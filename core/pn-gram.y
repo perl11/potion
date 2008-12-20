@@ -34,7 +34,6 @@ value(A) ::= TRUE(B). { A = B; }
 value(A) ::= FALSE(B). { A = B; }
 value(A) ::= INT(B). { A = B; }
 value(A) ::= FLOAT(B). { A = B; }
-value(A) ::= SYMBOL(B). { A = B; }
 value(A) ::= STRING(B). { A = B; }
 value(A) ::= STRING2(B). { A = B; }
 

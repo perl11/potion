@@ -54,7 +54,6 @@
                 "\\b" | "\\f" | "\\n" | "\\r" | "\\t";
   string      = "'" schar1* "'" | '"' schar2* '"';
   string2     = "% " (utf8 - newline)+;
-  symbol      = ':' (utfw+ | string | path);
 
   main := |*
     comma       => { TOKEN(SEP); };
@@ -76,7 +75,6 @@
     false       => { TOKEN(FALSE); };
     int         => { TOKEN(INT); };
     float       => { TOKEN(FLOAT); };
-    symbol      => { TOKEN(SYMBOL); };
     string      => { TOKEN(STRING); };
     string2     => { TOKEN(STRING2); };
 

@@ -22,6 +22,25 @@ static void potion_cmd_version() {
   printf("%s\n", potion_banner);
 }
 
+static int potion_fib(PN num) {
+  long a, b, n = PN_INT(num);
+  if (n <= 1) return PN_NUM(1);
+  a = PN_INT(potion_fib(PN_NUM(n - 1)));
+  b = PN_INT(potion_fib(PN_NUM(n - 2)));
+  return PN_NUM(a + b);
+}
+
+static void potion_cmd_fib() {
+  PN fib = potion_fib(PN_NUM(40));
+  potion_parse(
+    "fib = (n):\n"
+    "  if (n >= 1): 1.\n"
+    "  else: fib (n - 1) + fib (n - 2).\n"
+    "fib (40) print\n"
+  );
+  printf("answer: %ld\n", PN_INT(fib));
+}
+
 int main(int argc, char *argv[]) {
   int i;
 
@@ -38,6 +57,12 @@ int main(int argc, char *argv[]) {
           strcmp(argv[i], "--help") == 0)
       {
         potion_cmd_usage();
+        return 0;
+      }
+
+      if (strcmp(argv[i], "-f") == 0)
+      {
+        potion_cmd_fib();
         return 0;
       }
     }
