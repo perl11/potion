@@ -3,7 +3,7 @@ OBJ = ${SRC:.c=.o}
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -O
+CFLAGS = -O -Wall
 INCS = -Icore
 LIBS =
 

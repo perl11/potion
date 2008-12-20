@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "pn-gram.h"
+#include "internal.h"
 
 #define TOK(id)   printf("%s: %.*s\n", "" # id, (int)(te - ts), ts)
 #define TOKEN(id) LemonPotion(pParser, PN_##id, 0, NULL)
@@ -88,8 +89,8 @@
 
 void potion_parse(char *code)
 {
-  int cs, act, eof;
-  char *p, *pe, *ts, *te;
+  int cs, act;
+  char *p, *pe, *ts, *te, *eof = 0;
   // char *aps, *ape, *aps2, *ape2;
   int lineno = 0;
   void *pParser = LemonPotionAlloc(malloc);
