@@ -1,9 +1,9 @@
-SRC = core/internal.c core/objmodel.c core/pn-gram.c core/pn-scan.c core/potion.c
+SRC = core/internal.c core/objmodel.c core/pn-gram.c core/pn-scan.c core/potion.c core/string.c
 OBJ = ${SRC:.c=.o}
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -O -Wall
+CFLAGS = -O -Wall -DICACHE -DMCACHE
 INCS = -Icore
 LIBS =
 
@@ -27,6 +27,9 @@ core/pn-gram.c: core/pn-gram.y
 
 potion: ${OBJ}
 	${CC} ${CFLAGS} ${OBJ} -o potion
+
+todo:
+	@grep -rI TODO core
 
 clean:
 	@echo cleaning

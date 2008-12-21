@@ -7,6 +7,7 @@
 #define POTION_INTERNAL_H
 
 #define PN_ALLOC(T)          (T *)malloc(sizeof(T))
+#define PN_ALLOC2(T,C)       (T *)malloc(sizeof(T)+C)
 #define PN_ALLOC_N(T,N)      (T *)malloc(sizeof(T)*(N))
 #define PN_REALLOC(X,T)      (X)=(T *)realloc((char *)(X), sizeof(T))
 #define PN_REALLOC_N(X,T,N)  (X)=(T *)realloc((char *)(X), sizeof(T)*(N))

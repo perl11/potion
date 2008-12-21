@@ -17,7 +17,7 @@
 // types
 //
 typedef unsigned long PN;
-typedef unsigned long PNType;
+typedef unsigned int PNType;
 typedef struct Potion_State Potion;
 
 struct PNGarbage;
@@ -49,12 +49,17 @@ struct PNClosure;
 #define PN_IS_BOOL(v)   ((PN)(v) == PN_FALSE || (PN)(v) == PN_TRUE)
 #define PN_IS_NUM(v)    ((PN)(v) & PN_NUM_FLAG)
 #define PN_IS_TUPLE(v)  ((PN)(v) & PN_TUPLE_FLAG)
+#define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
+#define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
 
 #define PN_NUM_FLAG     0x01
 #define PN_TUPLE_FLAG   0x06
 
 #define PN_NUM(i)       ((PN)(((long)(i))<<1 | PN_NUM_FLAG))
 #define PN_INT(x)       (((long)(x))>>1)
+#define PN_STR_PTR(x)   (((struct PNString *)(x))->chars)
+#define PN_STR_LEN(x)   (((struct PNString *)(x))->len)
+#define PN_STR_HASH(x)  (((struct PNString *)(x))->hash)
 #define PN_GB(x,o,m)    (x).next = o; (x).marked = m
 
 struct PNGarbage {
@@ -79,8 +84,9 @@ struct PNObject {
 
 struct PNString {
   PN_OBJECT_HEADER
-  unsigned long len;
-  char *string[0];
+  unsigned int len;
+  unsigned int hash;
+  char *chars[0];
 };
 
 typedef PN (*imp_t)(struct PNClosure *closure, PN receiver, ...);
@@ -129,6 +135,7 @@ struct Potion_State {
 //
 Potion *potion_create();
 void potion_destroy(Potion *);
+PN potion_str(Potion *, const char *string);
 PN potion_bind(Potion *, PN rcv, PN msg);
 PN potion_closure_new(Potion *, imp_t meth, PN val);
 
