@@ -1,0 +1,107 @@
+
+         .ooo
+          'OOOo
+      ~ p ooOOOo tion ~
+          .OOO
+           oO      % a little
+             Oo    % language.
+            'O
+             `
+            (o)
+        ___/ /          
+       /`    \ 
+      /v^  `  ,
+     (...v/v^/
+      \../::/
+       \/::/ 
+
+
+  ~ potion ~
+
+  This isn't supposed to happen!
+
+  I started playing with Lua's internals and reading
+  stuff by Ian Piumarta and Nicolas Cannasse. And I,
+  well... I don't know how this happened!
+
+  I guess I got wrapped up in the challenge of
+  making a tiny language whose parser, VM and
+  stdlib amounted to less than 10k lines of code.
+
+
+  ~ unique ideas ~
+
+  Potion does have a few unique features.
+
+  * It is two languages in one.
+
+    The language itself is objects and closures.
+
+      Number add = (x): self + x.
+
+    But it also includes a data language.
+
+      Build [html [body [p "TEST" (font="Arial")]]]
+
+    The code and data languages can be interleaved
+    over and over again. In a way, I'm trying to find
+    a middle ground between s-expressions and stuff like
+    E4X. I like that s-expressions are a very light data
+    syntax, but I like that E4X clearly looks like data.
+
+    When s-expressions appear in Lisp code, they look
+    like code. I think it is nice to distinguish the two.
+
+  * Deeply nested blocks can be closed quickly.
+    I don't like significant whitespace, personally.
+    But I don't like end end end end.
+
+      10 times (i):
+        20 times (j):
+          "#(i) x #(j)" print
+      i.
+
+    The closing "i." ends the block with the "i" arg.
+    If more than one arg is present, use the first arg
+    only. If named args are used, use the arg not the name.
+
+      10 times (index=i, step=5):
+        20 times (index=j):
+          "#(i) x #(j)" print
+      i.
+
+    Normally, blocks are closed with a period.
+
+      10 times:
+        20 times:
+          "Odelay!" print.
+      .
+
+  * Elimination of line noise.
+
+    I avoid @, #, $, %, {}.
+    Stick with ., |, (), [], =, !, ?. Easier on the eyes.
+    These are common punctuations in English.
+
+  * I try to defer to English when it comes to punctuation rules.
+
+    Period means "end". (In other langs it means "method call".)
+    Comma breaks up statements.
+    Space between messages gives a noun-verb feeling.
+
+      window open (width=400, height=500)
+
+  * Named block args.
+
+      [1, 2, 3] map (item=x, index=i): i display, x + 1.
+
+
+  ~ license ~
+
+  See COPYING for legal information. It's an MIT license,
+  which lets you do anything you want with this. I'm hoping
+  that makes it very nice for folks who want to embed a little
+  Potion in their app!
+
+  _why
+
