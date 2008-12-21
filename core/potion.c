@@ -51,9 +51,11 @@ PN potion_test_closure(struct PNClosure *closure, PN receiver) {
 }
 
 static void potion_cmd_test() {
-  PN closure = potion_closure_new(potion_test_closure, PN_NIL);
+  Potion *P = potion_create();
+  PN closure = potion_closure_new(P, potion_test_closure, PN_NIL);
   printf("CLOSURE.vt = %lu\n", PN_TYPE(closure));
   PN_FREE(closure);
+  potion_destroy(P);
 }
 
 int main(int argc, char *argv[]) {

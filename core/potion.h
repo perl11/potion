@@ -17,6 +17,8 @@
 // types
 //
 typedef unsigned long PN;
+typedef unsigned long PNType;
+typedef struct Potion_State Potion;
 
 struct PNGarbage;
 struct PNTuple;
@@ -68,11 +70,17 @@ struct PNTuple {
 
 #define PN_OBJECT_HEADER \
   struct PNGarbage gb; \
-  unsigned long vt;
+  PNType vt;
 
 struct PNObject {
   PN_OBJECT_HEADER
   char *data[0];
+};
+
+struct PNString {
+  PN_OBJECT_HEADER
+  unsigned long len;
+  char *string[0];
 };
 
 typedef PN (*imp_t)(struct PNClosure *closure, PN receiver, ...);
@@ -100,10 +108,29 @@ static inline PN potion_obj_alloc(size_t size) {
 }
 
 //
+// the interpreter
+//
+struct PNVtable {
+  PN_OBJECT_HEADER
+  int size;
+  int tally;
+  PNType *keys;
+  PN *values;
+  PN parent;
+};
+
+struct Potion_State {
+  PN_OBJECT_HEADER
+  PN strings;
+};
+
+//
 // the Potion functions
 //
-PN potion_bind(PN rcv, PN msg);
-PN potion_closure_new(imp_t meth, PN val);
+Potion *potion_create();
+void potion_destroy(Potion *);
+PN potion_bind(Potion *, PN rcv, PN msg);
+PN potion_closure_new(Potion *, imp_t meth, PN val);
 
 void potion_parse(char *);
 void potion_run();

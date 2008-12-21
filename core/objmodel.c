@@ -1,5 +1,5 @@
 //
-// objmodel.h
+// objmodel.c
 // much of this is based on the work of ian piumarta
 // <http://www.piumarta.com/pepsi/objmodel.pdf>
 //
@@ -12,7 +12,7 @@
 
 unsigned long potion_vt_id = PN_TUSER;
 
-PN potion_closure_new(imp_t meth, PN val) {
+PN potion_closure_new(Potion *P, imp_t meth, PN val) {
   struct PNClosure *c = PN_ALLOC(struct PNClosure);
   PN_GB(c->gb, NULL, 0);
   c->vt = PN_TCLOSURE;
@@ -21,6 +21,6 @@ PN potion_closure_new(imp_t meth, PN val) {
   return (PN)c;
 }
 
-PN potion_bind(PN rcv, PN msg) {
+PN potion_bind(Potion *P, PN rcv, PN msg) {
   return PN_NIL;
 }

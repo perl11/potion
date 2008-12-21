@@ -1,4 +1,4 @@
-SRC = core/objmodel.c core/pn-gram.c core/pn-scan.c core/potion.c
+SRC = core/internal.c core/objmodel.c core/pn-gram.c core/pn-scan.c core/potion.c
 OBJ = ${SRC:.c=.o}
 
 PREFIX = /usr/local
