@@ -31,6 +31,7 @@ struct PNClosure;
 #define PN_TTABLE       4
 #define PN_TCLOSURE     5
 #define PN_TTUPLE       6
+#define PN_TUSER        7 
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)

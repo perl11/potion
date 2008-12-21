@@ -27,6 +27,7 @@ static void potion_cmd_version() {
 }
 
 static int potion_fib(PN num) {
+  if (!PN_IS_NUM(num)) return PN_NIL;
   long a, b, n = PN_INT(num);
   if (n <= 1) return PN_NUM(1);
   a = PN_INT(potion_fib(PN_NUM(n - 1)));

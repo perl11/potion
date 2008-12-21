@@ -10,6 +10,8 @@
 #include "internal.h"
 #include "potion.h"
 
+unsigned long potion_vt_id = PN_TUSER;
+
 PN potion_closure_new(imp_t meth, PN val) {
   struct PNClosure *c = PN_ALLOC(struct PNClosure);
   PN_GB(c->gb, NULL, 0);
