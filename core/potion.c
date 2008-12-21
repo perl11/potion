@@ -5,7 +5,9 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include "internal.h"
 #include "potion.h"
 
 const char potion_banner[] = "potion " POTION_VERSION
@@ -14,7 +16,7 @@ const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {
   printf("usage: potion [options] [script] [arguments]\n"
-      "  sizeof(PN=%d, PNGarbage=%d, PNTuple=%d, PNObject=%d\n"
+      "  sizeof(PN=%d, PNGarbage=%d, PNTuple=%d, PNObject=%d)\n"
       "  -h, --help         show this helpful stuff\n"
       "  -v, --version      show version\n",
       sizeof(PN), sizeof(struct PNGarbage), sizeof(struct PNTuple), sizeof(struct PNObject));
@@ -43,6 +45,16 @@ static void potion_cmd_fib() {
   printf("answer: %ld\n", PN_INT(fib));
 }
 
+PN potion_test_closure(struct PNClosure *closure, PN receiver) {
+  return PN_NIL;
+}
+
+static void potion_cmd_test() {
+  PN closure = potion_closure_new(potion_test_closure, PN_NIL);
+  printf("CLOSURE.vt = %lu\n", PN_TYPE(closure));
+  PN_FREE(closure);
+}
+
 int main(int argc, char *argv[]) {
   int i;
 
@@ -59,6 +71,12 @@ int main(int argc, char *argv[]) {
           strcmp(argv[i], "--help") == 0)
       {
         potion_cmd_usage();
+        return 0;
+      }
+
+      if (strcmp(argv[i], "--test") == 0)
+      {
+        potion_cmd_test();
         return 0;
       }
 

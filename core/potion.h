@@ -3,6 +3,8 @@
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
+#ifndef POTION_H
+#define POTION_H
 
 #define POTION_VERSION  "0.0"
 #define POTION_DATE     "2009-01-01"
@@ -16,10 +18,18 @@
 //
 typedef unsigned long PN;
 
+struct PNGarbage;
+struct PNTuple;
+struct PNObject;
+struct PNClosure;
+
 #define PN_TNONE        (-1)
 #define PN_TNIL         0
 #define PN_TNUMBER      1
 #define PN_TBOOLEAN     2
+#define PN_TSTRING      3
+#define PN_TTABLE       4
+#define PN_TCLOSURE     5
 #define PN_TTUPLE       6
 
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -42,6 +52,7 @@ typedef unsigned long PN;
 
 #define PN_NUM(i)       ((PN)(((long)(i))<<1 | PN_NUM_FLAG))
 #define PN_INT(x)       (((long)(x))>>1)
+#define PN_GB(x,o,m)    (x).next = o; (x).marked = m
 
 struct PNGarbage {
   struct PNGarbage *next;
@@ -54,9 +65,21 @@ struct PNTuple {
   PN *set[0];
 };
 
-struct PNObject {
-  struct PNGarbage *gb;
+#define PN_OBJECT_HEADER \
+  struct PNGarbage gb; \
   unsigned long vt;
+
+struct PNObject {
+  PN_OBJECT_HEADER
+  char *data[0];
+};
+
+typedef PN (*imp_t)(struct PNClosure *closure, PN receiver, ...);
+
+struct PNClosure {
+  PN_OBJECT_HEADER
+  imp_t method;
+  PN value;
 };
 
 // the potion type is the 't' in the vtable tuple (m,t)
@@ -71,8 +94,17 @@ static inline int potion_type(PN obj) {
   return PN_VTYPE(obj);
 }
 
+static inline PN potion_obj_alloc(size_t size) {
+  return (PN)calloc(1, sizeof(struct PNObject) + size);
+}
+
 //
 // the Potion functions
 //
+PN potion_bind(PN rcv, PN msg);
+PN potion_closure_new(imp_t meth, PN val);
+
 void potion_parse(char *);
 void potion_run();
+
+#endif
