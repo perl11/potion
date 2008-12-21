@@ -29,7 +29,7 @@ potion: ${OBJ}
 	${CC} ${CFLAGS} ${OBJ} -o potion
 
 todo:
-	@grep -rI TODO core
+	@grep -rInso 'TODO: \(.\+\)' core
 
 clean:
 	@echo cleaning
