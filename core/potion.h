@@ -43,12 +43,19 @@ typedef unsigned long PN;
 #define PN_NUM(i)       ((PN)(((long)(i))<<1 | PN_NUM_FLAG))
 #define PN_INT(x)       (((long)(x))>>1)
 
+struct PNGarbage {
+  struct PNGarbage *next;
+  unsigned char marked;
+};
+
 struct PNTuple {
+  struct PNGarbage *next;
   unsigned long len;
   PN *set[0];
 };
 
 struct PNObject {
+  struct PNGarbage *gb;
   unsigned long vt;
 };
 
