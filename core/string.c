@@ -21,13 +21,20 @@ unsigned int potion_strhash(Potion *P, const char *str, size_t len) {
 }
 
 PN potion_str(Potion *P, const char *str) {
-  // TODO: enhance string table
-  size_t len = strlen(str);
-  struct PNString *s = (struct PNString *)
-    potion_allocate(P, 0, PN_VTABLE(PN_TSTRING),
-      PN_NUM((sizeof(struct PNString)-sizeof(struct PNObject))+len));
-  s->len = (unsigned int)len;
-  s->hash = potion_strhash(P, str, len);
-  PN_MEMCPY_N(s->chars, str, char, len);
-  return (PN)s;
+  PN id = potion_lookup_str(P->strings, str);
+  if (!id)
+  {
+    size_t len = strlen(str);
+    struct PNString *s = (struct PNString *)
+      potion_allocate(P, 0, PN_VTABLE(PN_TSTRING),
+        PN_NUM((sizeof(struct PNString)-sizeof(struct PNObject))+len+1));
+    s->len = (unsigned int)len;
+    s->hash = potion_strhash(P, str, len);
+    PN_MEMCPY_N(s->chars, str, char, len);
+    s->chars[len] = '\0';
+    id = (PN)s;
+
+    potion_def_method(P, 0, P->strings, id, PN_NIL);
+  }
+  return id;
 }

@@ -65,7 +65,7 @@ struct PNClosure;
 
 #define PN_NUM(i)       ((PN)(((long)(i))<<1 | PN_NUM_FLAG))
 #define PN_INT(x)       (((long)(x))>>1)
-#define PN_STR_PTR(x)   (((struct PNString *)(x))->chars[0])
+#define PN_STR_PTR(x)   (((struct PNString *)(x))->chars)
 #define PN_STR_LEN(x)   (((struct PNString *)(x))->len)
 #define PN_STR_HASH(x)  (((struct PNString *)(x))->hash)
 #define PN_FUNC(f)      potion_closure_new(P, (imp_t)f, 0)
@@ -79,7 +79,7 @@ struct PNGarbage {
 struct PNTuple {
   struct PNGarbage *next;
   unsigned long len;
-  PN *set[0];
+  PN set[0];
 };
 
 #define PN_OBJECT_HEADER \
@@ -91,14 +91,14 @@ struct PNTuple {
 
 struct PNObject {
   PN_OBJECT_HEADER
-  char *data[0];
+  char data[0];
 };
 
 struct PNString {
   PN_OBJECT_HEADER
   unsigned int len;
   unsigned int hash;
-  char *chars[0];
+  char chars[0];
 };
 
 struct PNTableset {
@@ -172,8 +172,8 @@ struct Potion_State {
     static PNType prevVT = 0; \
     static int prevTN = 0; \
     static PN closure = 0; \
-    register PNType thisVT = potion_type(r); \
-    register int thisTN = P->typen; \
+    PNType thisVT = potion_type(r); \
+    int thisTN = P->typen; \
     thisVT == prevVT && prevTN == thisTN ? closure : \
       (prevVT = thisVT, prevTN = thisTN, closure = potion_bind(P, r, (MSG))); \
     ((struct PNClosure *)closure)->method(P, closure, r, ##ARGS); \
@@ -207,8 +207,11 @@ PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_lookup(Potion *, PN, PN, PN);
+PN potion_lookup_str(PN, char *);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, imp_t, PN);
+
+void potion_num_init(Potion *);
 
 void potion_parse(char *);
 void potion_run();

@@ -32,10 +32,6 @@ PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
 PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int i;
   struct PNVtable *vt = (struct PNVtable *)self;
-  if (!PN_IS_CLOSURE(method)) {
-    fprintf(stderr, "bad closure value\n");
-    return PN_NIL;
-  }
   for (i = 0; i < vt->tally; ++i)
     if (key == vt->p[i].key)
       return vt->p[i].value = method;
@@ -55,7 +51,15 @@ PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   for (i = 0; i < vt->tally; ++i)
     if (key == vt->p[i].key)
       return vt->p[i].value;
-  fprintf(stderr, "lookup failed %lu %s\n", self, PN_STR_PTR(key));
+  return PN_NIL;
+}
+
+PN potion_lookup_str(PN self, char *str) {
+  int i;
+  struct PNVtable *vt = (struct PNVtable *)self;
+  for (i = 0; i < vt->tally; ++i)
+    if (!strcmp(str, PN_STR_PTR(vt->p[i].key)))
+      return vt->p[i].key;
   return PN_NIL;
 }
 
@@ -68,5 +72,7 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
   closure = ((msg == PN_lookup) && (t == PN_TVTABLE))
     ? potion_lookup(P, 0, vt, msg)
     : potion_send(vt, PN_lookup, msg);
+  if (!closure)
+    fprintf(stderr, "lookup failed %lu %s\n", vt, PN_STR_PTR(msg));
   return closure;
 }

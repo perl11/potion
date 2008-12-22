@@ -23,6 +23,7 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TCLOSURE, obj_vt);
   potion_type_new(P, PN_TTUPLE, obj_vt);
   potion_type_new(P, PN_TSTATE, obj_vt);
+  P->strings = potion_delegated(P, 0, 0);
 
   PN_allocate = potion_str(P, "allocate");
   PN_def = potion_str(P, "def");
@@ -34,6 +35,8 @@ static void potion_init(Potion *P) {
 
   potion_send(vtable, PN_def, PN_allocate, PN_FUNC(potion_allocate));
   potion_send(vtable, PN_def, PN_delegated, PN_FUNC(potion_delegated));
+
+  potion_num_init(P);
 }
 
 Potion *potion_create() {

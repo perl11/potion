@@ -1,9 +1,15 @@
-SRC = core/internal.c core/objmodel.c core/pn-gram.c core/pn-scan.c core/potion.c core/string.c
+SRC = core/internal.c core/number.c core/objmodel.c core/pn-gram.c core/pn-scan.c core/potion.c core/string.c
 OBJ = ${SRC:.c=.o}
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -g -Wall -DICACHE -DMCACHE
+CFLAGS = -Wall -DICACHE -DMCACHE
+ifeq (${DEBUG}, 1)
+	CFLAGS += -g -DDEBUG
+else
+	CFLAGS += -O2
+endif
+
 INCS = -Icore
 LIBS =
 
