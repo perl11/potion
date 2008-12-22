@@ -7,6 +7,7 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "internal.h"
 #include "potion.h"
 
@@ -54,7 +55,7 @@ PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   return PN_NIL;
 }
 
-PN potion_lookup_str(PN self, char *str) {
+PN potion_lookup_str(PN self, const char *str) {
   int i;
   struct PNVtable *vt = (struct PNVtable *)self;
   for (i = 0; i < vt->tally; ++i)

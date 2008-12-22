@@ -207,11 +207,12 @@ PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_lookup(Potion *, PN, PN, PN);
-PN potion_lookup_str(PN, char *);
+PN potion_lookup_str(PN, const char *);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, imp_t, PN);
 
 void potion_num_init(Potion *);
+void potion_str_init(Potion *);
 
 void potion_parse(char *);
 void potion_run();
