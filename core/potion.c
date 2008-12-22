@@ -11,7 +11,7 @@
 #include "potion.h"
 
 const char potion_banner[] = "potion " POTION_VERSION
-                             " (date=" POTION_DATE ", commit=" POTION_COMMIT ")";
+                             " (date='" POTION_DATE "', commit='" POTION_COMMIT "')";
 const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {
