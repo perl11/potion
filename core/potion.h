@@ -23,6 +23,9 @@ typedef struct Potion_State Potion;
 struct PNGarbage;
 struct PNTuple;
 struct PNObject;
+struct PNString;
+struct PNTableset;
+struct PNTable;
 struct PNClosure;
 
 #define PN_TNONE        (-1)
@@ -89,6 +92,20 @@ struct PNString {
   char *chars[0];
 };
 
+struct PNTableset {
+  PN val;
+  PN key;
+};
+
+struct PNTable {
+  PN_OBJECT_HEADER
+  PN *array; /* array part */
+  struct PNTableset *set;
+  struct PNTableset *lastfree;
+  struct PNGarbage *gclist;
+  int sizearray;
+};
+
 typedef PN (*imp_t)(struct PNClosure *closure, PN receiver, ...);
 
 struct PNClosure {
@@ -116,13 +133,17 @@ static inline PN potion_obj_alloc(size_t size) {
 //
 // the interpreter
 //
+struct PNPairs {
+  PNType key;
+  PN value;
+};
+
 struct PNVtable {
   PN_OBJECT_HEADER
   int size;
   int tally;
-  PNType *keys;
-  PN *values;
   PN parent;
+  struct PNPairs *p;
 };
 
 struct Potion_State {

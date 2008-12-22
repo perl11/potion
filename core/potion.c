@@ -36,6 +36,8 @@ static int potion_fib(PN num) {
 }
 
 static void potion_cmd_fib() {
+  Potion *P = potion_create();
+  PN s_fib = potion_str(P, "fib");
   PN fib = potion_fib(PN_NUM(40));
   potion_parse(
     "fib = (n):\n"
@@ -44,6 +46,7 @@ static void potion_cmd_fib() {
     "fib (40) print\n"
   );
   printf("answer: %ld\n", PN_INT(fib));
+  potion_destroy(P);
 }
 
 PN potion_test_closure(struct PNClosure *closure, PN receiver) {
@@ -54,7 +57,6 @@ static void potion_cmd_test() {
   Potion *P = potion_create();
   PN closure = potion_closure_new(P, potion_test_closure, PN_NIL);
   printf("CLOSURE.vt = %lu\n", PN_TYPE(closure));
-  PN_FREE(closure);
   potion_destroy(P);
 }
 

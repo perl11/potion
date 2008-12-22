@@ -21,6 +21,7 @@ unsigned int potion_strhash(Potion *P, const char *str, size_t len) {
 }
 
 PN potion_str(Potion *P, const char *str) {
+  // TODO: enhance string table
   size_t len = strlen(str);
   struct PNString *s = PN_ALLOC2(struct PNString, len);
   s->vt = PN_TSTRING;
