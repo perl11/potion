@@ -34,6 +34,11 @@ core/pn-gram.c: core/pn-gram.y
 potion: ${OBJ}
 	${CC} ${CFLAGS} ${OBJ} -o potion
 
+sloc: clean
+	@cp core/pn-scan.rl core/pn-scan-rl.c
+	@sloccount .
+	@rm -f core/pn-scan-rl.c
+
 todo:
 	@grep -rInso 'TODO: \(.\+\)' core
 
