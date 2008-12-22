@@ -23,8 +23,9 @@ unsigned int potion_strhash(Potion *P, const char *str, size_t len) {
 PN potion_str(Potion *P, const char *str) {
   // TODO: enhance string table
   size_t len = strlen(str);
-  struct PNString *s = PN_ALLOC2(struct PNString, len);
-  s->vt = PN_TSTRING;
+  struct PNString *s = (struct PNString *)
+    potion_allocate(P, 0, PN_VTABLE(PN_TSTRING),
+      PN_NUM((sizeof(struct PNString)-sizeof(struct PNObject))+len));
   s->len = (unsigned int)len;
   s->hash = potion_strhash(P, str, len);
   PN_MEMCPY_N(s->chars, str, char, len);

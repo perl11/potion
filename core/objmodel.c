@@ -13,14 +13,60 @@
 unsigned long potion_vt_id = PN_TUSER;
 
 PN potion_closure_new(Potion *P, imp_t meth, PN val) {
-  struct PNClosure *c = PN_ALLOC(struct PNClosure);
-  PN_GB(c->gb, NULL, 0);
-  c->vt = PN_TCLOSURE;
+  struct PNClosure *c = (struct PNClosure *)
+    potion_allocate(P, 0, PN_VTABLE(PN_TCLOSURE),
+      PN_NUM(sizeof(struct PNClosure)-sizeof(struct PNObject)));
   c->method = meth;
   c->value = val;
   return (PN)c;
 }
 
-PN potion_bind(Potion *P, PN rcv, PN msg) {
+PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
+  struct PNVtable *vt = (struct PNVtable *)self;
+  struct PNObject *o = PN_ALLOC2(struct PNObject, PN_INT(len));
+  PN_GB(o->gb, NULL, 0);
+  o->vt = vt->type;
+  return (PN)o;
+}
+
+PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
+  int i;
+  struct PNVtable *vt = (struct PNVtable *)self;
+  if (!PN_IS_CLOSURE(method)) {
+    fprintf(stderr, "bad closure value\n");
+    return PN_NIL;
+  }
+  for (i = 0; i < vt->tally; ++i)
+    if (key == vt->p[i].key)
+      return vt->p[i].value = method;
+  if (vt->tally == vt->size) {
+    vt->size *= 2;
+    PN_REALLOC_N(vt->p, struct PNPairs, vt->size);
+  }
+  vt->p[vt->tally].key = key;
+  vt->p[vt->tally].value = method;
+  vt->tally++;
+  return method;
+}
+
+PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
+  int i;
+  struct PNVtable *vt = (struct PNVtable *)self;
+  for (i = 0; i < vt->tally; ++i)
+    if (key == vt->p[i].key)
+      return vt->p[i].value;
+  fprintf(stderr, "lookup failed %lu %s\n", self, PN_STR_PTR(key));
   return PN_NIL;
+}
+
+PN potion_bind(Potion *P, PN rcv, PN msg) {
+  PN closure, vt;
+  PNType t = PN_TYPE(rcv);
+  if (t >= P->typen) return PN_NIL;
+  vt = PN_VTABLE(t);
+  // TODO: enable mcache -- need to hash the (t,msg) tuple
+  closure = ((msg == PN_lookup) && (t == PN_TVTABLE))
+    ? potion_lookup(P, 0, vt, msg)
+    : potion_send(vt, PN_lookup, msg);
+  return closure;
 }

@@ -36,10 +36,14 @@ struct PNClosure;
 #define PN_TTABLE       4
 #define PN_TCLOSURE     5
 #define PN_TTUPLE       6
-#define PN_TUSER        7 
+#define PN_TVTABLE      7 // TODO: remove when PN_TTABLE is done
+#define PN_TSTATE       8
+#define PN_TOBJECT      9
+#define PN_TUSER        10
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
+#define PN_VTABLE(t)    ((PN)(&(P->vts[t])))
 
 #define PN_NIL          ((PN)0)
 #define PN_TRUE         ((PN)2)
@@ -54,15 +58,17 @@ struct PNClosure;
 #define PN_IS_TUPLE(v)  ((PN)(v) & PN_TUPLE_FLAG)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
+#define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
 
 #define PN_NUM_FLAG     0x01
 #define PN_TUPLE_FLAG   0x06
 
 #define PN_NUM(i)       ((PN)(((long)(i))<<1 | PN_NUM_FLAG))
 #define PN_INT(x)       (((long)(x))>>1)
-#define PN_STR_PTR(x)   (((struct PNString *)(x))->chars)
+#define PN_STR_PTR(x)   (((struct PNString *)(x))->chars[0])
 #define PN_STR_LEN(x)   (((struct PNString *)(x))->len)
 #define PN_STR_HASH(x)  (((struct PNString *)(x))->hash)
+#define PN_FUNC(f)      potion_closure_new(P, (imp_t)f, 0)
 #define PN_GB(x,o,m)    (x).next = o; (x).marked = m
 
 struct PNGarbage {
@@ -79,6 +85,9 @@ struct PNTuple {
 #define PN_OBJECT_HEADER \
   struct PNGarbage gb; \
   PNType vt;
+
+#define PN_OBJ_ALLOC(S, T, L) \
+  ((S *)potion_send(PN_VTABLE(T), PN_allocate, ((sizeof(S)-sizeof(struct PNObject))+(L))))
 
 struct PNObject {
   PN_OBJECT_HEADER
@@ -106,7 +115,7 @@ struct PNTable {
   int sizearray;
 };
 
-typedef PN (*imp_t)(struct PNClosure *closure, PN receiver, ...);
+typedef PN (*imp_t)(Potion *P, PN closure, PN receiver, ...);
 
 struct PNClosure {
   PN_OBJECT_HEADER
@@ -115,7 +124,7 @@ struct PNClosure {
 };
 
 // the potion type is the 't' in the vtable tuple (m,t)
-static inline int potion_type(PN obj) {
+static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (obj == 0)        return PN_NIL;
   if (obj & PN_PRIMITIVE)
@@ -126,20 +135,17 @@ static inline int potion_type(PN obj) {
   return PN_VTYPE(obj);
 }
 
-static inline PN potion_obj_alloc(size_t size) {
-  return (PN)calloc(1, sizeof(struct PNObject) + size);
-}
-
 //
 // the interpreter
 //
 struct PNPairs {
-  PNType key;
+  PN key;
   PN value;
 };
 
 struct PNVtable {
   PN_OBJECT_HEADER
+  PNType type;
   int size;
   int tally;
   PN parent;
@@ -148,17 +154,61 @@ struct PNVtable {
 
 struct Potion_State {
   PN_OBJECT_HEADER
-  PN strings;
+  PN strings; /* table of all strings */
+  struct PNVtable *vts; /* array of type vtables */
+  int typen; /* number of actual types in circulation */
+  int typea; /* type space allocated */ 
 };
+
+//
+// method caches
+// (more great stuff from ian piumarta)
+//
+// TODO: the vtable is going to go away, in favor of lua tables
+//
+#if ICACHE
+#define potion_send(RCV, MSG, ARGS...) ({ \
+    PN r = (PN)(RCV); \
+    static PNType prevVT = 0; \
+    static int prevTN = 0; \
+    static PN closure = 0; \
+    register PNType thisVT = potion_type(r); \
+    register int thisTN = P->typen; \
+    thisVT == prevVT && prevTN == thisTN ? closure : \
+      (prevVT = thisVT, prevTN = thisTN, closure = potion_bind(P, r, (MSG))); \
+    ((struct PNClosure *)closure)->method(P, closure, r, ##ARGS); \
+  })
+#else
+#define potion_send(RCV, MSG, ARGS...) ({ \
+    PN r = (PN)(RCV); \
+    PN c = potion_bind(P, r, (MSG)); \
+    ((struct PNClosure *)c)->method(P, c, r, ##ARGS); \
+  })
+#endif
+
+#if MCACHE
+struct PNMcache {
+  PN vt;
+  PN selector;
+  PN closure;
+} potion_mcache[8192];
+#endif
+
+PN PN_allocate, PN_def, PN_delegated, PN_lookup;
 
 //
 // the Potion functions
 //
 Potion *potion_create();
 void potion_destroy(Potion *);
-PN potion_str(Potion *, const char *string);
-PN potion_bind(Potion *, PN rcv, PN msg);
-PN potion_closure_new(Potion *, imp_t meth, PN val);
+PN potion_str(Potion *, const char *);
+PN potion_allocate(Potion *, PN, PN, PN);
+PN potion_def_method(Potion *P, PN, PN, PN, PN);
+PN potion_type_new(Potion *, PNType, PN);
+PN potion_delegated(Potion *, PN, PN);
+PN potion_lookup(Potion *, PN, PN, PN);
+PN potion_bind(Potion *, PN, PN);
+PN potion_closure_new(Potion *, imp_t, PN);
 
 void potion_parse(char *);
 void potion_run();

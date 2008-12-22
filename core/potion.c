@@ -26,19 +26,23 @@ static void potion_cmd_version() {
   printf("%s\n", potion_banner);
 }
 
-static int potion_fib(PN num) {
+static PN PN_fib;
+
+static PN potion_fib(Potion *P, PN closure, PN self, PN num) {
   if (!PN_IS_NUM(num)) return PN_NIL;
   long a, b, n = PN_INT(num);
   if (n <= 1) return PN_NUM(1);
-  a = PN_INT(potion_fib(PN_NUM(n - 1)));
-  b = PN_INT(potion_fib(PN_NUM(n - 2)));
+  a = PN_INT(potion_send(self, PN_fib, PN_NUM(n - 1)));
+  b = PN_INT(potion_send(self, PN_fib, PN_NUM(n - 2)));
   return PN_NUM(a + b);
 }
 
 static void potion_cmd_fib() {
   Potion *P = potion_create();
-  PN s_fib = potion_str(P, "fib");
-  PN fib = potion_fib(PN_NUM(40));
+  PN vtable = PN_VTABLE(PN_TVTABLE);
+  PN_fib = potion_str(P, "fib");
+  potion_send(vtable, PN_def, PN_fib, PN_FUNC(potion_fib));
+  PN fib = potion_send(vtable, PN_fib, PN_NUM(40));
   potion_parse(
     "fib = (n):\n"
     "  if (n >= 1): 1.\n"

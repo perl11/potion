@@ -24,9 +24,13 @@
   stuff by Ian Piumarta and Nicolas Cannasse. And I,
   well... I don't know how this happened!
 
-  I guess I got wrapped up in the challenge of
-  making a tiny language whose parser, VM and
-  stdlib amounted to less than 10k lines of code.
+  Turns out making a language is a lovely old time,
+  you should try it. If you keep it small, fit the
+  VM and the parser and the stdlib all into 10k
+  lines, then it's no sweat.
+
+  To be fair, I'd been tinkering with the parser
+  for years, though.
 
 
   ~ unique ideas ~
@@ -102,6 +106,4 @@
   which lets you do anything you want with this. I'm hoping
   that makes it very nice for folks who want to embed a little
   Potion in their app!
-
-  _why
 
