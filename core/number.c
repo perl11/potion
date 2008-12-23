@@ -28,8 +28,8 @@ static PN potion_div(Potion *P, PN closure, PN self, PN num) {
 void potion_num_init(Potion *P)
 {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
-  potion_send(num_vt, PN_def, potion_str(P, "+"), PN_FUNC(potion_add));
-  potion_send(num_vt, PN_def, potion_str(P, "-"), PN_FUNC(potion_sub));
-  potion_send(num_vt, PN_def, potion_str(P, "*"), PN_FUNC(potion_mult));
-  potion_send(num_vt, PN_def, potion_str(P, "/"), PN_FUNC(potion_div));
+  potion_method(num_vt, "+", potion_add,  "value=N");
+  potion_method(num_vt, "-", potion_sub,  "value=N");
+  potion_method(num_vt, "*", potion_mult, "value=N");
+  potion_method(num_vt, "/", potion_div,  "value=N");
 }

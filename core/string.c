@@ -47,5 +47,5 @@ static PN potion_str_length(Potion *P, PN closure, PN self)
 void potion_str_init(Potion *P)
 {
   PN str_vt = PN_VTABLE(PN_TSTRING);
-  potion_send(str_vt, PN_def, potion_str(P, "length"), PN_FUNC(potion_str_length));
+  potion_method(str_vt, "length", potion_str_length, 0);
 }

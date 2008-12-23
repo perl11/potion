@@ -27,6 +27,7 @@ struct PNString;
 struct PNTableset;
 struct PNTable;
 struct PNClosure;
+struct PNVtable;
 
 #define PN_TNONE        (-1)
 #define PN_TNIL         0
@@ -68,7 +69,7 @@ struct PNClosure;
 #define PN_STR_PTR(x)   (((struct PNString *)(x))->chars)
 #define PN_STR_LEN(x)   (((struct PNString *)(x))->len)
 #define PN_STR_HASH(x)  (((struct PNString *)(x))->hash)
-#define PN_FUNC(f)      potion_closure_new(P, (imp_t)f, 0)
+#define PN_FUNC(f)      potion_closure_new(P, (imp_t)f, 0, 0)
 #define PN_GB(x,o,m)    (x).next = o; (x).marked = m
 
 struct PNGarbage {
@@ -101,6 +102,13 @@ struct PNString {
   char chars[0];
 };
 
+struct PNFile {
+  PN_OBJECT_HEADER
+  FILE *stream;
+  PN path;
+  PN mode;
+};
+
 struct PNTableset {
   PN val;
   PN key;
@@ -120,6 +128,7 @@ typedef PN (*imp_t)(Potion *P, PN closure, PN receiver, ...);
 struct PNClosure {
   PN_OBJECT_HEADER
   imp_t method;
+  PN sig;
   PN value;
 };
 
@@ -186,6 +195,9 @@ struct Potion_State {
   })
 #endif
 
+#define potion_method(RCV, MSG, FN, SIG) \
+  potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN))
+
 #if MCACHE
 struct PNMcache {
   PN vt;
@@ -209,7 +221,7 @@ PN potion_delegated(Potion *, PN, PN);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_lookup_str(PN, const char *);
 PN potion_bind(Potion *, PN, PN);
-PN potion_closure_new(Potion *, imp_t, PN);
+PN potion_closure_new(Potion *, imp_t, PN, PN);
 
 void potion_num_init(Potion *);
 void potion_str_init(Potion *);

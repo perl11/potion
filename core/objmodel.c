@@ -13,11 +13,12 @@
 
 unsigned long potion_vt_id = PN_TUSER;
 
-PN potion_closure_new(Potion *P, imp_t meth, PN val) {
+PN potion_closure_new(Potion *P, imp_t meth, PN sig, PN val) {
   struct PNClosure *c = (struct PNClosure *)
     potion_allocate(P, 0, PN_VTABLE(PN_TCLOSURE),
       PN_NUM(sizeof(struct PNClosure)-sizeof(struct PNObject)));
   c->method = meth;
+  c->sig = sig;
   c->value = val;
   return (PN)c;
 }

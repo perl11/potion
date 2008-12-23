@@ -17,6 +17,7 @@ const char potion_version[] = POTION_VERSION;
 static void potion_cmd_usage() {
   printf("usage: potion [options] [script] [arguments]\n"
       "  sizeof(PN=%lu, PNGarbage=%lu, PNTuple=%lu, PNObject=%lu, PNString=%lu)\n"
+      "  -c, --compile      compile the script to bytecode\n"
       "  -h, --help         show this helpful stuff\n"
       "  -v, --version      show version\n",
       sizeof(PN), sizeof(struct PNGarbage), sizeof(struct PNTuple), sizeof(struct PNObject), sizeof(struct PNString));
@@ -24,6 +25,11 @@ static void potion_cmd_usage() {
 
 static void potion_cmd_version() {
   printf("%s\n", potion_banner);
+}
+
+static void potion_cmd_compile(char *filename) {
+  Potion *P = potion_create();
+  potion_destroy(P);
 }
 
 static PN PN_fib, PN_add, PN_sub, PN_length;
@@ -78,6 +84,16 @@ int main(int argc, char *argv[]) {
           strcmp(argv[i], "--help") == 0)
       {
         potion_cmd_usage();
+        return 0;
+      }
+
+      if (strcmp(argv[i], "-c") == 0 ||
+          strcmp(argv[i], "--compile") == 0)
+      {
+        if (i == argc - 1)
+          fprintf(stderr, "** compiler requires a file name\n");
+        else
+          potion_cmd_compile(argv[i++]);
         return 0;
       }
 
