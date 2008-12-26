@@ -15,6 +15,8 @@
   And, also, much of the VM is from Lua
     (c) 1994-2006 Lua.org, PUC-Rio
     <http://lua.org/license.html> (MIT licensed)
+  Lastly, khash.h
+    (c) 2008, by Attractive Chaos <attractivechaos@aol.co.uk>
   
   Permission is hereby granted, free of charge, to any person
   obtaining a copy of this software and associated documentation

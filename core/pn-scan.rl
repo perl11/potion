@@ -85,8 +85,7 @@
   write data nofinal;
 }%%
 
-void potion_parse(char *code)
-{
+void potion_parse(char *code) {
   int cs, act;
   char *p, *pe, *ts, *te, *eof = 0;
   // char *aps, *ape, *aps2, *ape2;
@@ -103,8 +102,7 @@ void potion_parse(char *code)
   LemonPotionFree(pParser, free);
 }
 
-void potion_run()
-{
+void potion_run() {
   potion_parse(
     "average = (x, y): (x + y) / 2."
   );

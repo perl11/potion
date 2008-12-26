@@ -9,43 +9,55 @@
 #include <string.h>
 #include "internal.h"
 #include "potion.h"
+#include "khash.h"
 
-unsigned int potion_strhash(Potion *P, const char *str, size_t len) {
-  unsigned int h = (unsigned int)len;
-  size_t step = (len >> 5) + 1; /* limit amount of string to hash */
-  size_t l1;
-  for (l1 = len; l1 >= step; l1 -= step)
-    h = h ^ ((h << 5) + (h >> 2) + (unsigned char)str[l1 - 1]);
-  // TODO: check GC (see src/string.c in lua)
-  return h;
+KHASH_MAP_INIT_STR(str, PN);
+
+struct PNStrTable {
+  PN_OBJECT_HEADER
+  kh_str_t kh;
+};
+
+void potion_add_str(PN self, unsigned k, PN id) {
+  struct PNStrTable *t = (struct PNStrTable *)self;
+  kh_value(&t->kh, k) = id;
+}
+
+unsigned potion_lookup_str(PN self, const char *str, PN *id) {
+  int ret;
+  struct PNStrTable *t = (struct PNStrTable *)self;
+  unsigned k = kh_put(str, &t->kh, str, &ret);
+  if (!ret) *id = kh_value(&t->kh, k);
+  return k;
 }
 
 PN potion_str(Potion *P, const char *str) {
-  PN id = potion_lookup_str(P->strings, str);
+  PN id = PN_NIL;
+  unsigned k = potion_lookup_str(P->strings, str, &id);
   if (!id)
   {
     size_t len = strlen(str);
-    struct PNString *s = (struct PNString *)
-      potion_allocate(P, 0, PN_VTABLE(PN_TSTRING),
-        PN_NUM((sizeof(struct PNString)-sizeof(struct PNObject))+len+1));
+    struct PNString *s = PN_BOOT_OBJ_ALLOC(struct PNString, PN_TSTRING, len + 1);
     s->len = (unsigned int)len;
-    s->hash = potion_strhash(P, str, len);
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
     id = (PN)s;
 
-    potion_def_method(P, 0, P->strings, id, PN_NIL);
+    potion_add_str(P->strings, k, id);
   }
   return id;
 }
 
-static PN potion_str_length(Potion *P, PN closure, PN self)
-{
+static PN potion_str_length(Potion *P, PN closure, PN self) {
   return PN_NUM(PN_STR_LEN(self));
 }
 
-void potion_str_init(Potion *P)
-{
+void potion_str_hash_init(Potion *P) {
+  struct PNStrTable *t = PN_BOOT_OBJ_ALLOC(struct PNStrTable, PN_TTABLE, 0);
+  P->strings = (PN)t;
+}
+
+void potion_str_init(Potion *P) {
   PN str_vt = PN_VTABLE(PN_TSTRING);
   potion_method(str_vt, "length", potion_str_length, 0);
 }

@@ -12,6 +12,7 @@
 #define POTION_MAJOR    0
 #define POTION_COMMIT   "afc6509"
 #define POTION_SIG      "p\07\10n"
+#define POTION_VMID     0x79
 
 //
 // types
@@ -25,7 +26,6 @@ struct PNTuple;
 struct PNObject;
 struct PNString;
 struct PNTableset;
-struct PNTable;
 struct PNClosure;
 struct PNVtable;
 
@@ -39,8 +39,9 @@ struct PNVtable;
 #define PN_TTUPLE       6
 #define PN_TVTABLE      7 // TODO: remove when PN_TTABLE is done
 #define PN_TSTATE       8
-#define PN_TOBJECT      9
-#define PN_TUSER        10
+#define PN_TFILE        9
+#define PN_TOBJECT      10
+#define PN_TUSER        11
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
@@ -68,7 +69,6 @@ struct PNVtable;
 #define PN_INT(x)       (((long)(x))>>1)
 #define PN_STR_PTR(x)   (((struct PNString *)(x))->chars)
 #define PN_STR_LEN(x)   (((struct PNString *)(x))->len)
-#define PN_STR_HASH(x)  (((struct PNString *)(x))->hash)
 #define PN_FUNC(f)      potion_closure_new(P, (imp_t)f, 0, 0)
 #define PN_GB(x,o,m)    (x).next = o; (x).marked = m
 
@@ -87,6 +87,8 @@ struct PNTuple {
   struct PNGarbage gb; \
   PNType vt;
 
+#define PN_BOOT_OBJ_ALLOC(S, T, L) \
+  ((S *)potion_allocate(P, 0, PN_VTABLE(T), PN_NUM((sizeof(S)-sizeof(struct PNObject))+(L))))
 #define PN_OBJ_ALLOC(S, T, L) \
   ((S *)potion_send(PN_VTABLE(T), PN_allocate, ((sizeof(S)-sizeof(struct PNObject))+(L))))
 
@@ -98,7 +100,6 @@ struct PNObject {
 struct PNString {
   PN_OBJECT_HEADER
   unsigned int len;
-  unsigned int hash;
   char chars[0];
 };
 
@@ -112,15 +113,6 @@ struct PNFile {
 struct PNTableset {
   PN val;
   PN key;
-};
-
-struct PNTable {
-  PN_OBJECT_HEADER
-  PN *array; /* array part */
-  struct PNTableset *set;
-  struct PNTableset *lastfree;
-  struct PNGarbage *gclist;
-  int sizearray;
 };
 
 typedef PN (*imp_t)(Potion *P, PN closure, PN receiver, ...);
@@ -219,12 +211,13 @@ PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_lookup(Potion *, PN, PN, PN);
-PN potion_lookup_str(PN, const char *);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, imp_t, PN, PN);
 
 void potion_num_init(Potion *);
+void potion_str_hash_init(Potion *);
 void potion_str_init(Potion *);
+void potion_table_init(Potion *);
 
 void potion_parse(char *);
 void potion_run();

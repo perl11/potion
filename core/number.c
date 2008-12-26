@@ -25,8 +25,7 @@ static PN potion_div(Potion *P, PN closure, PN self, PN num) {
   return PN_NUM(PN_INT(self) / PN_INT(num));
 }
 
-void potion_num_init(Potion *P)
-{
+void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
   potion_method(num_vt, "+", potion_add,  "value=N");
   potion_method(num_vt, "-", potion_sub,  "value=N");

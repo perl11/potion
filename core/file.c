@@ -10,5 +10,9 @@
 #include "internal.h"
 #include "potion.h"
 
-PN potion_file_new(Potion *P, PN self, PN args) {
+PN potion_file_with(Potion *P, PN cl, PN self, PN path) {
+}
+
+void potion_file_init(Potion *P) {
+  PN file_vt = PN_VTABLE(PN_TFILE);
 }

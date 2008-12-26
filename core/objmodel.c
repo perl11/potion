@@ -56,15 +56,6 @@ PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   return PN_NIL;
 }
 
-PN potion_lookup_str(PN self, const char *str) {
-  int i;
-  struct PNVtable *vt = (struct PNVtable *)self;
-  for (i = 0; i < vt->tally; ++i)
-    if (!strcmp(str, PN_STR_PTR(vt->p[i].key)))
-      return vt->p[i].key;
-  return PN_NIL;
-}
-
 PN potion_bind(Potion *P, PN rcv, PN msg) {
   PN closure, vt;
   PNType t = PN_TYPE(rcv);
