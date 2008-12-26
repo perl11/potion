@@ -10,13 +10,20 @@
 #include <string.h>
 #include "internal.h"
 #include "potion.h"
+#include "khash.h"
+#include "table.h"
+
+struct PNVtable {
+  PN_OBJECT_HEADER
+  kh_PN_t kh;
+  PNType type;
+  PN parent;
+};
 
 unsigned long potion_vt_id = PN_TUSER;
 
 PN potion_closure_new(Potion *P, imp_t meth, PN sig, PN val) {
-  struct PNClosure *c = (struct PNClosure *)
-    potion_allocate(P, 0, PN_VTABLE(PN_TCLOSURE),
-      PN_NUM(sizeof(struct PNClosure)-sizeof(struct PNObject)));
+  struct PNClosure *c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, 0);
   c->method = meth;
   c->sig = sig;
   c->value = val;
@@ -31,29 +38,29 @@ PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
   return (PN)o;
 }
 
+PN potion_type_new(Potion *P, PNType t, PN self) {
+  struct PNVtable *vt = PN_ALLOC(struct PNVtable);
+  PN_GB(vt->gb, NULL, 0);
+  vt->vt = PN_TVTABLE;
+  vt->type = t;
+  vt->parent = self;
+  PN_VTABLE(t) = (PN)vt;
+  return (PN)vt;
+}
+
 PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
-  int i;
+  int ret;
   struct PNVtable *vt = (struct PNVtable *)self;
-  for (i = 0; i < vt->tally; ++i)
-    if (key == vt->p[i].key)
-      return vt->p[i].value = method;
-  if (vt->tally == vt->size) {
-    vt->size *= 2;
-    PN_REALLOC_N(vt->p, struct PNPairs, vt->size);
-  }
-  vt->p[vt->tally].key = key;
-  vt->p[vt->tally].value = method;
-  vt->tally++;
-  return method;
+  unsigned k = kh_put(PN, &vt->kh, key, &ret);
+  return kh_value(&vt->kh, k) = method;
 }
 
 PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
-  int i;
+  int ret;
   struct PNVtable *vt = (struct PNVtable *)self;
-  for (i = 0; i < vt->tally; ++i)
-    if (key == vt->p[i].key)
-      return vt->p[i].value;
-  return PN_NIL;
+  unsigned k = kh_put(PN, &vt->kh, key, &ret);
+  if (ret) return PN_NIL;
+  return kh_value(&vt->kh, k);
 }
 
 PN potion_bind(Potion *P, PN rcv, PN msg) {

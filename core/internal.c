@@ -48,21 +48,9 @@ Potion *potion_create() {
   P->vt = PN_TSTATE;
   P->typea = TYPE_BATCH_SIZE;
   P->typen = PN_TUSER;
-  P->vts = PN_ALLOC_N(struct PNVtable, P->typea);
+  P->vts = PN_ALLOC_N(PN, P->typea);
   potion_init(P);
   return P;
-}
-
-PN potion_type_new(Potion *P, PNType t, PN self) {
-  struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(t);
-  PN_GB(vt->gb, NULL, 0);
-  vt->vt = PN_TVTABLE;
-  vt->type = t;
-  vt->size = 2;
-  vt->tally = 0;
-  vt->p = PN_ALLOC_N(struct PNPairs, vt->size);
-  vt->parent = self;
-  return (PN)vt;
 }
 
 PN potion_delegated(Potion *P, PN closure, PN self) {

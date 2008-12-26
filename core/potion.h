@@ -37,15 +37,15 @@ struct PNVtable;
 #define PN_TTABLE       4
 #define PN_TCLOSURE     5
 #define PN_TTUPLE       6
-#define PN_TVTABLE      7 // TODO: remove when PN_TTABLE is done
-#define PN_TSTATE       8
-#define PN_TFILE        9
-#define PN_TOBJECT      10
+#define PN_TSTATE       7
+#define PN_TFILE        8
+#define PN_TOBJECT      9
+#define PN_TVTABLE      10
 #define PN_TUSER        11
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
-#define PN_VTABLE(t)    ((PN)(&(P->vts[t])))
+#define PN_VTABLE(t)    (P->vts[t])
 
 #define PN_NIL          ((PN)0)
 #define PN_TRUE         ((PN)2)
@@ -139,24 +139,10 @@ static inline PNType potion_type(PN obj) {
 //
 // the interpreter
 //
-struct PNPairs {
-  PN key;
-  PN value;
-};
-
-struct PNVtable {
-  PN_OBJECT_HEADER
-  PNType type;
-  int size;
-  int tally;
-  PN parent;
-  struct PNPairs *p;
-};
-
 struct Potion_State {
   PN_OBJECT_HEADER
   PN strings; /* table of all strings */
-  struct PNVtable *vts; /* array of type vtables */
+  PN *vts;
   int typen; /* number of actual types in circulation */
   int typea; /* type space allocated */ 
 };
