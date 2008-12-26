@@ -21,13 +21,11 @@ typedef unsigned long PN;
 typedef unsigned int PNType;
 typedef struct Potion_State Potion;
 
-struct PNGarbage;
-struct PNTuple;
 struct PNObject;
 struct PNString;
-struct PNTableset;
 struct PNClosure;
-struct PNVtable;
+struct PNTuple;
+struct PNGarbage;
 
 #define PN_TNONE        (-1)
 #define PN_TNIL         0
@@ -77,12 +75,6 @@ struct PNGarbage {
   unsigned char marked;
 };
 
-struct PNTuple {
-  struct PNGarbage *next;
-  unsigned long len;
-  PN set[0];
-};
-
 #define PN_OBJECT_HEADER \
   struct PNGarbage gb; \
   PNType vt;
@@ -110,11 +102,6 @@ struct PNFile {
   PN mode;
 };
 
-struct PNTableset {
-  PN val;
-  PN key;
-};
-
 typedef PN (*imp_t)(Potion *P, PN closure, PN receiver, ...);
 
 struct PNClosure {
@@ -124,12 +111,17 @@ struct PNClosure {
   PN value;
 };
 
+struct PNTuple {
+  struct PNGarbage *next;
+  unsigned long len;
+  PN set[0];
+};
+
 // the potion type is the 't' in the vtable tuple (m,t)
 static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (obj == 0)        return PN_NIL;
-  if (obj & PN_PRIMITIVE)
-  {
+  if (obj & PN_PRIMITIVE) {
     if (obj == PN_FALSE) return PN_TBOOLEAN;
     return (obj & PN_PRIMITIVE);
   }

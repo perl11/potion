@@ -34,8 +34,7 @@ unsigned potion_lookup_str(PN self, const char *str, PN *id) {
 PN potion_str(Potion *P, const char *str) {
   PN id = PN_NIL;
   unsigned k = potion_lookup_str(P->strings, str, &id);
-  if (!id)
-  {
+  if (!id) {
     size_t len = strlen(str);
     struct PNString *s = PN_BOOT_OBJ_ALLOC(struct PNString, PN_TSTRING, len + 1);
     s->len = (unsigned int)len;

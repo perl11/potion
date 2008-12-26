@@ -74,22 +74,19 @@ int main(int argc, char *argv[]) {
   if (argc > 0) {
     for (i = 0; i < argc; i++) {
       if (strcmp(argv[i], "-v") == 0 ||
-          strcmp(argv[i], "--version") == 0)
-      {
+          strcmp(argv[i], "--version") == 0) {
         potion_cmd_version();
         return 0;
       }
 
       if (strcmp(argv[i], "-h") == 0 ||
-          strcmp(argv[i], "--help") == 0)
-      {
+          strcmp(argv[i], "--help") == 0) {
         potion_cmd_usage();
         return 0;
       }
 
       if (strcmp(argv[i], "-c") == 0 ||
-          strcmp(argv[i], "--compile") == 0)
-      {
+          strcmp(argv[i], "--compile") == 0) {
         if (i == argc - 1)
           fprintf(stderr, "** compiler requires a file name\n");
         else
@@ -97,8 +94,7 @@ int main(int argc, char *argv[]) {
         return 0;
       }
 
-      if (strcmp(argv[i], "-f") == 0)
-      {
+      if (strcmp(argv[i], "-f") == 0) {
         potion_cmd_fib();
         return 0;
       }

@@ -13,7 +13,7 @@
 #include "table.h"
 
 PN potion_table_new(Potion *P, PN closure, PN self) {
-  struct PNTable *t = PN_BOOT_OBJ_ALLOC(struct PNTable, PN_TTABLE, 0);
+  struct PNTable *t = PN_OBJ_ALLOC(struct PNTable, PN_TTABLE, 0);
 }
 
 void potion_table_init(Potion *P) {
