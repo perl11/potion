@@ -72,7 +72,13 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
   closure = ((msg == PN_lookup) && (t == PN_TVTABLE))
     ? potion_lookup(P, 0, vt, msg)
     : potion_send(vt, PN_lookup, msg);
+  // TODO: replace with `forward` method call
   if (!closure)
     fprintf(stderr, "lookup failed %lu %s\n", vt, PN_STR_PTR(msg));
   return closure;
+}
+
+void potion_lobby_init(Potion *P) {
+  struct PNTable *t = PN_BOOT_OBJ_ALLOC(struct PNTable, PN_TTABLE, 0);
+  P->lobby = (PN)t;
 }

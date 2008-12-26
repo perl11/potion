@@ -7,11 +7,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "pn-gram.h"
 #include "internal.h"
+#include "potion.h"
+#include "pn-gram.h"
+#include "pn-ast.h"
 
 #define TOK(id)   printf("%s: %.*s\n", "" # id, (int)(te - ts), ts)
-#define TOKEN(id) LemonPotion(pParser, PN_##id, 0, NULL)
+#define TOKEN(id) LemonPotion(pParser, PN_TOK_##id, 0, NULL)
 
 %%{
   machine potion;
@@ -85,15 +87,15 @@
   write data nofinal;
 }%%
 
-void potion_parse(char *code) {
+PN potion_parse(Potion *P, PN code) {
   int cs, act;
   char *p, *pe, *ts, *te, *eof = 0;
-  // char *aps, *ape, *aps2, *ape2;
   int lineno = 0;
+  PN src = potion_source(P, AST_CODE);
   void *pParser = LemonPotionAlloc(malloc);
 
-  p = code;
-  pe = p + strlen(code) + 1;
+  p = PN_STR_PTR(code);
+  pe = p + PN_STR_LEN(code) + 1;
 
   %% write init;
   %% write exec;
@@ -103,20 +105,23 @@ void potion_parse(char *code) {
 }
 
 void potion_run() {
-  potion_parse(
+  PN code;
+  Potion *P = potion_create();
+  code = potion_parse(P, potion_str(P,
     "average = (x, y): (x + y) / 2."
-  );
-  potion_parse(
+  ));
+  code = potion_parse(P, potion_str(P,
     "if (/ball top < 0): 'You win!'. else: 'Computer wins'."
-  );
-  potion_parse(
+  ));
+  code = potion_parse(P, potion_str(P,
     "if (/ball top + ball_diameter < 0 or /ball top > app height):\n"
     "  para (top=140, align=center):\n"
     "    [strong \"GAME OVER\" (size=32), \"\\n\"]. # <strong size=32>GAME OVER</strong>\n"
     "  /ball hide, /anim stop."
-  );
-  potion_parse(
+  ));
+  code = potion_parse(P, potion_str(P,
     "get (/test/hello):\n"
     "  ['Hello, world!']."
-  );
+  ));
+  potion_destroy(P);
 }

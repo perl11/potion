@@ -7,7 +7,7 @@
 %include { #include <assert.h> }
 %extra_argument { char *extra }
 %token_type { int }
-%token_prefix PN_
+%token_prefix PN_TOK_
 %parse_accept { printf("-- LEMON END --\n"); }
 %name LemonPotion
 

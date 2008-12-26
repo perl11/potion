@@ -23,7 +23,9 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TCLOSURE, obj_vt);
   potion_type_new(P, PN_TTUPLE, obj_vt);
   potion_type_new(P, PN_TSTATE, obj_vt);
+  potion_type_new(P, PN_TSOURCE, obj_vt);
   potion_str_hash_init(P);
+  potion_lobby_init(P);
 
   PN_allocate = potion_str(P, "allocate");
   PN_def = potion_str(P, "def");
@@ -39,6 +41,7 @@ static void potion_init(Potion *P) {
   potion_num_init(P);
   potion_str_init(P);
   potion_table_init(P);
+  potion_source_init(P);
 }
 
 Potion *potion_create() {

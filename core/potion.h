@@ -39,7 +39,8 @@ struct PNGarbage;
 #define PN_TFILE        8
 #define PN_TOBJECT      9
 #define PN_TVTABLE      10
-#define PN_TUSER        11
+#define PN_TSOURCE      11
+#define PN_TUSER        12
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
@@ -48,7 +49,7 @@ struct PNGarbage;
 #define PN_NIL          ((PN)0)
 #define PN_TRUE         ((PN)2)
 #define PN_FALSE        ((PN)4)
-#define PN_TUPLE        ((PN)6)
+#define PN_EMPTY        ((PN)6)
 #define PN_PRIMITIVE    6
 
 #define PN_TEST(v)      (((PN)(v) & ~PN_NIL) != 0)
@@ -134,6 +135,7 @@ static inline PNType potion_type(PN obj) {
 struct Potion_State {
   PN_OBJECT_HEADER
   PN strings; /* table of all strings */
+  PN lobby; /* root namespace */
   PN *vts;
   int typen; /* number of actual types in circulation */
   int typea; /* type space allocated */ 
@@ -192,12 +194,15 @@ PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, imp_t, PN, PN);
 
+void potion_lobby_init(Potion *);
 void potion_num_init(Potion *);
 void potion_str_hash_init(Potion *);
 void potion_str_init(Potion *);
 void potion_table_init(Potion *);
+PN potion_source(Potion *, unsigned char);
+void potion_source_init(Potion *);
 
-void potion_parse(char *);
+PN potion_parse(Potion *, PN);
 void potion_run();
 
 #endif

@@ -54,12 +54,12 @@ static void potion_cmd_fib() {
   PN_length = potion_str(P, "length");
   potion_send(vtable, PN_def, PN_fib, PN_FUNC(potion_fib));
   PN fib = potion_send(vtable, PN_fib, PN_NUM(40));
-  potion_parse(
+  potion_parse(P, potion_str(P,
     "fib = (n):\n"
     "  if (n >= 1): 1.\n"
     "  else: fib (n - 1) + fib (n - 2).\n"
     "fib (40) print\n"
-  );
+  ));
   printf("answer: %ld (%ld) %ld\n",
     PN_INT(fib),
     PN_INT(potion_send(PN_fib, PN_length)),
