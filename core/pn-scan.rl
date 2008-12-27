@@ -91,9 +91,10 @@ PN potion_parse(Potion *P, PN code) {
   int cs, act;
   char *p, *pe, *ts, *te, *eof = 0;
   int lineno = 0;
-  PN src = PN_NIL;
   void *pParser = LemonPotionAlloc(malloc);
 
+  P->xast = 1;
+  P->source = PN_NIL;
   p = PN_STR_PTR(code);
   pe = p + PN_STR_LEN(code) + 1;
 
@@ -103,7 +104,7 @@ PN potion_parse(Potion *P, PN code) {
   LemonPotion(pParser, 0, 0, P);
   LemonPotionFree(pParser, free);
 
-  return src;
+  return P->source;
 }
 
 void potion_run() {

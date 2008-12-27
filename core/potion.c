@@ -34,11 +34,12 @@ static void potion_cmd_compile(char *filename) {
 
 static void potion_cmd_fib() {
   Potion *P = potion_create();
-  potion_parse(P, potion_str(P,
+  PN fib = potion_parse(P, potion_str(P,
     "fib = (n):\n"
     "  if (n >= 1, 1, fib (n - 1) + fib (n - 2)).\n"
     "fib (40) print"
   ));
+  potion_send(fib, PN_inspect);
   potion_destroy(P);
 }
 

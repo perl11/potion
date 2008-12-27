@@ -13,14 +13,12 @@
 %extra_argument { Potion *P }
 %token_type { PN }
 %token_prefix PN_TOK_
+%token_destructor { if (potion_is_ref($$)) { P->xast++; } }
 %parse_accept { printf("-- LEMON END --\n"); }
 %parse_failure { printf("-- LEMON FAIL --\n"); }
 %name LemonPotion
 
-potion(A) ::= statements(B). {
-  A = PN_AST(CODE, B);
-  potion_send(A, PN_inspect);
-}
+potion(A) ::= statements(B). { A = P->source = PN_AST(CODE, B); }
 
 statements(A) ::= statements(B) SEP statement(C). { A = potion_tuple_push(P, B, PN_AST(EXPR, C)); }
 statements(A) ::= statement(B). { A = potion_tuple_new(P, PN_AST(EXPR, B)); }

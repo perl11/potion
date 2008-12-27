@@ -129,6 +129,10 @@ static inline PNType potion_type(PN obj) {
   return PN_VTYPE(obj);
 }
 
+static inline int potion_is_ref(PN obj) {
+  return (!(PN_IS_NUM(obj) || obj == 0 || (obj & PN_PRIMITIVE)));
+}
+
 //
 // the interpreter
 //
@@ -139,6 +143,8 @@ struct Potion_State {
   PN *vts;
   int typen; /* number of actual types in circulation */
   int typea; /* type space allocated */ 
+  PN source; /* temporary ast node */
+  int xast; /* extra ast allocations */
 };
 
 //

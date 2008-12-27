@@ -14,7 +14,7 @@ INCS = -Icore
 LIBS =
 
 # pre-processors
-LEMON = lemon
+LEMON = tools/lemon
 RAGEL = ragel
 
 all: potion
@@ -27,9 +27,12 @@ core/pn-scan.c: core/pn-scan.rl
 	@echo RAGEL $<
 	@${RAGEL} $< -C -o $@
 
-core/pn-gram.c: core/pn-gram.y
-	@echo LEMON $<
-	@${LEMON} $<
+core/pn-gram.c: tools/lemon core/pn-gram.y
+	@echo LEMON core/pn-gram.y
+	@${LEMON} core/pn-gram.y
+
+tools/lemon: tools/lemon.c
+	${CC} -o tools/lemon tools/lemon.c
 
 potion: ${OBJ}
 	${CC} ${CFLAGS} ${OBJ} -o potion
