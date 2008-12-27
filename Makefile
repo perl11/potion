@@ -41,7 +41,7 @@ potion: ${OBJ}
 
 sloc: clean
 	@cp core/pn-scan.rl core/pn-scan-rl.c
-	@sloccount .
+	@sloccount core
 	@rm -f core/pn-scan-rl.c
 
 todo:
