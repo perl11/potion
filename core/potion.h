@@ -207,6 +207,7 @@ inline PN potion_tuple_new(Potion *, PN);
 inline PN potion_tuple_push(Potion *, PN, PN);
 
 void potion_lobby_init(Potion *);
+void potion_primitive_init(Potion *);
 void potion_num_init(Potion *);
 void potion_str_hash_init(Potion *);
 void potion_str_init(Potion *);

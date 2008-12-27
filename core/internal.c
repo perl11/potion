@@ -40,6 +40,7 @@ static void potion_init(Potion *P) {
   potion_send(vtable, PN_def, PN_allocate, PN_FUNC(potion_allocate));
   potion_send(vtable, PN_def, PN_delegated, PN_FUNC(potion_delegated));
 
+  potion_primitive_init(P);
   potion_num_init(P);
   potion_str_init(P);
   potion_table_init(P);
