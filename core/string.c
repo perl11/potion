@@ -56,12 +56,24 @@ PN potion_str2(Potion *P, char *str, size_t len) {
   return s;
 }
 
+PN potion_bytes(Potion *P, size_t len) {
+  struct PNString *s = PN_OBJ_ALLOC(struct PNString, PN_TBYTES, len + 1);
+  s->len = (unsigned int)len;
+  s->chars[len] = '\0';
+  return (PN)s;
+}
+
 static PN potion_str_length(Potion *P, PN closure, PN self) {
   return PN_NUM(PN_STR_LEN(self));
 }
 
 static PN potion_str_inspect(Potion *P, PN closure, PN self) {
   printf("%s", PN_STR_PTR(self));
+  return PN_NIL;
+}
+
+static PN potion_bytes_inspect(Potion *P, PN closure, PN self) {
+  printf("#<bytes>");
   return PN_NIL;
 }
 
@@ -72,6 +84,9 @@ void potion_str_hash_init(Potion *P) {
 
 void potion_str_init(Potion *P) {
   PN str_vt = PN_VTABLE(PN_TSTRING);
+  PN byt_vt = PN_VTABLE(PN_TBYTES);
   potion_method(str_vt, "inspect", potion_str_inspect, 0);
   potion_method(str_vt, "length", potion_str_length, 0);
+  potion_method(byt_vt, "inspect", potion_bytes_inspect, 0);
+  potion_method(byt_vt, "length", potion_str_length, 0);
 }

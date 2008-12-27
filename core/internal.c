@@ -24,6 +24,7 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TTUPLE, obj_vt);
   potion_type_new(P, PN_TSTATE, obj_vt);
   potion_type_new(P, PN_TSOURCE, obj_vt);
+  potion_type_new(P, PN_TBYTES, obj_vt);
   potion_str_hash_init(P);
   potion_lobby_init(P);
 

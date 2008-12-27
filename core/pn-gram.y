@@ -18,7 +18,10 @@
 %parse_failure { printf("-- LEMON FAIL --\n"); }
 %name LemonPotion
 
-potion(A) ::= statements(B). { A = P->source = PN_AST(CODE, B); }
+potion(A) ::= all(B). { A = P->source = PN_AST(CODE, B); }
+
+all(A) ::= statements(B). { A = B; }
+all(A) ::= statements(B) SEP. { A = B; }
 
 statements(A) ::= statements(B) SEP statement(C). { A = PN_PUSH(B, PN_AST(EXPR, C)); }
 statements(A) ::= statement(B). { A = PN_TUP(PN_AST(EXPR, B)); }

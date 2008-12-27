@@ -40,7 +40,8 @@ struct PNGarbage;
 #define PN_TOBJECT      9
 #define PN_TVTABLE      10
 #define PN_TSOURCE      11
-#define PN_TUSER        12
+#define PN_TBYTES       12
+#define PN_TUSER        13
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
@@ -193,6 +194,7 @@ Potion *potion_create();
 void potion_destroy(Potion *);
 PN potion_str(Potion *, const char *);
 PN potion_str2(Potion *, char *, size_t);
+PN potion_bytes(Potion *, size_t);
 PN potion_allocate(Potion *, PN, PN, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);

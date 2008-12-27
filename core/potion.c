@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "internal.h"
 #include "potion.h"
 
@@ -28,7 +29,33 @@ static void potion_cmd_version() {
 }
 
 static void potion_cmd_compile(char *filename) {
+  PN buf;
+  FILE *fp;
+  struct stat stats;
   Potion *P = potion_create();
+  if (lstat(filename, &stats) == -1) {
+    fprintf(stderr, "** %s does not exist.", filename);
+    goto done;
+  }
+
+  fp = fopen(filename, "rb");
+  if (!fp) {
+    fprintf(stderr, "** could not open %s. check permissions.", filename);
+    goto done;
+  }
+
+  buf = potion_bytes(P, stats.st_size);
+  if (fread(PN_STR_PTR(buf), 1, stats.st_size, fp) == stats.st_size) {
+    PN code;
+    code = potion_parse(P, buf);
+    potion_send(code, PN_inspect);
+  } else {
+    fprintf(stderr, "** could not read entire file.");
+  }
+
+  fclose(fp);
+
+done:
   potion_destroy(P);
 }
 
@@ -65,7 +92,7 @@ int main(int argc, char *argv[]) {
         if (i == argc - 1)
           fprintf(stderr, "** compiler requires a file name\n");
         else
-          potion_cmd_compile(argv[i++]);
+          potion_cmd_compile(argv[++i]);
         return 0;
       }
 
