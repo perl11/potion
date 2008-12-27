@@ -84,7 +84,7 @@ struct PNGarbage {
 #define PN_BOOT_OBJ_ALLOC(S, T, L) \
   ((S *)potion_allocate(P, 0, PN_VTABLE(T), PN_NUM((sizeof(S)-sizeof(struct PNObject))+(L))))
 #define PN_OBJ_ALLOC(S, T, L) \
-  ((S *)potion_send(PN_VTABLE(T), PN_allocate, ((sizeof(S)-sizeof(struct PNObject))+(L))))
+  ((S *)potion_send(PN_VTABLE(T), PN_allocate, PN_NUM((sizeof(S)-sizeof(struct PNObject))+(L))))
 
 struct PNObject {
   PN_OBJECT_HEADER
