@@ -178,7 +178,7 @@ struct PNMcache {
 } potion_mcache[8192];
 #endif
 
-PN PN_allocate, PN_def, PN_delegated, PN_lookup;
+PN PN_allocate, PN_def, PN_delegated, PN_lookup, PN_inspect;
 
 //
 // the Potion functions
@@ -186,6 +186,7 @@ PN PN_allocate, PN_def, PN_delegated, PN_lookup;
 Potion *potion_create();
 void potion_destroy(Potion *);
 PN potion_str(Potion *, const char *);
+PN potion_str2(Potion *, char *, size_t);
 PN potion_allocate(Potion *, PN, PN, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);
@@ -194,12 +195,14 @@ PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, imp_t, PN, PN);
 
+inline PN potion_tuple_new(Potion *, PN);
+inline PN potion_tuple_push(Potion *, PN, PN);
+
 void potion_lobby_init(Potion *);
 void potion_num_init(Potion *);
 void potion_str_hash_init(Potion *);
 void potion_str_init(Potion *);
 void potion_table_init(Potion *);
-PN potion_source(Potion *, unsigned char);
 void potion_source_init(Potion *);
 
 PN potion_parse(Potion *, PN);

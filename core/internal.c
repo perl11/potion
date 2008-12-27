@@ -31,6 +31,7 @@ static void potion_init(Potion *P) {
   PN_def = potion_str(P, "def");
   PN_delegated = potion_str(P, "delegated");
   PN_lookup = potion_str(P, "lookup");
+  PN_inspect = potion_str(P, "inspect");
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup));
   potion_def_method(P, 0, vtable, PN_def, PN_FUNC(potion_def_method));

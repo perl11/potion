@@ -12,8 +12,8 @@
 #include "pn-gram.h"
 #include "pn-ast.h"
 
-#define TOK(id)   printf("%s: %.*s\n", "" # id, (int)(te - ts), ts)
-#define TOKEN(id) LemonPotion(pParser, PN_TOK_##id, 0, NULL)
+#define TOKEN2(id,v) LemonPotion(pParser, PN_TOK_##id, v, P)
+#define TOKEN(id)    TOKEN2(id, PN_NIL)
 
 %%{
   machine potion;
@@ -62,26 +62,26 @@
     whitespace;
     comment;
     assign      => { TOKEN(ASSIGN); };
-    begin_table => { TOKEN(BEGIN_TABLE); };
+    begin_table => { TOKEN2(BEGIN_TABLE, PN_EMPTY); };
     end_table   => { TOKEN(END_TABLE); };
     begin_data  => { TOKEN(BEGIN_DATA); };
     end_data    => { TOKEN(END_DATA); };
     begin_block => { TOKEN(BEGIN_BLOCK); };
     end_block   => { TOKEN(END_BLOCK); };
     newline     => { TOKEN(SEP); lineno++; };
-    ops         => { TOKEN(OPS); };
-    path        => { TOKEN(PATH); };
+    ops         => { TOKEN2(OPS, potion_str2(P, ts, te - ts)); };
+    path        => { TOKEN2(PATH, potion_str2(P, ts, te - ts)); };
 
-    nil         => { TOKEN(NIL); };
-    true        => { TOKEN(TRUE); };
-    false       => { TOKEN(FALSE); };
-    int         => { TOKEN(INT); };
-    float       => { TOKEN(FLOAT); };
-    string      => { TOKEN(STRING); };
-    string2     => { TOKEN(STRING2); };
+    nil         => { TOKEN2(NIL, PN_NIL); };
+    true        => { TOKEN2(TRUE, PN_TRUE); };
+    false       => { TOKEN2(FALSE, PN_FALSE); };
+    int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts))); };
+    float       => { TOKEN2(FLOAT, PN_NUM(PN_ATOI(ts, te - ts))); };
+    string      => { TOKEN2(STRING, potion_str2(P, ts, te - ts)); };
+    string2     => { TOKEN2(STRING2, potion_str2(P, ts, te - ts)); };
 
-    message     => { TOKEN(MESSAGE); };
-    query       => { TOK(QUERY); };
+    message     => { TOKEN2(MESSAGE, potion_str2(P, ts, te - ts)); };
+    query       => { TOKEN2(QUERY, potion_str2(P, ts + 1, (te - ts) - 1)); };
   *|;
 
   write data nofinal;
@@ -91,7 +91,7 @@ PN potion_parse(Potion *P, PN code) {
   int cs, act;
   char *p, *pe, *ts, *te, *eof = 0;
   int lineno = 0;
-  PN src = potion_source(P, AST_CODE);
+  PN src = PN_NIL;
   void *pParser = LemonPotionAlloc(malloc);
 
   p = PN_STR_PTR(code);
@@ -100,8 +100,10 @@ PN potion_parse(Potion *P, PN code) {
   %% write init;
   %% write exec;
 
-  LemonPotion(pParser, 0, 0, NULL);
+  LemonPotion(pParser, 0, 0, P);
   LemonPotionFree(pParser, free);
+
+  return src;
 }
 
 void potion_run() {

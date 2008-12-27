@@ -6,6 +6,8 @@
 #ifndef POTION_INTERNAL_H
 #define POTION_INTERNAL_H
 
+struct Potion_State;
+
 #define PN_ALLOC(T)          (T *)malloc(sizeof(T))
 #define PN_ALLOC2(T,C)       (T *)malloc(sizeof(T)+C)
 #define PN_ALLOC_N(T,N)      (T *)malloc(sizeof(T)*(N))
@@ -18,8 +20,22 @@
 #define PN_MEMCPY(X,Y,T)     memcpy((X), (Y), sizeof(T))
 #define PN_MEMCPY_N(X,Y,T,N) memcpy((X), (Y), sizeof(T)*(N))
 
+#define PN_ATOI(X,N) ({ \
+  char *Ap = X; \
+  int Ai = 0; \
+  size_t Al = N; \
+  while (Al--) { \
+    if ((*Ap >= '0') && (*Ap <= '9')) { \
+      Ai = (Ai * 10) + (*Ap - '0'); \
+      Ap++; \
+    } \
+    else break; \
+  } \
+  Ai; \
+})
+
 void *LemonPotionAlloc(void *(*)(size_t));
-void LemonPotion(void *, int, int, char *);
+void LemonPotion(void *, int, int, struct Potion_State *);
 void LemonPotionFree(void *, void (*)(void*));
 
 #endif

@@ -11,8 +11,9 @@
 #include "potion.h"
 
 PN potion_file_with(Potion *P, PN cl, PN self, PN path) {
+  return PN_NIL;
 }
 
 void potion_file_init(Potion *P) {
-  PN file_vt = PN_VTABLE(PN_TFILE);
+  // PN file_vt = PN_VTABLE(PN_TFILE);
 }

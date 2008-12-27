@@ -25,10 +25,16 @@ static PN potion_div(Potion *P, PN closure, PN self, PN num) {
   return PN_NUM(PN_INT(self) / PN_INT(num));
 }
 
+static PN potion_num_inspect(Potion *P, PN closure, PN self) {
+  printf("%ld", PN_INT(self));
+  return PN_NIL;
+}
+
 void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
   potion_method(num_vt, "+", potion_add,  "value=N");
   potion_method(num_vt, "-", potion_sub,  "value=N");
   potion_method(num_vt, "*", potion_mult, "value=N");
   potion_method(num_vt, "/", potion_div,  "value=N");
+  potion_method(num_vt, "inspect", potion_num_inspect, 0);
 }
