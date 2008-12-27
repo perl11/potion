@@ -32,10 +32,12 @@ core/pn-gram.c: tools/lemon core/pn-gram.y
 	@${LEMON} core/pn-gram.y
 
 tools/lemon: tools/lemon.c
-	${CC} -o tools/lemon tools/lemon.c
+	@echo CC tools/lemon.c
+	@${CC} -o tools/lemon tools/lemon.c
 
 potion: ${OBJ}
-	${CC} ${CFLAGS} ${OBJ} -o potion
+	@echo LINK potion
+	@${CC} ${CFLAGS} ${OBJ} -o potion
 
 sloc: clean
 	@cp core/pn-scan.rl core/pn-scan-rl.c

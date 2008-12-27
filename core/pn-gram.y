@@ -20,18 +20,17 @@
 
 potion(A) ::= statements(B). { A = P->source = PN_AST(CODE, B); }
 
-statements(A) ::= statements(B) SEP statement(C). { A = potion_tuple_push(P, B, PN_AST(EXPR, C)); }
-statements(A) ::= statement(B). { A = potion_tuple_new(P, PN_AST(EXPR, B)); }
-statements(A) ::= expr(B) ASSIGN statement(C). { A = potion_tuple_new(P, PN_AST(ASSIGN, potion_tuple_push(P, potion_tuple_new(P, B), C))); }
+statements(A) ::= statements(B) SEP statement(C). { A = PN_PUSH(B, PN_AST(EXPR, C)); }
+statements(A) ::= statement(B). { A = PN_TUP(PN_AST(EXPR, B)); }
+statements(A) ::= expr(B) ASSIGN statement(C). { A = PN_TUP(PN_AST(ASSIGN, PN_PUSH(PN_TUP(B), C))); }
 
-statement(A) ::= statement(B) expr(C). { A = potion_tuple_push(P, B, C); }
-statement(A) ::= expr(B). { A = potion_tuple_new(P, B); }
+statement(A) ::= statement(B) expr(C). { A = PN_PUSH(B, C); }
+statement(A) ::= expr(B). { A = PN_TUP(B); }
 
 expr(A) ::= MESSAGE(B). { A = PN_AST(MESSAGE, B); }
 expr(A) ::= QUERY(B). { A = PN_AST(QUERY, B); }
 expr(A) ::= block(B). { A = B; }
 expr(A) ::= table(B). { A = B; }
-expr(A) ::= data(B). { A = B; }
 expr(A) ::= OPS(B). { A = PN_AST(MESSAGE, B); }
 expr(A) ::= value(B). { A = B; }
 
@@ -43,6 +42,7 @@ value(A) ::= INT(B). { A = PN_AST(VALUE, B); }
 value(A) ::= FLOAT(B). { A = PN_AST(VALUE, B); }
 value(A) ::= STRING(B). { A = PN_AST(VALUE, B); }
 value(A) ::= STRING2(B). { A = PN_AST(VALUE, B); }
+value(A) ::= data(B). { A = B; }
 
 block(A) ::= BEGIN_BLOCK statements(B) END_BLOCK. { A = PN_AST(BLOCK, B); }
 block(A) ::= BEGIN_BLOCK END_BLOCK. { A = PN_AST(BLOCK, PN_EMPTY); }
@@ -55,15 +55,15 @@ table(A) ::= BEGIN_TABLE statements(B) END_TABLE. { A = PN_AST(TABLE, B); }
 data(A) ::= BEGIN_DATA items(B) END_DATA. { A = PN_AST(DATA, B); }
 data(A) ::= BEGIN_DATA END_DATA. { A = PN_AST(DATA, PN_EMPTY); }
 
-items(A) ::= item(B) SEP item(C). { A = potion_tuple_push(P, B, C); }
-items(A) ::= item(B). { A = potion_tuple_new(P, B); }
+items(A) ::= items(B) SEP item(C). { A = PN_PUSH(B, C); }
+items(A) ::= item(B). { A = PN_TUP(B); }
 
-item(A) ::= MESSAGE(B). { A = B; }
-item(A) ::= MESSAGE(B) value. { A = B; }
-item(A) ::= MESSAGE(B) value table. { A = B; }
-item(A) ::= MESSAGE(B) table. { A = B; }
-item(A) ::= MESSAGE(B) table value. { A = B; }
-item(A) ::= value(B). { A = B; }
-item(A) ::= value(B) table. { A = B; }
-item(A) ::= table(B). { A = B; }
-item(A) ::= table(B) value. { A = B; }
+item(A) ::= MESSAGE(B). { A = PN_TUP(B); }
+item(A) ::= MESSAGE(B) value(C). { A = PN_PUSH(PN_TUP(B), C); }
+item(A) ::= MESSAGE(B) value(C) table(D). { A = PN_PUSH(PN_PUSH(PN_TUP(B), C), D); }
+item(A) ::= MESSAGE(B) table(C). { A = PN_PUSH(PN_TUP(B), C); }
+item(A) ::= MESSAGE(B) table(C) value(D). { A = PN_PUSH(PN_PUSH(PN_TUP(B), C), D); }
+item(A) ::= value(B). { A = PN_TUP(B); }
+item(A) ::= value(B) table(C). { A = PN_PUSH(PN_TUP(B), C); }
+item(A) ::= table(B). { A = PN_TUP(B); }
+item(A) ::= table(B) value(C). { A = PN_PUSH(PN_TUP(B), C); }
