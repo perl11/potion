@@ -16,7 +16,7 @@ const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {
   printf("usage: potion [options] [script] [arguments]\n"
-      "  sizeof(PN=%lu, PNGarbage=%lu, PNTuple=%lu, PNObject=%lu, PNString=%lu)\n"
+      "  sizeof(PN=%zd, PNGarbage=%zd, PNTuple=%zd, PNObject=%zd, PNString=%zd)\n"
       "  -c, --compile      compile the script to bytecode\n"
       "  -h, --help         show this helpful stuff\n"
       "  -v, --version      show version\n",

@@ -6,6 +6,7 @@
 //
 %include {
 #include <assert.h>
+#include <string.h>
 #include "potion.h"
 #include "pn-ast.h"
 }
