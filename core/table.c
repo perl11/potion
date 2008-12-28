@@ -35,18 +35,18 @@ inline unsigned long potion_tuple_find(Potion *P, PN tuple, PN value) {
   PN_TUPLE_EACH(tuple, i, v, {
     if (v == value) return i;
   });
-  return -1;
+  return PN_NONE;
 }
 
-inline unsigned long potion_tuple_put(Potion *P, PN tuple, PN value) {
+inline unsigned long potion_tuple_put(Potion *P, PN *tuple, PN value) {
   struct PNTuple *t;
-  if (tuple != PN_EMPTY) {
-    unsigned long idx = potion_tuple_find(P, tuple, value);
+  if (*tuple != PN_EMPTY) {
+    unsigned long idx = potion_tuple_find(P, *tuple, value);
     if (idx != -1) return idx;
   }
 
-  tuple = potion_tuple_push(P, tuple, value);
-  t = PN_GET_TUPLE(tuple);
+  *tuple = potion_tuple_push(P, *tuple, value);
+  t = PN_GET_TUPLE(*tuple);
   return t->len - 1;
 }
 

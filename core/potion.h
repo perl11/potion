@@ -28,7 +28,6 @@ struct PNProto;
 struct PNTuple;
 struct PNGarbage;
 
-#define PN_TNONE        (-1)
 #define PN_TNIL         0
 #define PN_TNUMBER      1
 #define PN_TBOOLEAN     2
@@ -49,6 +48,7 @@ struct PNGarbage;
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
 #define PN_VTABLE(t)    (P->vts[t])
 
+#define PN_NONE         ((PN)-1)
 #define PN_NIL          ((PN)0)
 #define PN_TRUE         ((PN)2)
 #define PN_FALSE        ((PN)4)
@@ -229,7 +229,8 @@ PN potion_closure_new(Potion *, imp_t, PN, PN);
 
 inline PN potion_tuple_new(Potion *, PN);
 inline PN potion_tuple_push(Potion *, PN, PN);
-inline unsigned long potion_tuple_put(Potion *, PN, PN);
+inline unsigned long potion_tuple_put(Potion *, PN *, PN);
+inline unsigned long potion_tuple_find(Potion *, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 
 void potion_lobby_init(Potion *);

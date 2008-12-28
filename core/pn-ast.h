@@ -16,6 +16,7 @@ enum PN_AST {
   AST_MESSAGE,
   AST_PATH,
   AST_QUERY,
+  AST_PATHQ,
   AST_EXPR,
   AST_TABLE,
   AST_BLOCK,
@@ -31,7 +32,8 @@ struct PNSource {
 #define PN_AST(T, A)  potion_source(P, AST_##T, A)
 #define PN_PUSH(T, X) potion_tuple_push(P, T, X)
 #define PN_TUP(X)     potion_tuple_new(P, X)
-#define PN_PUT(T, X)  potion_tuple_put(P, T, X)
+#define PN_GET(T, X)  potion_tuple_find(P, T, X)
+#define PN_PUT(T, X)  potion_tuple_put(P, &(T), X)
 
 PN potion_source(Potion *, PNByte, PN);
 

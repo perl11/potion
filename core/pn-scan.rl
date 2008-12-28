@@ -19,7 +19,7 @@
   machine potion;
 
   comma       = ",";
-  newline     = "\r"? "\n";
+  newline     = "\r"? "\n" %{ lineno++; };
   whitespace  = " " | "\f" | "\t" | "\v";
   utfw        = alnum | "_" | "$" | "@" | "{" | "}" |
                 (0xc4 0xa8..0xbf) | (0xc5..0xdf 0x80..0xbf) |
@@ -35,7 +35,6 @@
   braced      = '{' (any - '}')+ '}' | '[' (any - ']')+ ']';
 
   message     = utfw+ braced?;
-  query       = "?" utfw+;
   assign      = "=";
   begin_block = ":";
   end_block   = ".";
@@ -44,6 +43,8 @@
   begin_data  = "[";
   end_data    = "]";
   path        = "/" ("/" | utfw)+;
+  query       = "?" message;
+  querypath   = "?" path;
   comment     = "#"+ (utf8 - newline)*;
 
   nil         = "nil";
@@ -68,7 +69,7 @@
     end_data    => { TOKEN(END_DATA); };
     begin_block => { TOKEN(BEGIN_BLOCK); };
     end_block   => { TOKEN(END_BLOCK); };
-    newline     => { TOKEN(SEP); lineno++; };
+    newline     => { TOKEN(SEP); };
     ops         => { TOKEN2(OPS, potion_str2(P, ts, te - ts)); };
     path        => { TOKEN2(PATH, potion_str2(P, ts, te - ts)); };
 
@@ -82,6 +83,7 @@
 
     message     => { TOKEN2(MESSAGE, potion_str2(P, ts, te - ts)); };
     query       => { TOKEN2(QUERY, potion_str2(P, ts + 1, (te - ts) - 1)); };
+    querypath   => { TOKEN2(PATHQ, potion_str2(P, ts + 1, (te - ts) - 1)); };
   *|;
 
   write data nofinal;

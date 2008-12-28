@@ -12,7 +12,7 @@
 
 const char *potion_ast_names[] = {
   "code", "value", "assign", "message",
-  "path", "query", "expr", "table",
+  "path", "query", "pathq", "expr", "table",
   "block", "data"
 };
 

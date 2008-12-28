@@ -25,19 +25,24 @@ all(A) ::= statements(B) SEP. { A = B; }
 
 statements(A) ::= statements(B) SEP statement(C). { A = PN_PUSH(B, PN_AST(EXPR, C)); }
 statements(A) ::= statement(B). { A = PN_TUP(PN_AST(EXPR, B)); }
-statements(A) ::= expr(B) ASSIGN statement(C). { A = PN_TUP(PN_AST(ASSIGN, PN_PUSH(PN_TUP(B), C))); }
+statements(A) ::= name(B) ASSIGN statement(C). { A = PN_TUP(PN_AST(ASSIGN, PN_PUSH(PN_TUP(B), C))); }
+statements(A) ::= statements(B) SEP name(C) ASSIGN statement(D).
+{ A = PN_PUSH(B, PN_AST(ASSIGN, PN_PUSH(PN_TUP(C), D))); }
 
 statement(A) ::= statement(B) expr(C). { A = PN_PUSH(B, C); }
 statement(A) ::= expr(B). { A = PN_TUP(B); }
 
-expr(A) ::= MESSAGE(B). { A = PN_AST(MESSAGE, B); }
-expr(A) ::= QUERY(B). { A = PN_AST(QUERY, B); }
 expr(A) ::= block(B). { A = B; }
 expr(A) ::= table(B). { A = B; }
 expr(A) ::= OPS(B). { A = PN_AST(MESSAGE, B); }
+expr(A) ::= name(B). { A = B; }
 expr(A) ::= value(B). { A = B; }
 
-value(A) ::= PATH(B). { A = PN_AST(PATH, B); }
+name(A) ::= MESSAGE(B). { A = PN_AST(MESSAGE, B); }
+name(A) ::= QUERY(B). { A = PN_AST(QUERY, B); }
+name(A) ::= PATH(B). { A = PN_AST(PATH, B); }
+name(A) ::= PATHQ(B). { A = PN_AST(PATHQ, B); }
+
 value(A) ::= NIL(B). { A = PN_AST(VALUE, B); }
 value(A) ::= TRUE(B). { A = PN_AST(VALUE, B); }
 value(A) ::= FALSE(B). { A = PN_AST(VALUE, B); }
@@ -61,11 +66,11 @@ data(A) ::= BEGIN_DATA END_DATA. { A = PN_AST(DATA, PN_EMPTY); }
 items(A) ::= items(B) SEP item(C). { A = PN_PUSH(B, C); }
 items(A) ::= item(B). { A = PN_TUP(B); }
 
-item(A) ::= MESSAGE(B). { A = PN_TUP(B); }
-item(A) ::= MESSAGE(B) value(C). { A = PN_PUSH(PN_TUP(B), C); }
-item(A) ::= MESSAGE(B) value(C) table(D). { A = PN_PUSH(PN_PUSH(PN_TUP(B), C), D); }
-item(A) ::= MESSAGE(B) table(C). { A = PN_PUSH(PN_TUP(B), C); }
-item(A) ::= MESSAGE(B) table(C) value(D). { A = PN_PUSH(PN_PUSH(PN_TUP(B), C), D); }
+item(A) ::= name(B). { A = PN_TUP(B); }
+item(A) ::= name(B) value(C). { A = PN_PUSH(PN_TUP(B), C); }
+item(A) ::= name(B) value(C) table(D). { A = PN_PUSH(PN_PUSH(PN_TUP(B), C), D); }
+item(A) ::= name(B) table(C). { A = PN_PUSH(PN_TUP(B), C); }
+item(A) ::= name(B) table(C) value(D). { A = PN_PUSH(PN_PUSH(PN_TUP(B), C), D); }
 item(A) ::= value(B). { A = PN_TUP(B); }
 item(A) ::= value(B) table(C). { A = PN_PUSH(PN_TUP(B), C); }
 item(A) ::= table(B). { A = PN_TUP(B); }

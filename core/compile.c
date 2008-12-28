@@ -14,30 +14,39 @@
 typedef unsigned char u8;
 
 #define PN_ASM2(ins, a, b) ({ \
-    *pos[0] = (u8)ins; \
-    *pos[1] = (u8)a; \
-    *pos[2] = (u8)b; \
-    *pos += 3; \
+    *((*pos)++) = (u8)ins; \
+    *((*pos)++) = (u8)a; \
+    *((*pos)++) = (u8)b; \
   })
 
 const char *potion_op_names[] = {
   "move", "loadk", "loadnil", "loadbool",
-  "getlocal", "setlocal", "self"
+  "getlocal", "setlocal", "gettable", "settable",
+  "getpath", "setpath", "self", "bind",
+  "test", "testset", "call", "tailcall",
+  "return"
 };
 
 const enum PN_OPARGS potion_op_args[] = {
   OP_ASM2, OP_ASM2, OP_ASM1, OP_ASM1,
-  OP_ASM2, OP_ASM2, OP_ASM1
+  OP_ASM2, OP_ASM2, OP_ASM2, OP_ASM2,
+  OP_ASM2, OP_ASM2, OP_ASM1, OP_ASM2,
+  OP_ASM2, OP_ASM2, OP_ASM2, OP_ASM2,
+  OP_ASM2
 };
 
 PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   struct PNProto *t = (struct PNProto *)self;
   unsigned int num = 1;
   u8 *pos, *end;
-  printf("; function definition: %p\n", t);
-  printf("; %u bytes\n", PN_STR_LEN(t->asmb));
+  printf("; function definition: %p ; %u bytes\n", t, PN_STR_LEN(t->asmb));
   PN_TUPLE_EACH(t->locals, i, v, {
     printf("; local \"");
+    potion_send(v, PN_inspect);
+    printf("\" ; %lu\n", i);
+  });
+  PN_TUPLE_EACH(t->values, i, v, {
+    printf("; value \"");
     potion_send(v, PN_inspect);
     printf("\" ; %lu\n", i);
   });
@@ -56,6 +65,7 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
       break;
     }
     printf("\n");
+    num++;
   }
   return PN_NIL;
 }
@@ -63,21 +73,69 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
 void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 **pos) {
   switch (t->part) {
     case AST_CODE:
+    case AST_EXPR:
       PN_TUPLE_EACH(t->a, i, v, {
         potion_source_asmb(P, f, (struct PNSource *)v, pos);
       });
+      if (t->part == AST_CODE)
+        PN_ASM2(OP_RETURN, 0, 1);
+    break;
+
+    case AST_VALUE: {
+      unsigned long num = PN_PUT(f->values, t->a);
+      PN_ASM2(OP_LOADK, 0, num);
+    }
     break;
 
     case AST_ASSIGN: {
       struct PNTuple *tp = PN_GET_TUPLE(t->a);
       struct PNSource *lhs = (struct PNSource *)tp->set[0];
+      unsigned long num = PN_NONE;
+
+      if (lhs->part == AST_MESSAGE || lhs->part == AST_QUERY)
+        num = PN_PUT(f->locals, lhs->a);
+      else if (lhs->part == AST_PATH || lhs->part == AST_PATHQ)
+        num = PN_PUT(f->values, lhs->a);
+
       PN_TUPLE_EACH(tp->set[1], i, v, {
         potion_source_asmb(P, f, (struct PNSource *)v, pos);
       });
-      if (lhs->part == AST_MESSAGE) {
-        unsigned long num = PN_PUT(f->locals, lhs->a);
+
+      if (lhs->part == AST_MESSAGE || lhs->part == AST_QUERY) {
+        if (lhs->part == AST_QUERY)
+          PN_ASM2(OP_TEST, num, 1); 
         PN_ASM2(OP_SETLOCAL, 0, num);
+      } else if (lhs->part == AST_PATH || lhs->part == AST_PATHQ) {
+        if (lhs->part == AST_PATHQ)
+          PN_ASM2(OP_TEST, num, 1);
+        PN_ASM2(OP_SETPATH, 0, num);
       }
+    }
+    break;
+
+    case AST_MESSAGE:
+    case AST_QUERY: {
+      unsigned long num = PN_GET(f->locals, t->a);
+      if (num == PN_NONE) {
+        num = PN_PUT(f->values, t->a);
+        if (t->part == AST_MESSAGE)
+          PN_ASM2(OP_CALL, 0, 0);
+        else
+          PN_ASM2(OP_TEST, num, 1);
+      } else {
+        PN_ASM2(OP_GETLOCAL, 0, num);
+        if (t->part == AST_QUERY)
+          PN_ASM2(OP_TEST, num, 1);
+      }
+    }
+    break;
+
+    case AST_PATH:
+    case AST_PATHQ: {
+      unsigned long num = PN_PUT(f->values, t->a);
+      PN_ASM2(OP_GETPATH, 0, num);
+      if (t->part == AST_PATHQ)
+        PN_ASM2(OP_TEST, num, 1);
     }
     break;
   }
