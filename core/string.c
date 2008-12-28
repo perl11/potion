@@ -18,22 +18,23 @@ struct PNStrTable {
   kh_str_t kh;
 };
 
-void potion_add_str(PN self, unsigned k, PN id) {
-  struct PNStrTable *t = (struct PNStrTable *)self;
-  kh_value(&t->kh, k) = id;
-}
-
-unsigned potion_lookup_str(PN self, const char *str, PN *id) {
+void potion_add_str(PN self, const char *str, PN id) {
   int ret;
   struct PNStrTable *t = (struct PNStrTable *)self;
   unsigned k = kh_put(str, &t->kh, str, &ret);
-  if (!ret) *id = kh_value(&t->kh, k);
-  return k;
+  if (!ret) kh_del(str, &t->kh, k);
+  kh_value(&t->kh, k) = id;
+}
+
+PN potion_lookup_str(PN self, const char *str) {
+  struct PNStrTable *t = (struct PNStrTable *)self;
+  unsigned k = kh_get(str, &t->kh, str);
+  if (k != kh_end(&t->kh)) return kh_value(&t->kh, k);
+  return PN_NIL;
 }
 
 PN potion_str(Potion *P, const char *str) {
-  PN id = PN_NIL;
-  unsigned k = potion_lookup_str(P->strings, str, &id);
+  PN id = potion_lookup_str(P->strings, str);
   if (!id) {
     size_t len = strlen(str);
     struct PNString *s = PN_BOOT_OBJ_ALLOC(struct PNString, PN_TSTRING, len + 1);
@@ -42,7 +43,7 @@ PN potion_str(Potion *P, const char *str) {
     s->chars[len] = '\0';
     id = (PN)s;
 
-    potion_add_str(P->strings, k, id);
+    potion_add_str(P->strings, s->chars, id);
   }
   return id;
 }

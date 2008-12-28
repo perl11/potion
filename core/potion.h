@@ -24,6 +24,7 @@ typedef struct Potion_State Potion;
 struct PNObject;
 struct PNString;
 struct PNClosure;
+struct PNProto;
 struct PNTuple;
 struct PNGarbage;
 
@@ -41,7 +42,8 @@ struct PNGarbage;
 #define PN_TVTABLE      10
 #define PN_TSOURCE      11
 #define PN_TBYTES       12
-#define PN_TUSER        13
+#define PN_TPROTO       13
+#define PN_TUSER        14
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
@@ -111,6 +113,12 @@ struct PNClosure {
   imp_t method;
   PN sig;
   PN value;
+};
+
+struct PNProto {
+  PN_OBJECT_HEADER
+  PN bytecode;
+  PN sig;
 };
 
 struct PNTuple {
@@ -205,6 +213,7 @@ PN potion_closure_new(Potion *, imp_t, PN, PN);
 
 inline PN potion_tuple_new(Potion *, PN);
 inline PN potion_tuple_push(Potion *, PN, PN);
+PN potion_table_inspect(Potion *, PN, PN);
 
 void potion_lobby_init(Potion *);
 void potion_primitive_init(Potion *);

@@ -39,6 +39,18 @@ PN potion_table_new(Potion *P, PN closure, PN self) {
   return PN_EMPTY;
 }
 
+PN potion_table_inspect(Potion *P, PN cl, PN self) {
+  struct PNTable *t = (struct PNTable *)self;
+  kh_PN_t *h = &t->kh;
+  unsigned k;
+  for (k = kh_begin(h); k != kh_end(h); ++k)
+    if (kh_exist(h, k)) {
+      potion_send(kh_value(h, k), PN_inspect);
+      printf("\n");
+    }
+  return PN_NIL;
+}
+
 PN potion_tuple_inspect(Potion *P, PN cl, PN self) {
   struct PNTuple *t = PN_GET_TUPLE(self);
   printf("(");
@@ -57,5 +69,6 @@ void potion_table_init(Potion *P) {
   PN tbl_vt = PN_VTABLE(PN_TTABLE);
   PN tpl_vt = PN_VTABLE(PN_TTUPLE);
   potion_method(tbl_vt, "new", potion_table_new, 0);
+  potion_method(tbl_vt, "inspect", potion_table_inspect, 0);
   potion_method(tpl_vt, "inspect", potion_tuple_inspect, 0);
 }
