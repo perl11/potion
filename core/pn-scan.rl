@@ -29,7 +29,7 @@
                 (0xc2..0xdf) (0x80..0xbf) |
                 (0xe0..0xef 0x80..0xbf 0x80..0xbf) |
                 (0xf0..0xf4 0x80..0xbf 0x80..0xbf 0x80..0xbf);
-  ops         = "~" | "!" | "+" | "-" | "*" | "**" | "/" | "//" |
+  ops         = "~" | "!" | "+" | "-" | "*" | "**" | "/" | "%" |
                 "^" | ">" | "<" | "<=" | ">=" | "&" | "&&" | "|" |
                 "||" | "\\";
   braced      = '{' (any - '}')+ '}' | '[' (any - ']')+ ']';
@@ -55,7 +55,7 @@
   schar2      = (utf8 - ["\\]) | "\\u" [0-9]{4} | '\\"' | "\\\\" | "\\/" |
                 "\\b" | "\\f" | "\\n" | "\\r" | "\\t";
   string      = "'" schar1* "'" | '"' schar2* '"';
-  string2     = "% " (utf8 - newline)+;
+  string2     = "%% " (utf8 - newline)+;
 
   main := |*
     comma       => { TOKEN(SEP); };
@@ -78,7 +78,7 @@
     int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts))); };
     float       => { TOKEN2(FLOAT, PN_NUM(PN_ATOI(ts, te - ts))); };
     string      => { TOKEN2(STRING, potion_str2(P, ts, te - ts)); };
-    string2     => { TOKEN2(STRING2, potion_str2(P, ts, te - ts)); };
+    string2     => { TOKEN2(STRING2, potion_str2(P, ts + 3, (te - ts) - 3)); };
 
     message     => { TOKEN2(MESSAGE, potion_str2(P, ts, te - ts)); };
     query       => { TOKEN2(QUERY, potion_str2(P, ts + 1, (te - ts) - 1)); };
