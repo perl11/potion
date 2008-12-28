@@ -49,6 +49,9 @@ static void potion_cmd_compile(char *filename) {
     PN code;
     code = potion_parse(P, buf);
     potion_send(code, PN_inspect);
+    printf("\n");
+    code = potion_send(code, PN_compile);
+    potion_send(code, PN_inspect);
   } else {
     fprintf(stderr, "** could not read entire file.");
   }
@@ -66,6 +69,7 @@ static void potion_cmd_fib() {
     "  if (n >= 1, 1, fib (n - 1) + fib (n - 2)).\n"
     "fib (40) print"
   ));
+  fib = potion_send(fib, PN_compile);
   potion_send(fib, PN_inspect);
   potion_destroy(P);
 }

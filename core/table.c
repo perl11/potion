@@ -12,9 +12,6 @@
 #include "khash.h"
 #include "table.h"
 
-#define PN_SET_TUPLE(t) (((PN)t)|PN_TUPLE_FLAG)
-#define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)^PN_TUPLE_FLAG))
-
 inline PN potion_tuple_new(Potion *P, PN value) {
   struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, sizeof(PN));
   t->len = 1;
@@ -32,6 +29,25 @@ inline PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   // be sure new pointer is registered with GC
   t->set[t->len-1] = value;
   return PN_SET_TUPLE(t);
+}
+
+inline unsigned long potion_tuple_find(Potion *P, PN tuple, PN value) {
+  PN_TUPLE_EACH(tuple, i, v, {
+    if (v == value) return i;
+  });
+  return -1;
+}
+
+inline unsigned long potion_tuple_put(Potion *P, PN tuple, PN value) {
+  struct PNTuple *t;
+  if (tuple != PN_EMPTY) {
+    unsigned long idx = potion_tuple_find(P, tuple, value);
+    if (idx != -1) return idx;
+  }
+
+  tuple = potion_tuple_push(P, tuple, value);
+  t = PN_GET_TUPLE(tuple);
+  return t->len - 1;
 }
 
 PN potion_table_new(Potion *P, PN closure, PN self) {
@@ -52,15 +68,11 @@ PN potion_table_inspect(Potion *P, PN cl, PN self) {
 }
 
 PN potion_tuple_inspect(Potion *P, PN cl, PN self) {
-  struct PNTuple *t = PN_GET_TUPLE(self);
   printf("(");
-  if (self != PN_EMPTY) {
-    unsigned long i;
-    for (i = 0; i < t->len; i++) {
-      if (i > 0) printf(", ");
-      potion_send(t->set[i], PN_inspect);
-    }
-  }
+  PN_TUPLE_EACH(self, i, v, {
+    if (i > 0) printf(", ");
+    potion_send(v, PN_inspect);
+  });
   printf(")");
   return PN_NIL;
 }

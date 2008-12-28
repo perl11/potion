@@ -25,14 +25,16 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TSTATE, obj_vt);
   potion_type_new(P, PN_TSOURCE, obj_vt);
   potion_type_new(P, PN_TBYTES, obj_vt);
+  potion_type_new(P, PN_TPROTO, obj_vt);
   potion_str_hash_init(P);
   potion_lobby_init(P);
 
   PN_allocate = potion_str(P, "allocate");
   PN_def = potion_str(P, "def");
   PN_delegated = potion_str(P, "delegated");
-  PN_lookup = potion_str(P, "lookup");
+  PN_compile = potion_str(P, "compile");
   PN_inspect = potion_str(P, "inspect");
+  PN_lookup = potion_str(P, "lookup");
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup));
   potion_def_method(P, 0, vtable, PN_def, PN_FUNC(potion_def_method));
@@ -45,6 +47,7 @@ static void potion_init(Potion *P) {
   potion_str_init(P);
   potion_table_init(P);
   potion_source_init(P);
+  potion_compiler_init(P);
 }
 
 Potion *potion_create() {

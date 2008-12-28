@@ -74,6 +74,18 @@ struct PNGarbage;
 #define PN_FUNC(f)      potion_closure_new(P, (imp_t)f, 0, 0)
 #define PN_GB(x,o,m)    (x).next = o; (x).marked = m
 
+#define PN_SET_TUPLE(t) (((PN)t)|PN_TUPLE_FLAG)
+#define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)^PN_TUPLE_FLAG))
+#define PN_TUPLE_EACH(T, I, V, B) \
+  if (T != PN_EMPTY) { \
+    struct PNTuple *__t##V = PN_GET_TUPLE(T); \
+    unsigned long I; \
+    for (I = 0; I < __t##V->len; I++) { \
+      PN V = __t##V->set[I]; \
+      B \
+    } \
+  }
+
 struct PNGarbage {
   struct PNGarbage *next;
   unsigned char marked;
@@ -117,8 +129,12 @@ struct PNClosure {
 
 struct PNProto {
   PN_OBJECT_HEADER
-  PN bytecode;
-  PN sig;
+  PN source; // program name
+  PN sig;    // argument signature
+  PN locals; // local variables
+  PN values; // numbers, strings, etc.
+  PN protos; // nested closures
+  PN asmb;   // assembled instructions
 };
 
 struct PNTuple {
@@ -193,7 +209,7 @@ struct PNMcache {
 } potion_mcache[8192];
 #endif
 
-PN PN_allocate, PN_def, PN_delegated, PN_lookup, PN_inspect;
+PN PN_allocate, PN_compile, PN_def, PN_delegated, PN_inspect, PN_lookup;
 
 //
 // the Potion functions
@@ -213,7 +229,8 @@ PN potion_closure_new(Potion *, imp_t, PN, PN);
 
 inline PN potion_tuple_new(Potion *, PN);
 inline PN potion_tuple_push(Potion *, PN, PN);
-PN potion_table_inspect(Potion *, PN, PN);
+inline unsigned long potion_tuple_put(Potion *, PN, PN);
+PN potion_source_compile(Potion *, PN, PN, PN, PN);
 
 void potion_lobby_init(Potion *);
 void potion_primitive_init(Potion *);
@@ -222,6 +239,7 @@ void potion_str_hash_init(Potion *);
 void potion_str_init(Potion *);
 void potion_table_init(Potion *);
 void potion_source_init(Potion *);
+void potion_compiler_init(Potion *);
 
 PN potion_parse(Potion *, PN);
 void potion_run();
