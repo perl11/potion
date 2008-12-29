@@ -180,8 +180,6 @@ struct Potion_State {
 // method caches
 // (more great stuff from ian piumarta)
 //
-// TODO: the vtable is going to go away, in favor of lua tables
-//
 #if ICACHE
 #define potion_send(RCV, MSG, ARGS...) ({ \
     PN r = (PN)(RCV); \
