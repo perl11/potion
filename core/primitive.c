@@ -6,8 +6,8 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
-#include "internal.h"
 #include "potion.h"
+#include "internal.h"
 
 static PN potion_nil_inspect(Potion *P, PN closure, PN self) {
   printf("nil");

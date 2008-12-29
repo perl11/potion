@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "internal.h"
 #include "potion.h"
+#include "internal.h"
 
 const char potion_banner[] = "potion " POTION_VERSION
                              " (date='" POTION_DATE "', commit='" POTION_COMMIT "')";
@@ -51,6 +51,8 @@ static void potion_cmd_compile(char *filename) {
     potion_send(code, PN_inspect);
     printf("\n");
     code = potion_send(code, PN_compile);
+    potion_send(code, PN_inspect);
+    code = potion_vm(P, code);
     potion_send(code, PN_inspect);
   } else {
     fprintf(stderr, "** could not read entire file.");

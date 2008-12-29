@@ -7,7 +7,6 @@
 #ifndef POTION_AST_H
 #define POTION_AST_H
 
-typedef unsigned char PNByte;
 typedef struct {
   PN v, b;
 } PNArg;
@@ -29,7 +28,7 @@ enum PN_AST {
 
 struct PNSource {
   PN_OBJECT_HEADER
-  PNByte part;
+  u8 part;
   PN a[0];
 };
 
@@ -42,6 +41,6 @@ struct PNSource {
 #define PN_PUT(T, X)  potion_tuple_put(P, &(T), X)
 #define PN_S(S, N, X) (((struct PNSource *)S)->a[N] = X)
 
-PN potion_source(Potion *, PNByte, PN, PN, PN);
+PN potion_source(Potion *, u8, PN, PN, PN);
 
 #endif

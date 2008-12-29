@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "internal.h"
 #include "potion.h"
+#include "internal.h"
 #include "khash.h"
 
 KHASH_MAP_INIT_STR(str, PN);

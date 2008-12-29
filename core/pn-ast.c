@@ -22,7 +22,7 @@ const int potion_ast_sizes[] = {
   1, 1, 1, 2
 };
 
-PN potion_source(Potion *P, PNByte p, PN a, PN b, PN c) {
+PN potion_source(Potion *P, u8 p, PN a, PN b, PN c) {
   struct PNSource *t = PN_OBJ_ALLOC(struct PNSource, PN_TSOURCE,
     potion_ast_sizes[p] * sizeof(PN));
   t->part = p;

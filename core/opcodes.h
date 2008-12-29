@@ -28,9 +28,4 @@ enum PN_OPCODE {
   OP_RETURN
 };
 
-enum PN_OPARGS {
-  OP_ASM1,
-  OP_ASM2
-};
-
 #endif

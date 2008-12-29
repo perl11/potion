@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "internal.h"
 #include "potion.h"
+#include "internal.h"
 
 PN potion_file_with(Potion *P, PN cl, PN self, PN path) {
   return PN_NIL;

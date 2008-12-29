@@ -8,6 +8,8 @@
 
 struct Potion_State;
 
+typedef unsigned char u8;
+
 #define PN_ALLOC(T)          (T *)malloc(sizeof(T))
 #define PN_ALLOC2(T,C)       (T *)malloc(sizeof(T)+C)
 #define PN_ALLOC_N(T,N)      (T *)malloc(sizeof(T)*(N))
@@ -35,7 +37,7 @@ struct Potion_State;
 })
 
 void *LemonPotionAlloc(void *(*)(size_t));
-void LemonPotion(void *, int, int, struct Potion_State *);
+void LemonPotion(void *, int, PN, struct Potion_State *);
 void LemonPotionFree(void *, void (*)(void*));
 
 #endif

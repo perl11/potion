@@ -6,8 +6,8 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
-#include "internal.h"
 #include "potion.h"
+#include "internal.h"
 
 static PN potion_add(Potion *P, PN closure, PN self, PN num) {
   return PN_NUM(PN_INT(self) + PN_INT(num));

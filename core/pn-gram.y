@@ -5,9 +5,11 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 %include {
+#define POTION_GRAMMAR_C
 #include <assert.h>
 #include <string.h>
 #include "potion.h"
+#include "internal.h"
 #include "pn-ast.h"
 }
 %extra_argument { Potion *P }

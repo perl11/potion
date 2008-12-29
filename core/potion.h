@@ -76,6 +76,9 @@ struct PNGarbage;
 
 #define PN_SET_TUPLE(t) (((PN)t)|PN_TUPLE_FLAG)
 #define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)^PN_TUPLE_FLAG))
+#define PN_TUPLE_LEN(t) (t == PN_EMPTY ? 0 : PN_GET_TUPLE(t)->len)
+#define PN_TUPLE_AT(t, n) \
+  (t == PN_EMPTY || n >= PN_GET_TUPLE(t)->len ? PN_NONE : PN_GET_TUPLE(t)->set[n])
 #define PN_TUPLE_EACH(T, I, V, B) \
   if (T != PN_EMPTY) { \
     struct PNTuple *__t##V = PN_GET_TUPLE(T); \
@@ -131,6 +134,7 @@ struct PNProto {
   PN_OBJECT_HEADER
   PN source; // program name
   PN sig;    // argument signature
+  PN stack;  // size of the stack
   PN locals; // local variables
   PN values; // numbers, strings, etc.
   PN protos; // nested closures
@@ -243,6 +247,7 @@ void potion_source_init(Potion *);
 void potion_compiler_init(Potion *);
 
 PN potion_parse(Potion *, PN);
+PN potion_vm(Potion *, PN);
 void potion_run();
 
 #endif
