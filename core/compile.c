@@ -27,7 +27,7 @@ const char *potion_op_names[] = {
   "getlocal", "setlocal", "newtable", "gettable",
   "settable", "getpath", "setpath", "self",
   "bind", "test", "testset", "call",
-  "tailcall", "return"
+  "tailcall", "return", "proto"
 };
 
 const u8 potion_op_args[] = {
@@ -35,8 +35,12 @@ const u8 potion_op_args[] = {
   2, 2, 1, 2,
   2, 2, 2, 1,
   2, 2, 2, 2,
-  2, 1
+  2, 1, 2
 };
+
+PN potion_proto_call(Potion *P, PN cl, PN self) {
+  return potion_vm(P, self);
+}
 
 PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   struct PNProto *t = (struct PNProto *)self;
@@ -54,6 +58,9 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
     potion_send(v, PN_inspect);
     printf(" ; %lu\n", i);
   });
+  PN_TUPLE_EACH(t->protos, i, v, {
+    potion_send(v, PN_inspect);
+  });
   pos = (u8 *)PN_STR_PTR(t->asmb);
   end = (u8 *)PN_STR_PTR(t->asmb) + PN_STR_LEN(t->asmb);
   while (pos < end) {
@@ -64,6 +71,7 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
     printf("\n");
     num++;
   }
+  printf("; function end\n");
   return PN_NIL;
 }
 
@@ -73,12 +81,20 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
 
   switch (t->part) {
     case AST_CODE:
+    case AST_BLOCK:
     case AST_EXPR:
       PN_TUPLE_EACH(t->a[0], i, v, {
         potion_source_asmb(P, f, (struct PNSource *)v, reg, pos);
       });
-      if (t->part == AST_CODE)
+      if (t->part != AST_EXPR)
         PN_ASM1(OP_RETURN, 0);
+    break;
+
+    case AST_PROTO: {
+      PN block = potion_send(t->a[1], PN_compile, PN_NIL, t->a[0]);
+      unsigned long num = PN_PUT(f->protos, block);
+      PN_ASM2(OP_PROTO, reg, num);
+    }
     break;
 
     case AST_VALUE: {
@@ -183,4 +199,5 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
 void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
   potion_method(pro_vt, "inspect", potion_proto_inspect, 0);
+  potion_method(pro_vt, "call", potion_proto_call, 0);
 }

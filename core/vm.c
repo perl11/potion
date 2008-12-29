@@ -26,6 +26,9 @@ PN potion_vm(Potion *P, PN proto) {
   end = (u8 *)PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb);
   while (pos < end) {
     switch (pos[0]) {
+      case OP_GETLOCAL:
+        reg[pos[1]] = locals[pos[2]]; 
+      break;
       case OP_SETLOCAL:
         locals[pos[1]] = reg[pos[2]]; 
       break;
@@ -41,6 +44,9 @@ PN potion_vm(Potion *P, PN proto) {
       break;
       case OP_RETURN:
         return reg[pos[1]];
+      break;
+      case OP_PROTO:
+        reg[pos[1]] = PN_TUPLE_AT(f->protos, pos[2]);
       break;
     }
     pos += 1 + potion_op_args[pos[0]];

@@ -25,7 +25,8 @@ enum PN_OPCODE {
   OP_TESTSET,
   OP_CALL,
   OP_TAILCALL,
-  OP_RETURN
+  OP_RETURN,
+  OP_PROTO
 };
 
 #endif
