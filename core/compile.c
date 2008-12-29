@@ -134,22 +134,28 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
 
     case AST_MESSAGE:
     case AST_QUERY: {
+      u8 breg = reg;
       unsigned long num = PN_GET(f->locals, t->a[0]);
-      if (num == PN_NONE || t->a[1] != PN_NIL) {
-        u8 breg = reg;
+      if (num == PN_NONE) {
+        if (t->a[1] != PN_NIL)
+          potion_source_asmb(P, f, (struct PNSource *)t->a[1], ++breg, pos);
         num = PN_PUT(f->values, t->a[0]);
         PN_ASM2(OP_LOADK, ++breg, num);
         PN_ASM2(OP_BIND, breg, reg);
-        if (t->a[1] != PN_NIL)
-          potion_source_asmb(P, f, (struct PNSource *)t->a[1], ++breg, pos);
-        if (t->part == AST_MESSAGE)
+        if (t->part == AST_MESSAGE) {
           PN_ASM2(OP_CALL, reg, breg);
-        else
-          PN_ASM2(OP_TEST, num, 1);
+        } else
+          PN_ASM2(OP_TEST, reg, breg);
       } else {
-        PN_ASM2(OP_GETLOCAL, 0, num);
-        if (t->part == AST_QUERY)
-          PN_ASM2(OP_TEST, num, 1);
+        if (t->part == AST_QUERY) {
+          PN_ASM2(OP_GETLOCAL, reg, num);
+          PN_ASM2(OP_TEST, reg, reg);
+        } else if (t->a[1] != PN_NIL) {
+          potion_source_asmb(P, f, (struct PNSource *)t->a[1], breg, pos);
+          PN_ASM2(OP_GETLOCAL, ++breg, num);
+          PN_ASM2(OP_CALL, reg, breg);
+        } else
+          PN_ASM2(OP_GETLOCAL, reg, num);
       }
     }
     break;

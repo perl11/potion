@@ -39,8 +39,12 @@ PN potion_vm(Potion *P, PN proto) {
         reg[pos[1]] = potion_bind(P, reg[pos[2]], reg[pos[1]]);
       break;
       case OP_CALL:
-        reg[pos[1]] = 
-          ((struct PNClosure *)reg[pos[1]+1])->method(P, reg[pos[1]+1], reg[pos[1]], reg[pos[2]]);
+        if (PN_TYPE(reg[pos[2]]) == PN_TCLOSURE) {
+          reg[pos[1]] = 
+            ((struct PNClosure *)reg[pos[2]])->method(P, reg[pos[2]], reg[pos[1]], reg[pos[1]+1]);
+        } else {
+          reg[pos[1]] = potion_vm(P, reg[pos[2]]);
+        }
       break;
       case OP_RETURN:
         return reg[pos[1]];

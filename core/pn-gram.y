@@ -64,6 +64,7 @@ block(A) ::= BEGIN_BLOCK statements(B) END_BLOCK. { A = PN_AST(BLOCK, B); }
 block(A) ::= BEGIN_BLOCK END_BLOCK. { A = PN_AST(BLOCK, PN_EMPTY); }
 
 table(A) ::= BEGIN_TABLE statements(B) END_TABLE. { A = PN_AST(TABLE, B); }
+table(A) ::= BEGIN_TABLE END_TABLE. { A = PN_AST(TABLE, PN_EMPTY); }
 
 //
 // the interleaved data language
