@@ -33,6 +33,55 @@
   for years, though.
 
 
+  ~ the potion pledge ~
+
+  EVERYTHING IS AN OBJECT.
+  However, OBJECTS AREN'T EVERYTHING.
+
+
+  ~ items to understand ~
+
+  1. A traditional object is a tuple of data
+     and methods: (D, M).
+     
+     D is kept in the object itself.
+     M is kept in classes.
+
+  2. In Potion, objects are just D.
+  
+  3. Every object has an M.
+
+  4. But M can be altered, swapped,
+     added to, removed from, whatever.
+
+  5. Objects do not have classes.
+     The M is a mixin, a collection
+     of methods.
+
+  Example: all strings have a "length"
+  method. This method comes with Potion.
+  It's in the String mixin.
+
+  6. You can swap out mixins for the span
+     of a single source file.
+
+  Example: you could give all strings a
+  "backwards" method. But just for the
+  code inside your test.pn script.
+
+  7. You can re-mix for the span of a
+     single closure.
+
+  To sum up:
+
+  EVERYTHING IS AN OBJECT.
+  EVEN MIXINS ARE OBJECTS.
+  AND, OF COURSE, CLOSURES ARE OBJECTS.
+
+  However, OBJECTS AREN'T EVERYTHING.
+  THEY ARE USELESS WITHOUT MIXINS.
+
+
   ~ unique ideas ~
 
   Potion does have a few unique features.
