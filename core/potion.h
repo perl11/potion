@@ -7,10 +7,8 @@
 #define POTION_H
 
 #define POTION_VERSION  "0.0"
-#define POTION_DATE     "2009-01-01"
 #define POTION_MINOR    0
 #define POTION_MAJOR    0
-#define POTION_COMMIT   "afc6509"
 #define POTION_SIG      "p\07\10n"
 #define POTION_VMID     0x79
 
