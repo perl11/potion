@@ -51,19 +51,20 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
     PN code;
     code = potion_source_load(P, PN_NIL, buf);
     if (PN_IS_PROTO(code)) {
-      printf("\n\n-- loaded --\n");
+      if (verbose)
+        printf("\n\n-- loaded --\n");
     } else {
       code = potion_parse(P, buf);
       if (verbose) {
         printf("\n-- parsed --\n");
         potion_send(code, PN_inspect);
       }
-      code = potion_send(code, PN_compile);
+      code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
+      if (verbose)
+        printf("\n\n-- compiled --\n");
     }
-    if (verbose) {
-      printf("\n\n-- compiled --\n");
+    if (verbose)
       potion_send(code, PN_inspect);
-    }
     if (exec) {
       code = potion_vm(P, code);
       if (verbose) {

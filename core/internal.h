@@ -38,6 +38,8 @@ typedef unsigned char u8;
 
 struct PNBHeader {
   u8 sig[4];
+  u8 major;
+  u8 minor;
   u8 vmid;
   u8 pn;
   u8 proto[0];
