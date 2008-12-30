@@ -76,9 +76,12 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   return PN_NIL;
 }
 
+#define PN_REG(f, reg) \
+  if (reg >= PN_INT(f->stack)) \
+    f->stack = PN_NUM(reg + 1); \
+
 void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg, u8 **pos) {
-  if (reg >= PN_INT(f->stack))
-    f->stack = PN_NUM(reg + 1);
+  PN_REG(f, reg);
 
   switch (t->part) {
     case AST_CODE:
@@ -159,15 +162,20 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
         } else
           PN_ASM2(OP_GETLOCAL, reg, num);
       }
+      PN_REG(f, breg);
     }
     break;
 
     case AST_PATH:
     case AST_PATHQ: {
       unsigned long num = PN_PUT(f->values, t->a[0]);
-      PN_ASM2(OP_GETPATH, 0, num);
+      u8 breg = reg;
+      PN_ASM2(OP_LOADK, ++breg, num);
+      PN_ASM2(OP_GETPATH, breg, reg);
       if (t->part == AST_PATHQ)
-        PN_ASM2(OP_TEST, num, 1);
+        PN_ASM2(OP_TEST, reg, breg);
+      else
+        PN_ASM2(OP_MOVE, reg, breg);
     }
     break;
 
