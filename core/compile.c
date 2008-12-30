@@ -222,12 +222,6 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
       PN_TUPLE_AT(tup, i) = READ_CONST(pn, ptr); \
     tup; \
   })
-#define READ_OBJ(pn, ptr, vals) ({ \
-    PN val = READ_PN(pn, ptr); \
-    if (potion_is_ref(val)) \
-      val = PN_TUPLE_AT(vals, val >> 3); \
-    val; \
-  })
 
 // TODO: load from a stream
 PN potion_source_load(Potion *P, PN cl, PN buf) {
@@ -244,40 +238,64 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
   f->values = READ_VALUES(h->pn, ptr);
   f->locals = READ_VALUES(h->pn, ptr);
   f->protos = READ_VALUES(h->pn, ptr);
-  f->source = READ_OBJ(h->pn, ptr, f->values);
-  f->sig = READ_OBJ(h->pn, ptr, f->values);
-  f->stack = READ_OBJ(h->pn, ptr, f->values);
+  f->source = READ_CONST(h->pn, ptr);
+  f->sig = READ_CONST(h->pn, ptr);
+  f->stack = READ_CONST(h->pn, ptr);
   // TODO: no need to memcpy the bytecode with flexible byte strings
   f->asmb = potion_bytes(P, end - ptr);
   PN_MEMCPY_N(PN_STR_PTR(f->asmb), ptr, u8, end - ptr);
   return (PN)f;
 }
 
-#define WRITE_VALUES(pn, ptr)
-#define WRITE_OBJ(pn, ptr)
+#define WRITE_PN(pn, ptr) ({PN rpn = *(PN *)ptr; ptr += pn; rpn;})
+#define WRITE_CONST(pn, ptr) ({ \
+    PN val = WRITE_PN(pn, ptr); \
+    if (potion_is_ref(val)) { \
+      size_t len = val >> 3; \
+      val = potion_str2(P, (char *)ptr, len); \
+      ptr += len; \
+    } \
+    val; \
+  })
+
+#define WRITE_VALUES(tup, ptr) ({ \
+    long i = 0, count = PN_TUPLE_LEN(tup); \
+    *(PN *)ptr = PN_NUM(count); \
+    ptr += sizeof(PN); \
+    for (; i < count; i++) \
+      WRITE_CONST(PN_TUPLE_AT(tup, i), ptr); \
+  })
+#define WRITE_OBJ(pn, ptr, vals) ({ \
+    PN val = WRITE_PN(pn, ptr); \
+    if (potion_is_ref(val)) \
+      val = PN_TUPLE_AT(vals, val >> 3); \
+    val; \
+  })
+
+long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
+  struct PNProto *f = (struct PNProto *)proto;
+  u8 *ptr = (u8 *)PN_STR_PTR(out) + pos;
+  WRITE_VALUES(f->values, ptr);
+  WRITE_VALUES(f->locals, ptr);
+  WRITE_VALUES(f->protos, ptr);
+  WRITE_CONST(f->source, ptr);
+  WRITE_CONST(f->sig, ptr);
+  WRITE_CONST(f->stack, ptr);
+  PN_MEMCPY_N(ptr, PN_STR_PTR(f->asmb), u8, PN_STR_LEN(f->asmb));
+  ptr += PN_STR_LEN(f->asmb);
+  return (char *)ptr - PN_STR_PTR(out);
+}
 
 // TODO: dump to a stream
 PN potion_source_dump(Potion *P, PN cl, PN proto) {
-  u8 *ptr;
   PN pnb = potion_bytes(P, 8192);
-  struct PNProto *f = (struct PNProto *)proto;
   struct PNBHeader h;
   PN_MEMCPY_N(h.sig, POTION_SIG, u8, 4);
   h.vmid = POTION_VMID;
   h.pn = (u8)sizeof(PN);
 
-  ptr = (u8 *)PN_STR_PTR(pnb);
-  PN_MEMCPY(ptr, &h, struct PNBHeader);
-  ptr += sizeof(struct PNBHeader);
-  WRITE_VALUES(f->values, ptr);
-  WRITE_VALUES(f->locals, ptr);
-  WRITE_VALUES(f->protos, ptr);
-  WRITE_OBJ(f->source, ptr);
-  WRITE_OBJ(f->sig, ptr);
-  WRITE_OBJ(f->stack, ptr);
-  PN_MEMCPY_N(ptr, PN_STR_PTR(f->asmb), u8, PN_STR_LEN(f->asmb));
-  ptr += PN_STR_LEN(f->asmb);
-  PN_STR_LEN(pnb) = (char *)ptr - PN_STR_PTR(pnb);
+  PN_MEMCPY(PN_STR_PTR(pnb), &h, struct PNBHeader);
+  PN_STR_LEN(pnb) = potion_proto_dump(P, proto, pnb, sizeof(struct PNBHeader));
   return pnb;
 }
 

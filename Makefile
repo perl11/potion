@@ -1,9 +1,16 @@
-SRC = core/compile.c core/file.c core/internal.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/pn-gram.c core/pn-scan.c core/potion.c core/string.c core/table.c core/vm.c
+SRC = core/compile.c core/file.c core/internal.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/pn-gram.c core/pn-scan.c core/string.c core/table.c core/vm.c
 OBJ = ${SRC:.c=.o}
+OBJ_POTION = core/potion.o
+OBJ_TEST = test/potion-test.o test/CuTest.o
 
 PREFIX = /usr/local
 CC = gcc
 CFLAGS = -Wall -DICACHE -DMCACHE
+INCS = -Icore
+LEMON = tools/lemon
+LIBS =
+RAGEL = ragel
+
 ifeq (${DEBUG}, 1)
 	CFLAGS += -g -DDEBUG
 	DEBUG = 1
@@ -12,18 +19,11 @@ else
 	DEBUG = 0
 endif
 
-INCS = -Icore
-LIBS =
-
-# pre-processors
-LEMON = tools/lemon
-RAGEL = ragel
-
 DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
 COMMIT = `git-rev-list HEAD -1 | head -c 7`
 
-all: potion
+all: potion test
 
 version:
 	@echo "#define POTION_DATE   \"${DATE}\""
@@ -41,7 +41,7 @@ core/version.h:
 
 .c.o:
 	@echo CC $<
-	@${CC} -c ${CFLAGS} -o $@ $<
+	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
 core/pn-scan.c: core/pn-scan.rl
 	@echo RAGEL $<
@@ -55,9 +55,17 @@ tools/lemon: tools/lemon.c
 	@echo CC tools/lemon.c
 	@${CC} -o tools/lemon tools/lemon.c
 
-potion: core/version.h ${OBJ}
+potion: core/version.h ${OBJ_POTION} ${OBJ}
 	@echo LINK potion
-	@${CC} ${CFLAGS} ${OBJ} -o potion
+	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} -o potion
+
+test: test/potion-test
+	@echo running tests
+	@test/potion-test
+
+test/potion-test: core/version.h ${OBJ_TEST} ${OBJ}
+	@echo LINK potion-test
+	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} -o $@
 
 sloc: clean
 	@cp core/pn-scan.rl core/pn-scan-rl.c
@@ -69,6 +77,8 @@ todo:
 
 clean:
 	@echo cleaning
-	@rm -f potion ${OBJ} core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
+	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST}
+	@rm -f core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
+	@rm -f potion test/potion-test
 
-.PHONY: all clean
+.PHONY: all clean test

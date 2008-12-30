@@ -12,6 +12,8 @@
 #define POTION_SIG      "p\07\10n"
 #define POTION_VMID     0x79
 
+#include <limits.h>
+
 //
 // types
 //
@@ -51,7 +53,7 @@ struct PNGarbage;
 #define PN_TRUE         ((PN)2)
 #define PN_FALSE        ((PN)4)
 #define PN_EMPTY        ((PN)6)
-#define PN_PRIMITIVE    7
+#define PN_PRIMITIVE    6
 
 #define PN_TEST(v)      (((PN)(v) & ~PN_NIL) != 0)
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
@@ -157,7 +159,7 @@ static inline PNType potion_type(PN obj) {
 }
 
 static inline int potion_is_ref(PN obj) {
-  return (!((obj & PN_PRIMITIVE) || obj == 0));
+  return (!PN_IS_NUM(obj) && (obj & (ULONG_MAX ^ PN_PRIMITIVE)));
 }
 
 //
@@ -244,6 +246,8 @@ void potion_str_init(Potion *);
 void potion_table_init(Potion *);
 void potion_source_init(Potion *);
 void potion_compiler_init(Potion *);
+
+PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
 PN potion_vm(Potion *, PN);
