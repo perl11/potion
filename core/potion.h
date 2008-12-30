@@ -51,7 +51,7 @@ struct PNGarbage;
 #define PN_TRUE         ((PN)2)
 #define PN_FALSE        ((PN)4)
 #define PN_EMPTY        ((PN)6)
-#define PN_PRIMITIVE    6
+#define PN_PRIMITIVE    7
 
 #define PN_TEST(v)      (((PN)(v) & ~PN_NIL) != 0)
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
@@ -61,22 +61,22 @@ struct PNGarbage;
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
+#define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
 
 #define PN_NUM_FLAG     0x01
 #define PN_TUPLE_FLAG   0x06
 
 #define PN_NUM(i)       ((PN)(((long)(i))<<1 | PN_NUM_FLAG))
 #define PN_INT(x)       (((long)(x))>>1)
-#define PN_STR_PTR(x)   (((struct PNString *)(x))->chars)
-#define PN_STR_LEN(x)   (((struct PNString *)(x))->len)
+#define PN_STR_PTR(x)   ((struct PNString *)(x))->chars
+#define PN_STR_LEN(x)   ((struct PNString *)(x))->len
 #define PN_FUNC(f)      potion_closure_new(P, (imp_t)f, 0, 0)
 #define PN_GB(x,o,m)    (x).next = o; (x).marked = m
 
 #define PN_SET_TUPLE(t) (((PN)t)|PN_TUPLE_FLAG)
 #define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)^PN_TUPLE_FLAG))
 #define PN_TUPLE_LEN(t) (t == PN_EMPTY ? 0 : PN_GET_TUPLE(t)->len)
-#define PN_TUPLE_AT(t, n) \
-  (t == PN_EMPTY || n >= PN_GET_TUPLE(t)->len ? PN_NONE : PN_GET_TUPLE(t)->set[n])
+#define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
 #define PN_TUPLE_EACH(T, I, V, B) \
   if (T != PN_EMPTY) { \
     struct PNTuple *__t##V = PN_GET_TUPLE(T); \
@@ -157,7 +157,7 @@ static inline PNType potion_type(PN obj) {
 }
 
 static inline int potion_is_ref(PN obj) {
-  return (!(PN_IS_NUM(obj) || obj == 0 || (obj & PN_PRIMITIVE)));
+  return (!((obj & PN_PRIMITIVE) || obj == 0));
 }
 
 //
@@ -227,11 +227,14 @@ PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, imp_t, PN, PN);
 
+inline PN potion_tuple_with_size(Potion *, unsigned long);
 inline PN potion_tuple_new(Potion *, PN);
 inline PN potion_tuple_push(Potion *, PN, PN);
 inline unsigned long potion_tuple_put(Potion *, PN *, PN);
 inline unsigned long potion_tuple_find(Potion *, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
+PN potion_source_load(Potion *, PN, PN);
+PN potion_source_dump(Potion *P, PN, PN);
 
 void potion_lobby_init(Potion *);
 void potion_primitive_init(Potion *);

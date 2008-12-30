@@ -12,6 +12,12 @@
 #include "khash.h"
 #include "table.h"
 
+inline PN potion_tuple_with_size(Potion *P, unsigned long size) {
+  struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, sizeof(PN) * size);
+  t->len = size;
+  return PN_SET_TUPLE(t);
+}
+
 inline PN potion_tuple_new(Potion *P, PN value) {
   struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, sizeof(PN));
   t->len = 1;

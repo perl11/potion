@@ -36,6 +36,13 @@ typedef unsigned char u8;
   Ai; \
 })
 
+struct PNBHeader {
+  u8 sig[4];
+  u8 vmid;
+  u8 pn;
+  u8 proto[0];
+};
+
 void *LemonPotionAlloc(void *(*)(size_t));
 void LemonPotion(void *, int, PN, struct Potion_State *);
 void LemonPotionFree(void *, void (*)(void*));

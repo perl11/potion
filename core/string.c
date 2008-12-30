@@ -73,6 +73,11 @@ static PN potion_str_inspect(Potion *P, PN closure, PN self) {
   return PN_NIL;
 }
 
+static PN potion_str_print(Potion *P, PN closure, PN self) {
+  printf("%s", PN_STR_PTR(self));
+  return PN_NIL;
+}
+
 static PN potion_bytes_inspect(Potion *P, PN closure, PN self) {
   printf("#<bytes>");
   return PN_NIL;
@@ -88,6 +93,7 @@ void potion_str_init(Potion *P) {
   PN byt_vt = PN_VTABLE(PN_TBYTES);
   potion_method(str_vt, "inspect", potion_str_inspect, 0);
   potion_method(str_vt, "length", potion_str_length, 0);
+  potion_method(str_vt, "print", potion_str_print, 0);
   potion_method(byt_vt, "inspect", potion_bytes_inspect, 0);
   potion_method(byt_vt, "length", potion_str_length, 0);
 }
