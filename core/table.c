@@ -63,7 +63,7 @@ PN potion_table_new(Potion *P, PN closure, PN self) {
 
 PN potion_table_inspect(Potion *P, PN cl, PN self) {
   struct PNTable *t = (struct PNTable *)self;
-  kh_PN_t *h = &t->kh;
+  kh_PN_t *h = t->kh;
   unsigned k;
   for (k = kh_begin(h); k != kh_end(h); ++k)
     if (kh_exist(h, k)) {
@@ -75,7 +75,7 @@ PN potion_table_inspect(Potion *P, PN cl, PN self) {
 
 PN potion_table_length(Potion *P, PN cl, PN self) {
   struct PNTable *t = (struct PNTable *)self;
-  return PN_NUM(kh_end(&t->kh));
+  return PN_NUM(kh_end(t->kh));
 }
 
 PN potion_tuple_inspect(Potion *P, PN cl, PN self) {

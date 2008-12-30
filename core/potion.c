@@ -35,7 +35,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
   FILE *fp;
   struct stat stats;
   Potion *P = potion_create();
-  if (lstat(filename, &stats) == -1) {
+  if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
     goto done;
   }

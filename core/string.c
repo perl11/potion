@@ -15,21 +15,21 @@ KHASH_MAP_INIT_STR(str, PN);
 
 struct PNStrTable {
   PN_OBJECT_HEADER
-  kh_str_t kh;
+  kh_str_t kh[0];
 };
 
 void potion_add_str(PN self, const char *str, PN id) {
   int ret;
   struct PNStrTable *t = (struct PNStrTable *)self;
-  unsigned k = kh_put(str, &t->kh, str, &ret);
-  if (!ret) kh_del(str, &t->kh, k);
-  kh_value(&t->kh, k) = id;
+  unsigned k = kh_put(str, t->kh, str, &ret);
+  if (!ret) kh_del(str, t->kh, k);
+  kh_value(t->kh, k) = id;
 }
 
 PN potion_lookup_str(PN self, const char *str) {
   struct PNStrTable *t = (struct PNStrTable *)self;
-  unsigned k = kh_get(str, &t->kh, str);
-  if (k != kh_end(&t->kh)) return kh_value(&t->kh, k);
+  unsigned k = kh_get(str, t->kh, str);
+  if (k != kh_end(t->kh)) return kh_value(t->kh, k);
   return PN_NIL;
 }
 
@@ -84,7 +84,9 @@ static PN potion_bytes_inspect(Potion *P, PN closure, PN self) {
 }
 
 void potion_str_hash_init(Potion *P) {
-  struct PNStrTable *t = PN_BOOT_OBJ_ALLOC(struct PNStrTable, PN_TTABLE, 0);
+  struct PNStrTable *t = PN_CALLOC(struct PNStrTable, sizeof(kh_str_t));
+  PN_GB(t->gb, NULL, 0);
+  t->vt = PN_TTABLE;
   P->strings = (PN)t;
 }
 

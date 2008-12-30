@@ -21,7 +21,7 @@ endif
 
 DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
-COMMIT = `git-rev-list HEAD -1 | head -c 7`
+COMMIT = `git rev-list HEAD -1 | head -c 7`
 
 all: potion test
 
@@ -79,6 +79,6 @@ clean:
 	@echo cleaning
 	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST}
 	@rm -f core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
-	@rm -f potion test/potion-test
+	@rm -f potion potion.exe test/potion-test
 
 .PHONY: all clean test

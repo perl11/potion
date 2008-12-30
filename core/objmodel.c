@@ -15,9 +15,9 @@
 
 struct PNVtable {
   PN_OBJECT_HEADER
-  kh_PN_t kh;
   PNType type;
   PN parent;
+  kh_PN_t kh[0];
 };
 
 unsigned long potion_vt_id = PN_TUSER;
@@ -39,7 +39,7 @@ PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
 }
 
 PN potion_type_new(Potion *P, PNType t, PN self) {
-  struct PNVtable *vt = PN_ALLOC(struct PNVtable);
+  struct PNVtable *vt = PN_CALLOC(struct PNVtable, sizeof(kh_PN_t));
   PN_GB(vt->gb, NULL, 0);
   vt->vt = PN_TVTABLE;
   vt->type = t;
@@ -51,16 +51,16 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
 PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int ret;
   struct PNVtable *vt = (struct PNVtable *)self;
-  unsigned k = kh_put(PN, &vt->kh, key, &ret);
-  return kh_value(&vt->kh, k) = method;
+  unsigned k = kh_put(PN, vt->kh, key, &ret);
+  return kh_value(vt->kh, k) = method;
 }
 
 PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   int ret;
   struct PNVtable *vt = (struct PNVtable *)self;
-  unsigned k = kh_put(PN, &vt->kh, key, &ret);
+  unsigned k = kh_put(PN, vt->kh, key, &ret);
   if (ret) return PN_NIL;
-  return kh_value(&vt->kh, k);
+  return kh_value(vt->kh, k);
 }
 
 PN potion_bind(Potion *P, PN rcv, PN msg) {
