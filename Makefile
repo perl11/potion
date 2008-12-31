@@ -22,7 +22,11 @@ COMMIT = `git rev-list HEAD -1 | head -c 7`
 CCEX = ${CC} -x c - && ./a.out && rm -f a.out
 ULONG = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned long)); }" | ${CCEX}`
 UINT  = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned int )); }" | ${CCEX}`
+USHORT = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned short)); }" | ${CCEX}`
+UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned short)); }" | ${CCEX}`
+UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned char)); }" | ${CCEX}`
 LLONG = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned long long)); }" | ${CCEX}`
+LILEND = `echo "\#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\\"%d\\\", (int)byte[0]); }" | ${CCEX}`
 
 all: potion test
 
@@ -38,9 +42,12 @@ version:
 	@echo "#define POTION_PREFIX \"${PREFIX}\""
 	@echo
 	@echo "#define PN_SIZE_T     ${ULONG}"
-	@echo "#define ULONG_SIZE_T  ${ULONG}"
-	@echo "#define UINT_SIZE_T   ${UINT}"
-	@echo "#define ULONGLONG_SIZE_T  ${ULONG}"
+	@echo "#define LONG_SIZE_T   ${ULONG}"
+	@echo "#define INT_SIZE_T    ${UINT}"
+	@echo "#define SHORT_SIZE_T  ${USHORT}"
+	@echo "#define CHAR_SIZE_T   ${UCHAR}"
+	@echo "#define LONGLONG_SIZE_T   ${LLONG}"
+	@echo "#define PN_LITTLE_ENDIAN  ${LILEND}"
 
 core/version.h:
 	@${MAKE} -s version > core/version.h
