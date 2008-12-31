@@ -12,14 +12,22 @@
 
 extern u8 potion_op_args[];
 
-PN potion_vm(Potion *P, PN proto) {
+PN potion_vm(Potion *P, PN proto, PN args) {
   struct PNProto *f = (struct PNProto *)proto;
   long stack = PN_INT(f->stack);
+  int argx = 0;
   u8 *pos, *end;
   PN *reg = PN_ALLOC_N(PN, stack + 1);
   PN *locals = NULL;
   if (f->locals != PN_EMPTY)
     locals = PN_ALLOC_N(PN, PN_TUPLE_LEN(f->locals));
+
+  PN_TUPLE_EACH(f->sig, i, v, {
+    if (PN_IS_STR(v)) {
+      unsigned long num = PN_GET(f->locals, v);
+      locals[num] = PN_TUPLE_AT(args, argx++);
+    }
+  });
 
   reg[0] = PN_NIL;
   pos = (u8 *)PN_STR_PTR(f->asmb);
@@ -32,6 +40,12 @@ PN potion_vm(Potion *P, PN proto) {
       case OP_SETLOCAL:
         locals[pos[1]] = reg[pos[2]]; 
       break;
+      case OP_NEWTABLE:
+        reg[pos[1]] = PN_EMPTY;
+      break;
+      case OP_SETTABLE:
+        reg[pos[1]] = PN_PUSH(reg[pos[1]], reg[pos[2]]);
+      break;
       case OP_LOADK:
         reg[pos[1]] = PN_TUPLE_AT(f->values, pos[2]);
       break;
@@ -43,7 +57,7 @@ PN potion_vm(Potion *P, PN proto) {
           reg[pos[1]] = 
             ((struct PNClosure *)reg[pos[2]])->method(P, reg[pos[2]], reg[pos[1]], reg[pos[1]+1]);
         } else {
-          reg[pos[1]] = potion_vm(P, reg[pos[2]]);
+          reg[pos[1]] = potion_vm(P, reg[pos[2]], reg[pos[1]]);
         }
       break;
       case OP_RETURN:

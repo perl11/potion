@@ -45,10 +45,23 @@ PN potion_proto_call(Potion *P, PN cl, PN self) {
 
 PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   struct PNProto *t = (struct PNProto *)self;
+  int x = 0;
   unsigned int num = 1;
   u8 *pos, *end, i = 0;
   printf("; function definition: %p ; %u bytes\n", t, PN_STR_LEN(t->asmb));
-  printf("; %ld stacks\n", PN_INT(t->stack));
+  printf("; (");
+  PN_TUPLE_EACH(t->sig, i, v, {
+    if (PN_IS_NUM(v)) {
+      if (i == x)
+        x += PN_INT(v);
+      else if (v != PN_ZERO)
+        printf("=%c, ", (int)PN_INT(v));
+      else
+        printf(", ");
+    } else
+      potion_send(v, PN_inspect);
+  });
+  printf(") %ld stacks\n", PN_INT(t->stack));
   PN_TUPLE_EACH(t->locals, i, v, {
     printf(".local \"");
     potion_send(v, PN_inspect);
@@ -179,15 +192,16 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     break;
 
     case AST_TABLE:
-      PN_ASM1(OP_NEWTABLE, 0);
+      PN_ASM1(OP_NEWTABLE, reg);
       PN_TUPLE_EACH(t->a[0], i, v, {
-        potion_source_asmb(P, f, (struct PNSource *)v, reg, pos);
+        potion_source_asmb(P, f, (struct PNSource *)v, reg + 1, pos);
+        PN_ASM2(OP_SETTABLE, reg, reg + 1);
       });
     break;
   }
 }
 
-PN potion_sig_compile(Potion *P, PN src) {
+PN potion_sig_compile(Potion *P, struct PNProto *f, PN src) {
   PN sig = PN_EMPTY;
   struct PNSource *t = (struct PNSource *)src;
   if (t->part == AST_TABLE && PN_TUPLE_LEN(t->a[0]) > 0) {
@@ -197,11 +211,17 @@ PN potion_sig_compile(Potion *P, PN src) {
       if (expr->part == AST_EXPR) {
         struct PNSource *name = (struct PNSource *)PN_TUPLE_AT(expr->a[0], 0);
         if (name->part == AST_MESSAGE)
+        {
+          PN_PUT(f->locals, name->a[0]);
           sig = PN_PUSH(sig, name->a[0]);
+        }
       } else if (expr->part == AST_ASSIGN) {
         struct PNSource *name = (struct PNSource *)expr->a[0];
         if (name->part == AST_MESSAGE)
+        {
+          PN_PUT(f->locals, name->a[0]);
           sig = PN_PUSH(sig, name->a[0]);
+        }
       }
       sig = PN_PUSH(sig, PN_NUM(0));
     });
@@ -222,9 +242,9 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
 
   f = PN_OBJ_ALLOC(struct PNProto, PN_TPROTO, 0);
   f->source = source;
-  f->sig = (sig == PN_NIL ? PN_EMPTY : potion_sig_compile(P, sig));
   f->stack = PN_NUM(1);
   f->protos = f->locals = f->values = PN_EMPTY;
+  f->sig = (sig == PN_NIL ? PN_EMPTY : potion_sig_compile(P, f, sig));
   f->asmb = potion_bytes(P, 8192);
 
   start = pos = (u8 *)PN_STR_PTR(f->asmb);

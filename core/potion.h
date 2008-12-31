@@ -50,6 +50,7 @@ struct PNGarbage;
 
 #define PN_NONE         ((PN)-1)
 #define PN_NIL          ((PN)0)
+#define PN_ZERO         ((PN)1)
 #define PN_TRUE         ((PN)2)
 #define PN_FALSE        ((PN)4)
 #define PN_EMPTY        ((PN)6)
@@ -77,6 +78,8 @@ struct PNGarbage;
 
 #define PN_TUP(X)       potion_tuple_new(P, X)
 #define PN_PUSH(T, X)   potion_tuple_push(P, T, X)
+#define PN_GET(T, X)    potion_tuple_find(P, T, X)
+#define PN_PUT(T, X)    potion_tuple_put(P, &(T), X)
 #define PN_SET_TUPLE(t) (((PN)t)|PN_TUPLE_FLAG)
 #define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)^PN_TUPLE_FLAG))
 #define PN_TUPLE_LEN(t) (t == PN_EMPTY ? 0 : PN_GET_TUPLE(t)->len)
@@ -253,7 +256,7 @@ void potion_compiler_init(Potion *);
 PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
-PN potion_vm(Potion *, PN);
+PN potion_vm(Potion *, PN, PN);
 void potion_run();
 
 #endif
