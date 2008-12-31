@@ -19,13 +19,13 @@ DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
 COMMIT = `git rev-list HEAD -1 | head -c 7`
 
-CCEX = ${CC} -x c - && ./a.out && rm -f a.out
-ULONG = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned long)); }" | ${CCEX}`
-UINT  = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned int )); }" | ${CCEX}`
-USHORT = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned short)); }" | ${CCEX}`
-UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned short)); }" | ${CCEX}`
-UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned char)); }" | ${CCEX}`
-LLONG = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned long long)); }" | ${CCEX}`
+CCEX = ${CC} -x c - -o pn.out && ./pn.out && rm -f pn.out
+ULONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned long)); }" | ${CCEX}`
+UINT  = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned int )); }" | ${CCEX}`
+USHORT = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned short)); }" | ${CCEX}`
+UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned short)); }" | ${CCEX}`
+UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned char)); }" | ${CCEX}`
+LLONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned long long)); }" | ${CCEX}`
 LILEND = `echo "\#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\\"%d\\\", (int)byte[0]); }" | ${CCEX}`
 
 all: potion test
