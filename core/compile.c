@@ -212,32 +212,6 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   return (PN)f;
 }
 
-#define WRITE_U8(un, ptr) ({*ptr = (u8)un; ptr += sizeof(u8);})
-#define WRITE_PN(pn, ptr) ({*(PN *)ptr = pn; ptr += sizeof(PN);})
-#define WRITE_CONST(val, ptr) ({ \
-    if (PN_IS_STR(val)) { \
-      PN count = PN_STR_LEN(val) << 3; \
-      WRITE_PN(count, ptr); \
-      PN_MEMCPY_N(ptr, PN_STR_PTR(val), char, PN_STR_LEN(val)); \
-      ptr += PN_STR_LEN(val); \
-    } else { \
-      WRITE_PN(val, ptr); \
-    } \
-  })
-#define WRITE_VALUES(tup, ptr) ({ \
-    long i = 0, count = PN_TUPLE_LEN(tup); \
-    WRITE_U8(count, ptr); \
-    for (; i < count; i++) \
-      WRITE_CONST(PN_TUPLE_AT(tup, i), ptr); \
-  })
-#define WRITE_PROTOS(tup, ptr) ({ \
-    long i = 0, count = PN_TUPLE_LEN(tup); \
-    WRITE_U8(count, ptr); \
-    for (; i < count; i++) \
-      ptr += potion_proto_dump(P, PN_TUPLE_AT(tup, i), \
-        out, (char *)ptr - PN_STR_PTR(out)); \
-  })
-
 #define READ_U8(ptr) ({u8 rpu = *ptr; ptr += sizeof(u8); rpu;})
 #define READ_PN(pn, ptr) ({PN rpn = *(PN *)ptr; ptr += pn; rpn;})
 #define READ_CONST(pn, ptr) ({ \
@@ -306,17 +280,15 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
       WRITE_PN(val, ptr); \
     } \
   })
+#define WRITE_TUPLE(tup, ptr) \
+  long i = 0, count = PN_TUPLE_LEN(tup); \
+  WRITE_U8(count, ptr); \
+  for (; i < count; i++)
 #define WRITE_VALUES(tup, ptr) ({ \
-    long i = 0, count = PN_TUPLE_LEN(tup); \
-    WRITE_U8(count, ptr); \
-    for (; i < count; i++) \
-      WRITE_CONST(PN_TUPLE_AT(tup, i), ptr); \
+    WRITE_TUPLE(tup, ptr) WRITE_CONST(PN_TUPLE_AT(tup, i), ptr); \
   })
 #define WRITE_PROTOS(tup, ptr) ({ \
-    long i = 0, count = PN_TUPLE_LEN(tup); \
-    WRITE_U8(count, ptr); \
-    for (; i < count; i++) \
-      ptr += potion_proto_dump(P, PN_TUPLE_AT(tup, i), \
+    WRITE_TUPLE(tup, ptr) ptr += potion_proto_dump(P, PN_TUPLE_AT(tup, i), \
         out, (char *)ptr - PN_STR_PTR(out)); \
   })
 

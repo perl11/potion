@@ -23,6 +23,10 @@ DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
 COMMIT = `git rev-list HEAD -1 | head -c 7`
 
+CCEX = ${CC} -x c - && ./a.out && rm -f a.out
+ULONG = `echo "\#include <stdio.h>\nint main() { printf(\\\"%zd\\\", sizeof(unsigned long)); }" | ${CCEX}`
+UINT  = `echo "\#include <stdio.h>\nint main() { printf(\\\"%zd\\\", sizeof(unsigned int )); }" | ${CCEX}`
+
 all: potion test
 
 version:
@@ -35,6 +39,10 @@ version:
 	@echo "#define POTION_DEBUG  ${DEBUG}"
 	@echo "#define POTION_MAKE   \"${MAKE}\""
 	@echo "#define POTION_PREFIX \"${PREFIX}\""
+	@echo
+	@echo "#define PN_SIZE_T     ${ULONG}"
+	@echo "#define ULONG_SIZE_T  ${ULONG}"
+	@echo "#define UINT_SIZE_T   ${UINT}"
 
 core/version.h:
 	@${MAKE} -s version > core/version.h
