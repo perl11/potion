@@ -81,6 +81,14 @@ void potion_test_tuple(CuTest *T) {
     PN_INT(potion_send(tup, potion_str(P, "length"))), 3);
 }
 
+void potion_test_sig(CuTest *T) {
+  PN sig = potion_sig(P, "num1=N,num2=N");
+  CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
+
+  sig = potion_sig(P, "x=N,y=N|r=N");
+  CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
+}
+
 CuSuite *potion_suite() {
   CuSuite *S = CuSuiteNew();
   SUITE_ADD_TEST(S, potion_test_nil);
@@ -91,6 +99,7 @@ CuSuite *potion_suite() {
   SUITE_ADD_TEST(S, potion_test_str);
   SUITE_ADD_TEST(S, potion_test_empty);
   SUITE_ADD_TEST(S, potion_test_tuple);
+  SUITE_ADD_TEST(S, potion_test_sig);
   return S;
 }
 

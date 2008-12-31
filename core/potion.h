@@ -72,9 +72,11 @@ struct PNGarbage;
 #define PN_INT(x)       (((long)(x))>>1)
 #define PN_STR_PTR(x)   ((struct PNString *)(x))->chars
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
-#define PN_FUNC(f)      potion_closure_new(P, (imp_t)f, 0, 0)
+#define PN_FUNC(f, s)   potion_closure_new(P, (imp_t)f, 0, potion_sig(P, s))
 #define PN_GB(x,o,m)    (x).next = o; (x).marked = m
 
+#define PN_TUP(X)       potion_tuple_new(P, X)
+#define PN_PUSH(T, X)   potion_tuple_push(P, T, X)
 #define PN_SET_TUPLE(t) (((PN)t)|PN_TUPLE_FLAG)
 #define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)^PN_TUPLE_FLAG))
 #define PN_TUPLE_LEN(t) (t == PN_EMPTY ? 0 : PN_GET_TUPLE(t)->len)
@@ -201,7 +203,7 @@ struct Potion_State {
 #endif
 
 #define potion_method(RCV, MSG, FN, SIG) \
-  potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN))
+  potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
 
 #if MCACHE
 struct PNMcache {
@@ -228,6 +230,7 @@ PN potion_delegated(Potion *, PN, PN);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, imp_t, PN, PN);
+PN potion_sig(Potion *, char *);
 
 inline PN potion_tuple_with_size(Potion *, unsigned long);
 inline PN potion_tuple_new(Potion *, PN);

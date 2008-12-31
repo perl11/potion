@@ -16,7 +16,7 @@
 #define TOKEN(id)    TOKEN2(id, PN_NIL)
 
 %%{
-  machine potion;
+  machine utf8;
 
   comma       = ",";
   newline     = "\r"? "\n" %{ lineno++; };
@@ -33,9 +33,14 @@
                 "^" | ">" | "<" | "<=" | ">=" | "&" | "&&" | "|" |
                 "||" | "\\";
   braced      = '{' (any - '}')+ '}' | '[' (any - ']')+ ']';
-
   message     = utfw+ braced?;
   assign      = "=";
+}%%
+
+%%{
+  machine potion;
+  include utf8;
+
   begin_block = ":";
   end_block   = ".";
   begin_table = "(";
@@ -107,6 +112,66 @@ PN potion_parse(Potion *P, PN code) {
   LemonPotionFree(pParser, free);
 
   return P->source;
+}
+
+#define ARG_NEXT() cast = 0; eql = NULL
+#define ARG_END() \
+  int l = PN_TUPLE_LEN(sig), a = l - (x + 1); \
+  if (a) PN_TUPLE_AT(sig, x) = PN_NUM(a)
+
+%%{
+  machine signature;
+  include utf8;
+
+  action cast { cast = p[0]; }
+  action name { eql = p; }
+
+  optional = "|" >cast;
+
+  type = ("s" | "S" | "n" | "N" | "l" | "L" | "m" |
+    "t" | "o" | "-" | "&") >cast;
+  sep = ".";
+  key = message assign >name;
+  arg = key type | type;
+  
+  main := |*
+    whitespace;
+    arg => {
+      if (eql) sig = PN_PUSH(sig, potion_str2(P, ts, eql - ts));
+      sig = PN_PUSH(sig, PN_NUM(cast));
+    };
+    optional => { sig = PN_PUSH(sig, PN_EMPTY); };
+    comma => { ARG_NEXT(); };
+    sep => { 
+      ARG_END();
+      x = l, sig = PN_PUSH(sig, PN_NUM(0)); \
+      ARG_NEXT();
+    };
+  *|;
+
+  write data nofinal;
+}%%
+
+PN potion_sig(Potion *P, char *fmt) {
+  PN sig = PN_EMPTY;
+  int cs, act, x = 0;
+  char *p, *pe, *ts, *te, *eof = 0;
+  char cast = 0, *eql = NULL;
+
+  if (fmt == NULL) return PN_NIL; // no signature, arg check off
+  if (fmt[0] == '\0') return sig; // empty signature, no args
+
+  fmt = strdup(fmt);
+  p = fmt, pe = fmt + strlen(fmt);
+  sig = PN_PUSH(sig, PN_NUM(0));
+
+  %% write init;
+  %% write exec;
+
+  ARG_END();
+
+  free(fmt);
+  return sig;
 }
 
 void potion_run() {
