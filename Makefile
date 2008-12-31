@@ -6,26 +6,23 @@ OBJ_TEST = test/potion-test.o test/CuTest.o
 PREFIX = /usr/local
 CC = gcc
 CFLAGS = -Wall -DICACHE -DMCACHE
+DEBUG ?= 0
 INCS = -Icore
 LEMON = tools/lemon
 LIBS =
 RAGEL = ragel
 
-ifeq (${DEBUG}, 1)
-	CFLAGS += -g -DDEBUG
-	DEBUG = 1
-else
-	CFLAGS += -O2
-	DEBUG = 0
-endif
+DFLAGS = `echo "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
+CFLAGS += ${DFLAGS}
 
 DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
 COMMIT = `git rev-list HEAD -1 | head -c 7`
 
 CCEX = ${CC} -x c - && ./a.out && rm -f a.out
-ULONG = `echo "\#include <stdio.h>\nint main() { printf(\\\"%zd\\\", sizeof(unsigned long)); }" | ${CCEX}`
-UINT  = `echo "\#include <stdio.h>\nint main() { printf(\\\"%zd\\\", sizeof(unsigned int )); }" | ${CCEX}`
+ULONG = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned long)); }" | ${CCEX}`
+UINT  = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned int )); }" | ${CCEX}`
+LLONG = `echo "\#include <stdio.h>int main() { printf(\\\"%zd\\\", sizeof(unsigned long long)); }" | ${CCEX}`
 
 all: potion test
 
@@ -43,6 +40,7 @@ version:
 	@echo "#define PN_SIZE_T     ${ULONG}"
 	@echo "#define ULONG_SIZE_T  ${ULONG}"
 	@echo "#define UINT_SIZE_T   ${UINT}"
+	@echo "#define ULONGLONG_SIZE_T  ${ULONG}"
 
 core/version.h:
 	@${MAKE} -s version > core/version.h
@@ -52,8 +50,8 @@ core/version.h:
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
 core/pn-scan.c: core/pn-scan.rl
-	@echo RAGEL $<
-	@${RAGEL} $< -C -o $@
+	@echo RAGEL core/pn-scan.rl
+	@${RAGEL} core/pn-scan.rl -C -o $@
 
 core/pn-gram.c: tools/lemon core/pn-gram.y
 	@echo LEMON core/pn-gram.y
