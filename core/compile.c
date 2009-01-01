@@ -12,25 +12,25 @@
 #include "pn-ast.h"
 #include "opcodes.h"
 
-#define PN_ASM1(ins, a) ({ \
-    *((*pos)++) = (u8)ins; \
-    *((*pos)++) = (u8)a; \
-    *((*pos)++) = 0; \
-    *((*pos)++) = 0; \
+#define PN_ASM1(ins, _a) ({ \
+    (*pos)->code = (u8)ins; \
+    (*pos)->a    = (u8)_a; \
+    (*pos)++; \
   })
 
-#define PN_ASM2(ins, a, b) ({ \
-    *((*pos)++) = (u8)ins; \
-    *((*pos)++) = (u8)a; \
-    *((*pos)++) = (u8)b; \
-    *((*pos)++) = 0; \
+#define PN_ASM2(ins, _a, _b) ({ \
+    (*pos)->code = (u8)ins; \
+    (*pos)->a    = (u8)_a; \
+    (*pos)->b    = (u8)_b; \
+    (*pos)++; \
   })
 
-#define PN_ASM3(ins, a, b, c) ({ \
-    *((*pos)++) = (u8)ins; \
-    *((*pos)++) = (u8)a; \
-    *((*pos)++) = (u8)b; \
-    *((*pos)++) = (u8)c; \
+#define PN_ASM3(ins, _a, _b, _c) ({ \
+    (*pos)->code = (u8)ins; \
+    (*pos)->a    = (u8)_a; \
+    (*pos)->b    = (u8)_b; \
+    (*pos)->c    = (u8)_c; \
+    (*pos)++; \
   })
 
 const char *potion_op_names[] = {
@@ -65,7 +65,7 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   struct PNProto *t = (struct PNProto *)self;
   int x = 0;
   unsigned int num = 1;
-  u8 *pos, *end, i = 0;
+  PN_OP *pos, *end;
   printf("; function definition: %p ; %u bytes\n", t, PN_STR_LEN(t->asmb));
   printf("; (");
   PN_TUPLE_EACH(t->sig, i, v, {
@@ -93,15 +93,16 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   PN_TUPLE_EACH(t->protos, i, v, {
     potion_send(v, PN_inspect);
   });
-  pos = (u8 *)PN_STR_PTR(t->asmb);
-  end = (u8 *)PN_STR_PTR(t->asmb) + PN_STR_LEN(t->asmb);
+  pos = (PN_OP *)PN_STR_PTR(t->asmb);
+  end = (PN_OP *)(PN_STR_PTR(t->asmb) + PN_STR_LEN(t->asmb));
   while (pos < end) {
-    printf("[%u] %s", num, potion_op_names[pos[0]]);
-    for (i = 0; i < potion_op_args[pos[0]]; i++)
-      printf(" %u", (unsigned)pos[i+1]);
-    pos += 4;
+    printf("[%u] %s", num, potion_op_names[pos->code]);
+    switch (potion_op_args[pos->code]) {
+      case 1: printf(" %u", (unsigned)pos->a); break;
+      case 2: printf(" %u %u", (unsigned)pos->a, (unsigned)pos->b); break;
+    }
     printf("\n");
-    num++;
+    pos++; num++;
   }
   printf("; function end\n");
   return PN_NIL;
@@ -113,7 +114,7 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
 #define PN_ARG(n, reg) \
   potion_source_asmb(P, f, (struct PNSource *)t->a[n], reg, pos)
 
-void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg, u8 **pos) {
+void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg, PN_OP **pos) {
   PN_REG(f, reg);
 
   switch (t->part) {
@@ -282,7 +283,8 @@ PN potion_sig_compile(Potion *P, struct PNProto *f, PN src) {
 PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   struct PNProto *f;
   struct PNSource *t = (struct PNSource *)self;
-  u8 *start, *pos;
+  char *start;
+  PN_OP *pos;
   switch (t->part) {
     case AST_CODE:
     case AST_BLOCK: break;
@@ -296,10 +298,10 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   f->sig = (sig == PN_NIL ? PN_EMPTY : potion_sig_compile(P, f, sig));
   f->asmb = potion_bytes(P, 8192);
 
-  start = pos = (u8 *)PN_STR_PTR(f->asmb);
+  pos = (PN_OP *)(start = PN_STR_PTR(f->asmb));
   potion_source_asmb(P, f, t, 0, &pos);
   // TODO: byte strings should be more flexible than this
-  PN_STR_LEN(f->asmb) = pos - start;
+  PN_STR_LEN(f->asmb) = (char *)pos - start;
   return (PN)f;
 }
 

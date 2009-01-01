@@ -32,7 +32,7 @@ PN potion_vm(Potion *P, PN proto, PN args) {
 
   reg[0] = PN_NIL;
   pos = (PN_OP *)PN_STR_PTR(f->asmb);
-  end = (PN_OP *)PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb);
+  end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
   while (pos < end) {
     switch (pos->code) {
       case OP_MOVE:
