@@ -11,15 +11,17 @@
 #include "pn-ast.h"
 
 const char *potion_ast_names[] = {
-  "code", "value", "assign", "message",
-  "path", "query", "pathq", "expr",
-  "table", "block", "data", "proto"
+  "code", "value", "assign", "or", "and", "cmp", "eq", "neq",
+  "gt", "gte", "lt", "lte", "pipe", "caret", "amp", "bitl",
+  "bitr", "plus", "minus", "times", "div", "rem", "pow", "message",
+  "path", "query", "pathq", "expr", "table", "block", "data", "proto"
 };
 
 const int potion_ast_sizes[] = {
-  1, 1, 2, 3,
-  1, 1, 1, 1,
-  1, 1, 1, 2
+  1, 1, 2, 2, 2, 2, 2, 2,
+  2, 2, 2, 2, 2, 2, 2, 2,
+  2, 2, 2, 2, 2, 2, 2, 3,
+  1, 1, 1, 1, 1, 1, 1, 2
 };
 
 PN potion_source(Potion *P, u8 p, PN a, PN b, PN c) {

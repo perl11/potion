@@ -15,32 +15,50 @@
 #define PN_ASM1(ins, a) ({ \
     *((*pos)++) = (u8)ins; \
     *((*pos)++) = (u8)a; \
+    *((*pos)++) = 0; \
+    *((*pos)++) = 0; \
   })
 
 #define PN_ASM2(ins, a, b) ({ \
     *((*pos)++) = (u8)ins; \
     *((*pos)++) = (u8)a; \
     *((*pos)++) = (u8)b; \
+    *((*pos)++) = 0; \
+  })
+
+#define PN_ASM3(ins, a, b, c) ({ \
+    *((*pos)++) = (u8)ins; \
+    *((*pos)++) = (u8)a; \
+    *((*pos)++) = (u8)b; \
+    *((*pos)++) = (u8)c; \
   })
 
 const char *potion_op_names[] = {
-  "move", "loadk", "loadnil", "loadbool",
-  "getlocal", "setlocal", "newtable", "gettable",
+  "noop",
+  "move", "loadk", "loadpn",
+  "getlocal", "setlocal", "gettable",
   "settable", "getpath", "setpath", "self",
-  "bind", "test", "testset", "call",
+  "add", "sub", "mult", "div",
+  "mod", "pow", "not", "eq", "neq",
+  "lt", "lte", "gt", "gte",
+  "bind", "jump", "test", "call",
   "tailcall", "return", "proto"
 };
 
 const u8 potion_op_args[] = {
-  2, 2, 1, 1,
-  2, 2, 1, 2,
+  0,
+  2, 2, 2,
+  2, 2, 2,
   2, 2, 2, 1,
   2, 2, 2, 2,
+  2, 2, 1, 2, 2,
+  2, 2, 2, 2,
+  2, 1, 2, 2,
   2, 1, 2
 };
 
-PN potion_proto_call(Potion *P, PN cl, PN self) {
-  return potion_vm(P, self);
+PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
+  return potion_vm(P, self, args);
 }
 
 PN potion_proto_inspect(Potion *P, PN cl, PN self) {
@@ -81,7 +99,7 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
     printf("[%u] %s", num, potion_op_names[pos[0]]);
     for (i = 0; i < potion_op_args[pos[0]]; i++)
       printf(" %u", (unsigned)pos[i+1]);
-    pos += i + 1;
+    pos += 4;
     printf("\n");
     num++;
   }
@@ -91,7 +109,9 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
 
 #define PN_REG(f, reg) \
   if (reg >= PN_INT(f->stack)) \
-    f->stack = PN_NUM(reg + 1); \
+    f->stack = PN_NUM(reg + 1)
+#define PN_ARG(n, reg) \
+  potion_source_asmb(P, f, (struct PNSource *)t->a[n], reg, pos)
 
 void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg, u8 **pos) {
   PN_REG(f, reg);
@@ -149,12 +169,41 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     }
     break;
 
+    case AST_GT: case AST_GTE: case AST_LT: case AST_LTE: {
+      PN_ARG(0, reg);
+      PN_ARG(1, reg + 1);
+      switch (t->part) {
+        case AST_GTE: PN_ASM2(OP_GTE, reg, reg + 1); break;
+        case AST_GT:  PN_ASM2(OP_GT, reg, reg + 1);  break;
+        case AST_LT:  PN_ASM2(OP_LT, reg, reg + 1);  break;
+        case AST_LTE: PN_ASM2(OP_LTE, reg, reg + 1); break;
+      }
+    }
+    break;
+
+    case AST_PLUS: case AST_MINUS: case AST_TIMES: case AST_DIV:
+    case AST_REM:  case AST_POW:   case AST_BITL:  case AST_BITR: {
+      PN_ARG(0, reg);
+      PN_ARG(1, reg + 1);
+      switch (t->part) {
+        case AST_PLUS:  PN_ASM2(OP_ADD, reg, reg + 1);  break;
+        case AST_MINUS: PN_ASM2(OP_SUB, reg, reg + 1);  break;
+        case AST_TIMES: PN_ASM2(OP_MULT, reg, reg + 1); break;
+        case AST_DIV:   PN_ASM2(OP_DIV, reg, reg + 1);  break;
+        case AST_REM:   PN_ASM2(OP_REM, reg, reg + 1);  break;
+        case AST_POW:   PN_ASM2(OP_POW, reg, reg + 1);  break;
+        // case AST_BITL:  PN_ASM2(OP_BITL, reg, reg + 1); break;
+        // case AST_BITR:  PN_ASM2(OP_BITR, reg, reg + 1); break;
+      }
+    }
+    break;
+
     case AST_MESSAGE:
     case AST_QUERY: {
       u8 breg = reg;
       unsigned long num = PN_GET(f->locals, t->a[0]);
       if (num == PN_NONE) {
-        if (t->a[1] != PN_NIL)
+        if (t->a[1] != PN_NIL && t->a[1] != PN_EMPTY)
           potion_source_asmb(P, f, (struct PNSource *)t->a[1], ++breg, pos);
         num = PN_PUT(f->values, t->a[0]);
         PN_ASM2(OP_LOADK, ++breg, num);
@@ -167,7 +216,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
         if (t->part == AST_QUERY) {
           PN_ASM2(OP_GETLOCAL, reg, num);
           PN_ASM2(OP_TEST, reg, reg);
-        } else if (t->a[1] != PN_NIL) {
+        } else if (t->a[1] != PN_NIL && t->a[1] != PN_EMPTY) {
           potion_source_asmb(P, f, (struct PNSource *)t->a[1], breg, pos);
           PN_ASM2(OP_GETLOCAL, ++breg, num);
           PN_ASM2(OP_CALL, reg, breg);
@@ -192,7 +241,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     break;
 
     case AST_TABLE:
-      PN_ASM1(OP_NEWTABLE, reg);
+      PN_ASM2(OP_LOADPN, reg, PN_EMPTY);
       PN_TUPLE_EACH(t->a[0], i, v, {
         potion_source_asmb(P, f, (struct PNSource *)v, reg + 1, pos);
         PN_ASM2(OP_SETTABLE, reg, reg + 1);

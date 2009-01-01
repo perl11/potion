@@ -21,6 +21,18 @@
 %parse_failure { printf("-- LEMON FAIL --\n"); }
 %name LemonPotion
 
+%left  OR AND.
+%right ASSIGN.
+%nonassoc CMP EQ NEQ.
+%left  GT GTE LT LTE. 
+%left  PIPE CARET.
+%left  AMP.
+%left  BITL BITR.
+%left  PLUS MINUS.
+%left  TIMES DIV REM.
+%right POW.
+// %right NOT WAVY.
+
 potion(A) ::= all(B). { A = P->source = PN_AST(CODE, B); }
 
 all(A) ::= statements(B). { A = B; }
@@ -31,10 +43,32 @@ statements(A) ::= statement(B). { A = PN_TUP(PN_AST(EXPR, B)); }
 statements(A) ::= name(B) ASSIGN statement(C). { A = PN_TUP(PN_AST2(ASSIGN, B, C)); }
 statements(A) ::= statements(B) SEP name(C) ASSIGN statement(D).
 { A = PN_PUSH(B, PN_AST2(ASSIGN, C, D)); }
+statements(A) ::= statement(B) op(C) statement(D). { A = PN_TUP(PN_OP(C, PN_AST(EXPR, B), PN_AST(EXPR, D))); }
 
 statement(A) ::= statement(B) call(C). { A = PN_PUSH(B, C); }
 statement(A) ::= arg(B). { A = PN_TUP(B.b == PN_NIL ? B.v : PN_AST2(PROTO, B.v, B.b)); }
 statement(A) ::= call(B). { A = PN_TUP(B); }
+
+op(A) ::= OR. { A = AST_OR; }
+op(A) ::= AND. { A = AST_AND; }
+op(A) ::= CMP. { A = AST_CMP; }
+op(A) ::= EQ. { A = AST_EQ; }
+op(A) ::= NEQ. { A = AST_NEQ; }
+op(A) ::= GT. { A = AST_GT; }
+op(A) ::= GTE. { A = AST_GTE; }
+op(A) ::= LT. { A = AST_LT; }
+op(A) ::= LTE. { A = AST_LTE; }
+op(A) ::= PIPE. { A = AST_PIPE; }
+op(A) ::= CARET. { A = AST_CARET; }
+op(A) ::= AMP. { A = AST_AMP; }
+op(A) ::= BITL. { A = AST_BITL; }
+op(A) ::= BITR. { A = AST_BITR; }
+op(A) ::= PLUS. { A = AST_PLUS; }
+op(A) ::= MINUS. { A = AST_MINUS; }
+op(A) ::= TIMES. { A = AST_TIMES; }
+op(A) ::= DIV. { A = AST_DIV; }
+op(A) ::= REM. { A = AST_REM; }
+op(A) ::= POW. { A = AST_POW; }
 
 call(A) ::= name(B). { A = B; }
 call(A) ::= name(B) arg(C). { PN_S(B, 1, C.v); PN_S(B, 2, C.b); A = B; }

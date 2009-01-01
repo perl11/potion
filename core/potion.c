@@ -58,18 +58,22 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       if (verbose) {
         printf("\n-- parsed --\n");
         potion_send(code, PN_inspect);
+        printf("\n");
       }
       code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
       if (verbose)
-        printf("\n\n-- compiled --\n");
+        printf("\n-- compiled --\n");
     }
-    if (verbose)
+    if (verbose) {
       potion_send(code, PN_inspect);
+      printf("\n");
+    }
     if (exec) {
-      code = potion_vm(P, code);
+      code = potion_vm(P, code, PN_EMPTY);
       if (verbose) {
-        printf("\n\n-- returned --\n");
+        printf("\n-- returned --\n");
         potion_send(code, PN_inspect);
+        printf("\n");
       }
     } else {
       char pnbpath[255];

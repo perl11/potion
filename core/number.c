@@ -9,6 +9,15 @@
 #include "potion.h"
 #include "internal.h"
 
+// pow by martin ankerl
+double pn_pow(double a, double b) {  
+  int tmp = (*(1 + (int *)&a));  
+  int tmp2 = (int)(b * (tmp - 1072632447) + 1072632447);  
+  double p = 0.0;  
+  *(1 + (int * )&p) = tmp2;  
+  return p;  
+}  
+
 static PN potion_add(Potion *P, PN closure, PN self, PN num) {
   return PN_NUM(PN_INT(self) + PN_INT(num));
 }

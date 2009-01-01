@@ -5,7 +5,7 @@ OBJ_TEST = test/potion-test.o test/CuTest.o
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -Wall -DICACHE -DMCACHE
+CFLAGS = -Wall -DICACHE -DMCACHE -fno-strict-aliasing
 DEBUG ?= 0
 INCS = -Icore
 LEMON = tools/lemon
@@ -70,7 +70,7 @@ tools/lemon: tools/lemon.c
 
 potion: core/version.h ${OBJ_POTION} ${OBJ}
 	@echo LINK potion
-	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} -o potion
+	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
 
 test: test/potion-test
 	@echo running tests

@@ -29,12 +29,8 @@
                 (0xc2..0xdf) (0x80..0xbf) |
                 (0xe0..0xef 0x80..0xbf 0x80..0xbf) |
                 (0xf0..0xf4 0x80..0xbf 0x80..0xbf 0x80..0xbf);
-  ops         = "~" | "!" | "+" | "-" | "*" | "**" | "/" | "%" |
-                "^" | ">" | "<" | "<=" | ">=" | "&" | "&&" | "|" |
-                "||" | "\\";
   braced      = '{' (any - '}')+ '}' | '[' (any - ']')+ ']';
   message     = utfw+ braced?;
-  assign      = "=";
 }%%
 
 %%{
@@ -67,7 +63,31 @@
     comma       => { TOKEN(SEP); };
     whitespace;
     comment;
-    assign      => { TOKEN(ASSIGN); };
+
+    "||"|"or"   => { TOKEN(OR); };
+    "&&"|"and"  => { TOKEN(AND); };
+#   "!"|"not"   => { TOKEN(NOT); };
+    "<=>"       => { TOKEN(CMP); };
+    "=="        => { TOKEN(EQ); };
+    "!="        => { TOKEN(NEQ); };
+    ">"         => { TOKEN(GT); };
+    ">="        => { TOKEN(GTE); };
+    "<"         => { TOKEN(LT); };
+    "<="        => { TOKEN(LTE); };
+    "|"         => { TOKEN(PIPE); };
+    "^"         => { TOKEN(CARET); };
+    "&"         => { TOKEN(AMP); };
+    "<<"        => { TOKEN(BITL); };
+    ">>"        => { TOKEN(BITR); };
+    "+"         => { TOKEN(PLUS); };
+    "-"         => { TOKEN(MINUS); };
+    "*"         => { TOKEN(TIMES); };
+    "/"         => { TOKEN(DIV); };
+    "%"         => { TOKEN(REM); };
+    "**"        => { TOKEN(POW); };
+#   "~"         => { TOKEN(WAVY); };
+    "="         => { TOKEN(ASSIGN); };
+
     begin_table => { TOKEN2(BEGIN_TABLE, PN_EMPTY); };
     end_table   => { TOKEN(END_TABLE); };
     begin_data  => { TOKEN(BEGIN_DATA); };
@@ -75,7 +95,6 @@
     begin_block => { TOKEN(BEGIN_BLOCK); };
     end_block   => { TOKEN(END_BLOCK); };
     newline     => { TOKEN(SEP); };
-    ops         => { TOKEN2(OPS, potion_str2(P, ts, te - ts)); };
     path        => { TOKEN2(PATH, potion_str2(P, ts, te - ts)); };
 
     nil         => { TOKEN2(NIL, PN_NIL); };
@@ -131,7 +150,7 @@ PN potion_parse(Potion *P, PN code) {
   type = ("s" | "S" | "n" | "N" | "l" | "L" | "m" |
     "t" | "o" | "-" | "&") >cast;
   sep = ".";
-  key = message assign >name;
+  key = message "=" >name;
   arg = key type | type;
   
   main := |*

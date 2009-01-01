@@ -57,6 +57,7 @@ struct PNGarbage;
 #define PN_PRIMITIVE    6
 
 #define PN_TEST(v)      (((PN)(v) & ~PN_NIL) != 0)
+#define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) == PN_FALSE || (PN)(v) == PN_TRUE)
 #define PN_IS_NUM(v)    ((PN)(v) & PN_NUM_FLAG)
@@ -253,6 +254,7 @@ void potion_table_init(Potion *);
 void potion_source_init(Potion *);
 void potion_compiler_init(Potion *);
 
+double pn_pow(double, double);
 PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
