@@ -7,12 +7,16 @@
 #ifndef POTION_OPCODES_H
 #define POTION_OPCODES_H
 
+#pragma pack(push)
+#pragma pack(1)
+
 typedef struct {
-  u8 code;
-  u8 a;
-  u8 b;
-  u8 c;
+  u8 code:8;
+  unsigned a:12;
+  unsigned b:12;
 } PN_OP;
+
+#pragma pack(pop)
 
 enum PN_OPCODE {
   OP_NONE,

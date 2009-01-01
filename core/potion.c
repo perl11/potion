@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include "potion.h"
 #include "internal.h"
+#include "opcodes.h"
 #include "version.h"
 
 const char potion_banner[] = "potion " POTION_VERSION
@@ -18,12 +19,12 @@ const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {
   printf("usage: potion [options] [script] [arguments]\n"
-      "  sizeof(PN=%zd, PNGarbage=%zd, PNTuple=%zd, PNObject=%zd, PNString=%zd)\n"
+      "  sizeof(PN=%zd, PNGarbage=%zd, PNTuple=%zd, PNObject=%zd, PN_OP=%zd)\n"
       "  -V, --verbose      show bytecode and ast info\n"
       "  -c, --compile      compile the script to bytecode\n"
       "  -h, --help         show this helpful stuff\n"
       "  -v, --version      show version\n",
-      sizeof(PN), sizeof(struct PNGarbage), sizeof(struct PNTuple), sizeof(struct PNObject), sizeof(struct PNString));
+      sizeof(PN), sizeof(struct PNGarbage), sizeof(struct PNTuple), sizeof(struct PNObject), sizeof(PN_OP));
 }
 
 static void potion_cmd_version() {

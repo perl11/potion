@@ -25,14 +25,6 @@
     (*pos)++; \
   })
 
-#define PN_ASM3(ins, _a, _b, _c) ({ \
-    (*pos)->code = (u8)ins; \
-    (*pos)->a    = (u8)_a; \
-    (*pos)->b    = (u8)_b; \
-    (*pos)->c    = (u8)_c; \
-    (*pos)++; \
-  })
-
 const char *potion_op_names[] = {
   "noop",
   "move", "loadk", "loadpn",
