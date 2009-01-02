@@ -58,7 +58,7 @@ struct PNGarbage;
 #define PN_EMPTY        ((PN)6)
 #define PN_PRIMITIVE    6
 
-#define PN_TEST(v)      (((PN)(v) & ~PN_NIL) != 0)
+#define PN_TEST(v)      ((PN)(v) != PN_FALSE)
 #define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) == PN_FALSE || (PN)(v) == PN_TRUE)

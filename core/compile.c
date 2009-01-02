@@ -150,8 +150,6 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
       PN_TUPLE_EACH(t->a[0], i, v, {
         potion_source_asmb(P, f, (struct PNSource *)v, reg, pos);
       });
-      if (t->part != AST_EXPR)
-        PN_ASM1(OP_RETURN, 0);
     break;
 
     case AST_PROTO:
@@ -243,6 +241,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
       int arg = (t->a[1] != PN_NIL && t->a[1] != PN_EMPTY);
       int call = (t->a[2] != PN_NIL || arg);
       if (t->a[0] == PN_if) {
+        PN_OP *jmp;
         if (arg) {
           PN test = t->a[1];
           if (PN_PART(test) == AST_TABLE)
@@ -250,21 +249,15 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
           potion_source_asmb(P, f, (struct PNSource *)test, reg, pos);
         } else
           PN_ASM2(OP_LOADPN, reg, t->a[1]);
-        PN_ASM2(OP_NOTJMP, reg, 2);
-        if (t->a[2] != PN_NIL) {
-          PN_BLOCK(reg + 1, t->a[2], PN_NIL);
-          PN_ASM2(OP_CALL, reg, reg + 1);
-        } else
-          PN_ASM1(OP_NONE, 0);
+        jmp = *pos;
+        PN_ASM2(OP_NOTJMP, reg, 0);
+        potion_source_asmb(P, f, (struct PNSource *)t->a[2], reg, pos);
+        jmp->b = (*pos - jmp) - 1;
       } else if (t->a[0] == PN_else) {
-        PN_ASM2(OP_TESTJMP, reg, 2);
-        // if (arg)
-        //   potion_source_asmb(P, f, (struct PNSource *)t->a[1], reg, pos);
-        if (t->a[2] != PN_NIL) {
-          PN_BLOCK(reg + 1, t->a[2], PN_NIL);
-          PN_ASM2(OP_CALL, reg, reg + 1);
-        } else
-          PN_ASM1(OP_NONE, 0);
+        PN_OP *jmp = *pos;
+        PN_ASM2(OP_TESTJMP, reg, 0);
+        potion_source_asmb(P, f, (struct PNSource *)t->a[2], reg, pos);
+        jmp->b = (*pos - jmp) - 1;
       } else {
         u8 breg = reg, opcode = OP_GETUPVAL;
         unsigned long num = PN_UPVAL(t->a[0]);
@@ -366,7 +359,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   struct PNProto *f;
   struct PNSource *t = (struct PNSource *)self;
   char *start;
-  PN_OP *pos;
+  PN_OP **pos, *ptr;
   switch (t->part) {
     case AST_CODE:
     case AST_BLOCK: break;
@@ -380,10 +373,12 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   f->sig = (sig == PN_NIL ? PN_EMPTY : potion_sig_compile(P, f, sig));
   f->asmb = potion_bytes(P, 8192);
 
-  pos = (PN_OP *)(start = PN_STR_PTR(f->asmb));
-  potion_source_asmb(P, f, t, 0, &pos);
+  ptr = (PN_OP *)(start = PN_STR_PTR(f->asmb));
+  pos = &ptr;
+  potion_source_asmb(P, f, t, 0, pos);
+  PN_ASM1(OP_RETURN, 0);
   // TODO: byte strings should be more flexible than this
-  PN_STR_LEN(f->asmb) = (char *)pos - start;
+  PN_STR_LEN(f->asmb) = (char *)ptr - start;
   return (PN)f;
 }
 

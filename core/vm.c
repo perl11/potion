@@ -77,10 +77,10 @@ reentry:
         locals[pos->b] = reg[pos->a];
       break;
       case OP_GETUPVAL:
-        reg[pos->a] = upvals[pos->b];
+        reg[pos->a] = *((PN *)(upvals[pos->b]));
       break;
       case OP_SETUPVAL:
-        upvals[pos->b] = reg[pos->a];
+        *((PN *)(upvals[pos->b])) = reg[pos->a];
       break;
       case OP_SETTABLE:
         reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
@@ -144,10 +144,10 @@ reentry:
         reg[pos->a] = PN_BOOL(PN_TEST(reg[pos->a]));
       break;
       case OP_TESTJMP:
-        if (PN_TEST(reg[pos->a])) pos++;
+        if (PN_TEST(reg[pos->a])) pos += pos->b;
       break;
       case OP_NOTJMP:
-        if (!PN_TEST(reg[pos->a])) pos++;
+        if (!PN_TEST(reg[pos->a])) pos += pos->b;
       break;
       case OP_CALL:
         if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {
@@ -196,7 +196,7 @@ reentry:
           if (pos->code == OP_GETUPVAL) {
             val = PN_PUSH(val, upvals[pos->b]);
           } else if (pos->code == OP_GETLOCAL) {
-            val = PN_PUSH(val, locals[pos->b]);
+            val = PN_PUSH(val, (PN)&locals[pos->b]);
           }
         });
         reg[areg] = potion_closure_new(P, (imp_t)potion_vm_proto, PN_NIL, val);
