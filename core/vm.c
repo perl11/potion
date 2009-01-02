@@ -45,10 +45,10 @@ PN potion_vm(Potion *P, PN proto, PN args) {
         reg[pos->a] = (PN)pos->b;
       break;
       case OP_GETLOCAL:
-        reg[pos->a] = locals[pos->b]; 
+        reg[pos->a] = locals[pos->b];
       break;
       case OP_SETLOCAL:
-        locals[pos->a] = reg[pos->b]; 
+        locals[pos->a] = reg[pos->b];
       break;
       case OP_SETTABLE:
         reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
@@ -75,11 +75,14 @@ PN potion_vm(Potion *P, PN proto, PN args) {
       case OP_NOT:
         reg[pos->a] = PN_BOOL(!PN_TEST(reg[pos->a]));
       break;
+      case OP_CMP:
+        reg[pos->a] = PN_NUM(PN_INT(reg[pos->b]) - PN_INT(reg[pos->a]));
+      break;
       case OP_NEQ:
-        reg[pos->a] = PN_BOOL(reg[pos->a] != PN_INT(reg[pos->b]));
+        reg[pos->a] = PN_BOOL(reg[pos->a] != reg[pos->b]);
       break;
       case OP_EQ:
-        reg[pos->a] = PN_BOOL(reg[pos->a] == PN_INT(reg[pos->b]));
+        reg[pos->a] = PN_BOOL(reg[pos->a] == reg[pos->b]);
       break;
       case OP_LT:
         reg[pos->a] = PN_BOOL(PN_INT(reg[pos->a]) < PN_INT(reg[pos->b]));
@@ -93,6 +96,12 @@ PN potion_vm(Potion *P, PN proto, PN args) {
       case OP_GTE:
         reg[pos->a] = PN_BOOL(PN_INT(reg[pos->a]) >= PN_INT(reg[pos->b]));
       break;
+      case OP_BITL:
+        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) << PN_INT(reg[pos->b]));
+      break;
+      case OP_BITR:
+        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) >> PN_INT(reg[pos->b]));
+      break;
       case OP_BIND:
         reg[pos->a] = potion_bind(P, reg[pos->b], reg[pos->a]);
       break;
@@ -104,7 +113,7 @@ PN potion_vm(Potion *P, PN proto, PN args) {
       break;
       case OP_CALL:
         if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {
-          reg[pos->a] = 
+          reg[pos->a] =
             ((struct PNClosure *)reg[pos->b])->method(P, reg[pos->b], reg[pos->a], reg[pos->a+1]);
         } else {
           reg[pos->a] = potion_vm(P, reg[pos->b], reg[pos->a]);

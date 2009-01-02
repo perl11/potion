@@ -19,12 +19,12 @@ const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {
   printf("usage: potion [options] [script] [arguments]\n"
-      "  sizeof(PN=%zd, PNGarbage=%zd, PNTuple=%zd, PNObject=%zd, PN_OP=%zd)\n"
+      "  sizeof(PN=%zd, PNGarbage=%zd, PNTuple=%zd, PNObject=%zd, PNString=%zd)\n"
       "  -V, --verbose      show bytecode and ast info\n"
       "  -c, --compile      compile the script to bytecode\n"
       "  -h, --help         show this helpful stuff\n"
       "  -v, --version      show version\n",
-      sizeof(PN), sizeof(struct PNGarbage), sizeof(struct PNTuple), sizeof(struct PNObject), sizeof(PN_OP));
+      sizeof(PN), sizeof(struct PNGarbage), sizeof(struct PNTuple), sizeof(struct PNObject), sizeof(struct PNString));
 }
 
 static void potion_cmd_version() {

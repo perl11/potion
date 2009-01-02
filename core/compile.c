@@ -26,25 +26,23 @@
   })
 
 const char *potion_op_names[] = {
-  "noop",
-  "move", "loadk", "loadpn",
-  "getlocal", "setlocal", "gettable",
-  "settable", "getpath", "setpath", "self",
-  "add", "sub", "mult", "div",
-  "mod", "pow", "not", "eq", "neq",
-  "lt", "lte", "gt", "gte",
+  "noop", "move", "loadk", "loadpn",
+  "getlocal", "setlocal", "gettable", "settable",
+  "getpath", "setpath", "self",
+  "add", "sub", "mult", "div", "mod", "pow",
+  "not", "cmp", "eq", "neq",
+  "lt", "lte", "gt", "gte", "bitl", "bitr",
   "bind", "jump", "test", "call",
   "tailcall", "return", "proto"
 };
 
 const u8 potion_op_args[] = {
-  0,
-  2, 2, 2,
-  2, 2, 2,
-  2, 2, 2, 1,
+  0, 2, 2, 2,
   2, 2, 2, 2,
-  2, 2, 1, 2, 2,
-  2, 2, 2, 2,
+  2, 2, 1,
+  2, 2, 2, 2, 2, 2,
+  1, 2, 2, 2,
+  2, 2, 2, 2, 2, 2,
   2, 1, 2, 2,
   2, 1, 2
 };
@@ -127,10 +125,18 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     }
     break;
 
-    case AST_VALUE: {
-      unsigned long num = PN_PUT(f->values, t->a[0]);
-      PN_ASM2(OP_LOADK, reg, num);
-    }
+    case AST_VALUE:
+      switch (t->a[0]) {
+        case PN_NIL: case PN_TRUE: case PN_FALSE:
+          PN_ASM2(OP_LOADPN, reg, t->a[0]);
+        break;
+
+        default: {
+          unsigned long num = PN_PUT(f->values, t->a[0]);
+          PN_ASM2(OP_LOADK, reg, num);
+        }
+        break;
+      }
     break;
 
     case AST_ASSIGN: {
@@ -162,31 +168,28 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     }
     break;
 
-    case AST_GT: case AST_GTE: case AST_LT: case AST_LTE: {
-      PN_ARG(0, reg);
-      PN_ARG(1, reg + 1);
-      switch (t->part) {
-        case AST_GTE: PN_ASM2(OP_GTE, reg, reg + 1); break;
-        case AST_GT:  PN_ASM2(OP_GT, reg, reg + 1);  break;
-        case AST_LT:  PN_ASM2(OP_LT, reg, reg + 1);  break;
-        case AST_LTE: PN_ASM2(OP_LTE, reg, reg + 1); break;
-      }
-    }
-    break;
-
+    case AST_CMP: case AST_EQ: case AST_NEQ:
+    case AST_GT: case AST_GTE: case AST_LT: case AST_LTE:
     case AST_PLUS: case AST_MINUS: case AST_TIMES: case AST_DIV:
     case AST_REM:  case AST_POW:   case AST_BITL:  case AST_BITR: {
       PN_ARG(0, reg);
       PN_ARG(1, reg + 1);
       switch (t->part) {
+        case AST_CMP:   PN_ASM2(OP_CMP, reg, reg + 1);  break;
+        case AST_EQ:    PN_ASM2(OP_EQ,  reg, reg + 1);  break;
+        case AST_NEQ:   PN_ASM2(OP_NEQ, reg, reg + 1);  break;
+        case AST_GTE:   PN_ASM2(OP_GTE, reg, reg + 1);  break;
+        case AST_GT:    PN_ASM2(OP_GT, reg, reg + 1);   break;
+        case AST_LT:    PN_ASM2(OP_LT, reg, reg + 1);   break;
+        case AST_LTE:   PN_ASM2(OP_LTE, reg, reg + 1);  break;
         case AST_PLUS:  PN_ASM2(OP_ADD, reg, reg + 1);  break;
         case AST_MINUS: PN_ASM2(OP_SUB, reg, reg + 1);  break;
         case AST_TIMES: PN_ASM2(OP_MULT, reg, reg + 1); break;
         case AST_DIV:   PN_ASM2(OP_DIV, reg, reg + 1);  break;
         case AST_REM:   PN_ASM2(OP_REM, reg, reg + 1);  break;
         case AST_POW:   PN_ASM2(OP_POW, reg, reg + 1);  break;
-        // case AST_BITL:  PN_ASM2(OP_BITL, reg, reg + 1); break;
-        // case AST_BITR:  PN_ASM2(OP_BITR, reg, reg + 1); break;
+        case AST_BITL:  PN_ASM2(OP_BITL, reg, reg + 1); break;
+        case AST_BITR:  PN_ASM2(OP_BITR, reg, reg + 1); break;
       }
     }
     break;
