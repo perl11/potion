@@ -19,12 +19,17 @@ const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {
   printf("usage: potion [options] [script] [arguments]\n"
-      "  sizeof(PN=%zd, PNGarbage=%zd, PNTuple=%zd, PNObject=%zd, PNString=%zd)\n"
       "  -V, --verbose      show bytecode and ast info\n"
       "  -c, --compile      compile the script to bytecode\n"
       "  -h, --help         show this helpful stuff\n"
-      "  -v, --version      show version\n",
-      sizeof(PN), sizeof(struct PNGarbage), sizeof(struct PNTuple), sizeof(struct PNObject), sizeof(struct PNString));
+      "  -v, --version      show version\n");
+}
+
+static void potion_cmd_stats() {
+  printf("sizeof(PN): %d\nsizeof(PNGarbage): %d\nsizeof(PNObject): %d\n",
+      (int)sizeof(PN), (int)sizeof(struct PNGarbage), (int)sizeof(struct PNObject));
+  printf("sizeof(PNTuple): %d\nsizeof(PN + PNTuple + PN_NUM): %d\n",
+      (int)sizeof(struct PNTuple), (int)((2 * sizeof(PN)) + sizeof(struct PNTuple)));
 }
 
 static void potion_cmd_version() {
@@ -135,6 +140,12 @@ int main(int argc, char *argv[]) {
       if (strcmp(argv[i], "-h") == 0 ||
           strcmp(argv[i], "--help") == 0) {
         potion_cmd_usage();
+        return 0;
+      }
+
+      if (strcmp(argv[i], "-s") == 0 ||
+          strcmp(argv[i], "--stats") == 0) {
+        potion_cmd_stats();
         return 0;
       }
 

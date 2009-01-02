@@ -32,7 +32,7 @@ const char *potion_op_names[] = {
   "add", "sub", "mult", "div", "mod", "pow",
   "not", "cmp", "eq", "neq",
   "lt", "lte", "gt", "gte", "bitl", "bitr",
-  "bind", "jump", "test", "testjmp",
+  "bind", "jump", "test", "testjmp", "notjmp",
   "call", "tailcall", "return", "proto"
 };
 
@@ -43,7 +43,7 @@ const u8 potion_op_args[] = {
   2, 2, 2, 2, 2, 2,
   1, 2, 2, 2,
   2, 2, 2, 2, 2, 2,
-  2, 1, 2, 2,
+  2, 1, 2, 2, 2,
   2, 2, 1, 2
 };
 
@@ -214,48 +214,70 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
 
     case AST_MESSAGE:
     case AST_QUERY: {
-      u8 breg = reg, opcode = OP_GETUPVAL;
-      unsigned long num = PN_GET(f->upvals, t->a[0]);
       int arg = (t->a[1] != PN_NIL && t->a[1] != PN_EMPTY);
       int call = (t->a[2] != PN_NIL || arg);
-      if (num == PN_NONE) {
-        num = PN_GET(f->locals, t->a[0]);
-        opcode = OP_GETLOCAL;
-      }
-
-      if (num == PN_NONE) {
-        if (call) {
-          if (arg)
-            potion_source_asmb(P, f, (struct PNSource *)t->a[1], ++breg, pos);
-          else
-            PN_ASM2(OP_LOADPN, ++breg, t->a[1]);
-          if (t->a[2] != PN_NIL)
-            PN_BLOCK(++breg, t->a[2], PN_NIL);
-        }
-        num = PN_PUT(f->values, t->a[0]);
-        PN_ASM2(OP_LOADK, ++breg, num);
-        PN_ASM2(OP_BIND, breg, reg);
-        if (t->part == AST_MESSAGE) {
-          PN_ASM2(OP_CALL, reg, breg);
+      if (t->a[0] == PN_if) {
+        if (arg)
+          potion_source_asmb(P, f, (struct PNSource *)t->a[1], reg, pos);
+        else
+          PN_ASM2(OP_LOADPN, reg, t->a[1]);
+        PN_ASM2(OP_NOTJMP, reg, 2);
+        if (t->a[2] != PN_NIL) {
+          PN_BLOCK(reg + 1, t->a[2], PN_NIL);
+          PN_ASM2(OP_CALL, reg, reg + 1);
         } else
-          PN_ASM2(OP_TEST, reg, breg);
+          PN_ASM1(OP_NONE, 0);
+      } else if (t->a[0] == PN_else) {
+        PN_ASM2(OP_TESTJMP, reg, 2);
+        // if (arg)
+        //   potion_source_asmb(P, f, (struct PNSource *)t->a[1], reg, pos);
+        if (t->a[2] != PN_NIL) {
+          PN_BLOCK(reg + 1, t->a[2], PN_NIL);
+          PN_ASM2(OP_CALL, reg, reg + 1);
+        } else
+          PN_ASM1(OP_NONE, 0);
       } else {
-        if (t->part == AST_QUERY) {
-          PN_ASM2(opcode, reg, num);
-          PN_ASM2(OP_TEST, reg, reg);
-        } else if (call) {
-          if (arg)
-            potion_source_asmb(P, f, (struct PNSource *)t->a[1], breg, pos);
-          else
-            PN_ASM2(OP_LOADPN, breg, t->a[1]);
-          if (t->a[2] != PN_NIL)
-            PN_BLOCK(++breg, t->a[2], PN_NIL);
-          PN_ASM2(opcode, ++breg, num);
-          PN_ASM2(OP_CALL, reg, breg);
-        } else
-          PN_ASM2(opcode, reg, num);
+        u8 breg = reg, opcode = OP_GETUPVAL;
+        unsigned long num = PN_GET(f->upvals, t->a[0]);
+        if (num == PN_NONE) {
+          num = PN_GET(f->locals, t->a[0]);
+          opcode = OP_GETLOCAL;
+        }
+
+        if (num == PN_NONE) {
+          if (call) {
+            if (arg)
+              potion_source_asmb(P, f, (struct PNSource *)t->a[1], ++breg, pos);
+            else
+              PN_ASM2(OP_LOADPN, ++breg, t->a[1]);
+            if (t->a[2] != PN_NIL)
+              PN_BLOCK(++breg, t->a[2], PN_NIL);
+          }
+          num = PN_PUT(f->values, t->a[0]);
+          PN_ASM2(OP_LOADK, ++breg, num);
+          PN_ASM2(OP_BIND, breg, reg);
+          if (t->part == AST_MESSAGE) {
+            PN_ASM2(OP_CALL, reg, breg);
+          } else
+            PN_ASM2(OP_TEST, reg, breg);
+        } else {
+          if (t->part == AST_QUERY) {
+            PN_ASM2(opcode, reg, num);
+            PN_ASM2(OP_TEST, reg, reg);
+          } else if (call) {
+            if (arg)
+              potion_source_asmb(P, f, (struct PNSource *)t->a[1], breg, pos);
+            else
+              PN_ASM2(OP_LOADPN, breg, t->a[1]);
+            if (t->a[2] != PN_NIL)
+              PN_BLOCK(++breg, t->a[2], PN_NIL);
+            PN_ASM2(opcode, ++breg, num);
+            PN_ASM2(OP_CALL, reg, breg);
+          } else
+            PN_ASM2(opcode, reg, num);
+        }
+        PN_REG(f, breg);
       }
-      PN_REG(f, breg);
     }
     break;
 

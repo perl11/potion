@@ -22,11 +22,11 @@ struct PNVtable {
 
 unsigned long potion_vt_id = PN_TUSER;
 
-PN potion_closure_new(Potion *P, imp_t meth, PN sig, PN val) {
+PN potion_closure_new(Potion *P, imp_t meth, PN sig, PN data) {
   struct PNClosure *c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, 0);
   c->method = meth;
   c->sig = sig;
-  c->value = val;
+  c->data = data;
   return (PN)c;
 }
 
@@ -48,10 +48,24 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
   return (PN)vt;
 }
 
+PN potion_proto_method(Potion *P, PN cl, PN self, PN args) {
+  return potion_vm(P, PN_CLOSURE(cl)->data, args);
+}
+
+PN potion_getter_method(Potion *P, PN cl, PN self) {
+  return PN_CLOSURE(cl)->data;
+}
+
 PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int ret;
   struct PNVtable *vt = (struct PNVtable *)self;
   unsigned k = kh_put(PN, vt->kh, key, &ret);
+  if (!PN_IS_CLOSURE(method)) {
+    if (PN_IS_PROTO(method))
+      method = potion_closure_new(P, (imp_t)potion_proto_method, PN_NIL, method);
+    else
+      method = potion_closure_new(P, (imp_t)potion_getter_method, PN_EMPTY, method);
+  }
   return kh_value(vt->kh, k) = method;
 }
 
@@ -79,6 +93,5 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
 }
 
 void potion_lobby_init(Potion *P) {
-  struct PNTable *t = PN_BOOT_OBJ_ALLOC(struct PNTable, PN_TTABLE, 0);
-  P->lobby = (PN)t;
+  P->lobby = PN_VTABLE(PN_TLOBBY);
 }

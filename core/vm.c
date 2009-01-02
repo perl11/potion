@@ -35,7 +35,7 @@ reentry:
   self = locals + PN_TUPLE_LEN(f->locals);
   reg = self + 1;
 
-  reg[0] = PN_NIL;
+  reg[0] = PN_VTABLE(PN_TLOBBY);
   if (!PN_IS_TUPLE(args)) args = PN_EMPTY;
   PN_TUPLE_EACH(f->sig, i, v, {
     if (PN_IS_STR(v)) {
@@ -125,6 +125,9 @@ reentry:
       break;
       case OP_TESTJMP:
         if (PN_TEST(reg[pos->a])) pos++;
+      break;
+      case OP_NOTJMP:
+        if (!PN_TEST(reg[pos->a])) pos++;
       break;
       case OP_CALL:
         if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {

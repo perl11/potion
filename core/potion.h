@@ -18,7 +18,7 @@
 //
 // types
 //
-typedef unsigned long PN;
+typedef unsigned long PN, PN_GC;
 typedef unsigned int PNType;
 typedef struct Potion_State Potion;
 
@@ -43,7 +43,8 @@ struct PNGarbage;
 #define PN_TSOURCE      11
 #define PN_TBYTES       12
 #define PN_TPROTO       13
-#define PN_TUSER        14
+#define PN_TLOBBY       14
+#define PN_TUSER        15
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
@@ -75,8 +76,10 @@ struct PNGarbage;
 #define PN_INT(x)       (((long)(x))>>1)
 #define PN_STR_PTR(x)   ((struct PNString *)(x))->chars
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
-#define PN_FUNC(f, s)   potion_closure_new(P, (imp_t)f, 0, potion_sig(P, s))
-#define PN_GB(x,o,m)    (x).next = o; (x).marked = m
+#define PN_CLOSURE(x)   ((struct PNClosure *)(x))
+#define PN_FUNC(f, s)   potion_closure_new(P, (imp_t)f, potion_sig(P, s), 0)
+#define PN_FUNCD(f,s,d) potion_closure_new(P, (imp_t)f, potion_sig(P, s), d)
+#define PN_GB(x,o,m)    (x).next = ((PN_GC)o) | m;
 
 #define PN_TUP(X)       potion_tuple_new(P, X)
 #define PN_PUSH(T, X)   potion_tuple_push(P, T, X)
@@ -97,8 +100,7 @@ struct PNGarbage;
   }
 
 struct PNGarbage {
-  struct PNGarbage *next;
-  unsigned char marked;
+  PN_GC next;
 };
 
 #define PN_OBJECT_HEADER \
@@ -134,7 +136,7 @@ struct PNClosure {
   PN_OBJECT_HEADER
   imp_t method;
   PN sig;
-  PN value;
+  PN data;
 };
 
 struct PNProto {
@@ -150,7 +152,7 @@ struct PNProto {
 };
 
 struct PNTuple {
-  struct PNGarbage *next;
+  PN_GC next;
   unsigned long len;
   PN set[0];
 };
@@ -219,7 +221,7 @@ struct PNMcache {
 } potion_mcache[8192];
 #endif
 
-PN PN_allocate, PN_compile, PN_def, PN_delegated, PN_inspect, PN_lookup;
+PN PN_allocate, PN_compile, PN_def, PN_delegated, PN_else, PN_if, PN_inspect, PN_lookup;
 
 //
 // the Potion functions
