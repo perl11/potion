@@ -143,6 +143,7 @@ struct PNProto {
   PN sig;    // argument signature
   PN stack;  // size of the stack
   PN locals; // local variables
+  PN upvals; // variables in upper scopes
   PN values; // numbers, strings, etc.
   PN protos; // nested closures
   PN asmb;   // assembled instructions

@@ -13,15 +13,29 @@
 
 extern u8 potion_op_args[];
 
+// TODO: place the stack in P, allow it to allocate as needed
 PN potion_vm(Potion *P, PN proto, PN args) {
   struct PNProto *f = (struct PNProto *)proto;
-  long stack = PN_INT(f->stack);
-  int argx = 0;
-  PN_OP *pos, *end;
-  PN *locals = PN_ALLOC_N(PN, PN_TUPLE_LEN(f->locals) + stack + 1);
-  PN *self = locals + PN_TUPLE_LEN(f->locals);
-  PN *reg = self + 1;
 
+  // these variables persist as we jump around
+  PN *stack = PN_ALLOC_N(PN, 2000);
+  int depth = 0;
+  PN val = PN_NIL;
+
+  // these variables change from proto to proto
+  PN_OP *pos, *end;
+  long stacksize = 0, argx = 0;
+  PN *locals, *self, *reg;
+  PN *current = stack;
+
+  pos = ((PN_OP *)PN_STR_PTR(f->asmb));
+reentry:
+  stacksize = PN_INT(f->stack);
+  locals = current;
+  self = locals + PN_TUPLE_LEN(f->locals);
+  reg = self + 1;
+
+  reg[0] = PN_NIL;
   if (!PN_IS_TUPLE(args)) args = PN_EMPTY;
   PN_TUPLE_EACH(f->sig, i, v, {
     if (PN_IS_STR(v)) {
@@ -30,8 +44,6 @@ PN potion_vm(Potion *P, PN proto, PN args) {
     }
   });
 
-  reg[0] = PN_NIL;
-  pos = (PN_OP *)PN_STR_PTR(f->asmb);
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
   while (pos < end) {
     switch (pos->code) {
@@ -111,16 +123,34 @@ PN potion_vm(Potion *P, PN proto, PN args) {
       case OP_TEST:
         reg[pos->a] = PN_BOOL(PN_TEST(reg[pos->a]));
       break;
+      case OP_TESTJMP:
+        if (PN_TEST(reg[pos->a])) pos++;
+      break;
       case OP_CALL:
         if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {
           reg[pos->a] =
             ((struct PNClosure *)reg[pos->b])->method(P, reg[pos->b], reg[pos->a], reg[pos->a+1]);
         } else {
-          reg[pos->a] = potion_vm(P, reg[pos->b], reg[pos->a]);
+          f = (struct PNProto *)reg[pos->b];
+          args = reg[pos->a];
+          current = reg + stacksize + 2;
+          current[-2] = (PN)f;
+          current[-1] = (PN)pos;
+          pos = ((PN_OP *)PN_STR_PTR(f->asmb));
+          depth++;
+          goto reentry;
         }
       break;
       case OP_RETURN:
-        return reg[pos->a];
+        if (--depth) {
+          f = (struct PNProto *)current[-2];
+          pos = (PN_OP *)current[-1];
+          current -= PN_TUPLE_LEN(f->locals) + PN_INT(f->stack) + 3;
+          goto reentry;
+        } else {
+          reg[0] = reg[pos->a];
+          goto done;
+        }
       break;
       case OP_PROTO:
         reg[pos->a] = PN_TUPLE_AT(f->protos, pos->b);
@@ -128,5 +158,9 @@ PN potion_vm(Potion *P, PN proto, PN args) {
     }
     pos++;
   }
-  return reg[0];
+
+done:
+  val = reg[0];
+  PN_FREE(stack);
+  return val;
 }
