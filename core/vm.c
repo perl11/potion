@@ -18,23 +18,31 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
   return potion_vm(P, proto, args, PN_CLOSURE(cl)->data);
 }
 
-// TODO: place the stack in P, allow it to allocate as needed
-PN potion_vm(Potion *P, PN proto, PN args, PN upargs) {
+#define STACK_MAX 72000
+
+PN potion_vm(Potion *P, PN proto, PN vargs, PN upargs) {
   struct PNProto *f = (struct PNProto *)proto;
 
   // these variables persist as we jump around
-  PN *stack = PN_ALLOC_N(PN, 2000);
+  PN *stack = PN_ALLOC_N(PN, STACK_MAX);
   int depth = 0;
   PN val = PN_NIL;
 
   // these variables change from proto to proto
   PN_OP *pos, *end;
   long argx = 0;
-  PN *upvals, *locals, *self, *reg;
+  PN *args, *upvals, *locals, *self, *reg;
   PN *current = stack;
 
   pos = ((PN_OP *)PN_STR_PTR(f->asmb));
+  args = PN_GET_TUPLE(vargs)->set;
 reentry:
+  // TODO: place the stack in P, allow it to allocate as needed
+  if (current - stack >= STACK_MAX) {
+    fprintf(stderr, "all registers used up!");
+    exit(1);
+  }
+
   upvals = current;
   locals = upvals + PN_TUPLE_LEN(f->upvals);
   self = locals + PN_TUPLE_LEN(f->locals);
@@ -42,17 +50,18 @@ reentry:
 
   if (pos == (PN_OP *)PN_STR_PTR(f->asmb)) {
     reg[0] = PN_VTABLE(PN_TLOBBY);
-    if (!PN_IS_TUPLE(upargs)) upargs = PN_EMPTY;
-    PN_TUPLE_EACH(upargs, i, v, {
-      if (i > 0) upvals[i-1] = v;
-    });
+    if (PN_IS_TUPLE(upargs)) {
+      PN_TUPLE_EACH(upargs, i, v, {
+        if (i > 0) upvals[i-1] = v;
+      });
+    }
 
-    if (PN_TEST(args)) {
+    if (args != NULL) {
       argx = 0;
       PN_TUPLE_EACH(f->sig, i, v, {
         if (PN_IS_STR(v)) {
           unsigned long num = PN_GET(f->locals, v);
-          locals[num] = PN_TUPLE_AT(args, argx++);
+          locals[num] = args[argx++];
         }
       });
     }
@@ -155,7 +164,7 @@ reentry:
             reg[pos->a] =
               ((struct PNClosure *)reg[pos->b])->method(P, reg[pos->b], reg[pos->a], reg[pos->a+1]);
           } else {
-            args = reg[pos->a];
+            args = &reg[pos->a];
             upargs = PN_CLOSURE(reg[pos->b])->data;
             current = reg + PN_INT(f->stack) + 2;
             current[-2] = (PN)f;

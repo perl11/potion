@@ -268,9 +268,12 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
 
         if (num == PN_NONE) {
           if (call) {
-            if (arg)
-              potion_source_asmb(P, f, (struct PNSource *)t->a[1], ++breg, pos);
-            else
+            if (arg) {
+              PN test = t->a[1];
+              if (PN_PART(test) == AST_TABLE)
+                test = PN_TUPLE_AT(PN_S(t->a[1], 0), 0);
+              potion_source_asmb(P, f, (struct PNSource *)test, ++breg, pos);
+            } else
               PN_ASM2(OP_LOADPN, ++breg, t->a[1]);
             if (t->a[2] != PN_NIL)
               PN_BLOCK(++breg, t->a[2], PN_NIL);
@@ -287,9 +290,12 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
             PN_ASM2(opcode, reg, num);
             PN_ASM2(OP_TEST, reg, reg);
           } else if (call) {
-            if (arg)
-              potion_source_asmb(P, f, (struct PNSource *)t->a[1], breg, pos);
-            else
+            if (arg) {
+              PN test = t->a[1];
+              if (PN_PART(test) == AST_TABLE)
+                test = PN_TUPLE_AT(PN_S(t->a[1], 0), 0);
+              potion_source_asmb(P, f, (struct PNSource *)test, breg, pos);
+            } else
               PN_ASM2(OP_LOADPN, breg, t->a[1]);
             if (t->a[2] != PN_NIL)
               PN_BLOCK(++breg, t->a[2], PN_NIL);
