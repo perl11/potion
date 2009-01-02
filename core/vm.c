@@ -25,13 +25,13 @@ PN potion_vm(Potion *P, PN proto, PN vargs, PN upargs) {
 
   // these variables persist as we jump around
   PN *stack = PN_ALLOC_N(PN, STACK_MAX);
-  int depth = 0;
   PN val = PN_NIL;
 
   // these variables change from proto to proto
+  // current = upvals | locals | self | reg
   PN_OP *pos, *end;
   long argx = 0;
-  PN *args, *upvals, *locals, *self, *reg;
+  PN *args, *upvals, *locals, *reg;
   PN *current = stack;
 
   pos = ((PN_OP *)PN_STR_PTR(f->asmb));
@@ -44,9 +44,8 @@ reentry:
   }
 
   upvals = current;
-  locals = upvals + PN_TUPLE_LEN(f->upvals);
-  self = locals + PN_TUPLE_LEN(f->locals);
-  reg = self + 1;
+  locals = upvals + f->upvalsize;
+  reg = locals + f->localsize + 1;
 
   if (pos == (PN_OP *)PN_STR_PTR(f->asmb)) {
     reg[0] = PN_VTABLE(PN_TLOBBY);
@@ -95,10 +94,10 @@ reentry:
         reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
       break;
       case OP_ADD:
-        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) + PN_INT(reg[pos->b]));
+        reg[pos->a] = reg[pos->a] + (reg[pos->b]-1);
       break;
       case OP_SUB:
-        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) - PN_INT(reg[pos->b]));
+        reg[pos->a] = reg[pos->a] - (reg[pos->b]-1);
       break;
       case OP_MULT:
         reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) * PN_INT(reg[pos->b]));
@@ -172,7 +171,6 @@ reentry:
 
             f = (struct PNProto *)PN_TUPLE_AT(upargs, 0);
             pos = ((PN_OP *)PN_STR_PTR(f->asmb));
-            depth++;
             goto reentry;
           }
         } else {
@@ -180,13 +178,13 @@ reentry:
         }
       break;
       case OP_RETURN:
-        if (depth--) {
+        if (current != stack) {
           val = reg[pos->a];
 
           f = (struct PNProto *)current[-2];
           pos = (PN_OP *)current[-1];
           reg = current - (PN_INT(f->stack) + 2);
-          current = reg - (PN_TUPLE_LEN(f->locals) + PN_TUPLE_LEN(f->upvals) + 1);
+          current = reg - (f->localsize + f->upvalsize + 1);
           reg[pos->a] = val;
           pos++;
           goto reentry;

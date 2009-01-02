@@ -385,6 +385,8 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   PN_ASM1(OP_RETURN, 0);
   // TODO: byte strings should be more flexible than this
   PN_STR_LEN(f->asmb) = (char *)ptr - start;
+  f->localsize = PN_TUPLE_LEN(f->locals);
+  f->upvalsize = PN_TUPLE_LEN(f->upvals);
   return (PN)f;
 }
 
@@ -427,6 +429,8 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   len = READ_PN(pn, *ptr);
   f->asmb = potion_bytes(P, len);
   PN_MEMCPY_N(PN_STR_PTR(f->asmb), *ptr, u8, len);
+  f->localsize = PN_TUPLE_LEN(f->locals);
+  f->upvalsize = PN_TUPLE_LEN(f->upvals);
   *ptr += len;
   return (PN)f;
 }

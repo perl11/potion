@@ -85,8 +85,8 @@ struct PNGarbage;
 #define PN_PUSH(T, X)   potion_tuple_push(P, T, X)
 #define PN_GET(T, X)    potion_tuple_find(P, T, X)
 #define PN_PUT(T, X)    potion_tuple_put(P, &(T), X)
-#define PN_SET_TUPLE(t) (((PN)t)|PN_TUPLE_FLAG)
-#define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)^PN_TUPLE_FLAG))
+#define PN_SET_TUPLE(t) (((PN)t)+PN_TUPLE_FLAG)
+#define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)-PN_TUPLE_FLAG))
 #define PN_TUPLE_LEN(t) (t == PN_EMPTY ? 0 : PN_GET_TUPLE(t)->len)
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
 #define PN_TUPLE_EACH(T, I, V, B) \
@@ -148,6 +148,7 @@ struct PNProto {
   PN upvals; // variables in upper scopes
   PN values; // numbers, strings, etc.
   PN protos; // nested closures
+  long localsize, upvalsize;
   PN asmb;   // assembled instructions
 };
 
