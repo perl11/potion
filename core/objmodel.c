@@ -30,6 +30,11 @@ PN potion_closure_new(Potion *P, imp_t meth, PN sig, PN data) {
   return (PN)c;
 }
 
+PN potion_closure_inspect(Potion *P, PN cl, PN self, PN len) {
+  printf("#<closure>");
+  return PN_NIL;
+}
+
 PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
   struct PNVtable *vt = (struct PNVtable *)self;
   struct PNObject *o = PN_ALLOC2(struct PNObject, PN_INT(len));
@@ -49,7 +54,7 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
 }
 
 PN potion_proto_method(Potion *P, PN cl, PN self, PN args) {
-  return potion_vm(P, PN_CLOSURE(cl)->data, args);
+  return potion_vm(P, PN_CLOSURE(cl)->data, args, PN_EMPTY);
 }
 
 PN potion_getter_method(Potion *P, PN cl, PN self) {
@@ -90,6 +95,11 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
   if (!closure)
     fprintf(stderr, "lookup failed %lu %s\n", vt, PN_STR_PTR(msg));
   return closure;
+}
+
+void potion_object_init(Potion *P) {
+  PN clo_vt = PN_VTABLE(PN_TCLOSURE);
+  potion_method(clo_vt, "inspect", potion_closure_inspect, 0);
 }
 
 void potion_lobby_init(Potion *P) {

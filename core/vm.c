@@ -1,5 +1,5 @@
 //
-// compile.c
+// vm.c
 // the vm execution loop
 //
 // (c) 2008 why the lucky stiff, the freelance professor
@@ -13,8 +13,13 @@
 
 extern u8 potion_op_args[];
 
+PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
+  PN proto = PN_TUPLE_AT(PN_CLOSURE(cl)->data, 0);
+  return potion_vm(P, proto, args, PN_CLOSURE(cl)->data);
+}
+
 // TODO: place the stack in P, allow it to allocate as needed
-PN potion_vm(Potion *P, PN proto, PN args) {
+PN potion_vm(Potion *P, PN proto, PN args, PN upargs) {
   struct PNProto *f = (struct PNProto *)proto;
 
   // these variables persist as we jump around
@@ -24,25 +29,34 @@ PN potion_vm(Potion *P, PN proto, PN args) {
 
   // these variables change from proto to proto
   PN_OP *pos, *end;
-  long stacksize = 0, argx = 0;
-  PN *locals, *self, *reg;
+  long argx = 0;
+  PN *upvals, *locals, *self, *reg;
   PN *current = stack;
 
   pos = ((PN_OP *)PN_STR_PTR(f->asmb));
 reentry:
-  stacksize = PN_INT(f->stack);
-  locals = current;
+  upvals = current;
+  locals = upvals + PN_TUPLE_LEN(f->upvals);
   self = locals + PN_TUPLE_LEN(f->locals);
   reg = self + 1;
 
-  reg[0] = PN_VTABLE(PN_TLOBBY);
-  if (!PN_IS_TUPLE(args)) args = PN_EMPTY;
-  PN_TUPLE_EACH(f->sig, i, v, {
-    if (PN_IS_STR(v)) {
-      unsigned long num = PN_GET(f->locals, v);
-      locals[num] = PN_TUPLE_AT(args, argx++);
+  if (pos == (PN_OP *)PN_STR_PTR(f->asmb)) {
+    reg[0] = PN_VTABLE(PN_TLOBBY);
+    if (!PN_IS_TUPLE(upargs)) upargs = PN_EMPTY;
+    PN_TUPLE_EACH(upargs, i, v, {
+      if (i > 0) upvals[i-1] = v;
+    });
+
+    if (PN_TEST(args)) {
+      argx = 0;
+      PN_TUPLE_EACH(f->sig, i, v, {
+        if (PN_IS_STR(v)) {
+          unsigned long num = PN_GET(f->locals, v);
+          locals[num] = PN_TUPLE_AT(args, argx++);
+        }
+      });
     }
-  });
+  }
 
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
   while (pos < end) {
@@ -60,7 +74,13 @@ reentry:
         reg[pos->a] = locals[pos->b];
       break;
       case OP_SETLOCAL:
-        locals[pos->a] = reg[pos->b];
+        locals[pos->b] = reg[pos->a];
+      break;
+      case OP_GETUPVAL:
+        reg[pos->a] = upvals[pos->b];
+      break;
+      case OP_SETUPVAL:
+        upvals[pos->b] = reg[pos->a];
       break;
       case OP_SETTABLE:
         reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
@@ -131,32 +151,56 @@ reentry:
       break;
       case OP_CALL:
         if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {
-          reg[pos->a] =
-            ((struct PNClosure *)reg[pos->b])->method(P, reg[pos->b], reg[pos->a], reg[pos->a+1]);
+          if (PN_CLOSURE(reg[pos->b])->method != (imp_t)potion_vm_proto) {
+            reg[pos->a] =
+              ((struct PNClosure *)reg[pos->b])->method(P, reg[pos->b], reg[pos->a], reg[pos->a+1]);
+          } else {
+            args = reg[pos->a];
+            upargs = PN_CLOSURE(reg[pos->b])->data;
+            current = reg + PN_INT(f->stack) + 2;
+            current[-2] = (PN)f;
+            current[-1] = (PN)pos;
+
+            f = (struct PNProto *)PN_TUPLE_AT(upargs, 0);
+            pos = ((PN_OP *)PN_STR_PTR(f->asmb));
+            depth++;
+            goto reentry;
+          }
         } else {
-          f = (struct PNProto *)reg[pos->b];
-          args = reg[pos->a];
-          current = reg + stacksize + 2;
-          current[-2] = (PN)f;
-          current[-1] = (PN)pos;
-          pos = ((PN_OP *)PN_STR_PTR(f->asmb));
-          depth++;
-          goto reentry;
+          reg[pos->a] = potion_send(reg[pos->b], PN_call);
         }
       break;
       case OP_RETURN:
-        if (--depth) {
+        if (depth--) {
+          val = reg[pos->a];
+
           f = (struct PNProto *)current[-2];
           pos = (PN_OP *)current[-1];
-          current -= PN_TUPLE_LEN(f->locals) + PN_INT(f->stack) + 3;
+          reg = current - (PN_INT(f->stack) + 2);
+          current = reg - (PN_TUPLE_LEN(f->locals) + PN_TUPLE_LEN(f->upvals) + 1);
+          reg[pos->a] = val;
+          pos++;
           goto reentry;
         } else {
           reg[0] = reg[pos->a];
           goto done;
         }
       break;
-      case OP_PROTO:
-        reg[pos->a] = PN_TUPLE_AT(f->protos, pos->b);
+      case OP_PROTO: {
+        unsigned areg = pos->a;
+        proto = PN_TUPLE_AT(f->protos, pos->b);
+        val = PN_TUP(proto);
+        PN_TUPLE_EACH(((struct PNProto *)proto)->upvals, i, v, {
+          // TODO: pass in weakrefs as upvals
+          pos++;
+          if (pos->code == OP_GETUPVAL) {
+            val = PN_PUSH(val, upvals[pos->b]);
+          } else if (pos->code == OP_GETLOCAL) {
+            val = PN_PUSH(val, locals[pos->b]);
+          }
+        });
+        reg[areg] = potion_closure_new(P, (imp_t)potion_vm_proto, PN_NIL, val);
+      }
       break;
     }
     pos++;

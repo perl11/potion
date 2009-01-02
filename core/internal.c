@@ -31,6 +31,7 @@ static void potion_init(Potion *P) {
   potion_lobby_init(P);
 
   PN_allocate = potion_str(P, "allocate");
+  PN_call = potion_str(P, "call");
   PN_def = potion_str(P, "def");
   PN_delegated = potion_str(P, "delegated");
   PN_compile = potion_str(P, "compile");
@@ -45,6 +46,7 @@ static void potion_init(Potion *P) {
   potion_send(vtable, PN_def, PN_allocate, PN_FUNC(potion_allocate, 0));
   potion_send(vtable, PN_def, PN_delegated, PN_FUNC(potion_delegated, 0));
 
+  potion_object_init(P);
   potion_primitive_init(P);
   potion_num_init(P);
   potion_str_init(P);

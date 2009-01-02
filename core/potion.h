@@ -141,7 +141,7 @@ struct PNClosure {
 
 struct PNProto {
   PN_OBJECT_HEADER
-  PN source; // program name
+  PN source; // program name or enclosing scope
   PN sig;    // argument signature
   PN stack;  // size of the stack
   PN locals; // local variables
@@ -221,7 +221,7 @@ struct PNMcache {
 } potion_mcache[8192];
 #endif
 
-PN PN_allocate, PN_compile, PN_def, PN_delegated, PN_else, PN_if, PN_inspect, PN_lookup;
+PN PN_allocate, PN_call, PN_compile, PN_def, PN_delegated, PN_else, PN_if, PN_inspect, PN_lookup;
 
 //
 // the Potion functions
@@ -250,6 +250,7 @@ PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *P, PN, PN);
 
 void potion_lobby_init(Potion *);
+void potion_object_init(Potion *);
 void potion_primitive_init(Potion *);
 void potion_num_init(Potion *);
 void potion_str_hash_init(Potion *);
@@ -262,7 +263,7 @@ double pn_pow(double, double);
 PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
-PN potion_vm(Potion *, PN, PN);
+PN potion_vm(Potion *, PN, PN, PN);
 void potion_run();
 
 #endif

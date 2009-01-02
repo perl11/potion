@@ -48,7 +48,7 @@ const u8 potion_op_args[] = {
 };
 
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
-  return potion_vm(P, self, args);
+  return potion_vm(P, self, args, PN_EMPTY);
 }
 
 PN potion_proto_inspect(Potion *P, PN cl, PN self) {
@@ -109,10 +109,36 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
 #define PN_ARG(n, reg) \
   potion_source_asmb(P, f, (struct PNSource *)t->a[n], reg, pos)
 #define PN_BLOCK(reg, blk, sig) ({ \
-  PN block = potion_send(blk, PN_compile, PN_NIL, sig); \
+  PN block = potion_send(blk, PN_compile, (PN)f, sig); \
   unsigned long num = PN_PUT(f->protos, block); \
   PN_ASM2(OP_PROTO, reg, num); \
+  PN_TUPLE_EACH(((struct PNProto *)block)->upvals, i, v, { \
+    unsigned long numup = PN_GET(f->upvals, v); \
+    if (numup != PN_NONE) PN_ASM2(OP_GETUPVAL, reg, numup); \
+    else                  PN_ASM2(OP_GETLOCAL, reg, PN_GET(f->locals, v)); \
+  }); \
 })
+#define PN_UPVAL(name) ({ \
+    unsigned long numup = PN_GET(f->upvals, name); \
+    if (numup == PN_NONE) { \
+      struct PNProto *up = f; \
+      int depth = 1; \
+      while (PN_IS_PROTO(up->source)) { \
+        up = (struct PNProto *)up->source; \
+        if (PN_NONE != (numup = PN_GET(up->locals, name))) break; \
+        depth++; \
+      } \
+      if (numup != PN_NONE) { \
+        up = f; \
+        while (depth--) { \
+          up->upvals = PN_PUSH(up->upvals, name); \
+          up = (struct PNProto *)up->source; \
+        } \
+      } \
+      numup = PN_GET(f->upvals, name); \
+    } \
+    numup; \
+  })
 
 void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg, PN_OP **pos) {
   PN_REG(f, reg);
@@ -152,7 +178,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
       u8 opcode = OP_SETUPVAL;
 
       if (lhs->part == AST_MESSAGE || lhs->part == AST_QUERY) {
-        num = PN_GET(f->upvals, lhs->a[0]);
+        num = PN_UPVAL(lhs->a[0]);
         if (num == PN_NONE) {
           num = PN_PUT(f->locals, lhs->a[0]);
           opcode = OP_SETLOCAL;
@@ -241,7 +267,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
           PN_ASM1(OP_NONE, 0);
       } else {
         u8 breg = reg, opcode = OP_GETUPVAL;
-        unsigned long num = PN_GET(f->upvals, t->a[0]);
+        unsigned long num = PN_UPVAL(t->a[0]);
         if (num == PN_NONE) {
           num = PN_GET(f->locals, t->a[0]);
           opcode = OP_GETLOCAL;
@@ -382,14 +408,15 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
     tup; \
   })
 #define READ_PROTOS(pn, ptr) ({ \
-    READ_TUPLE(ptr) PN_TUPLE_AT(tup, i) = potion_proto_load(P, pn, &(ptr)); \
+    READ_TUPLE(ptr) PN_TUPLE_AT(tup, i) = potion_proto_load(P, (PN)f, pn, &(ptr)); \
     tup; \
   })
 
-PN potion_proto_load(Potion *P, u8 pn, u8 **ptr) {
+PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   PN len = 0;
   struct PNProto *f = PN_OBJ_ALLOC(struct PNProto, PN_TPROTO, 0);
   f->source = READ_CONST(pn, *ptr);
+  if (f->source == PN_NIL) f->source = up; 
   f->sig = READ_VALUES(pn, *ptr);
   f->stack = READ_CONST(pn, *ptr);
   f->values = READ_VALUES(pn, *ptr);
@@ -412,7 +439,7 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
     return PN_NONE;
 
   ptr = h->proto;
-  return potion_proto_load(P, h->pn, &ptr);
+  return potion_proto_load(P, PN_NIL, h->pn, &ptr);
 }
 
 #define WRITE_U8(un, ptr) ({*ptr = (u8)un; ptr += sizeof(u8);})
@@ -423,7 +450,7 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
       WRITE_PN(count, ptr); \
       PN_MEMCPY_N(ptr, PN_STR_PTR(val), char, PN_STR_LEN(val)); \
       ptr += PN_STR_LEN(val); \
-    } else { \
+    } else if (!potion_is_ref(val)) { \
       WRITE_PN(val, ptr); \
     } \
   })
