@@ -71,7 +71,7 @@ op(A) ::= REM. { A = AST_REM; }
 op(A) ::= POW. { A = AST_POW; }
 
 call(A) ::= name(B). { A = B; }
-call(A) ::= name(B) arg(C). { PN_S(B, 1, C.v); PN_S(B, 2, C.b); A = B; }
+call(A) ::= name(B) arg(C). { PN_S(B, 1) = C.v; PN_S(B, 2) = C.b; A = B; }
 
 arg(A) ::= table(B) block(C). { A.v = B; A.b = C; }
 arg(A) ::= value(B) block(C). { A.v = B; A.b = C; }

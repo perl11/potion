@@ -20,12 +20,12 @@ REVISION = `git rev-list HEAD | wc -l`
 COMMIT = `git rev-list HEAD -1 | head -c 7`
 
 CCEX = ${CC} -x c - -o pn.out && ./pn.out && rm -f pn.out
-ULONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned long)); return 0; }" | ${CCEX}`
-UINT  = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned int )); return 0; }" | ${CCEX}`
-USHORT = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned short)); return 0; }" | ${CCEX}`
-UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned short)); return 0; }" | ${CCEX}`
-UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned char)); return 0; }" | ${CCEX}`
-LLONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(unsigned long long)); return 0; }" | ${CCEX}`
+ULONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(long)); return 0; }" | ${CCEX}`
+UINT  = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(int)); return 0; }" | ${CCEX}`
+USHORT = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(short)); return 0; }" | ${CCEX}`
+UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(char)); return 0; }" | ${CCEX}`
+LLONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(long long)); return 0; }" | ${CCEX}`
+DOUBLE = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(double)); return 0; }" | ${CCEX}`
 LILEND = `echo "\#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\\"%d\\\", (int)byte[0]); return 0; }" | ${CCEX}`
 
 all: potion test
@@ -43,6 +43,7 @@ version:
 	@echo
 	@echo "#define PN_SIZE_T     ${ULONG}"
 	@echo "#define LONG_SIZE_T   ${ULONG}"
+	@echo "#define DOUBLE_SIZE_T ${DOUBLE}"
 	@echo "#define INT_SIZE_T    ${UINT}"
 	@echo "#define SHORT_SIZE_T  ${USHORT}"
 	@echo "#define CHAR_SIZE_T   ${UCHAR}"

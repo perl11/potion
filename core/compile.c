@@ -217,9 +217,12 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
       int arg = (t->a[1] != PN_NIL && t->a[1] != PN_EMPTY);
       int call = (t->a[2] != PN_NIL || arg);
       if (t->a[0] == PN_if) {
-        if (arg)
-          potion_source_asmb(P, f, (struct PNSource *)t->a[1], reg, pos);
-        else
+        if (arg) {
+          PN test = t->a[1];
+          if (PN_PART(test) == AST_TABLE)
+            test = PN_TUPLE_AT(PN_S(t->a[1], 0), 0);
+          potion_source_asmb(P, f, (struct PNSource *)test, reg, pos);
+        } else
           PN_ASM2(OP_LOADPN, reg, t->a[1]);
         PN_ASM2(OP_NOTJMP, reg, 2);
         if (t->a[2] != PN_NIL) {

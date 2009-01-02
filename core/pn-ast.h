@@ -56,7 +56,8 @@ struct PNSource {
 #define PN_AST2(T, A, B)  potion_source(P, AST_##T, A, B, PN_NIL)
 #define PN_OP(T, A, B)    potion_source(P, T, A, B, PN_NIL)
 #define PN_AST3(T, A, B, C)  potion_source(P, AST_##T, A, B, C)
-#define PN_S(S, N, X) (((struct PNSource *)S)->a[N] = X)
+#define PN_PART(S)    ((struct PNSource *)S)->part
+#define PN_S(S, N)    ((struct PNSource *)S)->a[N]
 
 PN potion_source(Potion *, u8, PN, PN, PN);
 
