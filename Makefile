@@ -5,15 +5,18 @@ OBJ_TEST = test/potion-test.o test/CuTest.o
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -Wall -DICACHE -DMCACHE -fno-strict-aliasing
+CFLAGS = -Wall -DICACHE -DMCACHE -fno-stack-protector
 DEBUG ?= 0
 INCS = -Icore
+JIT ?= 1
 LEMON = tools/lemon
-LIBS =
+LIBS = -lm
 RAGEL = ragel
 
-DFLAGS = `echo "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
-CFLAGS += ${DFLAGS}
+DEBUGFLAGS = `echo "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
+CFLAGS += ${DEBUGFLAGS}
+JITFLAGS = `echo "${JIT}" | sed "s/0/-DNO_JIT/; s/1/-DX86_JIT/"`
+CFLAGS += ${JITFLAGS}
 
 DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
@@ -38,6 +41,7 @@ version:
 	@echo "#define POTION_CC     \"${CC}\""
 	@echo "#define POTION_CFLAGS \"${CFLAGS}\""
 	@echo "#define POTION_DEBUG  ${DEBUG}"
+	@echo "#define POTION_JIT    ${JIT}"
 	@echo "#define POTION_MAKE   \"${MAKE}\""
 	@echo "#define POTION_PREFIX \"${PREFIX}\""
 	@echo
@@ -79,7 +83,7 @@ test: test/potion-test
 
 test/potion-test: core/version.h ${OBJ_TEST} ${OBJ}
 	@echo LINK potion-test
-	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} -o $@
+	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
 
 sloc: clean
 	@cp core/pn-scan.rl core/pn-scan-rl.c

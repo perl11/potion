@@ -131,6 +131,7 @@ struct PNFile {
 };
 
 typedef PN (*imp_t)(Potion *P, PN closure, PN receiver, ...);
+typedef PN (*jit_t)();
 
 struct PNClosure {
   PN_OBJECT_HEADER
@@ -260,11 +261,14 @@ void potion_table_init(Potion *);
 void potion_source_init(Potion *);
 void potion_compiler_init(Potion *);
 
-double pn_pow(double, double);
 PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
 PN potion_vm(Potion *, PN, PN, PN);
 void potion_run();
+
+#ifdef X86_JIT
+jit_t potion_x86_proto(Potion *, PN);
+#endif
 
 #endif

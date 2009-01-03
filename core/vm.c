@@ -11,6 +11,11 @@
 #include "internal.h"
 #include "opcodes.h"
 
+#ifdef X86_JIT
+#include <sys/mman.h>
+#include <string.h>
+#endif
+
 extern u8 potion_op_args[];
 
 PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
@@ -19,6 +24,50 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 }
 
 #define STACK_MAX 72000
+
+#ifdef X86_JIT
+jit_t potion_x86_proto(Potion *P, PN proto) {
+  struct PNProto *f = (struct PNProto *)proto;
+  PN val;
+  PN_OP *pos, *end;
+  u8 *start, *asmb = (char *)mmap(0, 64, PROT_READ|PROT_WRITE|PROT_EXEC,(MAP_PRIVATE|MAP_ANON), -1, 0);
+  jit_t jit_func = (jit_t)asmb;
+  start = asmb;
+  asmb[0] = 0x55; // push %rbp
+  asmb[1] = 0x48; asmb[2] = 0x89; asmb[3] = 0xe5; // mov %rsp,%rbp
+  asmb += 4;
+
+  pos = ((PN_OP *)PN_STR_PTR(f->asmb));
+  end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
+
+  while (pos < end) {
+    switch (pos->code) {
+      case OP_LOADK:
+        val = PN_TUPLE_AT(f->values, pos->b);
+        asmb[0] = 0xc7; // movl
+        asmb[1] = 0x45; asmb[2] = 0xfc - (pos->a * 4); // -A(%rbp)
+        *((PN *)(asmb + 3)) = val; // const
+        asmb += 7;
+      break;
+      case OP_ADD:
+        asmb[0] = 0x8b; // mov
+        asmb[1] = 0x45; asmb[2] = 0xfc - (pos->a * 4); // -A(%rbp) %eax
+        asmb[3] = 0x01; // add
+        asmb[4] = 0x45; asmb[5] = 0xfc - (pos->b * 4); // %eax -B(%rbp)
+        asmb[6] = 0x8b; // mov
+        asmb[7] = 0x45; asmb[8] = 0xfc - (pos->b * 4); // -B(%rbp) %eax
+        asmb += 9;
+      break;
+    }
+    pos++;
+  }
+
+  asmb[0] = 0xc9; asmb[1] = 0xc3;
+  asmb += 2;
+
+  return jit_func;
+}
+#endif
 
 PN potion_vm(Potion *P, PN proto, PN vargs, PN upargs) {
   struct PNProto *f = (struct PNProto *)proto;
@@ -109,7 +158,7 @@ reentry:
         reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) % PN_INT(reg[pos->b]));
       break;
       case OP_POW:
-        reg[pos->a] = PN_NUM((int)pn_pow((double)PN_INT(reg[pos->a]),
+        reg[pos->a] = PN_NUM((int)pow((double)PN_INT(reg[pos->a]),
           (double)PN_INT(reg[pos->b])));
       break;
       case OP_NOT:
@@ -125,16 +174,16 @@ reentry:
         reg[pos->a] = PN_BOOL(reg[pos->a] == reg[pos->b]);
       break;
       case OP_LT:
-        reg[pos->a] = PN_BOOL(PN_INT(reg[pos->a]) < PN_INT(reg[pos->b]));
+        reg[pos->a] = PN_BOOL((long)(reg[pos->a]) < (long)(reg[pos->b]));
       break;
       case OP_LTE:
-        reg[pos->a] = PN_BOOL(PN_INT(reg[pos->a]) <= PN_INT(reg[pos->b]));
+        reg[pos->a] = PN_BOOL((long)(reg[pos->a]) <= (long)(reg[pos->b]));
       break;
       case OP_GT:
-        reg[pos->a] = PN_BOOL(PN_INT(reg[pos->a]) > PN_INT(reg[pos->b]));
+        reg[pos->a] = PN_BOOL((long)(reg[pos->a]) > (long)(reg[pos->b]));
       break;
       case OP_GTE:
-        reg[pos->a] = PN_BOOL(PN_INT(reg[pos->a]) >= PN_INT(reg[pos->b]));
+        reg[pos->a] = PN_BOOL((long)(reg[pos->a]) >= (long)(reg[pos->b]));
       break;
       case OP_BITL:
         reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) << PN_INT(reg[pos->b]));

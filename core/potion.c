@@ -74,13 +74,20 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       potion_send(code, PN_inspect);
       printf("\n");
     }
-    if (exec) {
+    if (exec == 1) {
       code = potion_vm(P, code, PN_EMPTY, PN_EMPTY);
       if (verbose) {
         printf("\n-- returned --\n");
         potion_send(code, PN_inspect);
         printf("\n");
       }
+    } else if (exec == 2) {
+#ifdef X86_JIT
+      jit_t func = potion_x86_proto(P, code);
+      printf("JIT: %lu\n", func());
+#else
+      fprintf(stderr, "** potion built without JIT support\n");
+#endif
     } else {
       char pnbpath[255];
       FILE *pnb;
@@ -155,6 +162,15 @@ int main(int argc, char *argv[]) {
           fprintf(stderr, "** compiler requires a file name\n");
         else
           potion_cmd_compile(argv[++i], 0, verbose);
+        return 0;
+      }
+
+      if (strcmp(argv[i], "-X") == 0 ||
+          strcmp(argv[i], "--X86") == 0) {
+        if (i == argc - 1)
+          fprintf(stderr, "** compiler requires a file name\n");
+        else
+          potion_cmd_compile(argv[++i], 2, verbose);
         return 0;
       }
 
