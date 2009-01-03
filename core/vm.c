@@ -27,7 +27,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 
 #ifdef X86_JIT
 
-#define RBP(x) (0xFF - (x * sizeof(PN)))
+#define RBP(x) (0x100 - ((x + 1) * sizeof(PN)))
 #if PN_SIZE_T == 4
 #define X86_PRE_T 0
 #define X86_PRE()
@@ -57,6 +57,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 
 jit_t potion_x86_proto(Potion *P, PN proto) {
   struct PNProto *f = (struct PNProto *)proto;
+  long regs = 0;
   PN val;
   PN_OP *pos, *end;
   u8 *start, *asmb = (char *)mmap(0, 1024, PROT_READ|PROT_WRITE|PROT_EXEC,(MAP_PRIVATE|MAP_ANON), -1, 0);
@@ -67,15 +68,34 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
 
   pos = ((PN_OP *)PN_STR_PTR(f->asmb));
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
+  regs = PN_INT(f->stack);
 
   while (pos < end) {
     switch (pos->code) {
+      case OP_MOVE:
+        X86_MOV_RBP(0x8B, pos->b);
+        X86_MOV_RBP(0x89, pos->a);
+      break;
+      case OP_LOADPN:
+        X86_PRE();
+        X86(0xC7); // movl
+        X86(0x45); X86(RBP(pos->a)); // -A(%rbp)
+        X86I((PN)pos->b);
+      break;
       case OP_LOADK:
         val = PN_TUPLE_AT(f->values, pos->b);
         X86_PRE();
         X86(0xC7); // movl
         X86(0x45); X86(RBP(pos->a)); // -A(%rbp)
         X86I(val);
+      break;
+      case OP_GETLOCAL:
+        X86_MOV_RBP(0x8B, regs + pos->b);
+        X86_MOV_RBP(0x89, pos->a);
+      break;
+      case OP_SETLOCAL:
+        X86_MOV_RBP(0x8B, pos->b);
+        X86_MOV_RBP(0x89, regs + pos->a);
       break;
       case OP_ADD:
         X86_MATH({
