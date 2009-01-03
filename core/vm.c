@@ -26,16 +26,44 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 #define STACK_MAX 72000
 
 #ifdef X86_JIT
+
+#define RBP(x) (0xFF - (x * sizeof(PN)))
+#if PN_SIZE_T == 4
+#define X86_PRE_T 0
+#define X86_PRE()
+#define X86_POST()
+#else
+#define X86_PRE_T 1
+#define X86_PRE()  X86(0x48)
+#define X86_POST() X86(0x48); X86(0x98)
+#endif
+
+#define X86(ins) *asmb++ = ins;
+#define X86I(pn) *((int *)asmb) = pn; asmb += 4
+#define X86_MOV_RBP(reg, x) \
+  X86_PRE(); X86(reg); X86(0x45); X86(RBP(x))
+#define X86_MATH(op) \
+  X86_MOV_RBP(0x8B, pos->a); /* mov -A(%rbp) %eax */ \
+  X86(0x89); X86(0xC2); /* mov %eax %edx */ \
+  X86(0xD1); X86(0xFA); /* sar %edx */ \
+  X86_MOV_RBP(0x8B, pos->b); /* mov -B(%rbp) %eax */ \
+  X86(0xD1); X86(0xF8); /* sar %eax */ \
+  op; /* add, sub, ... */ \
+  X86_POST(); /* cltq */ \
+  X86_PRE(); X86(0x01); X86(0xC0); /* add %rax %rax */ \
+  X86_PRE(); X86(0x83); X86(0xC8); X86(0x01); /* or 0x1 %eax */ \
+  X86_MOV_RBP(0x89, pos->a); /* mov -B(%rbp) %eax */ \
+  X86_MOV_RBP(0x8B, pos->a); /* mov -B(%rbp) %eax */
+
 jit_t potion_x86_proto(Potion *P, PN proto) {
   struct PNProto *f = (struct PNProto *)proto;
   PN val;
   PN_OP *pos, *end;
-  u8 *start, *asmb = (char *)mmap(0, 64, PROT_READ|PROT_WRITE|PROT_EXEC,(MAP_PRIVATE|MAP_ANON), -1, 0);
+  u8 *start, *asmb = (char *)mmap(0, 1024, PROT_READ|PROT_WRITE|PROT_EXEC,(MAP_PRIVATE|MAP_ANON), -1, 0);
   jit_t jit_func = (jit_t)asmb;
   start = asmb;
-  asmb[0] = 0x55; // push %rbp
-  asmb[1] = 0x48; asmb[2] = 0x89; asmb[3] = 0xe5; // mov %rsp,%rbp
-  asmb += 4;
+  X86(0x55); // push %rbp
+  X86(0x48); X86(0x89); X86(0xE5); // mov %rsp,%rbp
 
   pos = ((PN_OP *)PN_STR_PTR(f->asmb));
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
@@ -44,26 +72,56 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
     switch (pos->code) {
       case OP_LOADK:
         val = PN_TUPLE_AT(f->values, pos->b);
-        asmb[0] = 0xc7; // movl
-        asmb[1] = 0x45; asmb[2] = 0xfc - (pos->a * 4); // -A(%rbp)
-        *((PN *)(asmb + 3)) = val; // const
-        asmb += 7;
+        X86_PRE();
+        X86(0xC7); // movl
+        X86(0x45); X86(RBP(pos->a)); // -A(%rbp)
+        X86I(val);
       break;
       case OP_ADD:
-        asmb[0] = 0x8b; // mov
-        asmb[1] = 0x45; asmb[2] = 0xfc - (pos->a * 4); // -A(%rbp) %eax
-        asmb[3] = 0x01; // add
-        asmb[4] = 0x45; asmb[5] = 0xfc - (pos->b * 4); // %eax -B(%rbp)
-        asmb[6] = 0x8b; // mov
-        asmb[7] = 0x45; asmb[8] = 0xfc - (pos->b * 4); // -B(%rbp) %eax
-        asmb += 9;
+        X86_MATH({
+          X86(0x89); X86(0xD1); // mov %rdx %rcx
+          X86(0x01); X86(0xC1); // add %rax %rcx
+          X86(0x89); X86(0xC8); // mov %rcx %rax
+        });
+      break;
+      case OP_SUB:
+        X86_MATH({
+          X86(0x89); X86(0xD1); // mov %rdx %rcx
+          X86(0x29); X86(0xC1); // sub %rax %rcx
+          X86(0x89); X86(0xC8); // mov %rcx %rax
+        });
+      break;
+      case OP_MULT:
+        X86_MATH({
+          X86(0x0F); X86(0xAF); X86(0xC2); // imul %rdx %rax
+        });
+      break;
+      case OP_GT:
+        X86_MATH({
+          X86(0x39); X86(0xC2); // cmp %eax %edx
+          X86(0x7E); X86(0x09 + X86_PRE_T); // jle +10
+          X86_PRE(); X86(0xC7); // movl
+          X86(0x45); X86(RBP(pos->a)); // -A(%rbp) = TRUE
+          X86I(PN_TRUE);
+          X86(0); // noop
+          X86(0xEB); X86(0x7 + X86_PRE_T); // jmp +8
+          X86(0x45); X86(RBP(pos->a)); // -A(%rbp) = FALSE
+          X86I(PN_FALSE);
+        });
       break;
     }
     pos++;
   }
 
-  asmb[0] = 0xc9; asmb[1] = 0xc3;
-  asmb += 2;
+  X86(0xC9); X86(0xC3);
+
+#if DEBUG
+  while (start < asmb) {
+    printf("%x ", start[0]);
+    start++;
+  }
+  printf("\n\n");
+#endif
 
   return jit_func;
 }
@@ -149,7 +207,7 @@ reentry:
         reg[pos->a] = reg[pos->a] - (reg[pos->b]-1);
       break;
       case OP_MULT:
-        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) * PN_INT(reg[pos->b]));
+        reg[pos->a] = reg[pos->a] * (reg[pos->b]-1);
       break;
       case OP_DIV:
         reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) / PN_INT(reg[pos->b]));
