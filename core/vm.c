@@ -48,7 +48,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
         X86(0x48); X86(0x8B); X86(0x55); X86(RBP(preg)); /* mov -preg(%ebp) %rax */ \
         X86(0xB8); X86I(0); /* mov 0x0 %eax */ \
         X86(0xFF); X86(0xD2); /* callq *%rdx */ \
-        X86(0x48); X86(0x89); X86(0x45); X86(RBP(preg)); /* mov -preg(%ebp) %rax */
+        X86(0x48); X86(0x89); X86(0x45); X86(RBP(reg)); /* mov -preg(%ebp) %rax */
 #endif
 
 #define X86_MOV_RBP(reg, x) \
