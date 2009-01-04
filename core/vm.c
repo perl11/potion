@@ -81,7 +81,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
         X86_MOV_RBP(0x89, pos->a); /* mov -B(%rbp) %eax */ \
 
 jit_t potion_x86_proto(Potion *P, PN proto) {
-  long regs = 0;
+  long regs = 0, need = 0;
   PN val;
   PN_OP *pos, *end;
   struct PNProto *f = (struct PNProto *)proto;
@@ -96,7 +96,13 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
 
   pos = ((PN_OP *)PN_STR_PTR(f->asmb));
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
+
   regs = PN_INT(f->stack);
+  need = regs + PN_TUPLE_LEN(f->locals);
+  if (need > 1) {
+    // move the stack pointer if we need registers
+    X86_PRE(); X86(0x83); X86(0xEC); X86(need * sizeof(PN));
+  }
 
   if (PN_IS_TUPLE(f->protos)) {
     jit_protos = PN_ALLOC_N(jit_t, PN_TUPLE_LEN(f->protos));
