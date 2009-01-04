@@ -32,7 +32,9 @@ DOUBLE = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(
 LILEND = `echo "\#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\\"%d\\\", (int)byte[0]); return 0; }" | ${CCEX}`
 
 MINGW = `echo "\#include <stdio.h>int main() {\#ifdef __MINGW32__printf(\\\"1\\\");\#elseprintf(\\\"0\\\");\#endifreturn 0; }" | ${CCEX}`
-MINGW_OBJ := $(shell echo "\#include <stdio.h>int main() {\#ifdef __MINGW32__printf(\"core/mingw.o\");\#endifreturn 0; }" | ${CCEX})
+MINGW_CMD = echo "\#include <stdio.h>int main() {\#ifdef __MINGW32__printf(\"core/mingw.o\");\#endifreturn 0; }" | ${CCEX}
+MINGW_OBJ != `$(MINGW_CMD)`
+MINGW_OBJ ?= $(shell $(MINGW_CMD))
 OBJ += ${MINGW_OBJ}
 
 all: potion test
