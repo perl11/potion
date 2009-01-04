@@ -12,7 +12,9 @@
 #include "opcodes.h"
 
 #ifdef X86_JIT
+#ifndef __MINGW32__
 #include <sys/mman.h>
+#endif
 #include <string.h>
 #endif
 
@@ -86,8 +88,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   jit_t jit_func;
   jit_t *jit_protos = NULL;
 
-  start = asmb = (u8 *)mmap(NULL, 1024, PROT_READ|PROT_WRITE|PROT_EXEC,
-    (MAP_PRIVATE|MAP_ANON), -1, 0);
+  start = asmb = PN_ALLOC_FUNC(1024);
   jit_func = (jit_t)asmb;
   X86(0x55); // push %rbp
   X86_PRE(); X86(0x89); X86(0xE5); // mov %rsp,%rbp

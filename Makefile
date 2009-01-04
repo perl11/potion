@@ -31,6 +31,10 @@ LLONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(l
 DOUBLE = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(double)); return 0; }" | ${CCEX}`
 LILEND = `echo "\#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\\"%d\\\", (int)byte[0]); return 0; }" | ${CCEX}`
 
+MINGW = `echo "\#include <stdio.h>int main() {\#ifdef __MINGW32__printf(\\\"1\\\");\#elseprintf(\\\"0\\\");\#endifreturn 0; }" | ${CCEX}`
+MINGW_OBJ := $(shell echo "\#include <stdio.h>int main() {\#ifdef __MINGW32__printf(\"core/mingw.c\");\#endifreturn 0; }" | ${CCEX})
+OBJ += ${MINGW_OBJ}
+
 all: potion test
 
 version:
@@ -43,6 +47,7 @@ version:
 	@echo "#define POTION_DEBUG  ${DEBUG}"
 	@echo "#define POTION_JIT    ${JIT}"
 	@echo "#define POTION_MAKE   \"${MAKE}\""
+	@echo "#define POTION_MINGW  ${MINGW}"
 	@echo "#define POTION_PREFIX \"${PREFIX}\""
 	@echo
 	@echo "#define PN_SIZE_T     ${ULONG}"
