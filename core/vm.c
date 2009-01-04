@@ -58,9 +58,10 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 #define X86_MOVL(reg, x) ({ \
         int i, mreg, movl = sizeof(PN) / sizeof(int); \
         for (i = 0, mreg = (reg + 1) * movl; i < movl; i++) { \
+          int *xp = (int *)&x; \
           X86(0xC7); /* movl */ \
           X86(0x45); X86(RBPI(--mreg)); /* -A(%rbp) */ \
-          X86I(*(((int *)&x)+i)); \
+          X86I(*(xp+i)); \
         } \
 })
 #define X86_MOVQ(reg, x) \
@@ -122,8 +123,8 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
         X86_MOV_RBP(0x89, pos->a);
       break;
       case OP_SETLOCAL:
-        X86_MOV_RBP(0x8B, pos->b);
-        X86_MOV_RBP(0x89, regs + pos->a);
+        X86_MOV_RBP(0x8B, pos->a);
+        X86_MOV_RBP(0x89, regs + pos->b);
       break;
       case OP_ADD:
         X86_MATH({
@@ -166,8 +167,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
         X86(0xC9); X86(0xC3);
       break;
       case OP_PROTO: {
-        jit_t func2 = jit_protos[pos->b];
-        printf("MOVL %p TO %p: %d\n", asmb, func2, (int)((u8 *)func2 - asmb));
+        PN func2 = (PN)jit_protos[pos->b];
         // TODO: wrap function pointers in PNClosure
         X86_MOVL(pos->a, func2);
       }
