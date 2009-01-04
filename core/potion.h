@@ -89,6 +89,12 @@ struct PNGarbage;
 #define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)-PN_TUPLE_FLAG))
 #define PN_TUPLE_LEN(t) (t == PN_EMPTY ? 0 : PN_GET_TUPLE(t)->len)
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
+#define PN_TUPLE_COUNT(T, I, B) \
+  if (T != PN_EMPTY) { \
+    struct PNTuple *__t##I = PN_GET_TUPLE(T); \
+    unsigned long I; \
+    for (I = 0; I < __t##I->len; I++) B \
+  }
 #define PN_TUPLE_EACH(T, I, V, B) \
   if (T != PN_EMPTY) { \
     struct PNTuple *__t##V = PN_GET_TUPLE(T); \

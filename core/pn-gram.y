@@ -21,15 +21,15 @@
 %parse_failure { printf("-- LEMON FAIL --\n"); }
 %name LemonPotion
 
-%left  OR AND.
+%left OR AND.
 %right ASSIGN.
-%nonassoc CMP EQ NEQ.
-%left  GT GTE LT LTE. 
-%left  PIPE CARET.
-%left  AMP.
-%left  BITL BITR.
-%left  PLUS MINUS.
-%left  TIMES DIV REM.
+%left CMP EQ NEQ.
+%left GT GTE LT LTE. 
+%left PIPE CARET.
+%left AMP.
+%left BITL BITR.
+%left PLUS MINUS.
+%left TIMES DIV REM.
 %right POW.
 // %right NOT WAVY.
 
@@ -38,37 +38,35 @@ potion(A) ::= all(B). { A = P->source = PN_AST(CODE, B); }
 all(A) ::= statements(B). { A = B; }
 all(A) ::= statements(B) SEP. { A = B; }
 
-statements(A) ::= statements(B) SEP statement(C). { A = PN_PUSH(B, PN_AST(EXPR, C)); }
-statements(A) ::= statement(B). { A = PN_TUP(PN_AST(EXPR, B)); }
-statements(A) ::= name(B) ASSIGN statement(C). { A = PN_TUP(PN_AST2(ASSIGN, B, C)); }
-statements(A) ::= statements(B) SEP name(C) ASSIGN statement(D).
-{ A = PN_PUSH(B, PN_AST2(ASSIGN, C, D)); }
-statements(A) ::= statement(B) op(C) statement(D). { A = PN_TUP(PN_OP(C, PN_AST(EXPR, B), PN_AST(EXPR, D))); }
+statements(A) ::= statements(B) SEP statement(C). { A = PN_PUSH(B, C); }
+statements(A) ::= statement(B). { A = PN_TUP(B); }
 
-statement(A) ::= statement(B) call(C). { A = PN_PUSH(B, C); }
-statement(A) ::= arg(B). { A = PN_TUP(B.b == PN_NIL ? B.v : PN_AST2(PROTO, B.v, B.b)); }
-statement(A) ::= call(B). { A = PN_TUP(B); }
+statement(A) ::= expr(B). { A = PN_AST(EXPR, B); }
+statement(A) ::= name(B) ASSIGN statement(C). { A = PN_AST2(ASSIGN, B, C); }
+statement(A) ::= statement(B) OR statement(D). { A = PN_OP(AST_OR, B, D); }
+statement(A) ::= statement(B) AND statement(D). { A = PN_OP(AST_AND, B, D); }
+statement(A) ::= statement(B) CMP statement(D). { A = PN_OP(AST_CMP, B, D); }
+statement(A) ::= statement(B) EQ statement(D). { A = PN_OP(AST_EQ, B, D); }
+statement(A) ::= statement(B) NEQ statement(D). { A = PN_OP(AST_NEQ, B, D); }
+statement(A) ::= statement(B) GT statement(D). { A = PN_OP(AST_GT, B, D); }
+statement(A) ::= statement(B) GTE statement(D). { A = PN_OP(AST_GTE, B, D); }
+statement(A) ::= statement(B) LT statement(D). { A = PN_OP(AST_LT, B, D); }
+statement(A) ::= statement(B) LTE statement(D). { A = PN_OP(AST_LTE, B, D); }
+statement(A) ::= statement(B) PIPE statement(D). { A = PN_OP(AST_PIPE, B, D); }
+statement(A) ::= statement(B) CARET statement(D). { A = PN_OP(AST_CARET, B, D); }
+statement(A) ::= statement(B) AMP statement(D). { A = PN_OP(AST_AMP, B, D); }
+statement(A) ::= statement(B) BITL statement(D). { A = PN_OP(AST_BITL, B, D); }
+statement(A) ::= statement(B) BITR statement(D). { A = PN_OP(AST_BITR, B, D); }
+statement(A) ::= statement(B) PLUS statement(D). { A = PN_OP(AST_PLUS, B, D); }
+statement(A) ::= statement(B) MINUS statement(D). { A = PN_OP(AST_MINUS, B, D); }
+statement(A) ::= statement(B) TIMES statement(D). { A = PN_OP(AST_TIMES, B, D); }
+statement(A) ::= statement(B) DIV statement(D). { A = PN_OP(AST_DIV, B, D); }
+statement(A) ::= statement(B) REM statement(D). { A = PN_OP(AST_REM, B, D); }
+statement(A) ::= statement(B) POW statement(D). { A = PN_OP(AST_POW, B, D); }
 
-op(A) ::= OR. { A = AST_OR; }
-op(A) ::= AND. { A = AST_AND; }
-op(A) ::= CMP. { A = AST_CMP; }
-op(A) ::= EQ. { A = AST_EQ; }
-op(A) ::= NEQ. { A = AST_NEQ; }
-op(A) ::= GT. { A = AST_GT; }
-op(A) ::= GTE. { A = AST_GTE; }
-op(A) ::= LT. { A = AST_LT; }
-op(A) ::= LTE. { A = AST_LTE; }
-op(A) ::= PIPE. { A = AST_PIPE; }
-op(A) ::= CARET. { A = AST_CARET; }
-op(A) ::= AMP. { A = AST_AMP; }
-op(A) ::= BITL. { A = AST_BITL; }
-op(A) ::= BITR. { A = AST_BITR; }
-op(A) ::= PLUS. { A = AST_PLUS; }
-op(A) ::= MINUS. { A = AST_MINUS; }
-op(A) ::= TIMES. { A = AST_TIMES; }
-op(A) ::= DIV. { A = AST_DIV; }
-op(A) ::= REM. { A = AST_REM; }
-op(A) ::= POW. { A = AST_POW; }
+expr(A) ::= expr(B) call(C). { A = PN_PUSH(B, C); }
+expr(A) ::= arg(B). { A = PN_TUP(B.b == PN_NIL ? B.v : PN_AST2(PROTO, B.v, B.b)); }
+expr(A) ::= call(B). { A = PN_TUP(B); }
 
 call(A) ::= name(B). { A = B; }
 call(A) ::= name(B) arg(C). { PN_S(B, 1) = C.v; PN_S(B, 2) = C.b; A = B; }

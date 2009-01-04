@@ -186,9 +186,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
         opcode = OP_SETPATH;
       }
 
-      PN_TUPLE_EACH(t->a[1], i, v, {
-        potion_source_asmb(P, f, (struct PNSource *)v, reg, pos);
-      });
+      potion_source_asmb(P, f, (struct PNSource *)t->a[1], reg, pos);
 
       if (opcode == OP_SETUPVAL) {
         if (lhs->part == AST_QUERY) {
