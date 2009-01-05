@@ -16,7 +16,7 @@
 %token_type { PN }
 %type arg { PNArg }
 %token_prefix PN_TOK_
-%token_destructor { if (potion_is_ref($$)) { P->xast++; } }
+%token_destructor { if (PN_IS_PTR($$)) { P->xast++; } }
 %parse_accept { printf("-- LEMON END --\n"); }
 %parse_failure { printf("-- LEMON FAIL --\n"); }
 %name LemonPotion

@@ -62,15 +62,16 @@ struct PNGarbage;
 
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE)
 #define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
+#define PN_IS_PTR(v)    (!PN_IS_NUM(v) && ((v) & (ULONG_MAX ^ PN_PRIMITIVE)))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) == PN_FALSE || (PN)(v) == PN_TRUE)
 #define PN_IS_NUM(v)    ((PN)(v) & PN_NUM_FLAG)
 #define PN_IS_TUPLE(v)  ((PN)(v) & PN_TUPLE_FLAG)
-#define PN_IS_STR(v)    (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TSTRING)
-#define PN_IS_TABLE(v)  (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TTABLE)
-#define PN_IS_CLOSURE(v) (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TCLOSURE)
-#define PN_IS_PROTO(v)   (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TPROTO)
-#define PN_IS_REF(v)     (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TWEAK)
+#define PN_IS_STR(v)    (PN_IS_PTR(v) && PN_VTYPE(v) == PN_TSTRING)
+#define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
+#define PN_IS_CLOSURE(v) (PN_IS_PTR(v) && PN_VTYPE(v) == PN_TCLOSURE)
+#define PN_IS_PROTO(v)   (PN_IS_PTR(v) && PN_VTYPE(v) == PN_TPROTO)
+#define PN_IS_REF(v)     (PN_IS_PTR(v) && PN_VTYPE(v) == PN_TWEAK)
 
 #define PN_NUM_FLAG     0x01
 #define PN_TUPLE_FLAG   0x06
@@ -141,7 +142,7 @@ struct PNFile {
 };
 
 typedef PN (*imp_t)(Potion *P, PN closure, PN receiver, ...);
-typedef PN (*jit_t)(Potion *P, ...);
+typedef PN (*jit_t)(Potion *P, PN closure, ...);
 
 struct PNClosure {
   PN_OBJECT_HEADER
@@ -184,10 +185,6 @@ static inline PNType potion_type(PN obj) {
     return (obj & PN_PRIMITIVE);
   }
   return PN_VTYPE(obj);
-}
-
-static inline int potion_is_ref(PN obj) {
-  return (!PN_IS_NUM(obj) && (obj & (ULONG_MAX ^ PN_PRIMITIVE)));
 }
 
 //

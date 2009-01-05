@@ -396,7 +396,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
 #define READ_PN(pn, ptr) ({PN rpn = *(PN *)ptr; ptr += pn; rpn;})
 #define READ_CONST(pn, ptr) ({ \
     PN val = READ_PN(pn, ptr); \
-    if (potion_is_ref(val)) { \
+    if (PN_IS_PTR(val)) { \
       size_t len = val >> 3; \
       val = potion_str2(P, (char *)ptr, len); \
       ptr += len; \
@@ -457,7 +457,7 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
       WRITE_PN(count, ptr); \
       PN_MEMCPY_N(ptr, PN_STR_PTR(val), char, PN_STR_LEN(val)); \
       ptr += PN_STR_LEN(val); \
-    } else if (!potion_is_ref(val)) { \
+    } else if (!PN_IS_PTR(val)) { \
       WRITE_PN(val, ptr); \
     } \
   })
