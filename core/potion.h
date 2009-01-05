@@ -137,7 +137,7 @@ struct PNFile {
 };
 
 typedef PN (*imp_t)(Potion *P, PN closure, PN receiver, ...);
-typedef PN (*jit_t)();
+typedef PN (*jit_t)(Potion *P, ...);
 
 struct PNClosure {
   PN_OBJECT_HEADER

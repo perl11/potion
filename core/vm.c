@@ -33,6 +33,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 #define RBPI(x) (0x100 - ((x + 1) * sizeof(int)))
 #define X86(ins) *asmb++ = ins;
 #define X86I(pn) *((int *)asmb) = (int)(pn); asmb += sizeof(int)
+#define X86N(pn) *((PN *)asmb) = (PN)(pn); asmb += sizeof(PN)
 
 #if PN_SIZE_T == 4
 #define X86_PRE_T 0
@@ -47,9 +48,8 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 #define X86_PRE()  X86(0x48)
 #define X86_POST() X86(0x48); X86(0x98)
 #define X86_CALL(reg, preg) \
-        X86(0x48); X86(0x8B); X86(0x55); X86(RBP(preg)); /* mov -preg(%ebp) %rax */ \
-        X86(0xB8); X86I(0); /* mov 0x0 %eax */ \
-        X86(0xFF); X86(0xD2); /* callq *%rdx */ \
+        X86(0x48); X86(0x8B); X86(0x45); X86(RBP(preg)); /* mov -preg(%ebp) %rax */ \
+        X86(0xFF); X86(0xD0); /* callq *%rdx */ \
         X86(0x48); X86(0x89); X86(0x45); X86(RBP(reg)); /* mov -preg(%ebp) %rax */
 #endif
 
@@ -80,8 +80,16 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
         X86_PRE(); X86(0x83); X86(0xC8); X86(0x01); /* or 0x1 %eax */ \
         X86_MOV_RBP(0x89, pos->a); /* mov -B(%rbp) %eax */ \
 
+// TODO: pass variables through Potion struct? expand?
+const u8 x86_var_regs[] = {0x55, 0x4D};
+
+PN potion_x86_debug(Potion *P, PN cl, PN arg1, PN arg2) {
+  printf("DEBUG: %p %lu %lu\n", P, cl, arg1, arg2);
+  return PN_NUM(10);
+}
+
 jit_t potion_x86_proto(Potion *P, PN proto) {
-  long regs = 0, need = 0;
+  long regs = 0, need = 0, argx = 0;
   PN val;
   PN_OP *pos, *end;
   struct PNProto *f = (struct PNProto *)proto;
@@ -97,17 +105,30 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   pos = ((PN_OP *)PN_STR_PTR(f->asmb));
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
 
+  if (PN_TUPLE_LEN(f->protos) > 0) {
+    jit_protos = PN_ALLOC_N(jit_t, PN_TUPLE_LEN(f->protos));
+    PN_TUPLE_EACH(f->protos, i, proto2, {
+      jit_protos[i] = potion_x86_proto(P, proto2);
+    });
+  }
+
   regs = PN_INT(f->stack);
-  need = regs + PN_TUPLE_LEN(f->locals);
-  if (need > 1) {
+  need = regs + PN_TUPLE_LEN(f->locals) + 2;
+  if (jit_protos != NULL) {
     // move the stack pointer if we need registers
     X86_PRE(); X86(0x83); X86(0xEC); X86(need * sizeof(PN));
   }
 
-  if (PN_IS_TUPLE(f->protos)) {
-    jit_protos = PN_ALLOC_N(jit_t, PN_TUPLE_LEN(f->protos));
-    PN_TUPLE_EACH(f->protos, i, proto2, {
-      jit_protos[i] = potion_x86_proto(P, proto2);
+  // (Potion *, CL) in the last "register"
+  X86_PRE(); X86(0x89); X86(0x7d); X86(RBP(need - 2));
+  X86_PRE(); X86(0x89); X86(0x75); X86(RBP(need - 1));
+
+  if (PN_IS_TUPLE(f->sig)) {
+    PN_TUPLE_EACH(f->sig, i, v, {
+      if (PN_IS_STR(v)) {
+        unsigned long num = PN_GET(f->locals, v);
+        X86_PRE(); X86(0x89); X86(x86_var_regs[argx++]); X86(RBP(regs + num));
+      }
     });
   }
 
@@ -164,9 +185,17 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
           X86I(PN_FALSE);
         });
       break;
-      case OP_CALL:
+      case OP_CALL: {
+        int argc = pos->b - pos->a;
+        // (Potion *, CL) as the first argument
+        X86_PRE(); X86(0x8B); X86(0x7d); X86(RBP(need - 1));
+        X86_PRE(); X86(0xBE); X86N(proto); // TODO: send closure obj
+        while (--argc > 0) {
+          X86_PRE(); X86(0x8B); X86(x86_var_regs[argc - 1]); X86(RBP(pos->a + argc));
+        }
         // TODO: check for PNClosure and dispatch to C funcs / bytecode alike
         X86_CALL(pos->a, pos->b);
+      }
       break;
       case OP_RETURN:
         X86_MOV_RBP(0x8B, 0); /* mov -0(%rbp) %eax */ \
@@ -174,7 +203,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
       break;
       case OP_PROTO: {
         PN func2 = (PN)jit_protos[pos->b];
-        // TODO: wrap function pointers in PNClosure
+        // func2 = &potion_x86_debug;
         X86_MOVL(pos->a, func2);
       }
       break;
@@ -338,7 +367,7 @@ reentry:
             reg[pos->a] =
               ((struct PNClosure *)reg[pos->b])->method(P, reg[pos->b], reg[pos->a], reg[pos->a+1]);
           } else {
-            args = &reg[pos->a];
+            args = &reg[pos->a+1];
             upargs = PN_CLOSURE(reg[pos->b])->data;
             current = reg + PN_INT(f->stack) + 2;
             current[-2] = (PN)f;
