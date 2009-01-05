@@ -66,11 +66,11 @@ struct PNGarbage;
 #define PN_IS_BOOL(v)   ((PN)(v) == PN_FALSE || (PN)(v) == PN_TRUE)
 #define PN_IS_NUM(v)    ((PN)(v) & PN_NUM_FLAG)
 #define PN_IS_TUPLE(v)  ((PN)(v) & PN_TUPLE_FLAG)
-#define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
-#define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
-#define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
-#define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
-#define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
+#define PN_IS_STR(v)    (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TSTRING)
+#define PN_IS_TABLE(v)  (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TTABLE)
+#define PN_IS_CLOSURE(v) (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TCLOSURE)
+#define PN_IS_PROTO(v)   (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TPROTO)
+#define PN_IS_REF(v)     (((v) & PN_PRIMITIVE) == 0 && PN_VTYPE(v) == PN_TWEAK)
 
 #define PN_NUM_FLAG     0x01
 #define PN_TUPLE_FLAG   0x06
