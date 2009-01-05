@@ -144,10 +144,10 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   regs = PN_INT(f->stack);
   lregs = regs + PN_TUPLE_LEN(f->locals);
   need = lregs + upc + 2;
-  if (jit_protos != NULL) {
+  // if (jit_protos != NULL) {
     // move the stack pointer if we need registers
     X86_PRE(); X86(0x83); X86(0xEC); X86(need * sizeof(PN));
-  }
+  // }
 
   // (Potion *, CL) in the last "register"
   X86_PRE(); X86(0x89); X86(0x7d); X86(RBP(need - 2));
