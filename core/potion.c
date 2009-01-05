@@ -83,8 +83,11 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       }
     } else if (exec == 2) {
 #ifdef X86_JIT
+      PN val;
       jit_t func = potion_x86_proto(P, code);
-      printf("JIT: %ld\n", PN_INT(func(P, PN_NIL)));
+      val = func(P, PN_NIL);
+      printf("JIT: %lu\n", val);
+      potion_send(val, PN_inspect);
 #else
       fprintf(stderr, "** potion built without JIT support\n");
 #endif

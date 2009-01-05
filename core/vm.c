@@ -63,8 +63,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
         X86(0x45); X86(RBP(reg)); /* -A(%rbp) */ \
         X86I((PN)(x))
 #define X86_MATH(op) \
-        X86_MOV_RBP(0x8B, pos->a); /* mov -A(%rbp) %eax */ \
-        X86(0x89); X86(0xC2); /* mov %eax %edx */ \
+        X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /* mov -A(%rbp) %edx */ \
         X86(0xD1); X86(0xFA); /* sar %edx */ \
         X86_MOV_RBP(0x8B, pos->b); /* mov -B(%rbp) %eax */ \
         X86(0xD1); X86(0xF8); /* sar %eax */ \
@@ -72,19 +71,35 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
         X86_POST(); /* cltq */ \
         X86_PRE(); X86(0x01); X86(0xC0); /* add %rax %rax */ \
         X86_PRE(); X86(0x83); X86(0xC8); X86(0x01); /* or 0x1 %eax */ \
-        X86_MOV_RBP(0x89, pos->a); /* mov -B(%rbp) %eax */ \
+        X86_MOV_RBP(0x89, pos->a); /* mov -B(%rbp) %eax */
+#define X86_CMP(op) \
+        X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */ \
+        X86(0xD1); X86(0xFA); /*  sar %edx */ \
+        X86_MOV_RBP(0x8B, pos->b); /*  mov -B(%rbp) %eax */ \
+        X86(0xD1); X86(0xF8); /*  sar %eax */ \
+        X86(0x39); X86(0xC2); /*  cmp %eax %edx */ \
+        X86(op); X86(0x9 + X86_PRE_T); /*  jle +10 */ \
+        X86_MOVQ(pos->a, PN_TRUE); /*  -A(%rbp) = TRUE */ \
+        X86(0xEB); X86(0x7 + X86_PRE_T); /*  jmp +7 */ \
+        X86_MOVQ(pos->a, PN_FALSE) /*  -A(%rbp) = FALSE */
+#define TAG_JMP(pos) \
+        X86(0xE9); \
+        jmps[jmpc].from = asmb; \
+        X86I(0); \
+        jmps[jmpc].to = pos + 1; \
+        jmpc++
 
 // TODO: pass variables through Potion struct? expand?
 const u8 x86_var_regs[] = {0x55, 0x4D};
 
-PN potion_x86_debug(Potion *P, PN cl, PN arg1, PN arg2) {
-  PN up1, up2;
-  if (PN_IS_CLOSURE(cl)) {
+PN potion_x86_debug(Potion *P, PN cl) {
+  PN up1 = PN_NIL;
+  if (PN_IS_CLOSURE(cl))
     up1 = PN_CLOSURE(cl)->data[1];
-    up2 = PN_CLOSURE(cl)->data[2];
-  }
-  printf("DEBUG: %p %lu %lu %lu\n", P, cl, arg1, arg2);
-  return PN_NUM(10);
+  printf("DEBUG: %p %lu %lu\n", P, cl, up1);
+  if (PN_IS_REF(up1))
+    up1 = PN_DEREF(up1);
+  return up1;
 }
 
 PN potion_x86_stub(Potion *P, PN cl) {
@@ -92,10 +107,18 @@ PN potion_x86_stub(Potion *P, PN cl) {
   return func(P, cl); // TODO: use varargs
 }
 
+struct PNJumps {
+  u8 *from;
+  PN_OP *to;
+};
+
+#define MAX_JUMPS 1024
+
 jit_t potion_x86_proto(Potion *P, PN proto) {
   long regs = 0, lregs = 0, need = 0, argx = 0;
   PN val;
   PN_OP *pos, *end;
+  struct PNJumps jmps[MAX_JUMPS]; int jmpc = 0, jmpi = 0;
   struct PNProto *f = (struct PNProto *)proto;
   int upi, upc = PN_TUPLE_LEN(f->upvals);
   int movl = sizeof(PN) / sizeof(int);
@@ -131,7 +154,11 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   X86_PRE(); X86(0x89); X86(0x75); X86(RBP(need - 1));
 
   // Read locals
+  for (argx = regs; argx < lregs; argx++) {
+    X86_MOVQ(argx, PN_NIL);
+  }
   if (PN_IS_TUPLE(f->sig)) {
+    argx = 0;
     PN_TUPLE_EACH(f->sig, i, v, {
       if (PN_IS_STR(v)) {
         unsigned long num = PN_GET(f->locals, v);
@@ -143,6 +170,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   // if CL passed in with upvals, load them
   // TODO: optimize the PN_IS_CLOSURE call here
   if (upc > 0) {
+#if 0
     X86_PRE(); X86(0x8B); X86(0x45); X86(RBP(need - 1)); // mov cl %rax
     X86(0x83); X86(0xE0); X86(0x01); // and 0x1 %eax
     X86(0x85); X86(0xC0); // test %eax %eax
@@ -155,6 +183,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
     X86(0x8B); X86(0x40); X86(sizeof(PN_GC)); // mov (%rax).vt %eax
     X86(0x83); X86(0xF8); X86(PN_TCLOSURE); // cmp 0x5 %eax
     X86(0x75); X86(X86C(9, 12) * upc); // jne 12(u)
+#endif
 
     for (upi = 0; upi < upc; upi++) {
       X86_PRE(); X86(0x8B); X86(0x45); X86(RBP(need - 1)); // mov cl %rax
@@ -166,6 +195,12 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   }
 
   while (pos < end) {
+    for (jmpi = 0; jmpi < jmpc; jmpi++) {
+      if (jmps[jmpi].to == pos) {
+        *((int *)jmps[jmpi].from) = (int)(asmb - (jmps[jmpi].from + 4));
+      }
+    }
+
     switch (pos->code) {
       case OP_MOVE:
         X86_MOV_RBP(0x8B, pos->b);
@@ -179,12 +214,47 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
         X86_MOVQ(pos->a, val);
       break;
       case OP_GETLOCAL:
-        X86_MOV_RBP(0x8B, regs + pos->b);
+        // TODO: optimize to do the ref check only if there are upvals
+        X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
+        if (jit_protos != NULL) {
+          // TODO: optimize to use %rdx rather than jmp
+          X86(0x83); X86(0xE0); X86(PN_PRIMITIVE); // and PRIM %eax
+          X86(0x83); X86(0xF8); X86(PN_REF_FLAG); // cmp WEAK %eax
+          X86(0x75); X86(X86C(11, 13)); // jne 13
+          X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
+          X86(0x83); X86(0xE8); X86(PN_REF_FLAG); // sub REF %eax
+          X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(PN_GC)); // mov %rax.data %rax
+          X86(0xEB); X86(X86C(3, 4)); //  jmp 4
+          X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
+        }
         X86_MOV_RBP(0x89, pos->a);
       break;
       case OP_SETLOCAL:
+        X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */
+        if (jit_protos != NULL) {
+          // TODO: optimize to use %rdx rather than jmp
+          X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
+          X86(0x83); X86(0xE0); X86(PN_PRIMITIVE); // and PRIM %eax
+          X86(0x83); X86(0xF8); X86(PN_REF_FLAG); // cmp WEAK %eax
+          X86(0x75); X86(X86C(11, 13)); // jne 13
+          X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
+          X86(0x83); X86(0xE8); X86(PN_REF_FLAG); // sub REF %eax
+          X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(PN_GC)); // mov %rdx %rax.data
+          X86(0xEB); X86(X86C(3, 4)); //  jmp 4
+        }
+        X86_PRE(); X86(0x89); X86(0x55); X86(RBP(regs + pos->b)); // mov %rdx %rsp(B)
+      break;
+      case OP_GETUPVAL:
+        X86_MOV_RBP(0x8B, lregs + pos->b);
+        X86(0x83); X86(0xE8); X86(PN_REF_FLAG); // sub REF %eax
+        X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(PN_GC));
+        X86_MOV_RBP(0x89, pos->a);
+      break;
+      case OP_SETUPVAL:
         X86_MOV_RBP(0x8B, pos->a);
-        X86_MOV_RBP(0x89, regs + pos->b);
+        // 48 83 c0 08 add rax
+        // 48 83 c3 01 add rbx
+        X86_MOV_RBP(0x89, lregs + pos->b);
       break;
       case OP_ADD:
         X86_MATH({
@@ -205,24 +275,50 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
           X86(0x0F); X86(0xAF); X86(0xC2); // imul %rdx %rax
         });
       break;
+      case OP_NEQ:
+        X86_CMP(0x74); // je
+      break;
+      case OP_EQ:
+        X86_CMP(0x75); // jne
+      break;
+      case OP_LT:
+        X86_CMP(0x7D); // jge
+      break;
+      case OP_LTE:
+        X86_CMP(0x7F); // jg
+      break;
       case OP_GT:
-        X86_MATH({
-          X86(0x39); X86(0xC2); // cmp %eax %edx
-          X86(0x7E); X86(0x09 + X86_PRE_T); // jle +10
-          X86_PRE(); X86(0xC7); // movl
-          X86(0x45); X86(RBP(pos->a)); // -A(%rbp) = TRUE
-          X86I(PN_TRUE);
-          X86(0); // noop
-          X86(0xEB); X86(0x7 + X86_PRE_T); // jmp +8
-          X86(0x45); X86(RBP(pos->a)); // -A(%rbp) = FALSE
-          X86I(PN_FALSE);
-        });
+        X86_CMP(0x7E); // jle
+      break;
+      case OP_GTE:
+        X86_CMP(0x7C); // jl
+      break;
+      case OP_JMP:
+        // pos += pos->a;
+        // X86(0xEB); X86(0x7); /*  jmp +7 */
+      break;
+      case OP_TEST:
+        // reg[pos->a] = PN_BOOL(PN_TEST(reg[pos->a]));
+      break;
+      case OP_TESTJMP:
+        X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */
+        X86(0xB8); X86I(PN_FALSE); /* mov FALSE %eax */
+        X86(0x39); X86(0xC2); /*  cmp %eax %edx */
+        X86(0x74); X86(0x5); /*  je +10 */
+        TAG_JMP(pos + pos->b);
+      break;
+      case OP_NOTJMP:
+        X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */
+        X86(0xB8); X86I(PN_FALSE); /* mov FALSE %eax */
+        X86(0x39); X86(0xC2); /* cmp %eax %edx */
+        X86(0x75); X86(0x5); /* jne +10 */
+        TAG_JMP(pos + pos->b);
       break;
       case OP_CALL: {
         int argc = pos->b - pos->a;
         // (Potion *, CL) as the first argument
-        X86_PRE(); X86(0x8B); X86(0x7d); X86(RBP(need - 1));
-        X86_PRE(); X86(0xBE); X86N(proto); // TODO: send closure obj
+        X86_PRE(); X86(0x8B); X86(0x7d); X86(RBP(need - 2));
+        X86_PRE(); X86(0x8B); X86(0x75); X86(RBP(pos->b));
         while (--argc > 0) {
           X86_PRE(); X86(0x8B); X86(x86_var_regs[argc - 1]); X86(RBP(pos->a + argc));
         }
@@ -249,9 +345,9 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
         PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
           pos++;
           if (pos->code == OP_GETUPVAL) {
-            X86_PRE(); X86(0x8B); X86(0x50); X86(RBP(lregs + pos->b)); // mov upval %rdx
+            X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(lregs + pos->b)); // mov upval %rdx
           } else if (pos->code == OP_GETLOCAL) {
-            X86_PRE(); X86(0x8B); X86(0x7d); X86(RBP(need - 1));
+            X86_PRE(); X86(0x8B); X86(0x7d); X86(RBP(need - 2));
             X86_PRE(); X86(0x8B); X86(0x75); X86(RBP(regs + pos->b));
             X86_PRE(); X86(0xB8); X86N(&potion_ref); // mov &potion_ref %rax
             X86(0xFF); X86(0xD0); // callq %rax

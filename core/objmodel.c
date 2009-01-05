@@ -102,12 +102,19 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
 PN potion_ref(Potion *P, PN data) {
   struct PNWeakRef *ref = PN_BOOT_OBJ_ALLOC(struct PNWeakRef, PN_TWEAK, 0);
   ref->data = data;
-  return (PN)ref;
+  return PN_SET_REF(ref);
+}
+
+PN potion_ref_inspect(Potion *P, PN cl, PN self, PN len) {
+  printf("#<ref>");
+  return PN_NIL;
 }
 
 void potion_object_init(Potion *P) {
   PN clo_vt = PN_VTABLE(PN_TCLOSURE);
+  PN ref_vt = PN_VTABLE(PN_TWEAK);
   potion_method(clo_vt, "inspect", potion_closure_inspect, 0);
+  potion_method(ref_vt, "inspect", potion_ref_inspect, 0);
 }
 
 void potion_lobby_init(Potion *P) {
