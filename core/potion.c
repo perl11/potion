@@ -75,7 +75,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       printf("\n");
     }
     if (exec == 1) {
-      code = potion_vm(P, code, PN_EMPTY, PN_EMPTY);
+      code = potion_vm(P, code, PN_EMPTY, 0, NULL);
       if (verbose) {
         printf("\n-- returned %lu --\n", code);
         potion_send(code, PN_inspect);

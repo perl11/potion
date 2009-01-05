@@ -48,7 +48,7 @@ const u8 potion_op_args[] = {
 };
 
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
-  return potion_vm(P, self, args, PN_EMPTY);
+  return potion_vm(P, self, args, 0, NULL);
 }
 
 PN potion_proto_inspect(Potion *P, PN cl, PN self) {

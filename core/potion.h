@@ -27,6 +27,7 @@ struct PNString;
 struct PNClosure;
 struct PNProto;
 struct PNTuple;
+struct PNWeakRef;
 struct PNGarbage;
 
 #define PN_TNIL         0
@@ -44,7 +45,8 @@ struct PNGarbage;
 #define PN_TBYTES       12
 #define PN_TPROTO       13
 #define PN_TLOBBY       14
-#define PN_TUSER        15
+#define PN_TWEAK        15
+#define PN_TUSER        16
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
@@ -56,7 +58,7 @@ struct PNGarbage;
 #define PN_TRUE         ((PN)2)
 #define PN_FALSE        ((PN)4)
 #define PN_EMPTY        ((PN)6)
-#define PN_PRIMITIVE    6
+#define PN_PRIMITIVE    7
 
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE)
 #define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
@@ -68,6 +70,7 @@ struct PNGarbage;
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
+#define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
 
 #define PN_NUM_FLAG     0x01
 #define PN_TUPLE_FLAG   0x06
@@ -77,8 +80,9 @@ struct PNGarbage;
 #define PN_STR_PTR(x)   ((struct PNString *)(x))->chars
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
 #define PN_CLOSURE(x)   ((struct PNClosure *)(x))
+#define PN_PROTO(x)     ((struct PNProto *)(x))
 #define PN_FUNC(f, s)   potion_closure_new(P, (imp_t)f, potion_sig(P, s), 0)
-#define PN_FUNCD(f,s,d) potion_closure_new(P, (imp_t)f, potion_sig(P, s), d)
+#define PN_DEREF(x)     ((struct PNWeakRef *)(x))->data
 #define PN_GB(x,o,m)    (x).next = ((PN_GC)o) | m;
 
 #define PN_TUP(X)       potion_tuple_new(P, X)
@@ -143,7 +147,8 @@ struct PNClosure {
   PN_OBJECT_HEADER
   imp_t method;
   PN sig;
-  PN data;
+  unsigned int extra;
+  PN data[0];
 };
 
 struct PNProto {
@@ -163,6 +168,11 @@ struct PNTuple {
   PN_GC next;
   unsigned long len;
   PN set[0];
+};
+
+struct PNWeakRef {
+  PN_OBJECT_HEADER
+  PN data;
 };
 
 // the potion type is the 't' in the vtable tuple (m,t)
@@ -245,7 +255,8 @@ PN potion_type_new(Potion *, PNType, PN);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
-PN potion_closure_new(Potion *, imp_t, PN, PN);
+PN potion_closure_new(Potion *, imp_t, PN, unsigned int);
+PN potion_ref(Potion *, PN);
 PN potion_sig(Potion *, char *);
 
 inline PN potion_tuple_with_size(Potion *, unsigned long);
@@ -255,7 +266,7 @@ inline unsigned long potion_tuple_put(Potion *, PN *, PN);
 inline unsigned long potion_tuple_find(Potion *, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
-PN potion_source_dump(Potion *P, PN, PN);
+PN potion_source_dump(Potion *, PN, PN);
 
 void potion_lobby_init(Potion *);
 void potion_object_init(Potion *);
@@ -270,7 +281,7 @@ void potion_compiler_init(Potion *);
 PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
-PN potion_vm(Potion *, PN, PN, PN);
+PN potion_vm(Potion *, PN, PN, unsigned int, PN *);
 void potion_run();
 
 #ifdef X86_JIT

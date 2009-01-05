@@ -22,11 +22,11 @@ struct PNVtable {
 
 unsigned long potion_vt_id = PN_TUSER;
 
-PN potion_closure_new(Potion *P, imp_t meth, PN sig, PN data) {
-  struct PNClosure *c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, 0);
+PN potion_closure_new(Potion *P, imp_t meth, PN sig, unsigned int extra) {
+  struct PNClosure *c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, extra * sizeof(PN));
   c->method = meth;
   c->sig = sig;
-  c->data = data;
+  c->extra = extra;
   return (PN)c;
 }
 
@@ -54,22 +54,24 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
 }
 
 PN potion_proto_method(Potion *P, PN cl, PN self, PN args) {
-  return potion_vm(P, PN_CLOSURE(cl)->data, args, PN_EMPTY);
+  return potion_vm(P, PN_CLOSURE(cl)->data[0], args, 0, NULL);
 }
 
 PN potion_getter_method(Potion *P, PN cl, PN self) {
-  return PN_CLOSURE(cl)->data;
+  return PN_CLOSURE(cl)->data[0];
 }
 
 PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int ret;
+  PN cl;
   struct PNVtable *vt = (struct PNVtable *)self;
   unsigned k = kh_put(PN, vt->kh, key, &ret);
   if (!PN_IS_CLOSURE(method)) {
     if (PN_IS_PROTO(method))
-      method = potion_closure_new(P, (imp_t)potion_proto_method, PN_NIL, method);
+      cl = potion_closure_new(P, (imp_t)potion_proto_method, PN_NIL, 1);
     else
-      method = potion_closure_new(P, (imp_t)potion_getter_method, PN_EMPTY, method);
+      cl = potion_closure_new(P, (imp_t)potion_getter_method, PN_EMPTY, 1);
+    PN_CLOSURE(cl)->data[0] = method;
   }
   return kh_value(vt->kh, k) = method;
 }
@@ -95,6 +97,12 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
   if (!closure)
     fprintf(stderr, "lookup failed %lu %s\n", vt, PN_STR_PTR(msg));
   return closure;
+}
+
+PN potion_ref(Potion *P, PN data) {
+  struct PNWeakRef *ref = PN_BOOT_OBJ_ALLOC(struct PNWeakRef, PN_TWEAK, 0);
+  ref->data = data;
+  return (PN)ref;
 }
 
 void potion_object_init(Potion *P) {

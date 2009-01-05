@@ -21,8 +21,8 @@
 extern u8 potion_op_args[];
 
 PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
-  PN proto = PN_TUPLE_AT(PN_CLOSURE(cl)->data, 0);
-  return potion_vm(P, proto, args, PN_CLOSURE(cl)->data);
+  return potion_vm(P, PN_CLOSURE(cl)->data[0], args,
+    PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
 
 #define STACK_MAX 72000
@@ -84,7 +84,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 const u8 x86_var_regs[] = {0x55, 0x4D};
 
 PN potion_x86_debug(Potion *P, PN cl, PN arg1, PN arg2) {
-  printf("DEBUG: %p %lu %lu\n", P, cl, arg1, arg2);
+  printf("DEBUG: %p %lu %lu %lu\n", P, cl, arg1, arg2);
   return PN_NUM(10);
 }
 
@@ -224,7 +224,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
 }
 #endif
 
-PN potion_vm(Potion *P, PN proto, PN vargs, PN upargs) {
+PN potion_vm(Potion *P, PN proto, PN vargs, unsigned int upc, PN* upargs) {
   struct PNProto *f = (struct PNProto *)proto;
 
   // these variables persist as we jump around
@@ -253,10 +253,11 @@ reentry:
 
   if (pos == (PN_OP *)PN_STR_PTR(f->asmb)) {
     reg[0] = PN_VTABLE(PN_TLOBBY);
-    if (PN_IS_TUPLE(upargs)) {
-      PN_TUPLE_EACH(upargs, i, v, {
-        if (i > 0) upvals[i-1] = v;
-      });
+    if (upc > 0 && upargs != NULL) {
+      unsigned int i;
+      for (i = 0; i < upc; i++) {
+        upvals[i] = upargs[i];
+      }
     }
 
     if (args != NULL) {
@@ -283,16 +284,22 @@ reentry:
         reg[pos->a] = (PN)pos->b;
       break;
       case OP_GETLOCAL:
-        reg[pos->a] = locals[pos->b];
+        if (PN_IS_REF(locals[pos->b]))
+          reg[pos->a] = PN_DEREF(locals[pos->b]);
+        else
+          reg[pos->a] = locals[pos->b];
       break;
       case OP_SETLOCAL:
-        locals[pos->b] = reg[pos->a];
+        if (PN_IS_REF(locals[pos->b]))
+          PN_DEREF(locals[pos->b]) = reg[pos->a];
+        else
+          locals[pos->b] = reg[pos->a];
       break;
       case OP_GETUPVAL:
-        reg[pos->a] = *((PN *)(upvals[pos->b]));
+        reg[pos->a] = PN_DEREF(upvals[pos->b]);
       break;
       case OP_SETUPVAL:
-        *((PN *)(upvals[pos->b])) = reg[pos->a];
+        PN_DEREF(upvals[pos->b]) = reg[pos->a];
       break;
       case OP_SETTABLE:
         reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
@@ -368,12 +375,13 @@ reentry:
               ((struct PNClosure *)reg[pos->b])->method(P, reg[pos->b], reg[pos->a], reg[pos->a+1]);
           } else {
             args = &reg[pos->a+1];
-            upargs = PN_CLOSURE(reg[pos->b])->data;
+            upc = PN_CLOSURE(reg[pos->b])->extra - 1;
+            upargs = &PN_CLOSURE(reg[pos->b])->data[1];
             current = reg + PN_INT(f->stack) + 2;
             current[-2] = (PN)f;
             current[-1] = (PN)pos;
 
-            f = (struct PNProto *)PN_TUPLE_AT(upargs, 0);
+            f = (struct PNProto *)PN_CLOSURE(reg[pos->b])->data[0];
             pos = ((PN_OP *)PN_STR_PTR(f->asmb));
             goto reentry;
           }
@@ -398,19 +406,23 @@ reentry:
         }
       break;
       case OP_PROTO: {
+        struct PNClosure *cl;
         unsigned areg = pos->a;
         proto = PN_TUPLE_AT(f->protos, pos->b);
-        val = PN_TUP(proto);
+        cl = (struct PNClosure *)potion_closure_new(P, (imp_t)potion_vm_proto, PN_NIL,
+          PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
+        cl->data[0] = proto;
         PN_TUPLE_COUNT(((struct PNProto *)proto)->upvals, i, {
-          // TODO: pass in weakrefs as upvals
           pos++;
           if (pos->code == OP_GETUPVAL) {
-            val = PN_PUSH(val, upvals[pos->b]);
+            cl->data[i+1] = upvals[pos->b];
           } else if (pos->code == OP_GETLOCAL) {
-            val = PN_PUSH(val, (PN)&locals[pos->b]);
+            cl->data[i+1] = locals[pos->b] = (PN)potion_ref(P, locals[pos->b]);
+          } else {
+            fprintf(stderr, "** missing an upval to proto %p\n", proto);
           }
         });
-        reg[areg] = potion_closure_new(P, (imp_t)potion_vm_proto, PN_NIL, val);
+        reg[areg] = (PN)cl;
       }
       break;
     }
