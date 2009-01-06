@@ -1,0 +1,6 @@
+math = (x):
+  add = (x, y): x + y.
+  sub = (x, y): x - y.
+  sub.
+m = math()
+m(60, 2) # 58
