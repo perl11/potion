@@ -92,13 +92,8 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
         jmpc++
 
 PN potion_x86_debug(Potion *P, PN cl, PN v) {
-  printf("DEBUG: %p %p %lu\n", P, cl, v);
+  printf("DEBUG: %p %p %lu\n", P, PN_CLOSURE(cl), v);
   return (PN)P;
-}
-
-PN potion_x86_stub(Potion *P, PN cl) {
-  jit_t func = (jit_t)PN_CLOSURE(cl)->data[0];
-  return func(P, cl); // TODO: use varargs
 }
 
 struct PNJumps {
@@ -153,7 +148,7 @@ static u8 *potion_x86_c_arg(u8 *asmb, int out, int regn, int argn) {
   return asmb;
 }
 
-jit_t potion_x86_proto(Potion *P, PN proto) {
+imp_t potion_x86_proto(Potion *P, PN proto) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 0;
   PN val;
   PN_OP *pos, *end;
@@ -162,11 +157,11 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   int upi, upc = PN_TUPLE_LEN(f->upvals);
   int movl = sizeof(PN) / sizeof(int);
   u8 *start, *asmb;
-  jit_t jit_func;
-  jit_t *jit_protos = NULL;
+  imp_t jit_func;
+  imp_t *jit_protos = NULL;
 
   start = asmb = PN_ALLOC_FUNC(1024);
-  jit_func = (jit_t)asmb;
+  jit_func = (imp_t)asmb;
   X86(0x55); // push %rbp
   X86_PRE(); X86(0x89); X86(0xE5); // mov %rsp,%rbp
 
@@ -174,7 +169,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
 
   if (PN_TUPLE_LEN(f->protos) > 0) {
-    jit_protos = PN_ALLOC_N(jit_t, PN_TUPLE_LEN(f->protos));
+    jit_protos = PN_ALLOC_N(imp_t, PN_TUPLE_LEN(f->protos));
     PN_TUPLE_EACH(f->protos, i, proto2, {
       int p2args = 2;
       struct PNProto *f2 = (struct PNProto *)proto2;
@@ -445,10 +440,10 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
         struct PNClosure *cl;
         PN func2 = (PN)jit_protos[pos->b];
         PN proto = PN_TUPLE_AT(f->protos, pos->b);
-        cl = (struct PNClosure *)potion_closure_new(P, (imp_t)potion_x86_stub, PN_NIL,
+        cl = (struct PNClosure *)potion_closure_new(P, NULL, PN_NIL,
           PN_TUPLE_LEN(PN_PROTO(proto)->upvals));
         // func2 = &potion_x86_debug;
-        cl->method = func2;
+        cl->method = (imp_t)func2;
         X86_MOVL(pos->a, cl);
         PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
           pos++;

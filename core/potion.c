@@ -86,8 +86,8 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
     } else if (exec == 2) {
 #ifdef X86_JIT
       PN val;
-      jit_t func = potion_x86_proto(P, code);
-      val = func(P, PN_NIL);
+      imp_t func = potion_x86_proto(P, code);
+      val = func(P, PN_NIL, PN_NIL);
       if (verbose > 1)
         printf("\n-- jit returned %p --\n", func);
       if (verbose) {

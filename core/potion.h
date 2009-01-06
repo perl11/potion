@@ -147,7 +147,6 @@ struct PNFile {
 };
 
 typedef PN (*imp_t)(Potion *P, PN closure, PN receiver, ...);
-typedef PN (*jit_t)(Potion *P, PN closure, ...);
 
 struct PNClosure {
   PN_OBJECT_HEADER
@@ -287,7 +286,7 @@ PN potion_vm(Potion *, PN, PN, unsigned int, PN *);
 void potion_run();
 
 #ifdef X86_JIT
-jit_t potion_x86_proto(Potion *, PN);
+imp_t potion_x86_proto(Potion *, PN);
 #endif
 
 #endif
