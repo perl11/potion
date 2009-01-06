@@ -91,7 +91,7 @@ test: test/api/potion-test
 	@count=0; failed=0; \
 	for f in test/**/*.pn; do \
 		look=`cat $$f | sed "/\#/!d; s/.*\# *//"`; \
-		for=`./potion -I $$f`; \
+		for=`./potion -I $$f | sed "s/\n$$//"`; \
 		if [ "$$look" != "$$for" ]; then \
 		  echo; \
 			echo "$$f: expected <$$look>, but got <$$for>"; \
