@@ -12,7 +12,8 @@
 #include "pn-gram.h"
 #include "pn-ast.h"
 
-#define TOKEN2(id,v) LemonPotion(pParser, PN_TOK_##id, v, P)
+#define TOKEN2(id,v) LemonPotion(pParser, PN_TOK_##id, v, P); last = PN_TOK_##id
+#define TOKEN1(id)   if (last != PN_TOK_##id) { TOKEN(id); }
 #define TOKEN(id)    TOKEN2(id, PN_NIL)
 
 %%{
@@ -60,7 +61,7 @@
   string2     = "%% " (utf8 - newline)+;
 
   main := |*
-    comma       => { TOKEN(SEP); };
+    comma       => { TOKEN1(SEP); };
     whitespace;
     comment;
 
@@ -94,7 +95,7 @@
     end_data    => { TOKEN(END_DATA); };
     begin_block => { TOKEN(BEGIN_BLOCK); };
     end_block   => { TOKEN(END_BLOCK); };
-    newline     => { TOKEN(SEP); };
+    newline+    => { TOKEN1(SEP); };
     path        => { TOKEN2(PATH, potion_str2(P, ts, te - ts)); };
 
     nil         => { TOKEN2(NIL, PN_NIL); };
@@ -118,6 +119,7 @@ PN potion_parse(Potion *P, PN code) {
   char *p, *pe, *ts, *te, *eof = 0;
   int lineno = 0;
   void *pParser = LemonPotionAlloc(malloc);
+  PN last = PN_NIL;
 
   P->xast = 1;
   P->source = PN_NIL;
