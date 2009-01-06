@@ -14,7 +14,7 @@
 #include "version.h"
 
 const char potion_banner[] = "potion " POTION_VERSION
-                             " (date='" POTION_DATE "', commit='" POTION_COMMIT "')";
+                             " (date='" POTION_DATE "', commit='" POTION_COMMIT "', jit=%d)";
 const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {
@@ -43,7 +43,7 @@ static void potion_cmd_stats() {
 }
 
 static void potion_cmd_version() {
-  printf("%s\n", potion_banner);
+  printf(potion_banner, POTION_JIT);
 }
 
 static void potion_cmd_compile(char *filename, int exec, int verbose) {

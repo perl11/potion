@@ -93,6 +93,11 @@ test: test/api/potion-test
 		   echo running VM tests; \
 		else \
 		   echo; echo running JIT tests; \
+			 jit=`./potion -v | sed "/jit=1/!d"`; \
+			 if [ "$$jit" = "" ]; then \
+			   echo skipping; \
+			   break; \
+			 fi; \
 		fi; \
 		for f in test/**/*.pn; do \
 			look=`cat $$f | sed "/\#/!d; s/.*\# *//"`; \
