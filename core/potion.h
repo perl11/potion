@@ -258,7 +258,7 @@ PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, imp_t, PN, unsigned int);
 PN potion_ref(Potion *, PN);
 PN potion_sig(Potion *, char *);
-PN potion_pow(PN, PN);
+PN potion_pow(Potion *, PN, PN, PN);
 
 inline PN potion_tuple_with_size(Potion *, unsigned long);
 inline PN potion_tuple_new(Potion *, PN);

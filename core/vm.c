@@ -106,16 +106,22 @@ struct PNJumps {
 // mimick c calling convention
 static u8 *potion_x86_c_arg(u8 *asmb, int out, int regn, int argn) {
 #if PN_SIZE_T == 4
-  if (out) { X86_MOV_RBP(0x8b, regn); }
-  if (!out) argn += 2;
   if (argn == 0) {
-    X86_PRE(); X86(0x89); X86(0x04); X86(0x24);
-  } else if (out) {
-    X86_PRE(); X86(0x89); X86(0x44); X86(0x24); X86(argn * sizeof(PN));
+    // OPT: the first argument is always (Potion *)
+    if (!out) {
+      X86_PRE(); X86(0x8b); X86(0x45); X86(2 * sizeof(PN));
+      X86_PRE(); X86(0x89); X86(0x04); X86(0x24);
+    }
   } else {
-    X86_PRE(); X86(0x8b); X86(0x45); X86(argn * sizeof(PN));
+    if (out) { X86_MOV_RBP(0x8b, regn); }
+    if (!out) argn += 2;
+    if (out) {
+      X86_PRE(); X86(0x89); X86(0x44); X86(0x24); X86(argn * sizeof(PN));
+    } else {
+      X86_PRE(); X86(0x8b); X86(0x45); X86(argn * sizeof(PN));
+    }
+    if (!out) { X86_MOV_RBP(0x89, regn); }
   }
-  if (!out) { X86_MOV_RBP(0x89, regn); }
 #else
   switch (argn) {
     case 0:
@@ -346,8 +352,10 @@ imp_t potion_x86_proto(Potion *P, PN proto) {
         });
       break;
       case OP_POW:
-        X86_ARGO(pos->a, 0);
-        X86_ARGO(pos->b, 1);
+        X86_ARGO(need - 2, 0);
+        X86_ARGO(need - 1, 1);
+        X86_ARGO(pos->a, 2);
+        X86_ARGO(pos->b, 3);
         X86_PRE(); X86(0xB8); X86N(potion_pow); // mov &potion_tuple_push %rax
         X86(0xFF); X86(0xD0); // callq %rax
         X86_MOV_RBP(0x89, pos->a); // mov %rax local

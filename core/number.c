@@ -10,7 +10,7 @@
 #include "potion.h"
 #include "internal.h"
 
-PN potion_pow(PN num, PN sup) {
+PN potion_pow(Potion *P, PN cl, PN num, PN sup) {
   return PN_NUM((int)pow((double)PN_INT(num), (double)PN_INT(sup)));
 }
 
