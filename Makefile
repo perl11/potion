@@ -32,6 +32,7 @@ LLONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(l
 DOUBLE = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(double)); return 0; }" | ${CCEX}`
 LILEND = `echo "\#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\\"%d\\\", (int)byte[0]); return 0; }" | ${CCEX}`
 
+RAGELV = `${RAGEL} -v | sed "/ version /!d; s/.* version //; s/ .*//"`
 MINGW = `echo "\#include <stdio.h>int main() {\#ifdef __MINGW32__printf(\\\"1\\\");\#elseprintf(\\\"0\\\");\#endifreturn 0; }" | ${CCEX}`
 MINGW_CMD = echo "\#include <stdio.h>int main() {\#ifdef __MINGW32__printf(\"core/mingw.o\");\#endifreturn 0; }" | ${CCEX}
 MINGW_OBJ != `$(MINGW_CMD)`
@@ -78,6 +79,7 @@ version:
 	@echo "#define POTION_JIT    ${JIT}"
 	@echo "#define POTION_MAKE   \"${MAKE}\""
 	@echo "#define POTION_MINGW  ${MINGW}"
+	@echo "#define POTION_RAGEL  \"${RAGELV}\""
 	@echo "#define POTION_PREFIX \"${PREFIX}\""
 	@echo
 	@echo "#define PN_SIZE_T     ${ULONG}"
@@ -97,6 +99,11 @@ core/version.h:
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
 core/pn-scan.c: core/pn-scan.rl
+	@if [ "${RAGELV}" != "6.3" ]; then \
+		if [ "${RAGELV}" != "6.2" ]; then \
+			echo "** potion may not work with ragel ${RAGELV}! try version 6.2 or 6.3."; \
+		fi; \
+	fi
 	@echo RAGEL core/pn-scan.rl
 	@${RAGEL} core/pn-scan.rl -C -o $@
 
