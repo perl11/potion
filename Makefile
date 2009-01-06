@@ -37,7 +37,34 @@ MINGW_OBJ != `$(MINGW_CMD)`
 MINGW_OBJ ?= $(shell $(MINGW_CMD))
 OBJ += ${MINGW_OBJ}
 
-all: potion test
+all: potion test usage
+
+usage:
+	@echo
+	@echo " ~ using potion ~"
+	@echo
+	@echo " Running a script."
+	@echo
+	@echo "   ./potion examples/fib.pn"
+	@echo
+	@echo " Dump the AST and bytecode inspection for a script. "
+	@echo
+	@echo "   ./potion -V examples/fib.pn"
+	@echo
+	@echo " Compiling to bytecode."
+	@echo
+	@echo "   ./potion -c examples/fib.pn"
+	@echo "   ./potion examples/fib.pnb"
+	@echo
+	@echo " Potion builds its JIT compiler by default, but"
+	@echo " you can use the bytecode VM by running scripts"
+	@echo " with the -B flag."
+	@echo
+	@echo " If you built with JIT=0, then the bytecode VM"
+	@echo " will run by default."
+	@echo
+	@echo " Kindly email your respects and thoughtful queries"
+	@echo " to _why <why@whytheluckystiff.net>. Thankyou."
 
 version:
 	@echo "#define POTION_DATE   \"${DATE}\""
@@ -85,6 +112,7 @@ potion: core/version.h ${OBJ_POTION} ${OBJ}
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
 
 test: test/api/potion-test
+	@echo
 	@echo running API tests
 	@test/api/potion-test
 	@count=0; failed=0; pass=0; \

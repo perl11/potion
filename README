@@ -18,6 +18,54 @@
 
   ~ potion ~
 
+  Potion is an object- and mixin-oriented (traits)
+  language.
+
+  Its exciting points are:
+
+   * Just-in-time compilation to x86 and x86-64
+     machine code function pointers. This means
+     probably quite speedy and integrates very
+     well with C extensions.
+
+     The JIT is turned on by default and is
+     considered the primary mode of operation.
+
+   * Intermediate bytecode format and VM. Load
+     and dump code. Decent speed and cross-
+     architecture. Heavily based on Lua's VM.
+
+   * Bootstrapped "id" object model, based on
+     Ian Piumarta's soda languages. This means
+     everything in the language, including
+     object allocation and interpreter state
+     are part of the object model.
+     (See COPYING for citations.)
+
+   * Scoped mixins. Basically, you can modify
+     object behavior within a scope. So changes
+     to core classes can be localized.
+
+   * Interpreter is thread-safe and reentrant.
+
+   * Small. Under 10kloc. Right now we're like
+     4,000 or something. Install sloccount
+     and run: make sloc.
+
+  However, some warnings:
+
+   * Strings are immutable (like Lua) and byte
+     arrays are used for I/O buffers.
+
+   * No floating point support yet.
+
+   * GC is reference counting. I know, I know,
+     but I put my eggs in other baskets. At
+     least it's quick.
+
+
+  ~ how it transpired ~
+
   This isn't supposed to happen!
 
   I started playing with Lua's internals and reading
