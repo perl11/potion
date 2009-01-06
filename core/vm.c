@@ -25,7 +25,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
 
-#define STACK_MAX 72000
+#define STACK_MAX 1048576
 
 #ifdef X86_JIT
 
@@ -305,6 +305,14 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
         X86(0x83); X86(0xE8); X86(PN_REF_FLAG); // sub REF %eax
         X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(PN_GC)); // mov %rdx %rax.data
       break;
+      case OP_SETTABLE:
+        X86_ARGO(need - 1, 0);
+        X86_ARGO(pos->a, 1);
+        X86_ARGO(pos->b, 2);
+        X86_PRE(); X86(0xB8); X86N(potion_tuple_push); // mov &potion_tuple_push %rax
+        X86(0xFF); X86(0xD0); // callq %rax
+        X86_MOV_RBP(0x89, pos->a); // mov %rax local
+      break;
       case OP_ADD:
         X86_MATH({
           X86(0x89); X86(0xD1); // mov %rdx %rcx
@@ -323,6 +331,30 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
         X86_MATH({
           X86(0x0F); X86(0xAF); X86(0xC2); // imul %rdx %rax
         });
+      break;
+      case OP_DIV:
+        X86_MATH({
+          X86(0x89); X86(0xC1); // mov %eax %ecx
+          X86(0x89); X86(0xD0); // mov %edx %eax
+          X86(0xC1); X86(0xFA); X86(0x1F); // sar 0x1f %edx
+          X86(0xF7); X86(0xF9); // idiv %ecx
+        });
+      break;
+      case OP_REM:
+        X86_MATH({
+          X86(0x89); X86(0xC1); // mov %eax %ecx
+          X86(0x89); X86(0xD0); // mov %edx %eax
+          X86(0xC1); X86(0xFA); X86(0x1F); // sar 0x1f %edx
+          X86(0xF7); X86(0xF9); // idiv %ecx
+          X86(0x89); X86(0xD0); // mov %edx %eax
+        });
+      break;
+      case OP_POW:
+        X86_ARGO(pos->a, 0);
+        X86_ARGO(pos->b, 1);
+        X86_PRE(); X86(0xB8); X86N(potion_pow); // mov &potion_tuple_push %rax
+        X86(0xFF); X86(0xD0); // callq %rax
+        X86_MOV_RBP(0x89, pos->a); // mov %rax local
       break;
       case OP_NEQ:
         X86_CMP(0x74); // je
