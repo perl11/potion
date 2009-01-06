@@ -119,7 +119,10 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   }); \
 })
 #define PN_UPVAL(name) ({ \
-    unsigned long numup = PN_GET(f->upvals, name); \
+  unsigned long numl = PN_GET(f->locals, name); \
+  unsigned long numup = PN_NONE; \
+  if (numl == PN_NONE) { \
+    numup = PN_GET(f->upvals, name); \
     if (numup == PN_NONE) { \
       struct PNProto *up = f; \
       int depth = 1; \
@@ -137,8 +140,9 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
       } \
       numup = PN_GET(f->upvals, name); \
     } \
-    numup; \
-  })
+  } \
+  numup; \
+})
 
 void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg, PN_OP **pos) {
   PN_REG(f, reg);

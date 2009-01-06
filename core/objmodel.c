@@ -100,6 +100,7 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
 }
 
 PN potion_ref(Potion *P, PN data) {
+  if (PN_IS_REF(data)) return data;
   struct PNWeakRef *ref = PN_BOOT_OBJ_ALLOC(struct PNWeakRef, PN_TWEAK, 0);
   ref->data = data;
   return PN_SET_REF(ref);
