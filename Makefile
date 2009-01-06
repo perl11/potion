@@ -5,7 +5,7 @@ OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -Wall -DICACHE -DMCACHE
+CFLAGS = -Wall -DICACHE -DMCACHE -fno-strict-aliasing
 DEBUG ?= 0
 INCS = -Icore
 JIT ?= 1
