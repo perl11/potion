@@ -12,6 +12,7 @@ JIT ?= 1
 LEMON = tools/lemon
 LIBS = -lm
 RAGEL = ragel
+STRIP = strip -x
 
 DEBUGFLAGS = `echo "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
@@ -110,6 +111,8 @@ tools/lemon: tools/lemon.c
 potion: core/version.h ${OBJ_POTION} ${OBJ}
 	@echo LINK potion
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
+	@echo STRIP potion
+	@${STRIP} potion
 
 test: test/api/potion-test
 	@echo
