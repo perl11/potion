@@ -235,7 +235,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
 #endif
 
     for (upi = 0; upi < upc; upi++) {
-      X86_ARGI(0, 2);
+      X86_ARGI(0, 1);
       X86_MOV_RBP(0x8B, 0);
       X86_PRE(); X86(0x8B); X86(0x40);
         X86(sizeof(struct PNClosure) + (upi * sizeof(PN))); // 0x30(%rax)
