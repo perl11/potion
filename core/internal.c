@@ -37,6 +37,7 @@ static void potion_init(Potion *P) {
   PN_delegated = potion_str(P, "delegated");
   PN_compile = potion_str(P, "compile");
   PN_else = potion_str(P, "else");
+  PN_elsif = potion_str(P, "elsif");
   PN_if = potion_str(P, "if");
   PN_inspect = potion_str(P, "inspect");
   PN_lookup = potion_str(P, "lookup");
