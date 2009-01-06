@@ -177,7 +177,7 @@ imp_t potion_x86_proto(Potion *P, PN proto) {
   if (PN_TUPLE_LEN(f->protos) > 0) {
     jit_protos = PN_ALLOC_N(imp_t, PN_TUPLE_LEN(f->protos));
     PN_TUPLE_EACH(f->protos, i, proto2, {
-      int p2args = 2;
+      int p2args = 3;
       struct PNProto *f2 = (struct PNProto *)proto2;
       // TODO: i'm repeating this a lot. sad.
       if (PN_IS_TUPLE(f2->sig)) {
@@ -193,7 +193,7 @@ imp_t potion_x86_proto(Potion *P, PN proto) {
 
   regs = PN_INT(f->stack);
   lregs = regs + PN_TUPLE_LEN(f->locals);
-  need = lregs + upc + 2;
+  need = lregs + upc + 3;
   rsp = (need + protoargs) * sizeof(PN);
   rsp += (32 - rsp % 32);
   X86_PRE(); X86(0x83); X86(0xEC); X86(rsp);
