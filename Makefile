@@ -90,7 +90,7 @@ test: test/api/potion-test
 	@echo running VM tests
 	@count=0; failed=0; \
 	for f in test/**/*.pn; do \
-		look=`cat $$f | sed "/\#/!d; s/.\+#\s\+//"`; \
+		look=`cat $$f | sed "/\#/!d; s/.*\# *//"`; \
 		for=`./potion -I $$f`; \
 		if [ "$$look" != "$$for" ]; then \
 		  echo; \
