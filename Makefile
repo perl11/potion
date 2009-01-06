@@ -12,7 +12,7 @@ JIT ?= 1
 LEMON = tools/lemon
 LIBS = -lm
 RAGEL = ragel
-STRIP = strip -x
+STRIP := `echo "${DEBUG}" | sed "s/0/strip -x/; s/1/ls/"`
 
 DEBUGFLAGS = `echo "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
