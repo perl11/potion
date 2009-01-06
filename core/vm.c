@@ -89,17 +89,9 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
         jmps[jmpc].to = pos + 1; \
         jmpc++
 
-// TODO: pass variables through Potion struct? expand?
-const u8 x86_var_regs[] = {0x55, 0x4D};
-
-PN potion_x86_debug(Potion *P, PN cl, PN v) {
-  PN up1 = PN_NIL;
-  if (PN_IS_CLOSURE(cl))
-    up1 = PN_CLOSURE(cl)->data[1];
-  printf("DEBUG: %p %lu %lu\n", P, cl, v, up1);
-  if (PN_IS_REF(up1))
-    up1 = PN_DEREF(up1);
-  return up1;
+PN potion_x86_debug(Potion *P, PN cl) {
+  printf("DEBUG: %p %p\n", P, cl);
+  return (PN)P;
 }
 
 PN potion_x86_stub(Potion *P, PN cl) {
@@ -115,7 +107,7 @@ struct PNJumps {
 #define MAX_JUMPS 1024
 
 jit_t potion_x86_proto(Potion *P, PN proto) {
-  long regs = 0, lregs = 0, need = 0, argx = 0;
+  long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 0;
   PN val;
   PN_OP *pos, *end;
   struct PNJumps jmps[MAX_JUMPS]; int jmpc = 0, jmpi = 0;
@@ -126,6 +118,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   jit_t jit_func;
   jit_t *jit_protos = NULL;
 
+printf("Potion: %p\n", P);
   start = asmb = PN_ALLOC_FUNC(1024);
   jit_func = (jit_t)asmb;
   X86(0x55); // push %rbp
@@ -137,18 +130,30 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
   if (PN_TUPLE_LEN(f->protos) > 0) {
     jit_protos = PN_ALLOC_N(jit_t, PN_TUPLE_LEN(f->protos));
     PN_TUPLE_EACH(f->protos, i, proto2, {
+      int p2args = 2;
+      struct PNProto *f2 = (struct PNProto *)proto2;
+      // TODO: i'm repeating this a lot. sad.
+      if (PN_IS_TUPLE(f2->sig)) {
+        PN_TUPLE_EACH(f2->sig, i, v, {
+          if (PN_IS_STR(v)) p2args++;
+        });
+      }
       jit_protos[i] = potion_x86_proto(P, proto2);
+      if (p2args > protoargs)
+        protoargs = p2args;
     });
   }
 
   regs = PN_INT(f->stack);
   lregs = regs + PN_TUPLE_LEN(f->locals);
   need = lregs + upc;
-  need += (16 - need % 16);
-  // if (jit_protos != NULL) {
-    // move the stack pointer if we need registers
-    X86_PRE(); X86(0x83); X86(0xEC); X86(need * sizeof(PN));
-  // }
+  rsp = (need + protoargs) * sizeof(PN);
+  rsp += (16 - rsp % 16);
+  X86_PRE(); X86(0x83); X86(0xEC); X86(rsp);
+
+  // (Potion *) in the first argument slot 
+  X86_PRE(); X86(0x8B); X86(0x45); X86(2 * sizeof(PN));
+  X86_PRE(); X86(0x89); X86(0x04); X86(0x24);
 
   // Read locals
   for (argx = regs; argx < lregs + upc; argx++) {
@@ -315,8 +320,6 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
       case OP_CALL: {
         int argc = pos->b - pos->a;
         // (Potion *, CL) as the first argument
-        X86_PRE(); X86(0x8B); X86(0x45); X86(2 * sizeof(PN));
-        X86_PRE(); X86(0x89); X86(0x44); X86(0x24); X86(0);
         X86_MOV_RBP(0x8B, pos->b); /* mov -0(%rbp) %eax */
         X86_PRE(); X86(0x89); X86(0x44); X86(0x24); X86(sizeof(PN));
         while (--argc > 0) {
@@ -348,8 +351,6 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
           if (pos->code == OP_GETUPVAL) {
             X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(lregs + pos->b)); // mov upval %rdx
           } else if (pos->code == OP_GETLOCAL) {
-            X86_PRE(); X86(0x8B); X86(0x45); X86(2 * sizeof(PN));
-            X86_PRE(); X86(0x89); X86(0x44); X86(0x24); X86(0);
             X86_MOV_RBP(0x8B, regs + pos->b); /* mov -0(%rbp) %eax */
             X86_PRE(); X86(0x89); X86(0x44); X86(0x24); X86(sizeof(PN));
             X86_PRE(); X86(0xB8); X86N(potion_ref); // mov &potion_ref %rax
