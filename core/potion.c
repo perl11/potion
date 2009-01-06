@@ -19,11 +19,20 @@ const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {
   printf("usage: potion [options] [script] [arguments]\n"
+      "  -B, --bytecode     run with bytecode VM (slower, but cross-platform)\n"
+      "  -X, --x86          run with x86 JIT VM (faster, x86 and x86-64)\n"
       "  -I, --inspect      inspect the return value\n"
       "  -V, --verbose      show bytecode and ast info\n"
       "  -c, --compile      compile the script to bytecode\n"
       "  -h, --help         show this helpful stuff\n"
-      "  -v, --version      show version\n");
+      "  -v, --version      show version\n"
+      "(default: %s)\n",
+#if X86_JIT == 1
+      "-X"
+#else
+      "-B"
+#endif
+  );
 }
 
 static void potion_cmd_stats() {
@@ -109,6 +118,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
 
       code = potion_source_dump(P, PN_NIL, code);
       if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code)) {
+        printf("** compiled code saved to %s\n", pnbpath);
         fclose(pnb);
       } else {
         fprintf(stderr, "** could not write all bytecode.");
@@ -137,7 +147,7 @@ static void potion_cmd_fib() {
 }
 
 int main(int argc, char *argv[]) {
-  int i, verbose = 0;
+  int i, verbose = 0, exec = 1 + POTION_JIT;
 
   if (argc > 0) {
     for (i = 0; i < argc; i++) {
@@ -173,20 +183,18 @@ int main(int argc, char *argv[]) {
 
       if (strcmp(argv[i], "-c") == 0 ||
           strcmp(argv[i], "--compile") == 0) {
-        if (i == argc - 1)
-          fprintf(stderr, "** compiler requires a file name\n");
-        else
-          potion_cmd_compile(argv[++i], 0, verbose);
-        return 0;
+        fprintf(stderr, "!! be warned, the compiler isn't up to snuff, yet.\n");
+        exec = 0;
+      }
+
+      if (strcmp(argv[i], "-B") == 0 ||
+          strcmp(argv[i], "--bytecode") == 0) {
+        exec = 1;
       }
 
       if (strcmp(argv[i], "-X") == 0 ||
-          strcmp(argv[i], "--X86") == 0) {
-        if (i == argc - 1)
-          fprintf(stderr, "** compiler requires a file name\n");
-        else
-          potion_cmd_compile(argv[++i], 2, verbose);
-        return 0;
+          strcmp(argv[i], "--x86") == 0) {
+        exec = 2;
       }
 
       if (strcmp(argv[i], "-f") == 0) {
@@ -195,10 +203,11 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    potion_cmd_compile(argv[argc-1], 1, verbose);
+    potion_cmd_compile(argv[argc-1], exec, verbose);
     return 0;
+  } else {
+    fprintf(stderr, "// TODO: read from stdin");
   }
 
-  potion_run();
   return 0;
 }

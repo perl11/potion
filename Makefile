@@ -96,7 +96,7 @@ test: test/api/potion-test
 		fi; \
 		for f in test/**/*.pn; do \
 			look=`cat $$f | sed "/\#/!d; s/.*\# *//"`; \
-			flags=; \
+			flags=-B; \
 			if [ $$pass -eq 1 ]; then \
 			  flags=-X; \
 			fi; \
