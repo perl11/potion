@@ -192,13 +192,14 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
 
   regs = PN_INT(f->stack);
   lregs = regs + PN_TUPLE_LEN(f->locals);
-  need = lregs + upc + 1;
+  need = lregs + upc + 2;
   rsp = (need + protoargs) * sizeof(PN);
   rsp += (32 - rsp % 32);
   X86_PRE(); X86(0x83); X86(0xEC); X86(rsp);
 
-  // (Potion *) in the first argument slot 
-  X86_ARGI(need - 1, 0);
+  // (Potion *, self) in the first argument slot 
+  X86_ARGI(need - 2, 0);
+  X86_ARGI(need - 1, 2);
 
   // Read locals
   for (argx = regs; argx < lregs + upc; argx++) {
@@ -209,7 +210,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
     PN_TUPLE_EACH(f->sig, i, v, {
       if (PN_IS_STR(v)) {
         unsigned long num = PN_GET(f->locals, v);
-        X86_ARGI(regs + num, 2 + argx);
+        X86_ARGI(regs + num, 3 + argx);
         argx++;
       }
     });
@@ -234,10 +235,10 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
 #endif
 
     for (upi = 0; upi < upc; upi++) {
-      X86_ARGI(0, 1);
+      X86_ARGI(0, 2);
       X86_MOV_RBP(0x8B, 0);
       X86_PRE(); X86(0x8B); X86(0x40);
-        X86(sizeof(struct PNClosure) + ((upi + 1) * sizeof(PN))); // 0x30(%rax)
+        X86(sizeof(struct PNClosure) + (upi * sizeof(PN))); // 0x30(%rax)
       X86_MOV_RBP(0x89, lregs + upi);
       upc--;
     }
@@ -306,7 +307,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
         X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(PN_GC)); // mov %rdx %rax.data
       break;
       case OP_SETTABLE:
-        X86_ARGO(need - 1, 0);
+        X86_ARGO(need - 2, 0);
         X86_ARGO(pos->a, 1);
         X86_ARGO(pos->b, 2);
         X86_PRE(); X86(0xB8); X86N(potion_tuple_push); // mov &potion_tuple_push %rax
@@ -374,12 +375,40 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
       case OP_GTE:
         X86_CMP(0x7C); // jl
       break;
+      case OP_BITL:
+        X86_MATH({
+          X86(0x89); X86(0xC1); // mov %eax %ecx
+          X86(0x89); X86(0xD0); // mov %edx %eax
+          X86(0xD3); X86(0xE0); // sar %cl %eax
+        });
+      break;
+      case OP_BITR:
+        X86_MATH({
+          X86(0x89); X86(0xC1); // mov %eax %ecx
+          X86(0x89); X86(0xD0); // mov %edx %eax
+          X86(0xD3); X86(0xF8); // sar %cl %eax
+        });
+      break;
+      case OP_BIND:
+        X86_ARGO(need - 2, 0);
+        X86_ARGO(pos->b, 1);
+        X86_ARGO(pos->a, 2);
+        X86_PRE(); X86(0xB8); X86N(potion_bind); // mov &potion_bind %rax
+        X86(0xFF); X86(0xD0); // callq %rax
+        X86_MOV_RBP(0x89, pos->a); // mov %rax local
+      break;
       case OP_JMP:
-        // pos += pos->a;
-        // X86(0xEB); X86(0x7); /*  jmp +7 */
+        TAG_JMP(pos + pos->a);
       break;
       case OP_TEST:
-        // reg[pos->a] = PN_BOOL(PN_TEST(reg[pos->a]));
+      case OP_NOT:
+        X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */
+        X86(0xB8); X86I(PN_FALSE); /* mov FALSE %eax */
+        X86(0x39); X86(0xC2); /*  cmp %eax %edx */
+        X86(pos->code == OP_TEST ? 0x75 : 0x74); X86(0x9 + X86_PRE_T); /*  jne +10 */ \
+        X86_MOVQ(pos->a, PN_TRUE); /*  -A(%rbp) = TRUE */ \
+        X86(0xEB); X86(0x7 + X86_PRE_T); /*  jmp +7 */ \
+        X86_MOVQ(pos->a, PN_FALSE); /*  -A(%rbp) = FALSE */
       break;
       case OP_TESTJMP:
         X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */
@@ -398,12 +427,12 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
       case OP_CALL: {
         int argc = pos->b - pos->a;
         // (Potion *, CL) as the first argument
-        X86_ARGO(need - 1, 0);
+        X86_ARGO(need - 2, 0);
         X86_ARGO(pos->b, 1);
-        while (--argc > 0) X86_ARGO(pos->a + argc, argc + 1);
-        // TODO: check for PNClosure and dispatch to C funcs / bytecode alike
+        while (--argc >= 0) X86_ARGO(pos->a + argc, argc + 2);
+        // TODO: check for bytecode nodes and jit them as well?
         X86_PRE(); X86(0x8B); X86(0x45); X86(RBP(pos->b)); /* mov -preg(%ebp) %rax */
-        X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(struct PNClosure)); /* mov N(%rax) %rax */
+        X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(struct PNObject)); /* mov N(%rax) %rax */
         X86(0xFF); X86(0xD0); /* callq *%rax */
         X86_PRE(); X86(0x89); X86(0x45); X86(RBP(pos->a)); /* mov -preg(%ebp) %rax */
       }
@@ -417,16 +446,16 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
         PN func2 = (PN)jit_protos[pos->b];
         PN proto = PN_TUPLE_AT(f->protos, pos->b);
         cl = (struct PNClosure *)potion_closure_new(P, (imp_t)potion_x86_stub, PN_NIL,
-          PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
+          PN_TUPLE_LEN(PN_PROTO(proto)->upvals));
         // func2 = &potion_x86_debug;
-        cl->data[0] = func2;
+        cl->method = func2;
         X86_MOVL(pos->a, cl);
         PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
           pos++;
           if (pos->code == OP_GETUPVAL) {
             X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(lregs + pos->b)); // mov upval %rdx
           } else if (pos->code == OP_GETLOCAL) {
-            X86_ARGO(need - 1, 0);
+            X86_ARGO(need - 2, 0);
             X86_ARGO(regs + pos->b, 1);
             X86_PRE(); X86(0xB8); X86N(potion_ref); // mov &potion_ref %rax
             X86(0xFF); X86(0xD0); // callq %rax
@@ -437,7 +466,7 @@ jit_t potion_x86_proto(Potion *P, PN proto) {
           }
           X86_MOV_RBP(0x8B, pos->a); // mov cl %rax
           X86_PRE(); X86(0x89); X86(0x50); // mov %rdx N(%rax)
-            X86(sizeof(struct PNClosure) + (sizeof(PN) * (i + 1)));
+            X86(sizeof(struct PNClosure) + (sizeof(PN) * i));
         });
       }
       break;
