@@ -87,19 +87,30 @@ potion: core/version.h ${OBJ_POTION} ${OBJ}
 test: test/api/potion-test
 	@echo running API tests
 	@test/api/potion-test
-	@echo running VM tests
-	@count=0; failed=0; \
-	for f in test/**/*.pn; do \
-		look=`cat $$f | sed "/\#/!d; s/.*\# *//"`; \
-		for=`./potion -I $$f | sed "s/\n$$//"`; \
-		if [ "$$look" != "$$for" ]; then \
-		  echo; \
-			echo "$$f: expected <$$look>, but got <$$for>"; \
-			failed=`expr $$failed + 1`; \
+	@count=0; failed=0; pass=0; \
+	while [ $$pass -lt 2 ]; do \
+	  if [ $$pass -eq 0 ]; then \
+		   echo running VM tests; \
 		else \
-		  echo -n .; \
+		   echo; echo running JIT tests; \
 		fi; \
-		count=`expr $$count + 1`; \
+		for f in test/**/*.pn; do \
+			look=`cat $$f | sed "/\#/!d; s/.*\# *//"`; \
+			flags=; \
+			if [ $$pass -eq 1 ]; then \
+			  flags=-X; \
+			fi; \
+			for=`./potion -I $$flags $$f | sed "s/\n$$//"`; \
+			if [ "$$look" != "$$for" ]; then \
+				echo; \
+				echo "$$f: expected <$$look>, but got <$$for>"; \
+				failed=`expr $$failed + 1`; \
+			else \
+				echo -n .; \
+			fi; \
+			count=`expr $$count + 1`; \
+		done; \
+		pass=`expr $$pass + 1`; \
 	done; \
 	echo; \
 	if [ $$failed -gt 0 ]; then \
