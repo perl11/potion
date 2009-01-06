@@ -1,7 +1,7 @@
 SRC = core/compile.c core/file.c core/internal.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/pn-gram.c core/pn-scan.c core/string.c core/table.c core/vm.c
 OBJ = ${SRC:.c=.o}
 OBJ_POTION = core/potion.o
-OBJ_TEST = test/potion-test.o test/CuTest.o
+OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 
 PREFIX = /usr/local
 CC = gcc
@@ -84,11 +84,11 @@ potion: core/version.h ${OBJ_POTION} ${OBJ}
 	@echo LINK potion
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
 
-test: test/potion-test
+test: test/api/potion-test
 	@echo running tests
-	@test/potion-test
+	@test/api/potion-test
 
-test/potion-test: core/version.h ${OBJ_TEST} ${OBJ}
+test/api/potion-test: core/version.h ${OBJ_TEST} ${OBJ}
 	@echo LINK potion-test
 	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
 
@@ -104,6 +104,6 @@ clean:
 	@echo cleaning
 	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST}
 	@rm -f core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
-	@rm -f potion potion.exe test/potion-test
+	@rm -f potion potion.exe test/api/potion-test
 
 .PHONY: all clean test
