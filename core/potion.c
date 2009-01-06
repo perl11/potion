@@ -19,6 +19,7 @@ const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {
   printf("usage: potion [options] [script] [arguments]\n"
+      "  -I, --inspect      inspect the return value\n"
       "  -V, --verbose      show bytecode and ast info\n"
       "  -c, --compile      compile the script to bytecode\n"
       "  -h, --help         show this helpful stuff\n"
@@ -57,27 +58,28 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
     PN code;
     code = potion_source_load(P, PN_NIL, buf);
     if (PN_IS_PROTO(code)) {
-      if (verbose)
+      if (verbose > 1)
         printf("\n\n-- loaded --\n");
     } else {
       code = potion_parse(P, buf);
-      if (verbose) {
+      if (verbose > 1) {
         printf("\n-- parsed --\n");
         potion_send(code, PN_inspect);
         printf("\n");
       }
       code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
-      if (verbose)
+      if (verbose > 1)
         printf("\n-- compiled --\n");
     }
-    if (verbose) {
+    if (verbose > 1) {
       potion_send(code, PN_inspect);
       printf("\n");
     }
     if (exec == 1) {
       code = potion_vm(P, code, PN_EMPTY, 0, NULL);
-      if (verbose) {
+      if (verbose > 1)
         printf("\n-- returned %lu --\n", code);
+      if (verbose) {
         potion_send(code, PN_inspect);
         printf("\n");
       }
@@ -86,8 +88,12 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       PN val;
       jit_t func = potion_x86_proto(P, code);
       val = func(P, PN_NIL);
-      printf("JIT: %lu\n", val);
-      potion_send(val, PN_inspect);
+      if (verbose > 1)
+        printf("\n-- jit returned %p --\n", func);
+      if (verbose) {
+        potion_send(val, PN_inspect);
+        printf("\n");
+      }
 #else
       fprintf(stderr, "** potion built without JIT support\n");
 #endif
@@ -135,9 +141,15 @@ int main(int argc, char *argv[]) {
 
   if (argc > 0) {
     for (i = 0; i < argc; i++) {
+      if (strcmp(argv[i], "-I") == 0 ||
+          strcmp(argv[i], "--inspect") == 0) {
+        verbose = 1;
+        continue;
+      }
+
       if (strcmp(argv[i], "-V") == 0 ||
           strcmp(argv[i], "--verbose") == 0) {
-        verbose = 1;
+        verbose = 2;
         continue;
       }
 

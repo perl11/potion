@@ -85,8 +85,28 @@ potion: core/version.h ${OBJ_POTION} ${OBJ}
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
 
 test: test/api/potion-test
-	@echo running tests
+	@echo running API tests
 	@test/api/potion-test
+	@echo running VM tests
+	@count=0; failed=0; \
+	for f in test/**/*.pn; do \
+		look=`cat $$f | sed "/\#/!d; s/.\+#\s\+//"`; \
+		for=`./potion -I $$f`; \
+		if [ "$$look" != "$$for" ]; then \
+		  echo; \
+			echo "$$f: expected <$$look>, but got <$$for>"; \
+			failed=`expr $$failed + 1`; \
+		else \
+		  echo -n .; \
+		fi; \
+		count=`expr $$count + 1`; \
+	done; \
+	echo; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$$failed FAILS ($$count tests)"; \
+	else \
+		echo "OK ($$count tests)"; \
+	fi
 
 test/api/potion-test: core/version.h ${OBJ_TEST} ${OBJ}
 	@echo LINK potion-test
