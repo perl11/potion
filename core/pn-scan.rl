@@ -63,7 +63,7 @@
   escf        = "\\f";
   escr        = "\\t";
   esct        = "\\t";
-  escu        = "\\u" [0-9]{4};
+  escu        = "\\u" [0-9a-fA-F]{4};
   schar2      = utf8 -- (escn | escape1 | escb | escf | escn | escr | esct);
   quote1      = "'";
   quote2      = '"';
@@ -82,6 +82,23 @@
     escf        => { SCHAR("\f", 1); };
     escr        => { SCHAR("\r", 1); };
     esct        => { SCHAR("\t", 1); };
+    escu        => {
+      int cl = te - ts;
+      char c = ts[cl];
+      char *utfc = PN_STR_PTR(sbuf);
+      unsigned long code;
+      ts[cl] = '\0'; code = strtoul(ts+2, NULL, 16); ts[cl] = c;
+      if (code < 0x80) {
+        utfc[nbuf++] = code;
+      } else if (code < 0x7ff) {
+        utfc[nbuf++] = (code >> 6) | 0xc0;
+        utfc[nbuf++] = (code & 0x3f) | 0x80;
+      } else if (code < 0xffff) {
+        utfc[nbuf++] = (code >> 12) | 0xe0;
+        utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
+        utfc[nbuf++] = (code & 0x3f) | 0x80;
+      }
+    };
     '"'         => { TOKEN2(STRING, potion_str2(P, PN_STR_PTR(sbuf), nbuf)); fgoto main; };
     schar2      => { SCHAR(ts, te - ts); };
   *|;

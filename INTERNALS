@@ -74,7 +74,13 @@
   small enough to statically link into your
   program.
 
-  Enough opinions. Man alive. Sorry about that.
+  Again, LLVM is megs of stuff. What about a
+  C include that acts as a simple assembler into
+  a string buffer and makes some common
+  optimizations?
+
+  Enough opinions. Man alive. Now then. A round
+  of apologies, on the house.
 
 
   ~ lua's influence ~
