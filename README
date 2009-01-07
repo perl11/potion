@@ -3,8 +3,8 @@
           'OOOo
       ~ p ooOOOo tion ~
           .OOO
-           oO      % a little
-             Oo    % language.
+           oO      %% a little
+             Oo    fast language.
             'O
              `
             (o)
@@ -180,26 +180,22 @@
     I don't like significant whitespace, personally.
     But I don't like end end end end.
 
-      10 times (i):
-        20 times (j):
-          "#(i) x #(j)" print
-      i.
+      say = ():
+        10 times (i):
+          20 times (j):
+            i print, j print
+      say.
 
-    The closing "i." ends the block with the "i" arg.
-    If more than one arg is present, use the first arg
-    only. If named args are used, use the arg not the name.
+    The closing "say." ends the block saved to "say" var.
 
-      10 times (index=i, step=5):
-        20 times (index=j):
-          "#(i) x #(j)" print
-      i.
+    Normally, blocks are closed with a period. In this case
+    we'd need three periods, which looks strange.
 
-    Normally, blocks are closed with a period.
-
-      10 times:
-        20 times:
-          "Odelay!" print.
-      .
+      say = ():
+        10 times:
+          20 times:
+            "Odelay!" print
+      ...
 
   * Elimination of line noise.
 
