@@ -1,7 +1,7 @@
 CC=$1
 CCEX="$CC -x c - -o config.out"
 
-TARGET=`$CC -v 2>&1 | sed "/ --target=/!d; s/.* --target=//; s/ .*//"`
+TARGET=`gcc -v 2>&1 | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
 MINGW=`echo "$TARGET" | sed "/mingw/!d"`
 
 if [ "$MINGW" = "" ]; then
