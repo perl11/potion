@@ -84,12 +84,18 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
         X86_MOVQ(pos->a, PN_FALSE) /*  -A(%rbp) = FALSE */
 #define X86_ARGO(regn, argn) asmb = potion_x86_c_arg(asmb, 1, regn, argn)
 #define X86_ARGI(regn, argn) asmb = potion_x86_c_arg(asmb, 0, regn, argn)
-#define TAG_JMP(pos) \
+#define TAG_JMP(jpos) \
         X86(0xE9); \
-        jmps[jmpc].from = asmb; \
-        X86I(0); \
-        jmps[jmpc].to = pos + 1; \
-        jmpc++
+        if (jpos > pos) { \
+          jmps[jmpc].from = asmb; \
+          X86I(0); \
+          jmps[jmpc].to = jpos + 1; \
+          jmpc++; \
+        } else if (jpos < pos) { \
+          X86I(offs[jpos - start] - (asmb + 4)); \
+        } else { \
+          X86I(0); \
+        }
 
 PN potion_x86_debug(Potion *P, PN cl, PN v) {
   printf("DEBUG: %p %p %lu\n", P, PN_CLOSURE(cl), v);
@@ -157,21 +163,21 @@ static u8 *potion_x86_c_arg(u8 *asmb, int out, int regn, int argn) {
 imp_t potion_x86_proto(Potion *P, PN proto) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 0;
   PN val;
-  PN_OP *pos, *end;
-  struct PNJumps jmps[MAX_JUMPS]; int jmpc = 0, jmpi = 0;
+  PN_OP *start, *pos, *end;
+  struct PNJumps jmps[MAX_JUMPS]; u8 *offs[MAX_JUMPS]; int jmpc = 0, jmpi = 0;
   struct PNProto *f = (struct PNProto *)proto;
   int upi, upc = PN_TUPLE_LEN(f->upvals);
   int movl = sizeof(PN) / sizeof(int);
-  u8 *start, *asmb;
+  u8 *asm1, *asmb;
   imp_t jit_func;
   imp_t *jit_protos = NULL;
 
-  start = asmb = PN_ALLOC_FUNC(1024);
+  asm1 = asmb = PN_ALLOC_FUNC(1024);
   jit_func = (imp_t)asmb;
   X86(0x55); // push %rbp
   X86_PRE(); X86(0x89); X86(0xE5); // mov %rsp,%rbp
 
-  pos = ((PN_OP *)PN_STR_PTR(f->asmb));
+  start = pos = ((PN_OP *)PN_STR_PTR(f->asmb));
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
 
   if (PN_TUPLE_LEN(f->protos) > 0) {
@@ -246,6 +252,7 @@ imp_t potion_x86_proto(Potion *P, PN proto) {
   }
 
   while (pos < end) {
+    offs[pos - start] = asmb;
     for (jmpi = 0; jmpi < jmpc; jmpi++) {
       if (jmps[jmpi].to == pos) {
         *((int *)jmps[jmpi].from) = (int)(asmb - (jmps[jmpi].from + 4));
@@ -478,12 +485,12 @@ imp_t potion_x86_proto(Potion *P, PN proto) {
   }
 
 #if DEBUG
-  printf("jit(%p): ", jit_func);
-  while (start < asmb) {
-    printf("%x ", start[0]);
-    start++;
+  fprintf(stderr, "jit(%p): ", jit_func);
+  while (asm1 < asmb) {
+    fprintf(stderr, "%x ", asm1[0]);
+    asm1++;
   }
-  printf("\n\n");
+  fprintf(stderr, "\n\n");
 #endif
 
   return jit_func;
