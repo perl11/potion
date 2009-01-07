@@ -57,6 +57,14 @@ PN potion_str2(Potion *P, char *str, size_t len) {
   return s;
 }
 
+PN potion_byte_str(Potion *P, const char *str) {
+  size_t len = strlen(str);
+  struct PNString *s = (struct PNString *)potion_bytes(P, len);
+  PN_MEMCPY_N(s->chars, str, char, len);
+  s->chars[len] = '\0';
+  return (PN)s;
+}
+
 PN potion_bytes(Potion *P, size_t len) {
   struct PNString *s = PN_OBJ_ALLOC(struct PNString, PN_TBYTES, len + 1);
   s->len = (unsigned int)len;

@@ -161,7 +161,7 @@ static u8 *potion_x86_c_arg(u8 *asmb, int out, int regn, int argn) {
   return asmb;
 }
 
-imp_t potion_x86_proto(Potion *P, PN proto) {
+PN_F potion_x86_proto(Potion *P, PN proto) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 0;
   PN val;
   PN_OP *start, *pos, *end;
@@ -170,11 +170,11 @@ imp_t potion_x86_proto(Potion *P, PN proto) {
   int upi, upc = PN_TUPLE_LEN(f->upvals);
   int movl = sizeof(PN) / sizeof(int);
   u8 *asm1, *asmb;
-  imp_t jit_func;
-  imp_t *jit_protos = NULL;
+  PN_F jit_func;
+  PN_F *jit_protos = NULL;
 
   asm1 = asmb = PN_ALLOC_FUNC(1024);
-  jit_func = (imp_t)asmb;
+  jit_func = (PN_F)asmb;
   X86(0x55); // push %rbp
   X86_PRE(); X86(0x89); X86(0xE5); // mov %rsp,%rbp
 
@@ -182,7 +182,7 @@ imp_t potion_x86_proto(Potion *P, PN proto) {
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
 
   if (PN_TUPLE_LEN(f->protos) > 0) {
-    jit_protos = PN_ALLOC_N(imp_t, PN_TUPLE_LEN(f->protos));
+    jit_protos = PN_ALLOC_N(PN_F, PN_TUPLE_LEN(f->protos));
     PN_TUPLE_EACH(f->protos, i, proto2, {
       int p2args = 3;
       struct PNProto *f2 = (struct PNProto *)proto2;
@@ -459,7 +459,7 @@ imp_t potion_x86_proto(Potion *P, PN proto) {
         cl = (struct PNClosure *)potion_closure_new(P, NULL, PN_NIL,
           PN_TUPLE_LEN(PN_PROTO(proto)->upvals));
         // func2 = &potion_x86_debug;
-        cl->method = (imp_t)func2;
+        cl->method = (PN_F)func2;
         X86_MOVL(pos->a, cl);
         PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
           pos++;
@@ -645,7 +645,7 @@ reentry:
       break;
       case OP_CALL:
         if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {
-          if (PN_CLOSURE(reg[pos->b])->method != (imp_t)potion_vm_proto) {
+          if (PN_CLOSURE(reg[pos->b])->method != (PN_F)potion_vm_proto) {
             reg[pos->a] =
               ((struct PNClosure *)reg[pos->b])->method(P, reg[pos->b], reg[pos->a], reg[pos->a+1]);
           } else {
@@ -684,7 +684,7 @@ reentry:
         struct PNClosure *cl;
         unsigned areg = pos->a;
         proto = PN_TUPLE_AT(f->protos, pos->b);
-        cl = (struct PNClosure *)potion_closure_new(P, (imp_t)potion_vm_proto, PN_NIL,
+        cl = (struct PNClosure *)potion_closure_new(P, (PN_F)potion_vm_proto, PN_NIL,
           PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
         cl->data[0] = proto;
         PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {

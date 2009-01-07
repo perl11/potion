@@ -89,6 +89,14 @@ void potion_test_sig(CuTest *T) {
   CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
 }
 
+void potion_test_eval(CuTest *T) {
+  PN add = potion_eval(P, "(x, y): x + y.");
+  PN_F addfn = PN_CLOSURE_F(add);
+  PN num = addfn(P, 0, 0, PN_NUM(3), PN_NUM(5));
+  CuAssertIntEquals(T, "calling closure as c func failed",
+    PN_INT(num), 8);
+}
+
 CuSuite *potion_suite() {
   CuSuite *S = CuSuiteNew();
   SUITE_ADD_TEST(S, potion_test_nil);
@@ -100,6 +108,7 @@ CuSuite *potion_suite() {
   SUITE_ADD_TEST(S, potion_test_empty);
   SUITE_ADD_TEST(S, potion_test_tuple);
   SUITE_ADD_TEST(S, potion_test_sig);
+  SUITE_ADD_TEST(S, potion_test_eval);
   return S;
 }
 

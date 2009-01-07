@@ -25,7 +25,7 @@
 
    * Just-in-time compilation to x86 and x86-64
      machine code function pointers. This means
-     probably quite speedy and integrates very
+     she's a speedy one. Who integrates very
      well with C extensions.
 
      The JIT is turned on by default and is
@@ -47,6 +47,8 @@
      to core classes can be localized.
 
    * Interpreter is thread-safe and reentrant.
+     I hope this will facilitate coroutines,
+     parallel interpreters and sandboxing.
 
    * Small. Under 10kloc. Right now we're like
      4,000 or something. Install sloccount
@@ -59,9 +61,18 @@
 
    * No floating point support yet.
 
+   * No error handling. I'm wary of just tossing
+     in exceptions and feeling rather uninspired
+     on the matter. Let's hear from you.
+
    * GC is reference counting. I know, I know,
      but I put my eggs in other baskets. At
      least it's quick.
+
+
+  ~ a whiff of potion ~
+
+  loop: read eval print
 
 
   ~ how it transpired ~

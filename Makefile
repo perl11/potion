@@ -138,7 +138,7 @@ test: test/api/potion-test
 			 fi; \
 		fi; \
 		for f in test/**/*.pn; do \
-			look=`cat $$f | sed "/\#/!d; s/.*\# *//"`; \
+			look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
 			flags=-B; \
 			if [ $$pass -eq 1 ]; then \
 			  flags=-X; \

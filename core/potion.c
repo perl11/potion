@@ -27,7 +27,7 @@ static void potion_cmd_usage() {
       "  -h, --help         show this helpful stuff\n"
       "  -v, --version      show version\n"
       "(default: %s)\n",
-#if X86_JIT == 1
+#if POTION_JIT == 1
       "-X"
 #else
       "-B"
@@ -95,7 +95,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
     } else if (exec == 2) {
 #ifdef X86_JIT
       PN val;
-      imp_t func = potion_x86_proto(P, code);
+      PN_F func = potion_x86_proto(P, code);
       val = func(P, PN_NIL, PN_NIL);
       if (verbose > 1)
         printf("\n-- jit returned %p --\n", func);

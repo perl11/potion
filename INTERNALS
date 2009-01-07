@@ -1,0 +1,167 @@
+
+  ~ the nature of potion's insides ~
+
+  Potion's internals are based around the idea
+  that things that happen frequently should be
+  given the greater attention.
+
+  For example, code execution happens more often
+  than code parsing and loading. Therefore, the
+  VM is larger and faster than the parser and
+  compiler.
+
+  Other things that happen frequently:
+
+   * Math.
+   * Conditionals.
+   * Method dispatch.
+   * Local variables.
+   * Strings, to build and compare.
+   * Memory allocation.
+
+  More sporadic things likely include:
+
+   * New methods.
+   * Creation of classes.
+   * Very deep scoping situations.
+   * Altering the inheritance tree.
+   * Evals.
+   * Code allocation.
+
+  So understand that often the choices made in
+  Potion's VM are designed to accomodate the
+  first set rather than the second.
+
+                     ~
+
+  On a related note, I would like to say
+  something to all of the parties working on
+  languages atop abstracted runtimes, such as the
+  JVM and .Net and Parrot.
+
+  The first thing is: you should try target-
+  ting x86. It's very popular!
+
+  How big is Java? How big is .Net?
+  Caeser's Hounds, people. Java has a systray
+  icon and update alerts and browser toolbar. Are
+  those features? x86 gets by without!
+
+  My JIT is a few hundred lines of code.
+  That turns out to be like a 100k.
+  Why is everyone so afraid of assembler??
+
+  Well, sure, I can't run on ARM. But give me
+  another few hundred lines of code.
+
+  I'm not suggesting that x86 is my favorite
+  architecture. Just that it's everywhere, it's
+  easy to write for, and it's got no excess when
+  compared to these big, entrenched abstractions.
+
+                     ~
+
+  LLVM is a neat exercise, but I found it to be
+  much scarier than assembler. I'm sure I'd see
+  a lot of benefits by using LLVM to squeeze out
+  some optimization. But it wouldn't be any less
+  code and it would take me a lot longer to sort
+  through the docs.
+
+  What would be great is an LLVM where you just
+  write x86 machine code and then it'll optimize
+  it or translate to other machine codes. But
+  small enough to statically link into your
+  program.
+
+  Enough opinions. Man alive. Sorry about that.
+
+
+  ~ lua's influence ~
+
+  Potion used a register-based bytecode VM that
+  is nearly a word-for-word copy of Lua's. The
+  code is all different, but the bytecode is
+  nearly identical.
+
+  I also spelunked Neko VM for some ideas and
+  found this comparison very useful.
+  <http://nekovm.org/lua>
+
+  I also took from the Lua the notion of using
+  tables for everything. And, like Lua, lists
+  and tables are interchangeable. But, in Potion,
+  I kept their representations separate.
+
+  I also use immutable strings, like Lua.
+
+  However, my object representation is more
+  like Neko or Ruby, where objects are all
+  represented by 32-bit values.
+
+
+  ~ the parts of potion ~
+
+  1. the parser
+     - lexer written with Ragel
+       (see core/pn-scan.rl)
+     - parser written with Lemon
+       (see core/pn-scan.y)
+     - produces a syntax tree
+     - the tree is a Potion object that can
+       be traversed in the code
+     - see potion_source_load()
+       in core/compile.c
+
+  2. the compiler
+     - compiles a syntax tree into
+       bytecode (see core/compile.c)
+     - has its own file format
+       (save to .pnb files)
+     - interception of keywords
+       happens here, rather than in
+       the parser, to simplify parsing
+
+  3. the vm
+     - executes bytecode
+     - used mostly to ensure correctness
+     - helpful in debugging
+     - run code on non-x86 with performance
+       penalty
+
+  4. the jit
+     - compiles bytecode into a function
+       pointer
+     - uses the same argument passing strategy
+       as c functions
+
+
+  ~ the jit ~
+
+  The X86 JIT is the first half of core/vm.c.
+  The code translates Potion bytecode into 
+
+  In the code:
+
+    add = (x, y): x + y.
+
+  The `add` closure is compiled into a c function
+  pointer looking like this:
+
+    PN (*)(Potion *P, PN cl, PN self, PN x, PN y)
+
+  This means you can actually load this closure
+  into C and call it directly.
+
+    Potion *P = potion_create();
+    PN add = potion_eval(P, "(x, y): x + y.");
+    PN_F addfn = PN_CLOSURE_F(add);
+    PN num = addfn(P, 0, 0, PN_NUM(3), PN_NUM(5));
+    printf("3 + 5 = %d\n", PN_INT(num));
+
+  The macros are there to allow bytecode to be
+  wrapped in a function pointer, if needed. The
+  inside story looks like this:
+
+    PN num = ((struct PNClosure *)add)->method(
+               P, 0, 0, PN_NUM(3), PN_NUM(5));

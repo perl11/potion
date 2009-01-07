@@ -539,6 +539,22 @@ PN potion_source_dump(Potion *P, PN cl, PN proto) {
   return pnb;
 }
 
+PN potion_run(Potion *P, PN code) {
+#if POTION_JIT == 1
+  PN_F func = potion_x86_proto(P, code);
+  return func(P, PN_NIL, PN_NIL);
+#else
+  return potion_vm(P, code, PN_EMPTY, 0, NULL);
+#endif
+}
+
+PN potion_eval(Potion *P, const char *str) {
+  PN bytes = potion_byte_str(P, str);
+  PN code = potion_parse(P, bytes);
+  code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
+  return potion_run(P, code);
+}
+
 void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
   potion_method(pro_vt, "inspect", potion_proto_inspect, 0);

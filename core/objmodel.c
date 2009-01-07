@@ -22,7 +22,7 @@ struct PNVtable {
 
 unsigned long potion_vt_id = PN_TUSER;
 
-PN potion_closure_new(Potion *P, imp_t meth, PN sig, unsigned int extra) {
+PN potion_closure_new(Potion *P, PN_F meth, PN sig, unsigned int extra) {
   struct PNClosure *c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, extra * sizeof(PN));
   c->method = meth;
   c->sig = sig;
@@ -79,9 +79,9 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   unsigned k = kh_put(PN, vt->kh, key, &ret);
   if (!PN_IS_CLOSURE(method)) {
     if (PN_IS_PROTO(method))
-      cl = potion_closure_new(P, (imp_t)potion_proto_method, PN_NIL, 1);
+      cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_NIL, 1);
     else
-      cl = potion_closure_new(P, (imp_t)potion_getter_method, PN_EMPTY, 1);
+      cl = potion_closure_new(P, (PN_F)potion_getter_method, PN_EMPTY, 1);
     PN_CLOSURE(cl)->data[0] = method;
   }
   return kh_value(vt->kh, k) = method;

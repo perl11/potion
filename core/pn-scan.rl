@@ -67,7 +67,7 @@
   schar2      = utf8 -- (escn | escape1 | escb | escf | escn | escr | esct);
   quote1      = "'";
   quote2      = '"';
-  string3     = "%% " (utf8 - newline)+;
+  string3     = "%% " (utf8+ -- newline{2});
 
   string1 := |*
     "\\'"       => { SCHAR(ts + 1, 1); };
@@ -131,7 +131,9 @@
     float       => { TOKEN2(FLOAT, PN_NUM(PN_ATOI(ts, te - ts))); };
     quote1      => { nbuf = 0; fgoto string1; };
     quote2      => { nbuf = 0; fgoto string2; };
-    string3     => { TOKEN2(STRING2, potion_str2(P, ts + 3, (te - ts) - 3)); };
+    string3     => { 
+      if (te[-1] == '\n') te--; if (te[-1] == '\r') te--;
+      TOKEN2(STRING2, potion_str2(P, ts + 3, (te - ts) - 3)); };
 
     message     => { TOKEN2(MESSAGE, potion_str2(P, ts, te - ts)); };
     query       => { TOKEN2(QUERY, potion_str2(P, ts + 1, (te - ts) - 1)); };
@@ -220,26 +222,4 @@ PN potion_sig(Potion *P, char *fmt) {
 
   free(fmt);
   return sig;
-}
-
-void potion_run() {
-  PN code;
-  Potion *P = potion_create();
-  code = potion_parse(P, potion_str(P,
-    "average = (x, y): (x + y) / 2."
-  ));
-  code = potion_parse(P, potion_str(P,
-    "if (/ball top < 0): 'You win!'. else: 'Computer wins'."
-  ));
-  code = potion_parse(P, potion_str(P,
-    "if (/ball top + ball_diameter < 0 or /ball top > app height):\n"
-    "  para (top=140, align=center):\n"
-    "    [strong \"GAME OVER\" (size=32), \"\\n\"]. # <strong size=32>GAME OVER</strong>\n"
-    "  /ball hide, /anim stop."
-  ));
-  code = potion_parse(P, potion_str(P,
-    "get (/test/hello):\n"
-    "  ['Hello, world!']."
-  ));
-  potion_destroy(P);
 }
