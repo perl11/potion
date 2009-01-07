@@ -72,7 +72,19 @@
 
   ~ a whiff of potion ~
 
-  loop: read eval print
+    add = (x, y): x + y.
+    add(2, 4) inspect
+
+  Or,
+
+    "hello world" print
+
+
+  ~ building and installing ~
+
+    $ make
+
+  Look inside the file called INSTALL for options.
 
 
   ~ how it transpired ~

@@ -36,7 +36,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 #define X86I(pn) *((int *)asmb) = (int)(pn); asmb += sizeof(int)
 #define X86N(pn) *((PN *)asmb) = (PN)(pn); asmb += sizeof(PN)
 
-#if PN_SIZE_T == 4
+#if __WORDSIZE != 64
 #define X86_PRE_T 0
 #define X86_PRE()
 #define X86_POST()
@@ -112,7 +112,7 @@ struct PNJumps {
 
 // mimick c calling convention
 static u8 *potion_x86_c_arg(u8 *asmb, int out, int regn, int argn) {
-#if PN_SIZE_T == 4
+#if __WORDSIZE != 64
   if (argn == 0) {
     // OPT: the first argument is always (Potion *)
     if (!out) {

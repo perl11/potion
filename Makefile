@@ -12,7 +12,8 @@ JIT ?= 1
 LEMON = tools/lemon
 LIBS = -lm
 RAGEL = ragel
-STRIP := `echo "${DEBUG}" | sed "s/0/strip -x/; s/1/ls/"`
+STRIP ?= `./tools/config.sh ${CC} strip`
+STRIPD := `echo "${DEBUG}" | sed "s/0/${STRIP}/; s/1/ls/"`
 
 DEBUGFLAGS = `echo "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
@@ -23,18 +24,8 @@ DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
 COMMIT = `git rev-list HEAD -1 | head -c 7`
 
-CCEX = ${CC} -x c - -o pn.out && ./pn.out && rm -f pn.out
-ULONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(long)); return 0; }" | ${CCEX}`
-UINT  = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(int)); return 0; }" | ${CCEX}`
-USHORT = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(short)); return 0; }" | ${CCEX}`
-UCHAR = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(char)); return 0; }" | ${CCEX}`
-LLONG = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(long long)); return 0; }" | ${CCEX}`
-DOUBLE = `echo "\#include <stdio.h>int main() { printf(\\\"%d\\\", (int)sizeof(double)); return 0; }" | ${CCEX}`
-LILEND = `echo "\#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\\"%d\\\", (int)byte[0]); return 0; }" | ${CCEX}`
-
 RAGELV = `${RAGEL} -v | sed "/ version /!d; s/.* version //; s/ .*//"`
-MINGW = `echo "\#include <stdio.h>int main() {\#ifdef __MINGW32__printf(\\\"1\\\");\#elseprintf(\\\"0\\\");\#endifreturn 0; }" | ${CCEX}`
-MINGW_CMD = echo "\#include <stdio.h>int main() {\#ifdef __MINGW32__printf(\"core/mingw.o\");\#endifreturn 0; }" | ${CCEX}
+MINGW_CMD = ./tools/config.sh ${CC} mingw | sed "s/0//; s/1/core\/mingw.o/"
 MINGW_OBJ != `$(MINGW_CMD)`
 MINGW_OBJ ?= $(shell $(MINGW_CMD))
 OBJ += ${MINGW_OBJ}
@@ -81,15 +72,7 @@ version:
 	@echo "#define POTION_MINGW  ${MINGW}"
 	@echo "#define POTION_RAGEL  \"${RAGELV}\""
 	@echo "#define POTION_PREFIX \"${PREFIX}\""
-	@echo
-	@echo "#define PN_SIZE_T     ${ULONG}"
-	@echo "#define LONG_SIZE_T   ${ULONG}"
-	@echo "#define DOUBLE_SIZE_T ${DOUBLE}"
-	@echo "#define INT_SIZE_T    ${UINT}"
-	@echo "#define SHORT_SIZE_T  ${USHORT}"
-	@echo "#define CHAR_SIZE_T   ${UCHAR}"
-	@echo "#define LONGLONG_SIZE_T   ${LLONG}"
-	@echo "#define PN_LITTLE_ENDIAN  ${LILEND}"
+	@./tools/config.sh ${CC}
 
 core/version.h:
 	@${MAKE} -s version > core/version.h
