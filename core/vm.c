@@ -87,13 +87,13 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 #define X86_ARGI(regn, argn) asmb = potion_x86_c_arg(asmb, 0, regn, argn)
 #define TAG_JMP(jpos) \
         X86(0xE9); \
-        if (jpos > pos) { \
+        if (jpos >= pos) { \
           jmps[jmpc].from = asmb; \
           X86I(0); \
           jmps[jmpc].to = jpos + 1; \
           jmpc++; \
         } else if (jpos < pos) { \
-          X86I(offs[jpos - start] - (asmb + 4)); \
+          X86I(offs[(jpos + 1) - start] - (asmb + 4)); \
         } else { \
           X86I(0); \
         }
