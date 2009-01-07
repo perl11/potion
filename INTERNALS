@@ -145,7 +145,8 @@
   ~ the jit ~
 
   The X86 JIT is the first half of core/vm.c.
-  The code translates Potion bytecode into 
+  The code translates Potion bytecode into
+  32-bit or 64-bit machine code.
 
   In the code:
 
@@ -171,3 +172,125 @@
 
     PN num = ((struct PNClosure *)add)->method(
                P, 0, 0, PN_NUM(3), PN_NUM(5));
+
+
+  ~ the jit's assembly ~
+
+  Now, let's talk about the compiled code.
+
+  Earlier the example was,
+
+    add = (x, y): x + y.
+
+  So we have a function with two arguments
+  and a math operation.
+
+  The C equivalent is,
+
+    PN add(Potion *P, PN cl, PN self, PN x, PN y) {
+      PN reg1 = x;
+      PN reg2 = y;
+      reg1 = PN_NUM(PN_INT(reg1) + PN_INT(reg2));
+      return reg1;
+    }
+
+  The arguments are moved to registers on the
+  stack. Then converted to ints. Then added.
+  And, lastly, the result is cast as a Potion
+  object.
+
+  The machine code produced by the JIT will
+  be very close to the code produced by a
+  compiler with the optimizations turned off.
+  (At least for the present this is true.)
+
+  Like C functions, Potion keeps local variables
+  on the stack. The call stack is like a big tape
+  measure that goes on and on. Since this function
+  has two registers (reg1 and reg2,) we need
+  two inches from the tape measure.
+
+  <http://en.wikipedia.org/wiki/Call_stack>
+  (See the parts that say "Local data storage"
+  and "Argument passing".)
+
+  Our machine code says "give me two word-sized
+  slots in the stack" as the first order of business.
+
+  We store `x` and `y` in those two slots. (See
+  the comment about C argument passing in the
+  next section.)
+
+  Then we do the math. Even the PN_INT and
+  PN_NUM macros are fundamentally math.
+
+  If you run Potion with -V on this script,
+  you'll see a bytecode disassembly.
+
+    ; function ; 16 bytes
+    ; (x, y) 2 registers
+    .local "x" ; 0
+    .local "y" ; 1
+    [1] getlocal 0 0
+    [2] getlocal 1 1
+    [3] add 0 1
+    [4] return 0
+
+  Each of these lines corresponds to a line of
+  C code inside that function a few paragraphs
+  back. You see how they line up there?
+
+
+  ~ x86 and x86-64 ~
+
+  64-bit CPU instructions are a superset of
+  32-bit CPU instructions. And many 32-bit
+  instructions can be converted to 64-bit by
+  prefixing them.
+
+  Take this code,
+
+    8b 55 f8  // mov %ebp[-1] %edx
+    8b 45 fc  // mov %ebp[-2] %eax
+    83 e8 04  // sub 0x4 %edx
+    89 50 04  // mov %edx %eax[1]
+
+  These are the 32-bit instructions for altering
+  an upval. (A variable in another scope.) Since
+  a closure doesn't have access to the registers
+  of another function, these variables are passed
+  as pointers (the PNWeakRef struct.)
+
+  This code loads the upval into %eax and the new
+  value into %edx. To get the upval's actual struct
+  pointer, we subtract 4 from %edx. Finally, we
+  move the new value into offset 4 in the struct
+  pointed to by the upval.
+
+  In 64-bit code this would be,
+
+    48 8b 55 f0  // mov %rbp[-1] %rdx
+    48 8b 45 f8  // mov %rbp[-2] %rax
+    83 e8 04     // sub 0x4 %edx
+    48 89 50 08  // mov %rdx %rax[1]
+
+  All it took was adding the 0x48 prefix to our
+  mov instructions and changing our offsets to
+  measure 8 bytes rather than 4. The third
+  instruction actually stays the same, since
+  we're only doing math on the lower 32-bits of
+  the upval.
+
+  We now call the registers %rax and %rdx.
+  That's just what the CPU folks call em.
+
+  The only other technique that changes between
+  32-bit and 64-bit is function calling. On 32-
+  bit, we keep all the function arguments on
+  the stack. On 64-bit, some function arguments
+  are passed through registers.
+
+  That's the purpose behind the function named
+  potion_x86_c_arg. To shuttle the arguments
+  in and out, depending on the architecture.
+

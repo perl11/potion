@@ -69,7 +69,7 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
     } else
       potion_send(v, PN_inspect);
   });
-  printf(") %ld stacks\n", PN_INT(t->stack));
+  printf(") %ld registers\n", PN_INT(t->stack));
   PN_TUPLE_EACH(t->locals, i, v, {
     printf(".local \"");
     potion_send(v, PN_inspect);
