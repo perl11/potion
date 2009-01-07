@@ -1,10 +1,17 @@
+#!/bin/sh
+
 CC=$1
 CCEX="$CC -x c - -o config.out"
 
 TARGET=`gcc -v 2>&1 | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
-MINGW=`echo "$TARGET" | sed "/mingw/!d"`
+MINGW_GCC=`echo "$TARGET" | sed "/mingw/!d"`
+if [ "$MINGW_GCC" = "" ]; then
+  MINGW=0
+else
+  MINGW=1
+fi
 
-if [ "$MINGW" = "" ]; then
+if [ $MINGW -eq 0 ]; then
   LONG=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(long)); return 0; }" | $CCEX && ./config.out && rm -f config.out`
   INT=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(int)); return 0; }" | $CCEX && ./config.out && rm -f config.out`
   SHORT=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(short)); return 0; }" | $CCEX && ./config.out && rm -f config.out`
@@ -23,26 +30,27 @@ else
 fi
 
 if [ "$2" = "mingw" ]; then
-  if [ "$MINGW" = "" ]; then
+  if [ $MINGW -eq 0 ]; then
     echo "0"
   else
     echo "1"
   fi
 elif [ "$2" = "strip" ]; then
-  if [ "$MINGW" = "" ]; then
+  if [ $MINGW -eq 0 ]; then
     echo "strip -x"
   else
     echo "ls"
   fi
 else
-  echo "#define POTION_TARGET \"${TARGET}\""
+  echo "#define POTION_PLATFORM \"$TARGET\""
+  echo "#define POTION_WIN32    $MINGW"
   echo
-  echo "#define PN_SIZE_T     ${LONG}"
-  echo "#define LONG_SIZE_T   ${LONG}"
-  echo "#define DOUBLE_SIZE_T ${DOUBLE}"
-  echo "#define INT_SIZE_T    ${INT}"
-  echo "#define SHORT_SIZE_T  ${SHORT}"
-  echo "#define CHAR_SIZE_T   ${CHAR}"
-  echo "#define LONGLONG_SIZE_T   ${LLONG}"
-  echo "#define PN_LITTLE_ENDIAN  ${LILEND}"
+  echo "#define PN_SIZE_T     $LONG"
+  echo "#define LONG_SIZE_T   $LONG"
+  echo "#define DOUBLE_SIZE_T $DOUBLE"
+  echo "#define INT_SIZE_T    $INT"
+  echo "#define SHORT_SIZE_T  $SHORT"
+  echo "#define CHAR_SIZE_T   $CHAR"
+  echo "#define LONGLONG_SIZE_T   $LLONG"
+  echo "#define PN_LITTLE_ENDIAN  $LILEND"
 fi
