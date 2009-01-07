@@ -3,7 +3,7 @@
 CC=$1
 CCEX="$CC -x c - -o config.out"
 
-TARGET=`gcc -v 2>&1 | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
+TARGET=`$CC -v 2>&1 | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
 MINGW_GCC=`echo "$TARGET" | sed "/mingw/!d"`
 if [ "$MINGW_GCC" = "" ]; then
   MINGW=0
@@ -31,15 +31,15 @@ fi
 
 if [ "$2" = "mingw" ]; then
   if [ $MINGW -eq 0 ]; then
-    echo "0"
+    echo -n "0"
   else
-    echo "1"
+    echo -n "1"
   fi
 elif [ "$2" = "strip" ]; then
   if [ $MINGW -eq 0 ]; then
-    echo "strip -x"
+    echo -n "strip -x"
   else
-    echo "ls"
+    echo -n "ls"
   fi
 else
   echo "#define POTION_PLATFORM \"$TARGET\""

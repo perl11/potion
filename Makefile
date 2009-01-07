@@ -30,7 +30,7 @@ MINGW_OBJ != `$(MINGW_CMD)`
 MINGW_OBJ ?= $(shell $(MINGW_CMD))
 OBJ += ${MINGW_OBJ}
 
-all: potion test usage
+all: potion usage
 
 usage:
 	@echo
@@ -38,16 +38,16 @@ usage:
 	@echo
 	@echo " Running a script."
 	@echo
-	@echo "   ./potion examples/fib.pn"
+	@echo "   $$ ./potion examples/fib.pn"
 	@echo
 	@echo " Dump the AST and bytecode inspection for a script. "
 	@echo
-	@echo "   ./potion -V examples/fib.pn"
+	@echo "   $$ ./potion -V examples/fib.pn"
 	@echo
 	@echo " Compiling to bytecode."
 	@echo
-	@echo "   ./potion -c examples/fib.pn"
-	@echo "   ./potion examples/fib.pnb"
+	@echo "   $$ ./potion -c examples/fib.pn"
+	@echo "   $$ ./potion examples/fib.pnb"
 	@echo
 	@echo " Potion builds its JIT compiler by default, but"
 	@echo " you can use the bytecode VM by running scripts"
@@ -55,6 +55,10 @@ usage:
 	@echo
 	@echo " If you built with JIT=0, then the bytecode VM"
 	@echo " will run by default."
+	@echo
+	@echo " To verify your build,"
+	@echo
+	@echo "   $$ make test"
 	@echo
 	@echo " Kindly email your respects and thoughtful queries"
 	@echo " to _why <why@whytheluckystiff.net>. Thankyou."
@@ -105,10 +109,10 @@ potion: core/version.h ${OBJ_POTION} ${OBJ}
 	@${STRIP} potion
 
 test: test/api/potion-test
-	@echo
-	@echo running API tests
-	@test/api/potion-test
-	@count=0; failed=0; pass=0; \
+	@echo; \
+	echo running API tests; \
+	test/api/potion-test; \
+	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 2 ]; do \
 	  if [ $$pass -eq 0 ]; then \
 		   echo running VM tests; \
