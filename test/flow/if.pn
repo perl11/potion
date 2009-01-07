@@ -1,4 +1,13 @@
-if (false): 12
+a = if (false): 12
 . elsif (true): 14
 . else: 16.
-# 14
+
+b = if (false): 12
+. elsif (false): 14
+. else: 16.
+
+c = if (true): 12
+. elsif (true): 14
+. else: 16.
+
+(a, b, c) # (14, 16, 12)

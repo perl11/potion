@@ -34,6 +34,8 @@
   message     = utfw+ braced?;
 }%%
 
+#define SCHAR(ptr, len) PN_MEMCPY_N(PN_STR_PTR(sbuf) + nbuf, ptr, char, len); nbuf += len
+  
 %%{
   machine potion;
   include utf8;
@@ -54,11 +56,35 @@
   false       = "false";
   int         = [0-9]+;
   float       = ("0" | [1-9] [0-9]*) ("." [0-9]+)? ("e" [\-+] [0-9]+)?;
-  schar1      = (utf8 - "'") | "\\'";
-  schar2      = (utf8 - ["\\]) | "\\u" [0-9]{4} | '\\"' | "\\\\" | "\\/" |
-                "\\b" | "\\f" | "\\n" | "\\r" | "\\t";
-  string      = "'" schar1* "'" | '"' schar2* '"';
-  string2     = "%% " (utf8 - newline)+;
+  schar1      = utf8 -- "\\'";
+  escape1     = "\\\"" | "\\\\" | "\\/";
+  escn        = "\\n";
+  escb        = "\\b";
+  escf        = "\\f";
+  escr        = "\\t";
+  esct        = "\\t";
+  escu        = "\\u" [0-9]{4};
+  schar2      = utf8 -- (escn | escape1 | escb | escf | escn | escr | esct);
+  quote1      = "'";
+  quote2      = '"';
+  string3     = "%% " (utf8 - newline)+;
+
+  string1 := |*
+    "\\'"       => { SCHAR(ts + 1, 1); };
+    "'"         => { TOKEN2(STRING, potion_str2(P, PN_STR_PTR(sbuf), nbuf)); fgoto main; };
+    schar1      => { SCHAR(ts, te - ts); };
+  *|;
+
+  string2 := |*
+    escape1     => { SCHAR(ts + 1, 1); };
+    escn        => { SCHAR("\n", 1); };
+    escb        => { SCHAR("\b", 1); };
+    escf        => { SCHAR("\f", 1); };
+    escr        => { SCHAR("\r", 1); };
+    esct        => { SCHAR("\t", 1); };
+    '"'         => { TOKEN2(STRING, potion_str2(P, PN_STR_PTR(sbuf), nbuf)); fgoto main; };
+    schar2      => { SCHAR(ts, te - ts); };
+  *|;
 
   main := |*
     comma       => { TOKEN1(SEP); };
@@ -103,8 +129,9 @@
     false       => { TOKEN2(FALSE, PN_FALSE); };
     int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts))); };
     float       => { TOKEN2(FLOAT, PN_NUM(PN_ATOI(ts, te - ts))); };
-    string      => { TOKEN2(STRING, potion_str2(P, ts, te - ts)); };
-    string2     => { TOKEN2(STRING2, potion_str2(P, ts + 3, (te - ts) - 3)); };
+    quote1      => { nbuf = 0; fgoto string1; };
+    quote2      => { nbuf = 0; fgoto string2; };
+    string3     => { TOKEN2(STRING2, potion_str2(P, ts + 3, (te - ts) - 3)); };
 
     message     => { TOKEN2(MESSAGE, potion_str2(P, ts, te - ts)); };
     query       => { TOKEN2(QUERY, potion_str2(P, ts + 1, (te - ts) - 1)); };
@@ -117,9 +144,9 @@
 PN potion_parse(Potion *P, PN code) {
   int cs, act;
   char *p, *pe, *ts, *te, *eof = 0;
-  int lineno = 0;
+  int lineno = 0, nbuf = 0;
   void *pParser = LemonPotionAlloc(malloc);
-  PN last = PN_NIL;
+  PN last = PN_NIL, sbuf = potion_bytes(P, 4096);
 
   P->xast = 1;
   P->source = PN_NIL;

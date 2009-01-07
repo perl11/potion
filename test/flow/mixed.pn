@@ -1,0 +1,14 @@
+name = "Pieter"
+if (name length < 4):
+  "WRONG"
+. elsif (name length < 1):
+  "ALSO WRONG"
+. else:
+  while (name length > 4):
+    if (name length == 6): name = "Georg".
+    elsif (name length == 5): name = "Seth".
+    else: name = "Oz".
+  .
+  name.
+
+# Seth

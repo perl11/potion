@@ -18,6 +18,7 @@
 #include <string.h>
 #endif
 
+extern char *potion_op_names[];
 extern u8 potion_op_args[];
 
 PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
@@ -546,6 +547,7 @@ reentry:
 
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
   while (pos < end) {
+    // printf("CODE: %s\n", potion_op_names[pos->code]);
     switch (pos->code) {
       case OP_MOVE:
         reg[pos->a] = reg[pos->b];
