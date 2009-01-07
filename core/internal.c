@@ -32,7 +32,9 @@ static void potion_init(Potion *P) {
   potion_lobby_init(P);
 
   PN_allocate = potion_str(P, "allocate");
+  PN_break = potion_str(P, "break");
   PN_call = potion_str(P, "call");
+  PN_continue = potion_str(P, "continue");
   PN_def = potion_str(P, "def");
   PN_delegated = potion_str(P, "delegated");
   PN_compile = potion_str(P, "compile");

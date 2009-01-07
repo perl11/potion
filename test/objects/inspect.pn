@@ -1,1 +1,5 @@
-(40) inspect # (40)nil
+(40) inspect
+"elephant" length inspect
+inspect
+
+# (40)8nil

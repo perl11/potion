@@ -239,7 +239,9 @@ struct PNMcache {
 } potion_mcache[8192];
 #endif
 
-PN PN_allocate, PN_call, PN_compile, PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect, PN_lookup, PN_while;
+PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
+   PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect,
+   PN_lookup, PN_while;
 
 //
 // the Potion functions
