@@ -61,7 +61,7 @@ static void potion_init(Potion *P) {
 Potion *potion_create() {
   Potion *P = PN_ALLOC(Potion);
   PN_MEMZERO(P, Potion);
-  PN_GB(P->gb, NULL, 0);
+  PN_GB(P);
   P->vt = PN_TSTATE;
   P->typea = TYPE_BATCH_SIZE;
   P->typen = PN_TUSER;
@@ -78,9 +78,4 @@ PN potion_delegated(Potion *P, PN closure, PN self) {
   if (P->typea == P->typen)
     printf("Vtable out of room!\n");
   return vt;
-}
-
-void potion_destroy(Potion *P) {
-  // TODO: free the state through GC
-  PN_FREE(P);
 }

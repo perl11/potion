@@ -85,7 +85,7 @@ static PN potion_bytes_inspect(Potion *P, PN closure, PN self) {
 
 void potion_str_hash_init(Potion *P) {
   struct PNStrTable *t = PN_CALLOC(struct PNStrTable, sizeof(kh_str_t));
-  PN_GB(t->gb, NULL, 0);
+  PN_GB(t);
   t->vt = PN_TTABLE;
   P->strings = (PN)t;
 }

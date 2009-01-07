@@ -38,14 +38,25 @@ PN potion_closure_inspect(Potion *P, PN cl, PN self, PN len) {
 PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
   struct PNVtable *vt = (struct PNVtable *)self;
   struct PNObject *o = PN_ALLOC2(struct PNObject, PN_INT(len));
-  PN_GB(o->gb, NULL, 0);
+  PN_GB(o);
   o->vt = vt->type;
   return (PN)o;
 }
 
+void potion_release(Potion *P, PN obj) {
+  struct PNGarbage *ptr;
+  if (!PN_IS_REF(obj)) return;
+  ptr = (struct PNGarbage *)(obj & PN_REF_MASK);
+  if (--ptr->next < 1) PN_FREE(ptr);
+}
+
+void potion_destroy(Potion *P) {
+  potion_release(P, (PN)P);
+}
+
 PN potion_type_new(Potion *P, PNType t, PN self) {
   struct PNVtable *vt = PN_CALLOC(struct PNVtable, sizeof(kh_PN_t));
-  PN_GB(vt->gb, NULL, 0);
+  PN_GB(vt);
   vt->vt = PN_TVTABLE;
   vt->type = t;
   vt->parent = self;
