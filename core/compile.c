@@ -14,14 +14,14 @@
 
 #define PN_ASM1(ins, _a) ({ \
     (*pos)->code = (u8)ins; \
-    (*pos)->a    = (u8)_a; \
+    (*pos)->a    = (int)_a; \
     (*pos)++; \
   })
 
 #define PN_ASM2(ins, _a, _b) ({ \
     (*pos)->code = (u8)ins; \
-    (*pos)->a    = (u8)_a; \
-    (*pos)->b    = (u8)_b; \
+    (*pos)->a    = (int)_a; \
+    (*pos)->b    = (int)_b; \
     (*pos)++; \
   })
 
@@ -93,8 +93,8 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   while (pos < end) {
     printf("[%u] %s", num, potion_op_names[pos->code]);
     switch (potion_op_args[pos->code]) {
-      case 1: printf(" %u", (unsigned)pos->a); break;
-      case 2: printf(" %u %u", (unsigned)pos->a, (unsigned)pos->b); break;
+      case 1: printf(" %d", pos->a); break;
+      case 2: printf(" %d %d", pos->a, pos->b); break;
     }
     printf("\n");
     pos++; num++;
@@ -275,6 +275,20 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
         PN_ASM2(OP_TESTJMP, reg, 0);
         potion_source_asmb(P, f, (struct PNSource *)t->a[2], reg, pos);
         jmp->b = (*pos - jmp) - 1;
+      } else if (t->a[0] == PN_while) {
+        PN_OP *jmp1, *jmp2 = *pos;
+        if (arg) {
+          PN test = t->a[1];
+          if (PN_PART(test) == AST_TABLE)
+            test = PN_TUPLE_AT(PN_S(t->a[1], 0), 0);
+          potion_source_asmb(P, f, (struct PNSource *)test, reg, pos);
+        } else
+          PN_ASM2(OP_LOADPN, reg, t->a[1]);
+        jmp1 = *pos;
+        PN_ASM2(OP_NOTJMP, reg, 0);
+        potion_source_asmb(P, f, (struct PNSource *)t->a[2], reg, pos);
+        PN_ASM1(OP_JMP, (jmp2 - *pos) - 1);
+        jmp1->b = (*pos - jmp1) - 1;
       } else {
         u8 breg = reg, opcode = OP_GETUPVAL;
         unsigned long num = PN_UPVAL(t->a[0]);

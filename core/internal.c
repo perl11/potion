@@ -41,6 +41,7 @@ static void potion_init(Potion *P) {
   PN_if = potion_str(P, "if");
   PN_inspect = potion_str(P, "inspect");
   PN_lookup = potion_str(P, "lookup");
+  PN_while = potion_str(P, "while");
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup, 0));
   potion_def_method(P, 0, vtable, PN_def, PN_FUNC(potion_def_method, 0));

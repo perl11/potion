@@ -11,8 +11,8 @@
 
 typedef struct {
   u8 code:8;
-  unsigned a:12;
-  unsigned b:12;
+  int a:12;
+  int b:12;
 } PN_OP;
 
 #pragma pack(pop)
