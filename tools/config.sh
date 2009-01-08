@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 CC=$1
 AC="tools/config.c"
