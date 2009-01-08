@@ -281,7 +281,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
           X86(0x83); X86(0xF8); X86(PN_REF_FLAG); // cmp WEAK %eax
           X86(0x75); X86(X86C(11, 13)); // jne 13
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
-          X86(0x83); X86(0xE8); X86(PN_REF_FLAG); // sub REF %eax
+          X86(0x83); X86(0xF0); X86(PN_REF_FLAG); // xor REF %eax
           X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(PN_GC)); // mov %rax.data %rax
           X86(0xEB); X86(X86C(3, 4)); //  jmp 4
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
@@ -297,7 +297,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
           X86(0x83); X86(0xF8); X86(PN_REF_FLAG); // cmp WEAK %eax
           X86(0x75); X86(X86C(11, 13)); // jne 13
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
-          X86(0x83); X86(0xE8); X86(PN_REF_FLAG); // sub REF %eax
+          X86(0x83); X86(0xF0); X86(PN_REF_FLAG); // xor REF %eax
           X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(PN_GC)); // mov %rdx %rax.data
           X86(0xEB); X86(X86C(3, 4)); //  jmp 4
         }
@@ -305,14 +305,12 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
       break;
       case OP_GETUPVAL:
         X86_MOV_RBP(0x8B, lregs + pos->b);
-        X86(0x83); X86(0xE8); X86(PN_REF_FLAG); // sub REF %eax
         X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(PN_GC));
         X86_MOV_RBP(0x89, pos->a);
       break;
       case OP_SETUPVAL:
         X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */
         X86_MOV_RBP(0x8B, lregs + pos->b); // mov %rsp(B) %rax
-        X86(0x83); X86(0xE8); X86(PN_REF_FLAG); // sub REF %eax
         X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(PN_GC)); // mov %rdx %rax.data
       break;
       case OP_NEWTUPLE:
@@ -476,6 +474,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
             X86_ARGO(regs + pos->b, 1);
             X86_PRE(); X86(0xB8); X86N(potion_ref); // mov &potion_ref %rax
             X86(0xFF); X86(0xD0); // callq %rax
+            X86(0x83); X86(0xF0); X86(0x04); // xor REF %rax
             X86_MOV_RBP(0x89, regs + pos->b); // mov %rax local
             X86_PRE(); X86(0x89); X86(0xC2); // mov %rax %rdx
           } else {

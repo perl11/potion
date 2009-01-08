@@ -18,8 +18,8 @@
 //
 // types
 //
-typedef unsigned long PN;
-typedef unsigned int PNType, PN_GC, PN_SIZE;
+typedef unsigned long PN, PN_GC;
+typedef unsigned int PNType, PN_SIZE;
 typedef struct Potion_State Potion;
 
 struct PNObject;
