@@ -474,8 +474,8 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
             X86_ARGO(regs + pos->b, 1);
             X86_PRE(); X86(0xB8); X86N(potion_ref); // mov &potion_ref %rax
             X86(0xFF); X86(0xD0); // callq %rax
-            X86(0x83); X86(0xF0); X86(0x04); // xor REF %rax
             X86_MOV_RBP(0x89, regs + pos->b); // mov %rax local
+            X86(0x83); X86(0xF0); X86(0x04); // xor REF %rax
             X86_PRE(); X86(0x89); X86(0xC2); // mov %rax %rdx
           } else {
             fprintf(stderr, "** missing an upval to proto %p\n", (void *)proto);
