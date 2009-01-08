@@ -39,8 +39,8 @@ static void potion_cmd_usage() {
 static void potion_cmd_stats() {
   printf("sizeof(PN): %d\nsizeof(PNGarbage): %d\nsizeof(PNObject): %d\n",
       (int)sizeof(PN), (int)sizeof(struct PNGarbage), (int)sizeof(struct PNObject));
-  printf("sizeof(PNTuple): %d\nsizeof(PN + PNTuple + PN_NUM): %d\n",
-      (int)sizeof(struct PNTuple), (int)((2 * sizeof(PN)) + sizeof(struct PNTuple)));
+  printf("sizeof(PNTuple): %d\nsizeof(PN + PNTuple): %d\n",
+      (int)sizeof(struct PNTuple), (int)(sizeof(PN) + sizeof(struct PNTuple)));
 }
 
 static void potion_cmd_version() {
@@ -86,7 +86,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       printf("\n");
     }
     if (exec == 1) {
-      code = potion_vm(P, code, PN_EMPTY, 0, NULL);
+      code = potion_vm(P, code, PN_NIL, 0, NULL);
       if (verbose > 1)
         printf("\n-- returned %lu --\n", code);
       if (verbose) {

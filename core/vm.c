@@ -217,7 +217,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
     argx = 0;
     PN_TUPLE_EACH(f->sig, i, v, {
       if (PN_IS_STR(v)) {
-        unsigned long num = PN_GET(f->locals, v);
+        PN_SIZE num = PN_GET(f->locals, v);
         X86_ARGI(regs + num, 3 + argx);
         argx++;
       }
@@ -315,7 +315,13 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
         X86(0x83); X86(0xE8); X86(PN_REF_FLAG); // sub REF %eax
         X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(PN_GC)); // mov %rdx %rax.data
       break;
-      case OP_SETTABLE:
+      case OP_NEWTUPLE:
+        X86_ARGO(need - 2, 0);
+        X86_PRE(); X86(0xB8); X86N(potion_tuple_empty); // mov &potion_tuple_push %rax
+        X86(0xFF); X86(0xD0); // callq %rax
+        X86_MOV_RBP(0x89, pos->a); // mov %rax local
+      break;
+      case OP_SETTUPLE:
         X86_ARGO(need - 2, 0);
         X86_ARGO(pos->a, 1);
         X86_ARGO(pos->b, 2);
@@ -498,7 +504,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
 }
 #endif
 
-PN potion_vm(Potion *P, PN proto, PN vargs, unsigned int upc, PN* upargs) {
+PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {
   struct PNProto *f = (struct PNProto *)proto;
 
   // these variables persist as we jump around
@@ -509,11 +515,11 @@ PN potion_vm(Potion *P, PN proto, PN vargs, unsigned int upc, PN* upargs) {
   // current = upvals | locals | self | reg
   PN_OP *pos, *end;
   long argx = 0;
-  PN *args, *upvals, *locals, *reg;
+  PN *args = NULL, *upvals, *locals, *reg;
   PN *current = stack;
 
   pos = ((PN_OP *)PN_STR_PTR(f->asmb));
-  args = PN_GET_TUPLE(vargs)->set;
+  if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
 reentry:
   // TODO: place the stack in P, allow it to allocate as needed
   if (current - stack >= STACK_MAX) {
@@ -528,7 +534,7 @@ reentry:
   if (pos == (PN_OP *)PN_STR_PTR(f->asmb)) {
     reg[0] = PN_VTABLE(PN_TLOBBY);
     if (upc > 0 && upargs != NULL) {
-      unsigned int i;
+      PN_SIZE i;
       for (i = 0; i < upc; i++) {
         upvals[i] = upargs[i];
       }
@@ -538,7 +544,7 @@ reentry:
       argx = 0;
       PN_TUPLE_EACH(f->sig, i, v, {
         if (PN_IS_STR(v)) {
-          unsigned long num = PN_GET(f->locals, v);
+          PN_SIZE num = PN_GET(f->locals, v);
           locals[num] = args[argx++];
         }
       });
@@ -576,7 +582,10 @@ reentry:
       case OP_SETUPVAL:
         PN_DEREF(upvals[pos->b]) = reg[pos->a];
       break;
-      case OP_SETTABLE:
+      case OP_NEWTUPLE:
+        reg[pos->a] = PN_TUP0();
+      break;
+      case OP_SETTUPLE:
         reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
       break;
       case OP_ADD:
