@@ -71,6 +71,10 @@ static PN potion_str_print(Potion *P, PN closure, PN self) {
   return PN_NIL;
 }
 
+static PN potion_str__link(Potion *P, PN closure, PN self, PN link) {
+  return link;
+}
+
 PN potion_byte_str(Potion *P, const char *str) {
   size_t len = strlen(str);
   struct PNString *s = (struct PNString *)potion_bytes(P, len);
@@ -108,6 +112,8 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "inspect", potion_str_inspect, 0);
   potion_method(str_vt, "length", potion_str_length, 0);
   potion_method(str_vt, "print", potion_str_print, 0);
+  potion_method(str_vt, "~link", potion_str__link, 0);
   potion_method(byt_vt, "inspect", potion_bytes_inspect, 0);
   potion_method(byt_vt, "length", potion_bytes_length, 0);
+  potion_method(byt_vt, "~link", potion_str__link, 0);
 }

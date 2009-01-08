@@ -150,7 +150,7 @@ static void potion_cmd_fib() {
 int main(int argc, char *argv[]) {
   int i, verbose = 0, exec = 1 + POTION_JIT;
 
-  if (argc > 0) {
+  if (argc > 1) {
     for (i = 0; i < argc; i++) {
       if (strcmp(argv[i], "-I") == 0 ||
           strcmp(argv[i], "--inspect") == 0) {
@@ -206,9 +206,9 @@ int main(int argc, char *argv[]) {
 
     potion_cmd_compile(argv[argc-1], exec, verbose);
     return 0;
-  } else {
-    fprintf(stderr, "// TODO: read from stdin");
   }
 
+  fprintf(stderr, "// TODO: read from stdin\n");
+  potion_cmd_usage();
   return 0;
 }

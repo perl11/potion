@@ -30,6 +30,11 @@
     $ cd potion
     $ make
 
+  (NOTE: There appear to be some bugs using Ragel under
+  64-bit, though. The UTF-8 tests fail. Try building
+  the grammar on a 32-bit and copy over pn-scan.c
+  into core/.)
+
 
   ~ installing ~
 

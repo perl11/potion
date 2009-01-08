@@ -29,6 +29,16 @@ PN potion_table_length(Potion *P, PN cl, PN self) {
   return PN_NUM(kh_end(t->kh));
 }
 
+PN potion_table__link(Potion *P, PN cl, PN self, PN link) {
+  struct PNTable *t = (struct PNTable *)self;
+  kh_PN_t *h = t->kh;
+  unsigned k;
+  for (k = kh_begin(h); k != kh_end(h); ++k)
+    if (kh_exist(h, k))
+      PN_LINK(kh_value(h, k));
+  return link;
+}
+
 #define NEW_TUPLE(t, size, ptr) \
   struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, 0); \
   t->len = size; \
@@ -96,12 +106,21 @@ PN potion_tuple_length(Potion *P, PN cl, PN self) {
   return PN_NUM(PN_TUPLE_LEN(self));
 }
 
+PN potion_tuple__link(Potion *P, PN cl, PN self, PN link) {
+  PN_TUPLE_EACH(self, i, v, {
+    PN_LINK(v);
+  });
+  return link;
+}
+
 void potion_table_init(Potion *P) {
   PN tbl_vt = PN_VTABLE(PN_TTABLE);
   PN tpl_vt = PN_VTABLE(PN_TTUPLE);
   potion_method(tbl_vt, "inspect", potion_table_inspect, 0);
   potion_method(tbl_vt, "length", potion_table_length, 0);
+  potion_method(tpl_vt, "~link", potion_table__link, 0);
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "inspect", potion_tuple_inspect, 0);
   potion_method(tpl_vt, "length", potion_tuple_length, 0);
+  potion_method(tpl_vt, "~link", potion_tuple__link, 0);
 }

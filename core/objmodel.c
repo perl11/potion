@@ -23,16 +23,29 @@ struct PNVtable {
 unsigned long potion_vt_id = PN_TUSER;
 
 PN potion_closure_new(Potion *P, PN_F meth, PN sig, unsigned int extra) {
+  PN_SIZE i;
   struct PNClosure *c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, extra * sizeof(PN));
   c->method = meth;
   c->sig = sig;
   c->extra = extra;
+  for (i = 0; i < c->extra; i++)
+    c->data[i] = PN_NIL;
   return (PN)c;
 }
 
 PN potion_closure_inspect(Potion *P, PN cl, PN self, PN len) {
   printf("#<closure>");
   return PN_NIL;
+}
+
+PN potion_closure__link(Potion *P, PN cl, PN self, PN link) {
+  PN_SIZE i;
+  struct PNClosure *c = PN_CLOSURE(self);
+  // TODO: link function code if allocated by the jit
+  PN_LINK(c->sig);
+  for (i = 0; i < c->extra; i++)
+    PN_LINK(c->data[i]);
+  return link;
 }
 
 PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
@@ -122,6 +135,12 @@ PN potion_ref_inspect(Potion *P, PN cl, PN self, PN len) {
   return PN_NIL;
 }
 
+PN potion_ref__link(Potion *P, PN cl, PN self, PN link) {
+  struct PNWeakRef *r = PN_GET_REF(self);
+  PN_LINK(r->data);
+  return link;
+}
+
 PN potion_object_inspect(Potion *P, PN cl, PN self, PN len) {
   printf("#<object>");
   return PN_NIL;
@@ -136,15 +155,22 @@ PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
   return potion_send_dyn(self, method);
 }
 
+PN potion_object__link(Potion *P, PN cl, PN self, PN link) {
+  return link;
+}
+
 void potion_object_init(Potion *P) {
   PN clo_vt = PN_VTABLE(PN_TCLOSURE);
   PN ref_vt = PN_VTABLE(PN_TWEAK);
   PN obj_vt = PN_VTABLE(PN_TOBJECT);
   potion_method(clo_vt, "inspect", potion_closure_inspect, 0);
+  potion_method(clo_vt, "~link", potion_closure__link, 0);
   potion_method(ref_vt, "inspect", potion_ref_inspect, 0);
+  potion_method(ref_vt, "~link", potion_ref__link, 0);
   potion_method(obj_vt, "forward", potion_object_forward, 0);
   potion_method(obj_vt, "inspect", potion_object_inspect, 0);
   potion_method(obj_vt, "send", potion_object_send, 0);
+  potion_method(obj_vt, "~link", potion_object__link, 0);
 }
 
 void potion_lobby_init(Potion *P) {

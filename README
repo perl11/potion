@@ -45,6 +45,7 @@
    * Scoped mixins. Basically, you can modify
      object behavior within a scope. So changes
      to core classes can be localized.
+     ++ INCOMPLETE ++
 
    * Interpreter is thread-safe and reentrant.
      I hope this will facilitate coroutines,
@@ -153,9 +154,10 @@
   THEY ARE USELESS WITHOUT MIXINS.
 
 
-  ~ unique ideas ~
+  ~ unique ideas (to be implemented) ~
 
-  Potion does have a few unique features.
+  Potion does have a few unique features
+  underway.
 
   * It is two languages in one.
 

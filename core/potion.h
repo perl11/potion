@@ -86,10 +86,12 @@ struct PNGarbage;
 #define PN_PROTO(x)     ((struct PNProto *)(x))
 #define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0)
 #define PN_SET_REF(t)   (((PN)t)+PN_REF_FLAG)
-#define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)-PN_REF_FLAG))
+#define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_REF_FLAG))
 #define PN_DEREF(x)     PN_GET_REF(x)->data
 #define PN_GB(x)        ((struct PNGarbage *)x)->next = 1
+#define PN_GBN(x)       ((struct PNGarbage *)x)->next
 #define PN_LINK(x)      if (link) potion_release(P, x)
+#define PN_CLINK(x)     if (link && PN_GBN(x) == 1) { PN_FREE(x); }
 
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
 #define PN_TUP0()       potion_tuple_empty(P)
