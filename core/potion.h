@@ -18,8 +18,8 @@
 //
 // types
 //
-typedef unsigned long PN, PN_GC;
-typedef unsigned int PNType, PN_SIZE;
+typedef unsigned long PN;
+typedef unsigned int PNType, PN_GC, PN_SIZE;
 typedef struct Potion_State Potion;
 
 struct PNObject;
@@ -123,10 +123,11 @@ struct PNGarbage;
 
 struct PNGarbage {
   PN_GC next;
+  PNType vt;
 };
 
 #define PN_OBJECT_HEADER \
-  struct PNGarbage gb; \
+  PN_GC next; \
   PNType vt;
 
 #define PN_BOOT_OBJ_ALLOC(S, T, L) \
@@ -176,13 +177,13 @@ struct PNProto {
 };
 
 struct PNTuple {
-  PN_GC next;
+  PN_OBJECT_HEADER
   PN_SIZE len;
   PN *set;
 };
 
 struct PNWeakRef {
-  PN_GC next;
+  PN_OBJECT_HEADER
   PN data;
 };
 

@@ -20,9 +20,7 @@ struct PNVtable {
   kh_PN_t kh[0];
 };
 
-unsigned long potion_vt_id = PN_TUSER;
-
-PN potion_closure_new(Potion *P, PN_F meth, PN sig, unsigned int extra) {
+PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   PN_SIZE i;
   struct PNClosure *c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, extra * sizeof(PN));
   c->method = meth;
