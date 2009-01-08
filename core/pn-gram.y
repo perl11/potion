@@ -75,7 +75,7 @@ arg(A) ::= table(B) block(C). { A.v = B; A.b = C; }
 arg(A) ::= value(B) block(C). { A.v = B; A.b = C; }
 arg(A) ::= table(B). { A.v = B; A.b = PN_NIL; }
 arg(A) ::= value(B). { A.v = B; A.b = PN_NIL; }
-arg(A) ::= block(B). { A.v = PN_EMPTY; A.b = B; }
+arg(A) ::= block(B). { A.v = PN_FALSE; A.b = B; }
 
 name(A) ::= OPS(B). { A = PN_AST(MESSAGE, B); }
 name(A) ::= MESSAGE(B). { A = PN_AST(MESSAGE, B); }
@@ -93,16 +93,16 @@ value(A) ::= STRING2(B). { A = PN_AST(VALUE, B); }
 value(A) ::= data(B). { A = B; }
 
 block(A) ::= BEGIN_BLOCK all(B) END_BLOCK. { A = PN_AST(BLOCK, B); }
-block(A) ::= BEGIN_BLOCK END_BLOCK. { A = PN_AST(BLOCK, PN_EMPTY); }
+block(A) ::= BEGIN_BLOCK END_BLOCK. { A = PN_AST(BLOCK, PN_NIL); }
 
 table(A) ::= BEGIN_TABLE all(B) END_TABLE. { A = PN_AST(TABLE, B); }
-table(A) ::= BEGIN_TABLE END_TABLE. { A = PN_AST(TABLE, PN_EMPTY); }
+table(A) ::= BEGIN_TABLE END_TABLE. { A = PN_AST(TABLE, PN_NIL); }
 
 //
 // the interleaved data language
 //
 data(A) ::= BEGIN_DATA items(B) END_DATA. { A = PN_AST(DATA, B); }
-data(A) ::= BEGIN_DATA END_DATA. { A = PN_AST(DATA, PN_EMPTY); }
+data(A) ::= BEGIN_DATA END_DATA. { A = PN_AST(DATA, PN_NIL); }
 
 items(A) ::= items(B) SEP item(C). { A = PN_PUSH(B, C); }
 items(A) ::= item(B). { A = PN_TUP(B); }

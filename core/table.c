@@ -12,11 +12,6 @@
 #include "khash.h"
 #include "table.h"
 
-PN potion_table_new(Potion *P, PN closure, PN self) {
-  // struct PNTable *t = PN_OBJ_ALLOC(struct PNTable, PN_TTABLE, 0);
-  return PN_EMPTY;
-}
-
 PN potion_table_inspect(Potion *P, PN cl, PN self) {
   struct PNTable *t = (struct PNTable *)self;
   kh_PN_t *h = t->kh;
@@ -34,48 +29,50 @@ PN potion_table_length(Potion *P, PN cl, PN self) {
   return PN_NUM(kh_end(t->kh));
 }
 
-inline PN potion_tuple_with_size(Potion *P, unsigned long size) {
-  struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, sizeof(PN) * size);
-  t->len = size;
+#define NEW_TUPLE(t, size, ptr) \
+  struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, 0); \
+  t->len = size; \
+  t->set = ptr
+
+inline PN potion_tuple_empty(Potion *P) {
+  NEW_TUPLE(t, 0, NULL);
+  return PN_SET_TUPLE(t);
+}
+
+inline PN potion_tuple_with_size(Potion *P, PN_SIZE size) {
+  NEW_TUPLE(t, size, PN_ALLOC_N(PN, size));
   return PN_SET_TUPLE(t);
 }
 
 inline PN potion_tuple_new(Potion *P, PN value) {
-  struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, sizeof(PN));
-  t->len = 1;
+  NEW_TUPLE(t, 1, PN_ALLOC_N(PN, 1));
   t->set[0] = value;
   return PN_SET_TUPLE(t);
 }
 
 inline PN potion_tuple_push(Potion *P, PN tuple, PN value) {
-  struct PNTuple *t;
-  if (tuple == PN_EMPTY)
-    return potion_tuple_new(P, value);
-  t = PN_GET_TUPLE(tuple);
-  t = (struct PNTuple *)realloc((char *)t, sizeof(struct PNTuple) +
-                                (sizeof(PN) * ++t->len));
-  // be sure new pointer is registered with GC
+  struct PNTuple *t = PN_GET_TUPLE(tuple);
+  if (t->set == NULL)
+    t->set = PN_ALLOC_N(PN, ++t->len);
+  else
+    PN_REALLOC_N(t->set, PN, ++t->len);
   t->set[t->len-1] = value;
-  return PN_SET_TUPLE(t);
+  return tuple;
 }
 
-inline unsigned long potion_tuple_find(Potion *P, PN tuple, PN value) {
+inline PN_SIZE potion_tuple_find(Potion *P, PN tuple, PN value) {
   PN_TUPLE_EACH(tuple, i, v, {
     if (v == value) return i;
   });
-  return PN_NONE;
+  return -1;
 }
 
-inline unsigned long potion_tuple_put(Potion *P, PN *tuple, PN value) {
-  struct PNTuple *t;
-  if (*tuple != PN_EMPTY) {
-    unsigned long idx = potion_tuple_find(P, *tuple, value);
-    if (idx != -1) return idx;
-  }
+inline PN_SIZE potion_tuple_put(Potion *P, PN tuple, PN value) {
+  PN_SIZE idx = potion_tuple_find(P, tuple, value);
+  if (idx != -1) return idx;
 
-  *tuple = potion_tuple_push(P, *tuple, value);
-  t = PN_GET_TUPLE(*tuple);
-  return t->len - 1;
+  potion_tuple_push(P, tuple, value);
+  return PN_TUPLE_LEN(tuple) - 1;
 }
 
 PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
@@ -102,7 +99,6 @@ PN potion_tuple_length(Potion *P, PN cl, PN self) {
 void potion_table_init(Potion *P) {
   PN tbl_vt = PN_VTABLE(PN_TTABLE);
   PN tpl_vt = PN_VTABLE(PN_TTUPLE);
-  potion_method(tbl_vt, "new", potion_table_new, 0);
   potion_method(tbl_vt, "inspect", potion_table_inspect, 0);
   potion_method(tbl_vt, "length", potion_table_length, 0);
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");

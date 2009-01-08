@@ -27,6 +27,7 @@
 
 const char *potion_op_names[] = {
   "noop", "move", "loadk", "loadpn",
+  "newtuple", "settuple",
   "getlocal", "setlocal", "getupval", "setupval",
   "gettable", "settable", "getpath", "setpath",
   "add", "sub", "mult", "div", "mod", "pow",
@@ -38,6 +39,7 @@ const char *potion_op_names[] = {
 
 const u8 potion_op_args[] = {
   0, 2, 2, 2,
+  2, 2,
   2, 2, 2, 2,
   2, 2, 2, 2,
   2, 2, 2, 2, 2, 2,
@@ -54,7 +56,7 @@ PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
 PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   struct PNProto *t = (struct PNProto *)self;
   int x = 0;
-  unsigned int num = 1;
+  PN_SIZE num = 1;
   PN_OP *pos, *end;
   printf("; function definition: %p ; %u bytes\n", t, PN_STR_LEN(t->asmb));
   printf("; (");
@@ -73,17 +75,17 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   PN_TUPLE_EACH(t->locals, i, v, {
     printf(".local \"");
     potion_send(v, PN_inspect);
-    printf("\" ; %lu\n", i);
+    printf("\" ; %u\n", i);
   });
   PN_TUPLE_EACH(t->upvals, i, v, {
     printf(".upval \"");
     potion_send(v, PN_inspect);
-    printf("\" ; %lu\n", i);
+    printf("\" ; %u\n", i);
   });
   PN_TUPLE_EACH(t->values, i, v, {
     printf(".value ");
     potion_send(v, PN_inspect);
-    printf(" ; %lu\n", i);
+    printf(" ; %u\n", i);
   });
   PN_TUPLE_EACH(t->protos, i, v, {
     potion_send(v, PN_inspect);
@@ -110,17 +112,17 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   potion_source_asmb(P, f, (struct PNSource *)t->a[n], reg, pos)
 #define PN_BLOCK(reg, blk, sig) ({ \
   PN block = potion_send(blk, PN_compile, (PN)f, sig); \
-  unsigned long num = PN_PUT(f->protos, block); \
+  PN_SIZE num = PN_PUT(f->protos, block); \
   PN_ASM2(OP_PROTO, reg, num); \
   PN_TUPLE_EACH(((struct PNProto *)block)->upvals, i, v, { \
-    unsigned long numup = PN_GET(f->upvals, v); \
+    PN_SIZE numup = PN_GET(f->upvals, v); \
     if (numup != PN_NONE) PN_ASM2(OP_GETUPVAL, reg, numup); \
     else                  PN_ASM2(OP_GETLOCAL, reg, PN_GET(f->locals, v)); \
   }); \
 })
 #define PN_UPVAL(name) ({ \
-  unsigned long numl = PN_GET(f->locals, name); \
-  unsigned long numup = PN_NONE; \
+  PN_SIZE numl = PN_GET(f->locals, name); \
+  PN_SIZE numup = PN_NONE; \
   if (numl == PN_NONE) { \
     numup = PN_GET(f->upvals, name); \
     if (numup == PN_NONE) { \
@@ -167,7 +169,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
         break;
 
         default: {
-          unsigned long num = PN_PUT(f->values, t->a[0]);
+          PN_SIZE num = PN_PUT(f->values, t->a[0]);
           PN_ASM2(OP_LOADK, reg, num);
         }
         break;
@@ -176,7 +178,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
 
     case AST_ASSIGN: {
       struct PNSource *lhs = (struct PNSource *)t->a[0];
-      unsigned long num = PN_NONE;
+      PN_SIZE num = PN_NONE;
       u8 opcode = OP_SETUPVAL;
 
       if (lhs->part == AST_MESSAGE || lhs->part == AST_QUERY) {
@@ -238,20 +240,29 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     }
     break;
 
+#define PN_ARG_TABLE(args, reg1, reg2) \
+  if (arg) { \
+    PN test = args; \
+    if (PN_PART(test) == AST_TABLE) { \
+      test = PN_S(args, 0); \
+      if (!PN_IS_NIL(test)) { \
+        PN_TUPLE_EACH(test, i, v, { \
+          potion_source_asmb(P, f, (struct PNSource *)v, reg1, pos); }); \
+      } \
+    } else { \
+      potion_source_asmb(P, f, (struct PNSource *)test, reg2, pos); \
+    } \
+  } else \
+    PN_ASM2(OP_LOADPN, reg1, args)
+
     // TODO: this stuff is ugly and repetitive
     case AST_MESSAGE:
     case AST_QUERY: {
-      int arg = (t->a[1] != PN_NIL && t->a[1] != PN_EMPTY);
+      int arg = (t->a[1] != PN_NIL);
       int call = (t->a[2] != PN_NIL || arg);
       if (t->a[0] == PN_if) {
         PN_OP *jmp;
-        if (arg) {
-          PN test = t->a[1];
-          if (PN_PART(test) == AST_TABLE)
-            test = PN_TUPLE_AT(PN_S(t->a[1], 0), 0);
-          potion_source_asmb(P, f, (struct PNSource *)test, reg, pos);
-        } else
-          PN_ASM2(OP_LOADPN, reg, t->a[1]);
+        PN_ARG_TABLE(t->a[1], reg, reg);
         jmp = *pos;
         PN_ASM2(OP_NOTJMP, reg, 0);
         potion_source_asmb(P, f, (struct PNSource *)t->a[2], reg, pos);
@@ -259,13 +270,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
       } else if (t->a[0] == PN_elsif) {
         PN_OP *jmp1 = *pos, *jmp2;
         PN_ASM2(OP_TESTJMP, reg, 0);
-        if (arg) {
-          PN test = t->a[1];
-          if (PN_PART(test) == AST_TABLE)
-            test = PN_TUPLE_AT(PN_S(t->a[1], 0), 0);
-          potion_source_asmb(P, f, (struct PNSource *)test, reg, pos);
-        } else
-          PN_ASM2(OP_LOADPN, reg, t->a[1]);
+        PN_ARG_TABLE(t->a[1], reg, reg);
         jmp2 = *pos;
         PN_ASM2(OP_NOTJMP, reg, 0);
         potion_source_asmb(P, f, (struct PNSource *)t->a[2], reg, pos);
@@ -278,24 +283,12 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
         jmp->b = (*pos - jmp) - 1;
       } else if (t->a[0] == PN_loop) {
         PN_OP *jmp = *pos;
-        if (arg) {
-          PN test = t->a[1];
-          if (PN_PART(test) == AST_TABLE)
-            test = PN_TUPLE_AT(PN_S(t->a[1], 0), 0);
-          potion_source_asmb(P, f, (struct PNSource *)test, reg, pos);
-        } else
-          PN_ASM2(OP_LOADPN, reg, t->a[1]);
+        PN_ARG_TABLE(t->a[1], reg, reg);
         potion_source_asmb(P, f, (struct PNSource *)t->a[2], reg, pos);
         PN_ASM1(OP_JMP, (jmp - *pos) - 1);
       } else if (t->a[0] == PN_while) {
         PN_OP *jmp1, *jmp2 = *pos;
-        if (arg) {
-          PN test = t->a[1];
-          if (PN_PART(test) == AST_TABLE)
-            test = PN_TUPLE_AT(PN_S(t->a[1], 0), 0);
-          potion_source_asmb(P, f, (struct PNSource *)test, reg, pos);
-        } else
-          PN_ASM2(OP_LOADPN, reg, t->a[1]);
+        PN_ARG_TABLE(t->a[1], reg, reg);
         jmp1 = *pos;
         PN_ASM2(OP_NOTJMP, reg, 0);
         potion_source_asmb(P, f, (struct PNSource *)t->a[2], reg, pos);
@@ -303,29 +296,16 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
         jmp1->b = (*pos - jmp1) - 1;
       } else {
         u8 breg = reg, opcode = OP_GETUPVAL;
-        unsigned long num = PN_UPVAL(t->a[0]);
+        PN_SIZE num = PN_UPVAL(t->a[0]);
         if (num == PN_NONE) {
           num = PN_GET(f->locals, t->a[0]);
           opcode = OP_GETLOCAL;
         }
 
         if (num == PN_NONE) {
-          if (call) {
-            if (arg) {
-              PN test = t->a[1];
-              if (PN_PART(test) == AST_TABLE) {
-                test = PN_S(t->a[1], 0);
-                PN_TUPLE_EACH(test, i, v, {
-                  potion_source_asmb(P, f, (struct PNSource *)v, ++breg, pos);
-                });
-              } else {
-                potion_source_asmb(P, f, (struct PNSource *)test, breg, pos);
-              }
-            } else
-              PN_ASM2(OP_LOADPN, ++breg, t->a[1]);
-            if (t->a[2] != PN_NIL)
-              PN_BLOCK(++breg, t->a[2], PN_NIL);
-          }
+          PN_ARG_TABLE(t->a[1], ++breg, breg);
+          if (t->a[2] != PN_NIL)
+            PN_BLOCK(++breg, t->a[2], PN_NIL);
           num = PN_PUT(f->values, t->a[0]);
           PN_ASM2(OP_LOADK, ++breg, num);
           PN_ASM2(OP_BIND, breg, reg);
@@ -338,18 +318,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
             PN_ASM2(opcode, reg, num);
             PN_ASM2(OP_TEST, reg, reg);
           } else if (call) {
-            if (arg) {
-              PN test = t->a[1];
-              if (PN_PART(test) == AST_TABLE) {
-                test = PN_S(t->a[1], 0);
-                PN_TUPLE_EACH(test, i, v, {
-                  potion_source_asmb(P, f, (struct PNSource *)v, ++breg, pos);
-                });
-              } else {
-                potion_source_asmb(P, f, (struct PNSource *)test, breg, pos);
-              }
-            } else
-              PN_ASM2(OP_LOADPN, breg, t->a[1]);
+            PN_ARG_TABLE(t->a[1], ++breg, breg);
             if (t->a[2] != PN_NIL)
               PN_BLOCK(++breg, t->a[2], PN_NIL);
             PN_ASM2(opcode, ++breg, num);
@@ -364,7 +333,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
 
     case AST_PATH:
     case AST_PATHQ: {
-      unsigned long num = PN_PUT(f->values, t->a[0]);
+      PN_SIZE num = PN_PUT(f->values, t->a[0]);
       u8 breg = reg;
       PN_ASM2(OP_LOADK, ++breg, num);
       PN_ASM2(OP_GETPATH, breg, reg);
@@ -376,17 +345,17 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     break;
 
     case AST_TABLE:
-      PN_ASM2(OP_LOADPN, reg, PN_EMPTY);
+      PN_ASM1(OP_NEWTUPLE, reg);
       PN_TUPLE_EACH(t->a[0], i, v, {
         potion_source_asmb(P, f, (struct PNSource *)v, reg + 1, pos);
-        PN_ASM2(OP_SETTABLE, reg, reg + 1);
+        PN_ASM2(OP_SETTUPLE, reg, reg + 1);
       });
     break;
   }
 }
 
 PN potion_sig_compile(Potion *P, struct PNProto *f, PN src) {
-  PN sig = PN_EMPTY;
+  PN sig = PN_TUP0();
   struct PNSource *t = (struct PNSource *)src;
   if (t->part == AST_TABLE && PN_TUPLE_LEN(t->a[0]) > 0) {
     sig = PN_PUSH(sig, PN_NUM(0));
@@ -428,8 +397,11 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   f = PN_OBJ_ALLOC(struct PNProto, PN_TPROTO, 0);
   f->source = source;
   f->stack = PN_NUM(1);
-  f->protos = f->locals = f->upvals = f->values = PN_EMPTY;
-  f->sig = (sig == PN_NIL ? PN_EMPTY : potion_sig_compile(P, f, sig));
+  f->protos = PN_TUP0();
+  f->locals = PN_TUP0();
+  f->upvals = PN_TUP0();
+  f->values = PN_TUP0();
+  f->sig = (sig == PN_NIL ? PN_TUP0() : potion_sig_compile(P, f, sig));
   f->asmb = potion_bytes(P, 8192);
 
   ptr = (PN_OP *)(start = PN_STR_PTR(f->asmb));
@@ -457,7 +429,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
 
 #define READ_TUPLE(ptr) \
   long i = 0, count = READ_U8(ptr); \
-  PN tup = potion_tuple_with_size(P, (unsigned long)count); \
+  PN tup = potion_tuple_with_size(P, (PN_SIZE)count); \
   for (; i < count; i++)
 #define READ_VALUES(pn, ptr) ({ \
     READ_TUPLE(ptr) PN_TUPLE_AT(tup, i) = READ_CONST(pn, ptr); \
@@ -494,7 +466,7 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
   struct PNBHeader *h = (struct PNBHeader *)PN_STR_PTR(buf);
   if ((size_t)PN_STR_LEN(buf) <= sizeof(struct PNBHeader) || 
       strncmp((char *)h->sig, POTION_SIG, 4) != 0)
-    return PN_NONE;
+    return PN_NIL;
 
   ptr = h->proto;
   return potion_proto_load(P, PN_NIL, h->pn, &ptr);
@@ -562,7 +534,7 @@ PN potion_run(Potion *P, PN code) {
   PN_F func = potion_x86_proto(P, code);
   return func(P, PN_NIL, PN_NIL);
 #else
-  return potion_vm(P, code, PN_EMPTY, 0, NULL);
+  return potion_vm(P, code, PN_NIL, 0, NULL);
 #endif
 }
 

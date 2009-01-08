@@ -81,7 +81,7 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
     if (PN_IS_PROTO(method))
       cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_NIL, 1);
     else
-      cl = potion_closure_new(P, (PN_F)potion_getter_method, PN_EMPTY, 1);
+      cl = potion_closure_new(P, (PN_F)potion_getter_method, PN_FALSE, 1);
     PN_CLOSURE(cl)->data[0] = method;
   }
   return kh_value(vt->kh, k) = method;

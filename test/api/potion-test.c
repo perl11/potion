@@ -64,15 +64,16 @@ void potion_test_str(CuTest *T) {
 }
 
 void potion_test_empty(CuTest *T) {
-  CuAssert(T, "empty isn't a tuple", PN_IS_TUPLE(PN_EMPTY));
-  CuAssert(T, "empty is a ref", !PN_IS_PTR(PN_EMPTY));
+  PN empty = PN_TUP0();
+  CuAssert(T, "empty isn't a tuple", PN_IS_TUPLE(empty));
+  CuAssert(T, "empty isn't a ref", PN_IS_PTR(empty));
   CuAssertIntEquals(T, "tuple length is off",
-    PN_INT(potion_send(PN_EMPTY, potion_str(P, "length"))), 0);
+    PN_INT(potion_send(empty, potion_str(P, "length"))), 0);
 }
 
 void potion_test_tuple(CuTest *T) {
   PN tup = potion_tuple_with_size(P, 3);
-  PN_TUPLE_AT(tup, 0) = PN_EMPTY;
+  PN_TUPLE_AT(tup, 0) = PN_NIL;
   PN_TUPLE_AT(tup, 1) = PN_inspect;
   PN_TUPLE_AT(tup, 2) = tup;
   CuAssert(T, "tuple isn't a tuple", PN_IS_TUPLE(tup));

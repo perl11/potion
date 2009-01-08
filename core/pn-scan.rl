@@ -134,7 +134,7 @@
 #   "~"         => { TOKEN(WAVY); };
     "="         => { TOKEN(ASSIGN); };
 
-    begin_table => { TOKEN2(BEGIN_TABLE, PN_EMPTY); };
+    begin_table => { TOKEN2(BEGIN_TABLE, PN_TUP0()); };
     end_table   => { TOKEN(END_TABLE); };
     begin_data  => { TOKEN(BEGIN_DATA); };
     end_data    => { TOKEN(END_DATA); };
@@ -211,7 +211,7 @@ PN potion_parse(Potion *P, PN code) {
       if (eql) sig = PN_PUSH(sig, potion_str2(P, ts, eql - ts));
       sig = PN_PUSH(sig, PN_NUM(cast));
     };
-    optional => { sig = PN_PUSH(sig, PN_EMPTY); };
+    optional => { sig = PN_PUSH(sig, PN_NIL); };
     comma => { ARG_NEXT(); };
     sep => { 
       ARG_END();
@@ -224,17 +224,17 @@ PN potion_parse(Potion *P, PN code) {
 }%%
 
 PN potion_sig(Potion *P, char *fmt) {
-  PN sig = PN_EMPTY;
+  PN sig;
   int cs, act, x = 0;
   char *p, *pe, *ts, *te, *eof = 0;
   char cast = 0, *eql = NULL;
 
   if (fmt == NULL) return PN_NIL; // no signature, arg check off
-  if (fmt[0] == '\0') return sig; // empty signature, no args
+  if (fmt[0] == '\0') return PN_FALSE; // empty signature, no args
 
   fmt = strdup(fmt);
   p = fmt, pe = fmt + strlen(fmt);
-  sig = PN_PUSH(sig, PN_NUM(0));
+  sig = PN_TUP(PN_NUM(0));
 
   %% write init;
   %% write exec;

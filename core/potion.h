@@ -18,8 +18,8 @@
 //
 // types
 //
-typedef unsigned long PN, PN_GC;
-typedef unsigned int PNType;
+typedef unsigned long PN;
+typedef unsigned int PNType, PN_GC, PN_SIZE;
 typedef struct Potion_State Potion;
 
 struct PNObject;
@@ -52,15 +52,13 @@ struct PNGarbage;
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
 #define PN_VTABLE(t)    (P->vts[t])
 
-#define PN_NONE         ((PN)-1)
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)
-#define PN_EMPTY        ((PN)2)
-#define PN_REF          ((PN)4)
 #define PN_TRUE         ((PN)6)
 #define PN_FALSE        ((PN)14)
 #define PN_PRIMITIVE    7
 #define PN_REF_MASK     (ULONG_MAX ^ 15)
+#define PN_NONE         ((PN_SIZE)-1)
 
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE)
 #define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
@@ -92,29 +90,33 @@ struct PNGarbage;
 #define PN_DEREF(x)     PN_GET_REF(x)->data
 #define PN_GB(x)        ((struct PNGarbage *)x)->next = 1
 
+#define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
+#define PN_TUP0()       potion_tuple_empty(P)
 #define PN_TUP(X)       potion_tuple_new(P, X)
 #define PN_PUSH(T, X)   potion_tuple_push(P, T, X)
 #define PN_GET(T, X)    potion_tuple_find(P, T, X)
-#define PN_PUT(T, X)    potion_tuple_put(P, &(T), X)
+#define PN_PUT(T, X)    potion_tuple_put(P, T, X)
 #define PN_SET_TUPLE(t) (((PN)t)+PN_TUPLE_FLAG)
 #define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)-PN_TUPLE_FLAG))
-#define PN_TUPLE_LEN(t) (t == PN_EMPTY ? 0 : PN_GET_TUPLE(t)->len)
+#define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
-#define PN_TUPLE_COUNT(T, I, B) \
-  if (T != PN_EMPTY) { \
+#define PN_TUPLE_COUNT(T, I, B) ({ \
     struct PNTuple *__t##I = PN_GET_TUPLE(T); \
-    unsigned long I; \
-    for (I = 0; I < __t##I->len; I++) B \
-  }
-#define PN_TUPLE_EACH(T, I, V, B) \
-  if (T != PN_EMPTY) { \
-    struct PNTuple *__t##V = PN_GET_TUPLE(T); \
-    unsigned long I; \
-    for (I = 0; I < __t##V->len; I++) { \
-      PN V = __t##V->set[I]; \
-      B \
+    if (__t##I->len != 0) { \
+      PN_SIZE I; \
+      for (I = 0; I < __t##I->len; I++) B \
     } \
-  }
+  })
+#define PN_TUPLE_EACH(T, I, V, B) ({ \
+    struct PNTuple *__t##V = PN_GET_TUPLE(T); \
+    if (__t##V->len != 0) { \
+      PN_SIZE I; \
+      for (I = 0; I < __t##V->len; I++) { \
+        PN V = __t##V->set[I]; \
+        B \
+      } \
+    } \
+  })
 
 struct PNGarbage {
   PN_GC next;
@@ -136,7 +138,7 @@ struct PNObject {
 
 struct PNString {
   PN_OBJECT_HEADER
-  unsigned int len;
+  PN_SIZE len;
   char chars[0];
 };
 
@@ -153,7 +155,7 @@ struct PNClosure {
   PN_OBJECT_HEADER
   PN_F method;
   PN sig;
-  unsigned int extra;
+  PN_SIZE extra;
   PN data[0];
 };
 
@@ -172,8 +174,8 @@ struct PNProto {
 
 struct PNTuple {
   PN_GC next;
-  unsigned long len;
-  PN set[0];
+  PN_SIZE len;
+  PN *set;
 };
 
 struct PNWeakRef {
@@ -252,16 +254,17 @@ PN potion_type_new(Potion *, PNType, PN);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
-PN potion_closure_new(Potion *, PN_F, PN, unsigned int);
+PN potion_closure_new(Potion *, PN_F, PN, PN_SIZE);
 PN potion_ref(Potion *, PN);
 PN potion_sig(Potion *, char *);
 PN potion_pow(Potion *, PN, PN, PN);
 
-inline PN potion_tuple_with_size(Potion *, unsigned long);
+inline PN potion_tuple_empty(Potion *);
+inline PN potion_tuple_with_size(Potion *, PN_SIZE);
 inline PN potion_tuple_new(Potion *, PN);
 inline PN potion_tuple_push(Potion *, PN, PN);
-inline unsigned long potion_tuple_put(Potion *, PN *, PN);
-inline unsigned long potion_tuple_find(Potion *, PN, PN);
+inline PN_SIZE potion_tuple_put(Potion *, PN, PN);
+inline PN_SIZE potion_tuple_find(Potion *, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);
@@ -279,7 +282,7 @@ void potion_compiler_init(Potion *);
 PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
-PN potion_vm(Potion *, PN, PN, unsigned int, PN *);
+PN potion_vm(Potion *, PN, PN, PN_SIZE, PN *);
 PN potion_eval(Potion *, const char *);
 PN potion_run(Potion *, PN);
 
