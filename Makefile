@@ -13,7 +13,6 @@ LEMON = tools/lemon
 LIBS = -lm
 RAGEL = ragel
 STRIP ?= `./tools/config.sh ${CC} strip`
-STRIPD := `echo "${DEBUG}" | sed "s/0/${STRIP}/; s/1/ls/"`
 
 DEBUGFLAGS = `echo "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
@@ -101,8 +100,10 @@ tools/lemon: tools/lemon.c
 potion: core/version.h ${OBJ_POTION} ${OBJ}
 	@echo LINK potion
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
-	@echo STRIP potion
-	@${STRIP} potion
+	@if [ "${DEBUG}" != "1" ]; then \
+		echo STRIP potion; \
+	  ${STRIP} potion; \
+	fi
 
 test: test/api/potion-test
 	@echo; \

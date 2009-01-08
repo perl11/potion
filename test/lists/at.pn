@@ -1,0 +1,3 @@
+list = ("badgers", "bottles", "germans")
+(list at(2), list at(4), list at(-2))
+# (germans, nil, bottles)

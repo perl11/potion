@@ -238,6 +238,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     }
     break;
 
+    // TODO: this stuff is ugly and repetitive
     case AST_MESSAGE:
     case AST_QUERY: {
       int arg = (t->a[1] != PN_NIL && t->a[1] != PN_EMPTY);
@@ -311,9 +312,15 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
         if (num == PN_NONE) {
           if (call) {
             if (arg) {
-              PN_TUPLE_EACH(t->a[1], i, v, {
-                potion_source_asmb(P, f, (struct PNSource *)v, ++breg, pos);
-              });
+              PN test = t->a[1];
+              if (PN_PART(test) == AST_TABLE) {
+                test = PN_S(t->a[1], 0);
+                PN_TUPLE_EACH(test, i, v, {
+                  potion_source_asmb(P, f, (struct PNSource *)v, ++breg, pos);
+                });
+              } else {
+                potion_source_asmb(P, f, (struct PNSource *)test, breg, pos);
+              }
             } else
               PN_ASM2(OP_LOADPN, ++breg, t->a[1]);
             if (t->a[2] != PN_NIL)

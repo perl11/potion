@@ -56,6 +56,7 @@
   true        = "true";
   false       = "false";
   int         = [0-9]+;
+  int2        = "-" int;
   float       = ("0" | [1-9] [0-9]*) ("." [0-9]+)? ("e" [\-+] [0-9]+)?;
   schar1      = utf8 -- "\\'";
   escape1     = "\\\"" | "\\\\" | "\\/";
@@ -147,6 +148,7 @@
     true        => { TOKEN2(TRUE, PN_TRUE); };
     false       => { TOKEN2(FALSE, PN_FALSE); };
     int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts))); };
+    int2        => { TOKEN2(INT, PN_NUM(-PN_ATOI(ts + 1, te - (ts + 1)))); };
     float       => { TOKEN2(FLOAT, PN_NUM(PN_ATOI(ts, te - ts))); };
     quote1      => { nbuf = 0; fgoto string1; };
     quote2      => { nbuf = 0; fgoto string2; };

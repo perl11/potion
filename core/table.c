@@ -12,6 +12,28 @@
 #include "khash.h"
 #include "table.h"
 
+PN potion_table_new(Potion *P, PN closure, PN self) {
+  // struct PNTable *t = PN_OBJ_ALLOC(struct PNTable, PN_TTABLE, 0);
+  return PN_EMPTY;
+}
+
+PN potion_table_inspect(Potion *P, PN cl, PN self) {
+  struct PNTable *t = (struct PNTable *)self;
+  kh_PN_t *h = t->kh;
+  unsigned k;
+  for (k = kh_begin(h); k != kh_end(h); ++k)
+    if (kh_exist(h, k)) {
+      potion_send(kh_value(h, k), PN_inspect);
+      printf("\n");
+    }
+  return PN_NIL;
+}
+
+PN potion_table_length(Potion *P, PN cl, PN self) {
+  struct PNTable *t = (struct PNTable *)self;
+  return PN_NUM(kh_end(t->kh));
+}
+
 inline PN potion_tuple_with_size(Potion *P, unsigned long size) {
   struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, sizeof(PN) * size);
   t->len = size;
@@ -56,26 +78,11 @@ inline unsigned long potion_tuple_put(Potion *P, PN *tuple, PN value) {
   return t->len - 1;
 }
 
-PN potion_table_new(Potion *P, PN closure, PN self) {
-  // struct PNTable *t = PN_OBJ_ALLOC(struct PNTable, PN_TTABLE, 0);
-  return PN_EMPTY;
-}
-
-PN potion_table_inspect(Potion *P, PN cl, PN self) {
-  struct PNTable *t = (struct PNTable *)self;
-  kh_PN_t *h = t->kh;
-  unsigned k;
-  for (k = kh_begin(h); k != kh_end(h); ++k)
-    if (kh_exist(h, k)) {
-      potion_send(kh_value(h, k), PN_inspect);
-      printf("\n");
-    }
-  return PN_NIL;
-}
-
-PN potion_table_length(Potion *P, PN cl, PN self) {
-  struct PNTable *t = (struct PNTable *)self;
-  return PN_NUM(kh_end(t->kh));
+PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
+  long i = PN_INT(index), len = PN_TUPLE_LEN(self);
+  if (i < 0) i += len;
+  if (i >= len) return PN_NIL;
+  return PN_TUPLE_AT(self, i);
 }
 
 PN potion_tuple_inspect(Potion *P, PN cl, PN self) {
@@ -98,6 +105,7 @@ void potion_table_init(Potion *P) {
   potion_method(tbl_vt, "new", potion_table_new, 0);
   potion_method(tbl_vt, "inspect", potion_table_inspect, 0);
   potion_method(tbl_vt, "length", potion_table_length, 0);
+  potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "inspect", potion_tuple_inspect, 0);
   potion_method(tpl_vt, "length", potion_tuple_length, 0);
 }
