@@ -1,0 +1,3 @@
+msg = (): "no arguments" print.
+msg ()
+# no argumentsnil

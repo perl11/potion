@@ -357,7 +357,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
 PN potion_sig_compile(Potion *P, struct PNProto *f, PN src) {
   PN sig = PN_TUP0();
   struct PNSource *t = (struct PNSource *)src;
-  if (t->part == AST_TABLE && PN_TUPLE_LEN(t->a[0]) > 0) {
+  if (t->part == AST_TABLE && t->a[0] != PN_NIL) {
     sig = PN_PUSH(sig, PN_NUM(0));
     PN_TUPLE_EACH(t->a[0], i, v, {
       struct PNSource *expr = (struct PNSource *)v;

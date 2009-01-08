@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 CC=$1
 AC="tools/config.c"
@@ -33,15 +33,15 @@ fi
 
 if [ "$2" = "mingw" ]; then
   if [ $MINGW -eq 0 ]; then
-    echo -n "0"
+    echo "0"
   else
-    echo -n "1"
+    echo "1"
   fi
 elif [ "$2" = "strip" ]; then
   if [ $MINGW -eq 0 ]; then
-    echo -n "strip -x"
+    echo "strip -x"
   else
-    echo -n "ls"
+    echo "ls"
   fi
 else
   echo "#define POTION_PLATFORM \"$TARGET\""
