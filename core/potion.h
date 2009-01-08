@@ -232,15 +232,7 @@ struct Potion_State {
 #define potion_method(RCV, MSG, FN, SIG) \
   potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
 
-#if MCACHE
-struct PNMcache {
-  PN vt;
-  PN selector;
-  PN closure;
-} potion_mcache[8192];
-#endif
-
-PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
+extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
    PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect,
    PN_lookup, PN_loop, PN_while;
 
