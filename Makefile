@@ -25,10 +25,6 @@ REVISION = `git rev-list HEAD | wc -l`
 COMMIT = `git rev-list HEAD -1 | head -c 7`
 
 RAGELV = `${RAGEL} -v | sed "/ version /!d; s/.* version //; s/ .*//"`
-MINGW_CMD = ./tools/config.sh ${CC} mingw | sed "s/0//; s/1/core\/mingw.o/"
-MINGW_OBJ != `$(MINGW_CMD)`
-MINGW_OBJ ?= $(shell $(MINGW_CMD))
-OBJ += ${MINGW_OBJ}
 
 all: potion usage
 
