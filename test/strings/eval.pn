@@ -1,3 +1,4 @@
 hello =
   "(x): ('hello ', x) print." eval
 hello ('world')
+# hello worldnil
