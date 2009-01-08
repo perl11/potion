@@ -12,6 +12,10 @@
 
 #define TYPE_BATCH_SIZE 64
 
+PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
+   PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect,
+   PN_lookup, PN_loop, PN_while;
+
 static void potion_init(Potion *P) {
   PN vtable = potion_type_new(P, PN_TVTABLE, 0);
   PN obj_vt = potion_type_new(P, PN_TOBJECT, vtable);
