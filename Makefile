@@ -22,7 +22,7 @@ CFLAGS += ${JITFLAGS}
 
 DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
-COMMIT = `git rev-list HEAD -1 | head -c 7`
+COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
 
 RAGELV = `${RAGEL} -v | sed "/ version /!d; s/.* version //; s/ .*//"`
 

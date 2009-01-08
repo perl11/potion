@@ -120,6 +120,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       code = potion_source_dump(P, PN_NIL, code);
       if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code)) {
         printf("** compiled code saved to %s\n", pnbpath);
+        printf("** run it with: potion %s\n", pnbpath);
         fclose(pnb);
       } else {
         fprintf(stderr, "** could not write all bytecode.");
@@ -184,7 +185,6 @@ int main(int argc, char *argv[]) {
 
       if (strcmp(argv[i], "-c") == 0 ||
           strcmp(argv[i], "--compile") == 0) {
-        fprintf(stderr, "!! be warned, the compiler isn't up to snuff, yet.\n");
         exec = 0;
       }
 
