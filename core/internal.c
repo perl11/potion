@@ -14,7 +14,7 @@
 
 PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
    PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect,
-   PN_lookup, PN_loop, PN_while;
+   PN_lookup, PN_loop, PN_while, PN__link;
 
 static void potion_init(Potion *P) {
   PN vtable = potion_type_new(P, PN_TVTABLE, 0);
@@ -49,6 +49,7 @@ static void potion_init(Potion *P) {
   PN_lookup = potion_str(P, "lookup");
   PN_loop = potion_str(P, "loop");
   PN_while = potion_str(P, "while");
+  PN__link = potion_str(P, "~link");
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup, 0));
   potion_def_method(P, 0, vtable, PN_def, PN_FUNC(potion_def_method, 0));

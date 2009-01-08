@@ -27,6 +27,8 @@ RAGELV = `${RAGEL} -v | sed "/ version /!d; s/.* version //; s/ .*//"`
 
 all: potion usage
 
+rebuild: clean potion test
+
 usage:
 	@echo
 	@echo " ~ using potion ~"
@@ -164,4 +166,4 @@ clean:
 	@rm -f core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
 	@rm -f potion potion.exe test/api/potion-test
 
-.PHONY: all clean test
+.PHONY: all clean rebuild test

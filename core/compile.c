@@ -513,6 +513,19 @@ long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
   return (char *)ptr - start;
 }
 
+PN potion_proto__link(Potion *P, PN cl, PN proto, PN link) {
+  struct PNProto *f = (struct PNProto *)proto;
+  PN_LINK(f->source);
+  PN_LINK(f->sig);
+  PN_LINK(f->stack);
+  PN_LINK(f->locals);
+  PN_LINK(f->upvals);
+  PN_LINK(f->values);
+  PN_LINK(f->protos);
+  PN_LINK(f->asmb);
+  return link;
+}
+
 // TODO: dump to a stream
 PN potion_source_dump(Potion *P, PN cl, PN proto) {
   PN pnb = potion_bytes(P, 8192);
@@ -549,4 +562,5 @@ void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
   potion_method(pro_vt, "inspect", potion_proto_inspect, 0);
   potion_method(pro_vt, "call", potion_proto_call, 0);
+  potion_method(pro_vt, "~link", potion_proto__link, 0);
 }

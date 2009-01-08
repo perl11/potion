@@ -45,7 +45,7 @@ PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
 
 void potion_release(Potion *P, PN obj) {
   struct PNGarbage *ptr;
-  if (!PN_IS_REF(obj)) return;
+  if (!PN_IS_PTR(obj)) return;
   ptr = (struct PNGarbage *)(obj & PN_REF_MASK);
   if (--ptr->next < 1) PN_FREE(ptr);
 }
@@ -122,11 +122,29 @@ PN potion_ref_inspect(Potion *P, PN cl, PN self, PN len) {
   return PN_NIL;
 }
 
+PN potion_object_inspect(Potion *P, PN cl, PN self, PN len) {
+  printf("#<object>");
+  return PN_NIL;
+}
+
+PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {
+  printf("#<object>");
+  return PN_NIL;
+}
+
+PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
+  return potion_send_dyn(self, method);
+}
+
 void potion_object_init(Potion *P) {
   PN clo_vt = PN_VTABLE(PN_TCLOSURE);
   PN ref_vt = PN_VTABLE(PN_TWEAK);
+  PN obj_vt = PN_VTABLE(PN_TOBJECT);
   potion_method(clo_vt, "inspect", potion_closure_inspect, 0);
   potion_method(ref_vt, "inspect", potion_ref_inspect, 0);
+  potion_method(obj_vt, "forward", potion_object_forward, 0);
+  potion_method(obj_vt, "inspect", potion_object_inspect, 0);
+  potion_method(obj_vt, "send", potion_object_send, 0);
 }
 
 void potion_lobby_init(Potion *P) {

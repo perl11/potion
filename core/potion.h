@@ -89,6 +89,7 @@ struct PNGarbage;
 #define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)-PN_REF_FLAG))
 #define PN_DEREF(x)     PN_GET_REF(x)->data
 #define PN_GB(x)        ((struct PNGarbage *)x)->next = 1
+#define PN_LINK(x)
 
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
 #define PN_TUP0()       potion_tuple_empty(P)
@@ -96,8 +97,8 @@ struct PNGarbage;
 #define PN_PUSH(T, X)   potion_tuple_push(P, T, X)
 #define PN_GET(T, X)    potion_tuple_find(P, T, X)
 #define PN_PUT(T, X)    potion_tuple_put(P, T, X)
-#define PN_SET_TUPLE(t) (((PN)t)+PN_TUPLE_FLAG)
-#define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)-PN_TUPLE_FLAG))
+#define PN_SET_TUPLE(t) (((PN)t)|PN_TUPLE_FLAG)
+#define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)^PN_TUPLE_FLAG))
 #define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
 #define PN_TUPLE_COUNT(T, I, B) ({ \
@@ -168,7 +169,7 @@ struct PNProto {
   PN upvals; // variables in upper scopes
   PN values; // numbers, strings, etc.
   PN protos; // nested closures
-  long localsize, upvalsize;
+  PN_SIZE localsize, upvalsize;
   PN asmb;   // assembled instructions
 };
 
@@ -211,6 +212,13 @@ struct Potion_State {
 // method caches
 // (more great stuff from ian piumarta)
 //
+// TODO: make the ICACHE per-thread
+//
+#define potion_send_dyn(RCV, MSG, ARGS...) ({ \
+    PN r = (PN)(RCV); \
+    PN c = potion_bind(P, r, (MSG)); \
+    ((struct PNClosure *)c)->method(P, c, r, ##ARGS); \
+  })
 #if ICACHE
 #define potion_send(RCV, MSG, ARGS...) ({ \
     PN r = (PN)(RCV); \
@@ -224,18 +232,14 @@ struct Potion_State {
     ((struct PNClosure *)closure)->method(P, closure, r, ##ARGS); \
   })
 #else
-#define potion_send(RCV, MSG, ARGS...) ({ \
-    PN r = (PN)(RCV); \
-    PN c = potion_bind(P, r, (MSG)); \
-    ((struct PNClosure *)c)->method(P, c, r, ##ARGS); \
-  })
+#define potion_send potion_send_dyn
 #endif
 
 #define potion_method(RCV, MSG, FN, SIG) \
   potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
 
 extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
-   PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect,
+   PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect, PN__link,
    PN_lookup, PN_loop, PN_while;
 
 //
@@ -250,7 +254,7 @@ PN potion_bytes(Potion *, size_t);
 PN potion_allocate(Potion *, PN, PN, PN);
 void potion_release(Potion *, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);
-PN potion_type_new(Potion *, PNType, PN);
+PN potion_type_new(Potion *, PNType, const char *, PN);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
