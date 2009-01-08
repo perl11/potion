@@ -1,6 +1,6 @@
 a = "\u0024\u00A9\u221E"
-b = "hello, world"
+b = "hello, world\n"
 c = "naïve"
 d = "こんにちは"
 (a length, b length, c length, d length)
-# 3
+# (3, 13, 5, 5)
