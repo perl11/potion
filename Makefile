@@ -7,6 +7,7 @@ PREFIX = /usr/local
 CC = gcc
 CFLAGS = -Wall -DICACHE -DMCACHE -fno-strict-aliasing
 DEBUG ?= 0
+ECHO = /bin/echo
 INCS = -Icore
 JIT ?= 1
 LEMON = tools/lemon
@@ -14,9 +15,9 @@ LIBS = -lm
 RAGEL = ragel
 STRIP ?= `./tools/config.sh ${CC} strip`
 
-DEBUGFLAGS = `echo "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
+DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
-JITFLAGS = `echo "${JIT}" | sed "s/0/-DNO_JIT/; s/1/-DX86_JIT/"`
+JITFLAGS = `${ECHO} "${JIT}" | sed "s/0/-DNO_JIT/; s/1/-DX86_JIT/"`
 CFLAGS += ${JITFLAGS}
 
 DATE = `date +%Y-%m-%d`
@@ -30,96 +31,96 @@ all: potion usage
 rebuild: clean potion test
 
 usage:
-	@echo
-	@echo " ~ using potion ~"
-	@echo
-	@echo " Running a script."
-	@echo
-	@echo "   $$ ./potion examples/fib.pn"
-	@echo
-	@echo " Dump the AST and bytecode inspection for a script. "
-	@echo
-	@echo "   $$ ./potion -V examples/fib.pn"
-	@echo
-	@echo " Compiling to bytecode."
-	@echo
-	@echo "   $$ ./potion -c examples/fib.pn"
-	@echo "   $$ ./potion examples/fib.pnb"
-	@echo
-	@echo " Potion builds its JIT compiler by default, but"
-	@echo " you can use the bytecode VM by running scripts"
-	@echo " with the -B flag."
-	@echo
-	@echo " If you built with JIT=0, then the bytecode VM"
-	@echo " will run by default."
-	@echo
-	@echo " To verify your build,"
-	@echo
-	@echo "   $$ make test"
-	@echo
-	@echo " Kindly email your respects and thoughtful queries"
-	@echo " to _why <why@whytheluckystiff.net>. Thankyou."
+	@${ECHO}
+	@${ECHO} " ~ using potion ~"
+	@${ECHO}
+	@${ECHO} " Running a script."
+	@${ECHO}
+	@${ECHO} "   $$ ./potion examples/fib.pn"
+	@${ECHO}
+	@${ECHO} " Dump the AST and bytecode inspection for a script. "
+	@${ECHO}
+	@${ECHO} "   $$ ./potion -V examples/fib.pn"
+	@${ECHO}
+	@${ECHO} " Compiling to bytecode."
+	@${ECHO}
+	@${ECHO} "   $$ ./potion -c examples/fib.pn"
+	@${ECHO} "   $$ ./potion examples/fib.pnb"
+	@${ECHO}
+	@${ECHO} " Potion builds its JIT compiler by default, but"
+	@${ECHO} " you can use the bytecode VM by running scripts"
+	@${ECHO} " with the -B flag."
+	@${ECHO}
+	@${ECHO} " If you built with JIT=0, then the bytecode VM"
+	@${ECHO} " will run by default."
+	@${ECHO}
+	@${ECHO} " To verify your build,"
+	@${ECHO}
+	@${ECHO} "   $$ make test"
+	@${ECHO}
+	@${ECHO} " Kindly email your respects and thoughtful queries"
+	@${ECHO} " to _why <why@whytheluckystiff.net>. Thankyou."
 
 version:
-	@echo "#define POTION_DATE   \"${DATE}\""
-	@echo "#define POTION_COMMIT \"${COMMIT}\""
-	@echo "#define POTION_REV    ${REVISION}"
-	@echo
-	@echo "#define POTION_CC     \"${CC}\""
-	@echo "#define POTION_CFLAGS \"${CFLAGS}\""
-	@echo "#define POTION_DEBUG  ${DEBUG}"
-	@echo "#define POTION_JIT    ${JIT}"
-	@echo "#define POTION_MAKE   \"${MAKE}\""
-	@echo "#define POTION_RAGEL  \"${RAGELV}\""
-	@echo "#define POTION_PREFIX \"${PREFIX}\""
-	@echo
+	@${ECHO} "#define POTION_DATE   \"${DATE}\""
+	@${ECHO} "#define POTION_COMMIT \"${COMMIT}\""
+	@${ECHO} "#define POTION_REV    ${REVISION}"
+	@${ECHO}
+	@${ECHO} "#define POTION_CC     \"${CC}\""
+	@${ECHO} "#define POTION_CFLAGS \"${CFLAGS}\""
+	@${ECHO} "#define POTION_DEBUG  ${DEBUG}"
+	@${ECHO} "#define POTION_JIT    ${JIT}"
+	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
+	@${ECHO} "#define POTION_RAGEL  \"${RAGELV}\""
+	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
+	@${ECHO}
 	@./tools/config.sh ${CC}
 
 core/version.h:
 	@${MAKE} -s version > core/version.h
 
 .c.o:
-	@echo CC $<
+	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
 core/pn-scan.c: core/pn-scan.rl
 	@if [ "${RAGELV}" != "6.3" ]; then \
 		if [ "${RAGELV}" != "6.2" ]; then \
-			echo "** potion may not work with ragel ${RAGELV}! try version 6.2 or 6.3."; \
+			${ECHO} "** potion may not work with ragel ${RAGELV}! try version 6.2 or 6.3."; \
 		fi; \
 	fi
-	@echo RAGEL core/pn-scan.rl
+	@${ECHO} RAGEL core/pn-scan.rl
 	@${RAGEL} core/pn-scan.rl -C -o $@
 
 core/pn-gram.c: tools/lemon core/pn-gram.y
-	@echo LEMON core/pn-gram.y
+	@${ECHO} LEMON core/pn-gram.y
 	@${LEMON} core/pn-gram.y
 
 tools/lemon: tools/lemon.c
-	@echo CC tools/lemon.c
+	@${ECHO} CC tools/lemon.c
 	@${CC} -o tools/lemon tools/lemon.c
 
 potion: core/version.h ${OBJ_POTION} ${OBJ}
-	@echo LINK potion
+	@${ECHO} LINK potion
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
 	@if [ "${DEBUG}" != "1" ]; then \
-		echo STRIP potion; \
+		${ECHO} STRIP potion; \
 	  ${STRIP} potion; \
 	fi
 
 test: test/api/potion-test
-	@echo; \
-	echo running API tests; \
+	@${ECHO}; \
+	${ECHO} running API tests; \
 	test/api/potion-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 2 ]; do \
 	  if [ $$pass -eq 0 ]; then \
-		   echo running VM tests; \
+		   ${ECHO} running VM tests; \
 		else \
-		   echo; echo running JIT tests; \
+		   ${ECHO}; ${ECHO} running JIT tests; \
 			 jit=`./potion -v | sed "/jit=1/!d"`; \
 			 if [ "$$jit" = "" ]; then \
-			   echo skipping; \
+			   ${ECHO} skipping; \
 			   break; \
 			 fi; \
 		fi; \
@@ -131,25 +132,25 @@ test: test/api/potion-test
 			fi; \
 			for=`./potion -I $$flags $$f | sed "s/\n$$//"`; \
 			if [ "$$look" != "$$for" ]; then \
-				echo; \
-				echo "$$f: expected <$$look>, but got <$$for>"; \
+				${ECHO}; \
+				${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
 				failed=`expr $$failed + 1`; \
 			else \
-				echo -n .; \
+				${ECHO} -n .; \
 			fi; \
 			count=`expr $$count + 1`; \
 		done; \
 		pass=`expr $$pass + 1`; \
 	done; \
-	echo; \
+	${ECHO}; \
 	if [ $$failed -gt 0 ]; then \
-		echo "$$failed FAILS ($$count tests)"; \
+		${ECHO} "$$failed FAILS ($$count tests)"; \
 	else \
-		echo "OK ($$count tests)"; \
+		${ECHO} "OK ($$count tests)"; \
 	fi
 
 test/api/potion-test: core/version.h ${OBJ_TEST} ${OBJ}
-	@echo LINK potion-test
+	@${ECHO} LINK potion-test
 	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
 
 sloc: clean
@@ -161,7 +162,7 @@ todo:
 	@grep -rInso 'TODO: \(.\+\)' core
 
 clean:
-	@echo cleaning
+	@${ECHO} cleaning
 	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST}
 	@rm -f core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
 	@rm -f potion potion.exe test/api/potion-test
