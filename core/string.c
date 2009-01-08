@@ -57,6 +57,20 @@ PN potion_str2(Potion *P, char *str, size_t len) {
   return s;
 }
 
+static PN potion_str_length(Potion *P, PN closure, PN self) {
+  return PN_NUM(potion_cp_strlen_utf8(PN_STR_PTR(self)));
+}
+
+static PN potion_str_inspect(Potion *P, PN closure, PN self) {
+  printf("%s", PN_STR_PTR(self));
+  return PN_NIL;
+}
+
+static PN potion_str_print(Potion *P, PN closure, PN self) {
+  printf("%s", PN_STR_PTR(self));
+  return PN_NIL;
+}
+
 PN potion_byte_str(Potion *P, const char *str) {
   size_t len = strlen(str);
   struct PNString *s = (struct PNString *)potion_bytes(P, len);
@@ -72,18 +86,8 @@ PN potion_bytes(Potion *P, size_t len) {
   return (PN)s;
 }
 
-static PN potion_str_length(Potion *P, PN closure, PN self) {
+static PN potion_bytes_length(Potion *P, PN closure, PN self) {
   return PN_NUM(PN_STR_LEN(self));
-}
-
-static PN potion_str_inspect(Potion *P, PN closure, PN self) {
-  printf("%s", PN_STR_PTR(self));
-  return PN_NIL;
-}
-
-static PN potion_str_print(Potion *P, PN closure, PN self) {
-  printf("%s", PN_STR_PTR(self));
-  return PN_NIL;
 }
 
 static PN potion_bytes_inspect(Potion *P, PN closure, PN self) {
@@ -105,5 +109,5 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "length", potion_str_length, 0);
   potion_method(str_vt, "print", potion_str_print, 0);
   potion_method(byt_vt, "inspect", potion_bytes_inspect, 0);
-  potion_method(byt_vt, "length", potion_str_length, 0);
+  potion_method(byt_vt, "length", potion_bytes_length, 0);
 }

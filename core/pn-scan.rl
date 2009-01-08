@@ -42,6 +42,7 @@
 
   begin_block = ":";
   end_block   = ".";
+  end_blocks  = "_" whitespace* utfw+;
   begin_table = "(";
   end_table   = ")";
   begin_data  = "[";
@@ -138,6 +139,7 @@
     end_data    => { TOKEN(END_DATA); };
     begin_block => { TOKEN(BEGIN_BLOCK); };
     end_block   => { TOKEN(END_BLOCK); };
+    end_blocks  => { TOKEN(END_BLOCK); };
     newline+    => { TOKEN1(SEP); };
     path        => { TOKEN2(PATH, potion_str2(P, ts, te - ts)); };
 

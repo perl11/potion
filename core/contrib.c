@@ -1,0 +1,45 @@
+//
+// contrib.c
+// stuff written by other folks, seen on blogs, etc. 
+//
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+
+//
+// wonderful utf-8 counting trickery
+// by colin percival
+//
+#define ONEMASK ((size_t)(-1) / 0xFF)
+
+size_t
+potion_cp_strlen_utf8(const char * _s)
+{
+  const char * s;
+  size_t count = 0;
+  size_t u;
+  unsigned char b;
+
+  for (s = _s; (uintptr_t)(s) & (sizeof(size_t) - 1); s++) {
+    b = *s;
+    if (b == '\0') goto done;
+    count += (b >> 7) & ((~b) >> 6);
+  }
+
+  for (; ; s += sizeof(size_t)) {
+    __builtin_prefetch(&s[256], 0, 0);
+    u = *(size_t *)(s);
+    if ((u - ONEMASK) & (~u) & (ONEMASK * 0x80)) break;
+    u = ((u & (ONEMASK * 0x80)) >> 7) & ((~u) >> 6);
+    count += (u * ONEMASK) >> ((sizeof(size_t) - 1) * 8);
+  }
+
+  for (; ; s++) {
+    b = *s;
+    if (b == '\0') break;
+    count += (b >> 7) & ((~b) >> 6);
+  }
+done:
+  return ((s - _s) - count);
+}
+

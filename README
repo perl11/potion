@@ -180,13 +180,13 @@
     I don't like significant whitespace, personally.
     But I don't like end end end end.
 
-      say = ():
+      say = (phrase):
         10 times (i):
           20 times (j):
-            i print, j print
-      say.
+            phrase print
+      _say
 
-    The closing "say." ends the block saved to "say" var.
+    The closing "_ say" ends the block saved to "say" var.
 
     Normally, blocks are closed with a period. In this case
     we'd need three periods, which looks strange.
@@ -196,6 +196,25 @@
           20 times:
             "Odelay!" print
       ...
+
+    If you prefer, you can give it some space. Or you can
+    use a variable name introduced by the block,
+
+      say = (phrase):
+        10 times (i):
+          20 times (j):
+            phrase print
+      _ phrase
+
+      say = (phrase):
+        10 times (i):
+          20 times (j):
+            phrase print
+        _ i
+      .
+
+    Maybe it all looks strange. I don't know. I'm just trying
+    things out, okay?
 
   * Elimination of line noise.
 

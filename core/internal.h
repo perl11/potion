@@ -50,6 +50,8 @@ void *LemonPotionAlloc(void *(*)(size_t));
 void LemonPotion(void *, int, PN, struct Potion_State *);
 void LemonPotionFree(void *, void (*)(void*));
 
+size_t potion_cp_strlen_utf8(const char *);
+
 #ifdef __MINGW32__
 void *mingw_mmap(size_t);
 #define PN_ALLOC_FUNC(size) mingw_mmap(size)
