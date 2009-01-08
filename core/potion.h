@@ -89,7 +89,7 @@ struct PNGarbage;
 #define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)-PN_REF_FLAG))
 #define PN_DEREF(x)     PN_GET_REF(x)->data
 #define PN_GB(x)        ((struct PNGarbage *)x)->next = 1
-#define PN_LINK(x)
+#define PN_LINK(x)      if (link) potion_release(P, x)
 
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
 #define PN_TUP0()       potion_tuple_empty(P)
@@ -254,7 +254,7 @@ PN potion_bytes(Potion *, size_t);
 PN potion_allocate(Potion *, PN, PN, PN);
 void potion_release(Potion *, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);
-PN potion_type_new(Potion *, PNType, const char *, PN);
+PN potion_type_new(Potion *, PNType, PN);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);

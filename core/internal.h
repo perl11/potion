@@ -23,11 +23,6 @@ typedef unsigned char u8;
 #define PN_MEMCPY(X,Y,T)     memcpy((X), (Y), sizeof(T))
 #define PN_MEMCPY_N(X,Y,T,N) memcpy((X), (Y), sizeof(T)*(N))
 
-#ifdef __GNUC__
-#include <malloc.h>
-#define PN_MEMSIZE(X)        malloc_usable_size((void *)X)
-#endif 
-
 #define PN_ATOI(X,N) ({ \
   char *Ap = X; \
   int Ai = 0; \
