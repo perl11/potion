@@ -102,6 +102,13 @@ PN potion_tuple_inspect(Potion *P, PN cl, PN self) {
   return PN_NIL;
 }
 
+PN potion_tuple_print(Potion *P, PN cl, PN self) {
+  PN_TUPLE_EACH(self, i, v, {
+    potion_send(v, PN_inspect);
+  });
+  return PN_NIL;
+}
+
 PN potion_tuple_length(Potion *P, PN cl, PN self) {
   return PN_NUM(PN_TUPLE_LEN(self));
 }
@@ -122,5 +129,6 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "inspect", potion_tuple_inspect, 0);
   potion_method(tpl_vt, "length", potion_tuple_length, 0);
+  potion_method(tpl_vt, "print", potion_tuple_print, 0);
   potion_method(tpl_vt, "~link", potion_tuple__link, 0);
 }

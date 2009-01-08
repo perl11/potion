@@ -15,7 +15,7 @@
 
 const char potion_banner[] = "potion " POTION_VERSION
                              " (date='" POTION_DATE "', commit='" POTION_COMMIT
-                             "', platform='" POTION_PLATFORM "', jit=%d)";
+                             "', platform='" POTION_PLATFORM "', jit=%d)\n";
 const char potion_version[] = POTION_VERSION;
 
 static void potion_cmd_usage() {

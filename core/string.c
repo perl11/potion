@@ -61,6 +61,10 @@ static PN potion_str_length(Potion *P, PN closure, PN self) {
   return PN_NUM(potion_cp_strlen_utf8(PN_STR_PTR(self)));
 }
 
+static PN potion_str_eval(Potion *P, PN closure, PN self) {
+  return potion_eval(P, PN_STR_PTR(self));
+}
+
 static PN potion_str_inspect(Potion *P, PN closure, PN self) {
   printf("%s", PN_STR_PTR(self));
   return PN_NIL;
@@ -109,6 +113,7 @@ void potion_str_hash_init(Potion *P) {
 void potion_str_init(Potion *P) {
   PN str_vt = PN_VTABLE(PN_TSTRING);
   PN byt_vt = PN_VTABLE(PN_TBYTES);
+  potion_method(str_vt, "eval", potion_str_eval, 0);
   potion_method(str_vt, "inspect", potion_str_inspect, 0);
   potion_method(str_vt, "length", potion_str_length, 0);
   potion_method(str_vt, "print", potion_str_print, 0);
