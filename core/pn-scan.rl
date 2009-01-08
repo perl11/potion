@@ -42,7 +42,8 @@
 
   begin_block = ":";
   end_block   = ".";
-  end_blocks  = "_" whitespace* utfw+;
+  ellipsis    = "_" | (0xe2 0x80 0xa6);
+  end_blocks  = ellipsis whitespace* utfw+;
   begin_table = "(";
   end_table   = ")";
   begin_data  = "[";
