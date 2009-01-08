@@ -108,7 +108,7 @@ potion: core/version.h ${OBJ_POTION} ${OBJ}
 	  ${STRIP} potion; \
 	fi
 
-test: test/api/potion-test
+test: potion test/api/potion-test
 	@${ECHO}; \
 	${ECHO} running API tests; \
 	test/api/potion-test; \
