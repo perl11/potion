@@ -87,3 +87,7 @@ PN potion_delegated(Potion *P, PN closure, PN self) {
     printf("Vtable out of room!\n");
   return vt;
 }
+
+PNType potion_kind_of(PN obj) {
+  return potion_type(obj);
+}

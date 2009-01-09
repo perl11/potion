@@ -252,6 +252,7 @@ extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
 //
 Potion *potion_create();
 void potion_destroy(Potion *);
+PNType potion_kind_of(PN);
 PN potion_str(Potion *, const char *);
 PN potion_str2(Potion *, char *, size_t);
 PN potion_byte_str(Potion *P, const char *);
