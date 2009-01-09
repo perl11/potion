@@ -36,7 +36,7 @@ typedef struct {
 } PNAsm;
 
 #define XGRO() \
-  if (asmb->capa - (asmb->ptr - asmb->start) < __WORDSIZE) { \
+  if (asmb->capa - (asmb->ptr - asmb->start) < (64 * PN_SIZE_T)) { \
     size_t dist = asmb->ptr - asmb->start; \
     asmb->capa += 4096; \
     asmb->start = PN_REALLOC_N(asmb->start, u8, asmb->capa); \
@@ -173,7 +173,7 @@ static void potion_x86_c_arg(PNAsm *asmb, int out, int regn, int argn) {
 }
 
 PN_F potion_x86_proto(Potion *P, PN proto) {
-  long fc, regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 0;
+  long fc, regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
   PN val;
   PN_OP *start, *pos, *end;
   struct PNJumps jmps[MAX_JUMPS]; u8 *offs[MAX_JUMPS]; int jmpc = 0, jmpi = 0;
