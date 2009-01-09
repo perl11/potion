@@ -240,6 +240,19 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     }
     break;
 
+    case AST_AND: case AST_OR: {
+      PN_OP *jmp;
+      PN_ARG(0, reg);
+      jmp = *pos;
+      if (t->part == AST_AND)
+        PN_ASM2(OP_NOTJMP, reg, 0);
+      else
+        PN_ASM2(OP_TESTJMP, reg, 0);
+      PN_ARG(1, reg);
+      jmp->b = (*pos - jmp) - 1;
+    }
+    break;
+
 #define PN_ARG_TABLE(args, reg1, reg2) \
   if (arg) { \
     PN test = args; \
