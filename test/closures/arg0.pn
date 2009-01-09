@@ -1,3 +1,7 @@
 msg = (): "no arguments" print.
 msg ()
-# no argumentsnil
+
+msg2 =: " and highly sparse".
+msg2 ()
+
+# no arguments and highly sparse
