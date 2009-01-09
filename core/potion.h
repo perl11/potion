@@ -208,6 +208,8 @@ struct Potion_State {
   int typen; /* number of actual types in circulation */
   int typea; /* type space allocated */ 
   PN source; /* temporary ast node */
+  PN unclosed; /* used by parser for named block endings */
+  int dast; /* parsing depth */
   int xast; /* extra ast allocations */
 };
 

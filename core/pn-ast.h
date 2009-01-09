@@ -58,6 +58,16 @@ struct PNSource {
 #define PN_AST3(T, A, B, C)  potion_source(P, AST_##T, A, B, C)
 #define PN_PART(S)    ((struct PNSource *)S)->part
 #define PN_S(S, N)    ((struct PNSource *)S)->a[N]
+#define PN_CLOSE(B) ({ \
+    PN endname = B; \
+    if (PN_IS_TUPLE(endname)) endname = PN_TUPLE_AT(endname, 0); \
+    if (endname != PN_NIL) { \
+      if (PN_PART(endname) == AST_EXPR) endname = PN_TUPLE_AT(PN_S(endname, 0), 0); \
+      if (PN_PART(endname) == AST_MESSAGE || PN_PART(endname) == AST_PATH) \
+        endname = PN_S(endname, 0); \
+      if (P->unclosed == endname) { P->unclosed = PN_NIL; } \
+    } \
+  })
 
 PN potion_source(Potion *, u8, PN, PN, PN);
 

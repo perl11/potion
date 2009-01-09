@@ -69,9 +69,9 @@ expr(A) ::= arg(B). { A = PN_TUP(B.b == PN_NIL ? B.v : PN_AST2(PROTO, B.v, B.b))
 expr(A) ::= call(B). { A = PN_TUP(B); }
 
 call(A) ::= name(B). { A = B; }
-call(A) ::= name(B) arg(C). { PN_S(B, 1) = C.v; PN_S(B, 2) = C.b; A = B; }
+call(A) ::= name(B) arg(C). { PN_CLOSE(B); PN_S(B, 1) = C.v; PN_S(B, 2) = C.b; A = B; }
 
-arg(A) ::= table(B) block(C). { A.v = B; A.b = C; }
+arg(A) ::= table(B) block(C). { PN_CLOSE(PN_S(B, 0)); A.v = B; A.b = C; }
 arg(A) ::= value(B) block(C). { A.v = B; A.b = C; }
 arg(A) ::= table(B). { A.v = B; A.b = PN_NIL; }
 arg(A) ::= value(B). { A.v = B; A.b = PN_NIL; }

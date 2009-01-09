@@ -43,7 +43,7 @@
   begin_block = ":";
   end_block   = ".";
   ellipsis    = "_" | (0xe2 0x80 0xa6);
-  end_blocks  = ellipsis whitespace* utfw+;
+  end_blocks  = ellipsis whitespace* %{ tm = p; } utfw+;
   begin_table = "(";
   end_table   = ")";
   begin_data  = "[";
@@ -108,6 +108,7 @@
 
   main := |*
     comma       => { TOKEN1(SEP); };
+    newline+    => { TOKEN1(SEP); };
     whitespace;
     comment;
 
@@ -139,11 +140,12 @@
     end_table   => { TOKEN(END_TABLE); };
     begin_data  => { TOKEN(BEGIN_DATA); };
     end_data    => { TOKEN(END_DATA); };
-    begin_block => { TOKEN(BEGIN_BLOCK); };
-    end_block   => { TOKEN(END_BLOCK); };
-    end_blocks  => { TOKEN(END_BLOCK); };
-    newline+    => { TOKEN1(SEP); };
-    path        => { TOKEN2(PATH, potion_str2(P, ts, te - ts)); };
+    begin_block => { TOKEN(BEGIN_BLOCK); P->dast++; };
+    end_block   => { TOKEN(END_BLOCK); P->dast--; };
+    end_blocks  => { 
+      P->unclosed = potion_str2(P, tm, te - tm);
+      while (P->dast && P->unclosed != PN_NIL) {
+        TOKEN(END_BLOCK); P->dast--; } };
 
     nil         => { TOKEN2(NIL, PN_NIL); };
     true        => { TOKEN2(TRUE, PN_TRUE); };
@@ -158,6 +160,7 @@
       TOKEN2(STRING2, potion_str2(P, ts + 3, (te - ts) - 3)); };
 
     message     => { TOKEN2(MESSAGE, potion_str2(P, ts, te - ts)); };
+    path        => { TOKEN2(PATH, potion_str2(P, ts, te - ts)); };
     query       => { TOKEN2(QUERY, potion_str2(P, ts + 1, (te - ts) - 1)); };
     querypath   => { TOKEN2(PATHQ, potion_str2(P, ts + 1, (te - ts) - 1)); };
   *|;
@@ -167,11 +170,12 @@
 
 PN potion_parse(Potion *P, PN code) {
   int cs, act;
-  char *p, *pe, *ts, *te, *eof = 0;
+  char *p, *pe, *ts, *te, *tm = 0, *eof = 0;
   int lineno = 0, nbuf = 0;
   void *pParser = LemonPotionAlloc(malloc);
   PN last = PN_NIL, sbuf = potion_bytes(P, 4096);
 
+  P->dast = 0;
   P->xast = 1;
   P->source = PN_NIL;
   p = PN_STR_PTR(code);
