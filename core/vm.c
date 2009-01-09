@@ -35,18 +35,28 @@ typedef struct {
   long capa;
 } PNAsm;
 
-#define XGRO() \
-  if (asmb->capa - (asmb->ptr - asmb->start) < (64 * PN_SIZE_T)) { \
-    size_t dist = asmb->ptr - asmb->start; \
-    asmb->capa += 4096; \
-    asmb->start = PN_REALLOC_N(asmb->start, u8, asmb->capa); \
-    asmb->ptr = asmb->start + dist; \
+static void potion_x86_put(PNAsm *asmb, PN val, size_t len) {
+  if (asmb->capa - (asmb->ptr - asmb->start) < len) {
+    size_t dist = asmb->ptr - asmb->start;
+    asmb->capa += 4096;
+    asmb->start = PN_REALLOC_N(asmb->start, u8, asmb->capa);
+    asmb->ptr = asmb->start + dist;
   }
+
+  if (len == sizeof(u8))
+    *asmb->ptr = (u8)val;
+  else if (len == sizeof(int))
+    *((int *)asmb->ptr) = (int)val;
+  else if (len == sizeof(PN))
+    *((PN *)asmb->ptr) = val;
+  asmb->ptr += len;
+}
+
 #define RBP(x)  (0x100 - ((x + 1) * sizeof(PN)))
 #define RBPI(x) (0x100 - ((x + 1) * sizeof(int)))
-#define X86(ins) XGRO(); *asmb->ptr++ = ins;
-#define X86I(pn) XGRO(); *((int *)asmb->ptr) = (int)(pn); asmb->ptr += sizeof(int)
-#define X86N(pn) XGRO(); *((PN *)asmb->ptr) = (PN)(pn); asmb->ptr += sizeof(PN)
+#define X86(ins) potion_x86_put(asmb, (PN)ins, sizeof(u8))
+#define X86I(pn) potion_x86_put(asmb, (PN)pn, sizeof(int))
+#define X86N(pn) potion_x86_put(asmb, (PN)pn, sizeof(PN))
 
 #if __WORDSIZE != 64
 #define X86_PRE_T 0
@@ -100,12 +110,12 @@ typedef struct {
 #define TAG_JMP(jpos) \
         X86(0xE9); \
         if (jpos >= pos) { \
-          jmps[jmpc].from = asmb->ptr; \
+          jmps[jmpc].from = asmb->ptr - asmb->start; \
           X86I(0); \
           jmps[jmpc].to = jpos + 1; \
           jmpc++; \
         } else if (jpos < pos) { \
-          X86I(offs[(jpos + 1) - start] - (asmb->ptr + 4)); \
+          X86I(offs[(jpos + 1) - start] - ((asmb->ptr - asmb->start) + 4)); \
         } else { \
           X86I(0); \
         }
@@ -116,7 +126,7 @@ PN potion_x86_debug(Potion *P, PN cl, PN v) {
 }
 
 struct PNJumps {
-  u8 *from;
+  size_t from;
   PN_OP *to;
 };
 
@@ -176,7 +186,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
   PN val;
   PN_OP *start, *pos, *end;
-  struct PNJumps jmps[MAX_JUMPS]; u8 *offs[MAX_JUMPS]; int jmpc = 0, jmpi = 0;
+  struct PNJumps jmps[MAX_JUMPS]; size_t offs[MAX_JUMPS]; int jmpc = 0, jmpi = 0;
   struct PNProto *f = (struct PNProto *)proto;
   int upi, upc = PN_TUPLE_LEN(f->upvals);
   int movl = sizeof(PN) / sizeof(int);
@@ -184,7 +194,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   u8 *fn;
   PN_F *jit_protos = NULL;
 
-  asmb->start = asmb->ptr = PN_ALLOC_N(u8, (asmb->capa = 1024));
+  asmb->start = asmb->ptr = PN_ALLOC_N(u8, (asmb->capa = 4096));
   X86(0x55); // push %rbp
   X86_PRE(); X86(0x89); X86(0xE5); // mov %rsp,%rbp
 
@@ -263,10 +273,11 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   }
 
   while (pos < end) {
-    offs[pos - start] = asmb->ptr;
+    offs[pos - start] = asmb->ptr - asmb->start;
     for (jmpi = 0; jmpi < jmpc; jmpi++) {
       if (jmps[jmpi].to == pos) {
-        *((int *)jmps[jmpi].from) = (int)(asmb->ptr - (jmps[jmpi].from + 4));
+        u8 *asmj = asmb->start + jmps[jmpi].from;
+        *((int *)asmj) = (int)((asmb->ptr - asmb->start) - (jmps[jmpi].from + 4));
       }
     }
 
