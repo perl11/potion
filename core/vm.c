@@ -173,7 +173,7 @@ static void potion_x86_c_arg(PNAsm *asmb, int out, int regn, int argn) {
 }
 
 PN_F potion_x86_proto(Potion *P, PN proto) {
-  long fc, regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
+  long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
   PN val;
   PN_OP *start, *pos, *end;
   struct PNJumps jmps[MAX_JUMPS]; u8 *offs[MAX_JUMPS]; int jmpc = 0, jmpi = 0;
