@@ -42,7 +42,7 @@
 
   begin_block = ":";
   end_block   = ".";
-  ellipsis    = "_" | (0xe2 0x80 0xa6);
+  ellipsis    = "_" | "…";
   end_blocks  = ellipsis whitespace* %{ tm = p; } utfw+;
   begin_table = "(";
   end_table   = ")";
