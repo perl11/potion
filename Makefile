@@ -36,16 +36,16 @@ usage:
 	@${ECHO}
 	@${ECHO} " Running a script."
 	@${ECHO}
-	@${ECHO} "   $$ ./potion examples/fib.pn"
+	@${ECHO} "   $$ ./potion example/fib.pn"
 	@${ECHO}
 	@${ECHO} " Dump the AST and bytecode inspection for a script. "
 	@${ECHO}
-	@${ECHO} "   $$ ./potion -V examples/fib.pn"
+	@${ECHO} "   $$ ./potion -V example/fib.pn"
 	@${ECHO}
 	@${ECHO} " Compiling to bytecode."
 	@${ECHO}
-	@${ECHO} "   $$ ./potion -c examples/fib.pn"
-	@${ECHO} "   $$ ./potion examples/fib.pnb"
+	@${ECHO} "   $$ ./potion -c example/fib.pn"
+	@${ECHO} "   $$ ./potion example/fib.pnb"
 	@${ECHO}
 	@${ECHO} " Potion builds its JIT compiler by default, but"
 	@${ECHO} " you can use the bytecode VM by running scripts"
