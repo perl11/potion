@@ -35,18 +35,28 @@ typedef struct {
   long capa;
 } PNAsm;
 
-#define XGRO() \
-  if (asmb->capa - (asmb->ptr - asmb->start) < (64 * PN_SIZE_T)) { \
-    size_t dist = asmb->ptr - asmb->start; \
-    asmb->capa += 4096; \
-    asmb->start = PN_REALLOC_N(asmb->start, u8, asmb->capa); \
-    asmb->ptr = asmb->start + dist; \
+static void potion_x86_put(PNAsm *asmb, PN val, size_t len) {
+  if (asmb->capa - (asmb->ptr - asmb->start) < len) {
+    size_t dist = asmb->ptr - asmb->start;
+    asmb->capa += 4096;
+    asmb->start = PN_REALLOC_N(asmb->start, u8, asmb->capa);
+    asmb->ptr = asmb->start + dist;
   }
+
+  if (len == sizeof(u8))
+    *asmb->ptr = (u8)val;
+  else if (len == sizeof(int))
+    *((int *)asmb->ptr) = (int)val;
+  else if (len == sizeof(PN))
+    *((PN *)asmb->ptr) = val;
+  asmb->ptr += len;
+}
+
 #define RBP(x)  (0x100 - ((x + 1) * sizeof(PN)))
 #define RBPI(x) (0x100 - ((x + 1) * sizeof(int)))
-#define X86(ins) XGRO(); *asmb->ptr++ = ins;
-#define X86I(pn) XGRO(); *((int *)asmb->ptr) = (int)(pn); asmb->ptr += sizeof(int)
-#define X86N(pn) XGRO(); *((PN *)asmb->ptr) = (PN)(pn); asmb->ptr += sizeof(PN)
+#define X86(ins) potion_x86_put(asmb, (PN)ins, sizeof(u8))
+#define X86I(pn) potion_x86_put(asmb, (PN)pn, sizeof(int))
+#define X86N(pn) potion_x86_put(asmb, (PN)pn, sizeof(PN))
 
 #if __WORDSIZE != 64
 #define X86_PRE_T 0
