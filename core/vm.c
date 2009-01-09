@@ -30,11 +30,23 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
 
 #ifdef X86_JIT
 
+typedef struct {
+  u8 *start, *ptr;
+  long capa;
+} PNAsm;
+
+#define XGRO() \
+  if (asmb->capa - (asmb->ptr - asmb->start) < __WORDSIZE) { \
+    size_t dist = asmb->ptr - asmb->start; \
+    asmb->capa += 4096; \
+    asmb->start = PN_REALLOC_N(asmb->start, u8, asmb->capa); \
+    asmb->ptr = asmb->start + dist; \
+  }
 #define RBP(x)  (0x100 - ((x + 1) * sizeof(PN)))
 #define RBPI(x) (0x100 - ((x + 1) * sizeof(int)))
-#define X86(ins) *asmb++ = ins;
-#define X86I(pn) *((int *)asmb) = (int)(pn); asmb += sizeof(int)
-#define X86N(pn) *((PN *)asmb) = (PN)(pn); asmb += sizeof(PN)
+#define X86(ins) XGRO(); *asmb->ptr++ = ins;
+#define X86I(pn) XGRO(); *((int *)asmb->ptr) = (int)(pn); asmb->ptr += sizeof(int)
+#define X86N(pn) XGRO(); *((PN *)asmb->ptr) = (PN)(pn); asmb->ptr += sizeof(PN)
 
 #if __WORDSIZE != 64
 #define X86_PRE_T 0
@@ -83,17 +95,17 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
         X86_MOVQ(pos->a, PN_TRUE); /*  -A(%rbp) = TRUE */ \
         X86(0xEB); X86(0x7 + X86_PRE_T); /*  jmp +7 */ \
         X86_MOVQ(pos->a, PN_FALSE) /*  -A(%rbp) = FALSE */
-#define X86_ARGO(regn, argn) asmb = potion_x86_c_arg(asmb, 1, regn, argn)
-#define X86_ARGI(regn, argn) asmb = potion_x86_c_arg(asmb, 0, regn, argn)
+#define X86_ARGO(regn, argn) potion_x86_c_arg(asmb, 1, regn, argn)
+#define X86_ARGI(regn, argn) potion_x86_c_arg(asmb, 0, regn, argn)
 #define TAG_JMP(jpos) \
         X86(0xE9); \
         if (jpos >= pos) { \
-          jmps[jmpc].from = asmb; \
+          jmps[jmpc].from = asmb->ptr; \
           X86I(0); \
           jmps[jmpc].to = jpos + 1; \
           jmpc++; \
         } else if (jpos < pos) { \
-          X86I(offs[(jpos + 1) - start] - (asmb + 4)); \
+          X86I(offs[(jpos + 1) - start] - (asmb->ptr + 4)); \
         } else { \
           X86I(0); \
         }
@@ -111,7 +123,7 @@ struct PNJumps {
 #define MAX_JUMPS 1024
 
 // mimick c calling convention
-static u8 *potion_x86_c_arg(u8 *asmb, int out, int regn, int argn) {
+static void potion_x86_c_arg(PNAsm *asmb, int out, int regn, int argn) {
 #if __WORDSIZE != 64
   if (argn == 0) {
     // OPT: the first argument is always (Potion *)
@@ -158,23 +170,21 @@ static u8 *potion_x86_c_arg(u8 *asmb, int out, int regn, int argn) {
     break;
   }
 #endif
-  return asmb;
 }
 
 PN_F potion_x86_proto(Potion *P, PN proto) {
-  long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 0;
+  long fc, regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 0;
   PN val;
   PN_OP *start, *pos, *end;
   struct PNJumps jmps[MAX_JUMPS]; u8 *offs[MAX_JUMPS]; int jmpc = 0, jmpi = 0;
   struct PNProto *f = (struct PNProto *)proto;
   int upi, upc = PN_TUPLE_LEN(f->upvals);
   int movl = sizeof(PN) / sizeof(int);
-  u8 *asm1, *asmb;
-  PN_F jit_func;
+  PNAsm *asmb = PN_ALLOC(PNAsm);
+  u8 *fn;
   PN_F *jit_protos = NULL;
 
-  asm1 = asmb = PN_ALLOC_FUNC(1024);
-  jit_func = (PN_F)asmb;
+  asmb->start = asmb->ptr = PN_ALLOC_N(u8, (asmb->capa = 1024));
   X86(0x55); // push %rbp
   X86_PRE(); X86(0x89); X86(0xE5); // mov %rsp,%rbp
 
@@ -253,10 +263,10 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   }
 
   while (pos < end) {
-    offs[pos - start] = asmb;
+    offs[pos - start] = asmb->ptr;
     for (jmpi = 0; jmpi < jmpc; jmpi++) {
       if (jmps[jmpi].to == pos) {
-        *((int *)jmps[jmpi].from) = (int)(asmb - (jmps[jmpi].from + 4));
+        *((int *)jmps[jmpi].from) = (int)(asmb->ptr - (jmps[jmpi].from + 4));
       }
     }
 
@@ -490,16 +500,13 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
     pos++;
   }
 
-#if DEBUG
-  fprintf(stderr, "jit(%p): ", jit_func);
-  while (asm1 < asmb) {
-    fprintf(stderr, "%x ", asm1[0]);
-    asm1++;
-  }
-  fprintf(stderr, "\n\n");
-#endif
+  asmb->capa = asmb->ptr - asmb->start;
+  fn = PN_ALLOC_FUNC(asmb->capa);
+  PN_MEMCPY_N(fn, asmb->start, u8, asmb->capa);
+  PN_FREE(asmb->start);
+  PN_FREE(asmb);
 
-  return jit_func;
+  return (PN_F)fn;
 }
 #endif
 
