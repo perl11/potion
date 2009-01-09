@@ -79,6 +79,44 @@ static PN potion_str__link(Potion *P, PN closure, PN self, PN link) {
   return link;
 }
 
+static size_t potion_utf8char_offset(const char *s, size_t index) {
+  int i;
+  for (i = 0; s[i]; i++) {
+    if ((s[i] & 0xC0) != 0x80) {
+      if (index-- == 0) {
+        return i;
+      }
+    }
+  }
+  return i;
+}
+
+inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
+  int i = PN_INT(index);
+  int corrected;
+  if (PN_IS_NIL(index)) {
+    corrected = nilvalue;
+  } else if (i < 0) {
+    corrected = i + len;
+    if (corrected < 0) {
+      corrected = 0;
+    }
+  } else if (i > len) {
+    corrected = len;
+  } else {
+    corrected = i;
+  }
+  return PN_NUM(corrected);
+}
+
+static PN potion_str_slice(Potion *P, PN closure, PN self, PN slice) {
+  char *str = PN_STR_PTR(self);
+  size_t len = potion_cp_strlen_utf8(str);
+  size_t startoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(PN_TUPLE_AT(slice, 0), len, 0)));
+  size_t endoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(PN_TUPLE_AT(slice, 1), len, len)));
+  return potion_str2(P, str + startoffset, endoffset - startoffset);
+}
+
 PN potion_byte_str(Potion *P, const char *str) {
   size_t len = strlen(str);
   struct PNString *s = (struct PNString *)potion_bytes(P, len);
@@ -118,6 +156,7 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "length", potion_str_length, 0);
   potion_method(str_vt, "print", potion_str_print, 0);
   potion_method(str_vt, "~link", potion_str__link, 0);
+  potion_method(str_vt, "slice", potion_str_slice, "slice=t");
   potion_method(byt_vt, "inspect", potion_bytes_inspect, 0);
   potion_method(byt_vt, "length", potion_bytes_length, 0);
   potion_method(byt_vt, "~link", potion_str__link, 0);
