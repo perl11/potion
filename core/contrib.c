@@ -10,6 +10,8 @@
 // wonderful utf-8 counting trickery
 // by colin percival
 //
+// http://www.daemonology.net/blog/2008-06-05-faster-utf8-strlen.html
+//
 #define ONEMASK ((size_t)(-1) / 0xFF)
 
 size_t
