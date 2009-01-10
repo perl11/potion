@@ -223,6 +223,11 @@ struct Potion_State {
     ((struct PNClosure *)c)->method(P, c, r, ##ARGS); \
   })
 #if ICACHE
+#define ICACHE_MASK 0x80000000
+struct PNInlineCache {
+  PN type, name, token, closure;
+};
+
 #define potion_send(RCV, MSG, ARGS...) ({ \
     PN r = (PN)(RCV); \
     static PNType prevVT = 0; \

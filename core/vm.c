@@ -121,8 +121,8 @@ static void potion_x86_put(PNAsm *asmb, PN val, size_t len) {
         }
 
 PN potion_x86_debug(Potion *P, PN cl, PN v) {
-  printf("DEBUG: %p %p %lu\n", P, PN_CLOSURE(cl), v);
-  return (PN)P;
+  printf("\nDEBUG: %lu\n", v);
+  return (PN)v;
 }
 
 struct PNJumps {
@@ -193,6 +193,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   PNAsm *asmb = PN_ALLOC(PNAsm);
   u8 *fn;
   PN_F *jit_protos = NULL;
+  long icsize = 0;
 
   asmb->start = asmb->ptr = PN_ALLOC_N(u8, (asmb->capa = 4096));
   X86(0x55); // push %rbp
@@ -247,21 +248,6 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   // if CL passed in with upvals, load them
   // TODO: optimize the PN_IS_CLOSURE call here
   if (upc > 0) {
-#if 0
-    X86_PRE(); X86(0x8B); X86(0x45); X86(RBP(need - 1)); // mov cl %rax
-    X86(0x83); X86(0xE0); X86(0x01); // and 0x1 %eax
-    X86(0x85); X86(0xC0); // test %eax %eax
-    X86(0x75); X86(X86C(21, 25) + (X86C(9, 12) * upc)); // jne 12(u)+25
-    X86_PRE(); X86(0x8B); X86(0x45); X86(RBP(need - 1)); // mov cl %rax
-    X86_PRE(); X86(0x83); X86(0xE0); X86(0xF8); // and ^0x7 %eax
-    X86_PRE(); X86(0x85); X86(0xC0); // test %rax %rax
-    X86(0x74); X86(X86C(11, 12) + (X86C(9, 12) * upc)); // je 12(u)+12
-    X86_PRE(); X86(0x8B); X86(0x45); X86(RBP(need - 1)); // mov cl %rax
-    X86(0x8B); X86(0x40); X86(sizeof(PN_GC)); // mov (%rax).vt %eax
-    X86(0x83); X86(0xF8); X86(PN_TCLOSURE); // cmp 0x5 %eax
-    X86(0x75); X86(X86C(9, 12) * upc); // jne 12(u)
-#endif
-
     for (upi = 0; upi < upc; upi++) {
       X86_ARGI(0, 1);
       X86_MOV_RBP(0x8B, 0);
@@ -426,11 +412,50 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
         });
       break;
       case OP_BIND:
-        X86_ARGO(need - 2, 0);
-        X86_ARGO(pos->b, 1);
-        X86_ARGO(pos->a, 2);
+#ifdef JIT_ICACHE
+#define X86S(N) X86I((icsize + (N * sizeof(PN))) | ICACHE_MASK)
+        // place the receiver's class in %eax
+        X86_PRE(); X86(0xB8); X86I(1); // mov 0x1 %rax
+        X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->b)); // mov %rbp(B) %rdx
+        X86(0xF6); X86(0xC2); X86(0x01); // test 0x1 %dl
+        X86(0x75); X86(X86C(21, 23)); // jne [b]
+        X86(0xF7); X86(0xC2); X86I(PN_REF_MASK); // test REFMASK %edx
+        X86(0x75); X86(X86C(7, 8)); // jne [a]
+        X86_PRE(); X86(0x89); X86(0xD0); // mov %rdx %rax
+        X86(0x83); X86(0xE0); X86(PN_PRIMITIVE); // and 0x7 %eax
+        X86(0xEB); X86(X86C(6, 7)); // jmp [b]
+        X86(0x83); X86(0xE2); X86(0xF8); // [a] and ~PRIMITIVE %edx
+        X86_PRE(); X86(0x8B); X86(0x42); X86(sizeof(PN_GC)); // %rdx.vt %rax
+        // [b] compare to %rip(N)+0
+        X86_PRE(); X86(0x89); X86(0xC2); // mov %rax %rdx
+        X86_PRE(); X86(0x8B); X86(0x05); X86S(0); // mov %rip(N)+0 %rax
+        X86_PRE(); X86(0x39); X86(0xC2); // cmp %rax %rdx
+        X86(0x75); X86(X86C(15, 18)); // jne [c]
+        // compare %rbp(A) and %rip(N)+1
+        X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); // mov %rbp(A) %rdx
+        X86_PRE(); X86(0x8B); X86(0x05); X86S(1); // mov %rip(N)+1 %rax
+        X86_PRE(); X86(0x39); X86(0xC2); // cmp %rax %rdx
+        X86(0x75); X86(X86C(10, 12)); // jne [d]
+        X86(0xEB); X86(X86C(46, 60)); // jmp [e]
+        // [c] cache new type
+        X86_PRE(); X86(0x89); X86(0xD0); // mov %rdx %rax
+        X86_PRE(); X86(0x89); X86(0x05); X86S(0); // mov %rax %rip(N)+0
+        // [d] cache new method
+        X86_MOV_RBP(0x8B, pos->a); // mov %rbp(A) %rax
+        X86_PRE(); X86(0x89); X86(0x05); X86S(1); // mov %rax %rip(N)+1
+#endif
+        X86_ARGO(need - 2, 0); // (0, 3)
+        X86_ARGO(pos->b, 1); // (7, 3)
+        X86_ARGO(pos->a, 2); // (7, 3)
         X86_PRE(); X86(0xB8); X86N(potion_bind); // mov &potion_bind %rax
         X86(0xFF); X86(0xD0); // callq %rax
+#ifdef JIT_ICACHE
+        X86_PRE(); X86(0x89); X86(0x05); X86S(3); // mov %rax %rip(N)+3
+        X86(0xEB); X86(X86C(6, 7)); // jmp over [e]
+        // [e] load cached method
+        X86_PRE(); X86(0x8B); X86(0x05); X86S(3); // mov %rip(N)+3 %rax
+        icsize += sizeof(struct PNInlineCache);
+#endif
         X86_MOV_RBP(0x89, pos->a); // mov %rax local
       break;
       case OP_JMP:
@@ -512,7 +537,30 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   }
 
   asmb->capa = asmb->ptr - asmb->start;
-  fn = PN_ALLOC_FUNC(asmb->capa);
+#ifdef JIT_ICACHE
+  if (icsize > 0) {
+    long ici = 0; int *ipos, ival; 
+    for (ici = 0; ici < asmb->capa; ici++) {
+      if (asmb->start[ici] != 0x89 && asmb->start[ici] != 0x8b)
+        continue;
+      if (asmb->start[ici+1] != 0x05) continue;
+      ipos = (int *)(asmb->start+ici+2);
+      if (!(*ipos & ICACHE_MASK))     continue;
+      ival = *ipos ^ ICACHE_MASK;
+#if __WORDSIZE != 64
+      if (asmb->start[ici] == 0x89)
+        asmb->start[ici] = 0xA3;   // mov %eax MEMOFF
+      else
+        asmb->start[ici] = 0xA1;   // mov MEMOFF %eax
+      asmb->start[ici+5] = 0x90; // nop
+      ipos = (int *)(asmb->start+ici+1);
+#endif
+      *ipos = asmb->ptr + asmb->capa + ival;
+    }
+  }
+#endif
+
+  fn = PN_ALLOC_FUNC(asmb->capa + icsize);
   PN_MEMCPY_N(fn, asmb->start, u8, asmb->capa);
   PN_FREE(asmb->start);
   PN_FREE(asmb);
