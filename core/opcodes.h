@@ -15,8 +15,6 @@ typedef struct {
   int b:12;
 } PN_OP;
 
-#define OP_MASK ~(0xFFF)
-
 #pragma pack(pop)
 
 enum PN_OPCODE {

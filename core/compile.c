@@ -186,7 +186,8 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     break;
 
     case AST_VALUE:
-      if (!PN_IS_PTR(t->a[0]) && !(t->a[0] & OP_MASK)) {
+      (*pos)->a = (int)t->a[0];
+      if (!PN_IS_PTR(t->a[0]) && t->a[0] == (*pos)->a) {
         PN_ASM2(OP_LOADPN, reg, t->a[0]);
       } else {
         PN_SIZE num = PN_PUT(f->values, t->a[0]);
