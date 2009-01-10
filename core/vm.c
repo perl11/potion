@@ -729,8 +729,7 @@ reentry:
       case OP_CALL:
         if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {
           if (PN_CLOSURE(reg[pos->b])->method != (PN_F)potion_vm_proto) {
-            reg[pos->a] =
-              ((struct PNClosure *)reg[pos->b])->method(P, reg[pos->b], reg[pos->a], reg[pos->a+1]);
+            reg[pos->a] = potion_call(P, reg[pos->b], pos->b - pos->a, reg + pos->a);
           } else {
             args = &reg[pos->a+1];
             upc = PN_CLOSURE(reg[pos->b])->extra - 1;

@@ -109,11 +109,11 @@ inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
   return PN_NUM(corrected);
 }
 
-static PN potion_str_slice(Potion *P, PN closure, PN self, PN slice) {
+static PN potion_str_slice(Potion *P, PN closure, PN self, PN start, PN end) {
   char *str = PN_STR_PTR(self);
   size_t len = potion_cp_strlen_utf8(str);
-  size_t startoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(PN_TUPLE_AT(slice, 0), len, 0)));
-  size_t endoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(PN_TUPLE_AT(slice, 1), len, len)));
+  size_t startoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(start, len, 0)));
+  size_t endoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(end, len, len)));
   return potion_str2(P, str + startoffset, endoffset - startoffset);
 }
 

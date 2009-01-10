@@ -1,9 +1,9 @@
 (
-  "abcdef" slice((1, 5)),
-  "abc" slice((0, 3)),
-  "abc" slice((nil, 3)),
-  "abc" slice((nil, nil)),
-  "abcd" slice((-3, -1)),
-  "乔纳森莱特" slice((0, 3)),
+  "abcdef" slice(1, 5),
+  "abc" slice(0, 3),
+  "abc" slice(nil, 3),
+  "abc" slice(nil, nil),
+  "abcd" slice(-3, -1),
+  "乔纳森莱特" slice(0, 3),
 )
 # (bcde, abc, abc, abc, bc, 乔纳森)

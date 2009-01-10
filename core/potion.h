@@ -265,6 +265,7 @@ void potion_release(Potion *, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);
 PN potion_delegated(Potion *, PN, PN);
+PN potion_call(Potion *, PN, PN_SIZE, PN *);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, PN_F, PN, PN_SIZE);

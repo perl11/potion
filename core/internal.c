@@ -88,6 +88,58 @@ PN potion_delegated(Potion *P, PN closure, PN self) {
   return vt;
 }
 
+PN potion_call(Potion *P, PN cl, PN_SIZE argc, PN *argv) {
+  struct PNClosure *c = PN_CLOSURE(cl);
+  switch (argc) {
+    case 0:
+    return c->method(P, cl, cl);
+    case 1:
+    return c->method(P, cl, argv[0]);
+    case 2:
+    return c->method(P, cl, argv[0], argv[1]);
+    case 3:
+    return c->method(P, cl, argv[0], argv[1], argv[2]);
+    case 4:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3]);
+    case 5:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4]);
+    case 6:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5]);
+    case 7:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5], argv[6]);
+    case 8:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5], argv[6], argv[7]);
+    case 9:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5], argv[6], argv[7], argv[8]);
+    case 10:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5], argv[6], argv[7], argv[8], argv[9]);
+    case 11:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5], argv[6], argv[7], argv[8], argv[9], argv[10]);
+    case 12:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5], argv[6], argv[7], argv[8], argv[9], argv[10], argv[11]);
+    case 13:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5], argv[6], argv[7], argv[8], argv[9], argv[10], argv[11],
+        argv[12]);
+    case 14:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5], argv[6], argv[7], argv[8], argv[9], argv[10], argv[11],
+        argv[12], argv[13]);
+    case 15:
+    return c->method(P, cl, argv[0], argv[1], argv[2], argv[3], argv[4],
+        argv[5], argv[6], argv[7], argv[8], argv[9], argv[10], argv[11],
+        argv[12], argv[13], argv[14]);
+  }
+  return PN_NIL; // TODO: error "too many arguments"
+}
+
 PNType potion_kind_of(PN obj) {
   return potion_type(obj);
 }
