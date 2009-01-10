@@ -66,7 +66,6 @@ struct PNGarbage;
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) == PN_FALSE || (PN)(v) == PN_TRUE)
 #define PN_IS_NUM(v)    ((PN)(v) & PN_NUM_FLAG)
-#define PN_IS_PN_NUM(v) (PN_IS_NUM(v) && PN_INT(v) >= -1024 && PN_INT(v) < 1024)
 #define PN_IS_TUPLE(v)  (((PN)(v) & PN_PRIMITIVE) == PN_TUPLE_FLAG)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
