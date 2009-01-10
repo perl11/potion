@@ -98,6 +98,29 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
       case 1: printf(" %d", pos->a); break;
       case 2: printf(" %d %d", pos->a, pos->b); break;
     }
+    // TODO: Byte code listing: instead of using tabs, pad with spaces to make everything line up
+    switch (pos->code) {
+      case OP_JMP:
+        printf("\t; to %d", num + pos->a + 1);
+        break;
+      case OP_NOTJMP:
+      case OP_TESTJMP:
+        printf("\t; to %d", num + pos->b + 1);
+        break;
+      case OP_LOADPN:
+        printf("\t; ");
+        potion_send(pos->b, PN_inspect);
+        break;
+      case OP_LOADK:
+        printf("\t; ");
+        potion_send(PN_TUPLE_AT(t->values, pos->b), PN_inspect);
+        break;
+      case OP_SETLOCAL:
+      case OP_GETLOCAL:
+        printf("\t; ");
+        potion_send(PN_TUPLE_AT(t->locals, pos->b), PN_inspect);
+        break;
+    }
     printf("\n");
     pos++; num++;
   }
