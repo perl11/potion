@@ -163,16 +163,11 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     break;
 
     case AST_VALUE:
-      switch (t->a[0]) {
-        case PN_NIL: case PN_TRUE: case PN_FALSE:
-          PN_ASM2(OP_LOADPN, reg, t->a[0]);
-        break;
-
-        default: {
-          PN_SIZE num = PN_PUT(f->values, t->a[0]);
-          PN_ASM2(OP_LOADK, reg, num);
-        }
-        break;
+      if (PN_IS_NIL(t->a[0]) || PN_IS_BOOL(t->a[0]) || PN_IS_PN_NUM(t->a[0])) {
+        PN_ASM2(OP_LOADPN, reg, t->a[0]);
+      } else {
+        PN_SIZE num = PN_PUT(f->values, t->a[0]);
+        PN_ASM2(OP_LOADK, reg, num);
       }
     break;
 
