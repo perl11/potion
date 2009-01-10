@@ -5,7 +5,7 @@ OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -Wall -DICACHE -DMCACHE -fno-strict-aliasing
+CFLAGS = -Wall -fno-strict-aliasing
 DEBUG ?= 0
 ECHO = /bin/echo
 INCS = -Icore
@@ -15,7 +15,7 @@ LIBS = -lm
 RAGEL = ragel
 STRIP ?= `./tools/config.sh ${CC} strip`
 
-DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
+DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2 -DICACHE -DMCACHE/; s/1/-g -DDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
 JITFLAGS = `${ECHO} "${JIT}" | sed "s/0/-DNO_JIT/; s/1/-DX86_JIT/"`
 CFLAGS += ${JITFLAGS}

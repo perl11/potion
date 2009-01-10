@@ -136,18 +136,6 @@ done:
   potion_destroy(P);
 }
 
-static void potion_cmd_fib() {
-  Potion *P = potion_create();
-  PN fib = potion_parse(P, potion_str(P,
-    "fib = (n):\n"
-    "  if (n >= 1, 1, fib (n - 1) + fib (n - 2)).\n"
-    "fib (40) print"
-  ));
-  fib = potion_send(fib, PN_compile);
-  potion_send(fib, PN_inspect);
-  potion_destroy(P);
-}
-
 int main(int argc, char *argv[]) {
   int i, verbose = 0, exec = 1 + POTION_JIT;
 
@@ -196,11 +184,6 @@ int main(int argc, char *argv[]) {
       if (strcmp(argv[i], "-X") == 0 ||
           strcmp(argv[i], "--x86") == 0) {
         exec = 2;
-      }
-
-      if (strcmp(argv[i], "-f") == 0) {
-        potion_cmd_fib();
-        return 0;
       }
     }
 

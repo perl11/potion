@@ -57,7 +57,7 @@ struct PNGarbage;
 #define PN_TRUE         ((PN)6)
 #define PN_FALSE        ((PN)14)
 #define PN_PRIMITIVE    7
-#define PN_REF_MASK     (ULONG_MAX ^ 15)
+#define PN_REF_MASK     ~15
 #define PN_NONE         ((PN_SIZE)-1)
 
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE)
@@ -189,12 +189,10 @@ struct PNWeakRef {
 
 // the potion type is the 't' in the vtable tuple (m,t)
 static inline PNType potion_type(PN obj) {
-  PNType n = PN_TNUMBER;
-  if (PN_IS_NUM(obj))  return n;
-  if (obj == 0)        return PN_TNIL;
-  if ((n = (obj & PN_PRIMITIVE)))
-    return n;
-  return PN_VTYPE(obj);
+  if (PN_IS_NUM(obj))  return PN_TNUMBER;
+  if (obj & PN_REF_MASK)
+    return PN_VTYPE(obj & ~PN_PRIMITIVE);
+  return obj & PN_PRIMITIVE;
 }
 
 //
