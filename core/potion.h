@@ -273,11 +273,11 @@ PN potion_sig(Potion *, char *);
 PN potion_pow(Potion *, PN, PN, PN);
 
 PN potion_tuple_empty(Potion *);
-inline PN potion_tuple_with_size(Potion *, PN_SIZE);
-inline PN potion_tuple_new(Potion *, PN);
+PN potion_tuple_with_size(Potion *, PN_SIZE);
+PN potion_tuple_new(Potion *, PN);
 PN potion_tuple_push(Potion *, PN, PN);
-inline PN_SIZE potion_tuple_put(Potion *, PN, PN);
-inline PN_SIZE potion_tuple_find(Potion *, PN, PN);
+PN_SIZE potion_tuple_put(Potion *, PN, PN);
+PN_SIZE potion_tuple_find(Potion *, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);

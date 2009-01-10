@@ -44,23 +44,23 @@ PN potion_table__link(Potion *P, PN cl, PN self, PN link) {
   t->len = size; \
   t->set = ptr
 
-inline PN potion_tuple_empty(Potion *P) {
+PN potion_tuple_empty(Potion *P) {
   NEW_TUPLE(t, 0, NULL);
   return PN_SET_TUPLE(t);
 }
 
-inline PN potion_tuple_with_size(Potion *P, PN_SIZE size) {
+PN potion_tuple_with_size(Potion *P, PN_SIZE size) {
   NEW_TUPLE(t, size, PN_ALLOC_N(PN, size));
   return PN_SET_TUPLE(t);
 }
 
-inline PN potion_tuple_new(Potion *P, PN value) {
+PN potion_tuple_new(Potion *P, PN value) {
   NEW_TUPLE(t, 1, PN_ALLOC_N(PN, 1));
   t->set[0] = value;
   return PN_SET_TUPLE(t);
 }
 
-inline PN potion_tuple_push(Potion *P, PN tuple, PN value) {
+PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   struct PNTuple *t = PN_GET_TUPLE(tuple);
   if (t->set == NULL)
     t->set = PN_ALLOC_N(PN, ++t->len);
@@ -70,14 +70,14 @@ inline PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   return tuple;
 }
 
-inline PN_SIZE potion_tuple_find(Potion *P, PN tuple, PN value) {
+PN_SIZE potion_tuple_find(Potion *P, PN tuple, PN value) {
   PN_TUPLE_EACH(tuple, i, v, {
     if (v == value) return i;
   });
   return -1;
 }
 
-inline PN_SIZE potion_tuple_put(Potion *P, PN tuple, PN value) {
+PN_SIZE potion_tuple_put(Potion *P, PN tuple, PN value) {
   PN_SIZE idx = potion_tuple_find(P, tuple, value);
   if (idx != -1) return idx;
 

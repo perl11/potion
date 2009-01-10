@@ -223,8 +223,11 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   lregs = regs + PN_TUPLE_LEN(f->locals);
   need = lregs + upc + 3;
   rsp = (need + protoargs) * sizeof(PN);
-  rsp += (32 - rsp % 32);
-  X86_PRE(); X86(0x83); X86(0xEC); X86(rsp);
+  if (rsp >= 0x80) {
+    X86_PRE(); X86(0x81); X86(0xEC); X86I(rsp);
+  } else {
+    X86_PRE(); X86(0x83); X86(0xEC); X86(rsp);
+  }
 
   // (Potion *, self) in the first argument slot 
   X86_ARGI(need - 2, 0);
@@ -561,6 +564,12 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
 #endif
 
   fn = PN_ALLOC_FUNC(asmb->capa + icsize);
+#ifdef DEBUG
+  printf("JIT(%p): ", fn);
+  for (icsize = 0; icsize < asmb->capa; icsize++) {
+    printf("%x ", asmb->start[icsize]);
+  }
+#endif
   PN_MEMCPY_N(fn, asmb->start, u8, asmb->capa);
   PN_FREE(asmb->start);
   PN_FREE(asmb);
