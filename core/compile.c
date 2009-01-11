@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "potion.h"
 #include "internal.h"
 #include "pn-ast.h"
@@ -57,6 +58,7 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   struct PNProto *t = (struct PNProto *)self;
   int x = 0;
   PN_SIZE num = 1;
+  PN_SIZE numcols;
   PN_OP *pos, *end;
   printf("; function definition: %p ; %u bytes\n", t, PN_STR_LEN(t->asmb));
   printf("; (");
@@ -92,32 +94,38 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   });
   pos = (PN_OP *)PN_STR_PTR(t->asmb);
   end = (PN_OP *)(PN_STR_PTR(t->asmb) + PN_STR_LEN(t->asmb));
+  numcols = (int)ceil(log10(end - pos));
   while (pos < end) {
-    printf("[%u] %s", num, potion_op_names[pos->code]);
-    switch (potion_op_args[pos->code]) {
-      case 1: printf(" %d", pos->a); break;
-      case 2: printf(" %d %d", pos->a, pos->b); break;
+    const int commentoffset = 20;
+    int width = printf("[%*u] %-8s %d", numcols, num, potion_op_names[pos->code], pos->a);
+    if (potion_op_args[pos->code] > 1) {
+      width += printf(" %d", pos->b);
+    }
+    if (width < commentoffset) {
+      printf("%*s", commentoffset - width, "");
+    } else {
+      printf(" ");
     }
     // TODO: Byte code listing: instead of using tabs, pad with spaces to make everything line up
     switch (pos->code) {
       case OP_JMP:
-        printf("\t; to %d", num + pos->a + 1);
+        printf("; to %d", num + pos->a + 1);
         break;
       case OP_NOTJMP:
       case OP_TESTJMP:
-        printf("\t; to %d", num + pos->b + 1);
+        printf("; to %d", num + pos->b + 1);
         break;
       case OP_LOADPN:
-        printf("\t; ");
+        printf("; ");
         potion_send(pos->b, PN_inspect);
         break;
       case OP_LOADK:
-        printf("\t; ");
+        printf("; ");
         potion_send(PN_TUPLE_AT(t->values, pos->b), PN_inspect);
         break;
       case OP_SETLOCAL:
       case OP_GETLOCAL:
-        printf("\t; ");
+        printf("; ");
         potion_send(PN_TUPLE_AT(t->locals, pos->b), PN_inspect);
         break;
     }
