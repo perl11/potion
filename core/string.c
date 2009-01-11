@@ -156,7 +156,7 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "length", potion_str_length, 0);
   potion_method(str_vt, "print", potion_str_print, 0);
   potion_method(str_vt, "~link", potion_str__link, 0);
-  potion_method(str_vt, "slice", potion_str_slice, "slice=t");
+  potion_method(str_vt, "slice", potion_str_slice, "start=N,end=N");
   potion_method(byt_vt, "inspect", potion_bytes_inspect, 0);
   potion_method(byt_vt, "length", potion_bytes_length, 0);
   potion_method(byt_vt, "~link", potion_str__link, 0);
