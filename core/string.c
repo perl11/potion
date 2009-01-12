@@ -140,12 +140,15 @@ PN_SIZE pn_printf(Potion *P, PN bytes, const char *format, ...)
   struct PNBytes *s = (struct PNBytes *)bytes;
 
   va_start(args, format);
-  len = (PN_SIZE)snprintf(NULL, 0, format, args);
+  len = (PN_SIZE)vsnprintf(NULL, 0, format, args);
+  va_end(args);
   PN_REALLOC_N(s->chars, char, s->len + len + 1);
 
-  snprintf(s->chars + s->len, len + 1, format, args);
-  s->len += len;
+  va_start(args, format);
+  vsnprintf(s->chars + s->len, len + 1, format, args);
   va_end(args);
+
+  s->len += len;
   return len;
 }
 
