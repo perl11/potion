@@ -54,7 +54,7 @@ PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
   return potion_vm(P, self, args, 0, NULL);
 }
 
-PN potion_proto_inspect(Potion *P, PN cl, PN self) {
+PN potion_proto_string(Potion *P, PN cl, PN self) {
   struct PNProto *t = (struct PNProto *)self;
   int x = 0;
   PN_SIZE num = 1;
@@ -72,26 +72,26 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
       else
         pn_printf(P, out, ", ");
     } else
-      potion_bytes_obj_inspect(P, out, v);
+      potion_bytes_obj_string(P, out, v);
   });
   pn_printf(P, out, ") %ld registers\n", PN_INT(t->stack));
   PN_TUPLE_EACH(t->locals, i, v, {
     pn_printf(P, out, ".local \"");
-    potion_bytes_obj_inspect(P, out, v);
+    potion_bytes_obj_string(P, out, v);
     pn_printf(P, out, "\" ; %u\n", i);
   });
   PN_TUPLE_EACH(t->upvals, i, v, {
     pn_printf(P, out, ".upval \"");
-    potion_bytes_obj_inspect(P, out, v);
+    potion_bytes_obj_string(P, out, v);
     pn_printf(P, out, "\" ; %u\n", i);
   });
   PN_TUPLE_EACH(t->values, i, v, {
     pn_printf(P, out, ".value ");
-    potion_bytes_obj_inspect(P, out, v);
+    potion_bytes_obj_string(P, out, v);
     pn_printf(P, out, " ; %u\n", i);
   });
   PN_TUPLE_EACH(t->protos, i, v, {
-    potion_bytes_obj_inspect(P, out, v);
+    potion_bytes_obj_string(P, out, v);
   });
   pos = (PN_OP *)PN_STR_PTR(t->asmb);
   end = (PN_OP *)(PN_STR_PTR(t->asmb) + PN_STR_LEN(t->asmb));
@@ -118,16 +118,16 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
         break;
       case OP_LOADPN:
         pn_printf(P, out, "; ");
-        potion_bytes_obj_inspect(P, out, pos->b);
+        potion_bytes_obj_string(P, out, pos->b);
         break;
       case OP_LOADK:
         pn_printf(P, out, "; ");
-        potion_bytes_obj_inspect(P, out, PN_TUPLE_AT(t->values, pos->b));
+        potion_bytes_obj_string(P, out, PN_TUPLE_AT(t->values, pos->b));
         break;
       case OP_SETLOCAL:
       case OP_GETLOCAL:
         pn_printf(P, out, "; ");
-        potion_bytes_obj_inspect(P, out, PN_TUPLE_AT(t->locals, pos->b));
+        potion_bytes_obj_string(P, out, PN_TUPLE_AT(t->locals, pos->b));
         break;
     }
     pn_printf(P, out, "\n");
@@ -602,7 +602,7 @@ PN potion_eval(Potion *P, const char *str) {
 
 void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
-  potion_method(pro_vt, "inspect", potion_proto_inspect, 0);
   potion_method(pro_vt, "call", potion_proto_call, 0);
+  potion_method(pro_vt, "string", potion_proto_string, 0);
   potion_method(pro_vt, "~link", potion_proto__link, 0);
 }

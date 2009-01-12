@@ -39,7 +39,7 @@ PN potion_source_name(Potion *P, PN cl, PN self) {
   return potion_str(P, potion_ast_names[t->part]);
 }
 
-PN potion_source_inspect(Potion *P, PN cl, PN self) {
+PN potion_source_string(Potion *P, PN cl, PN self) {
   int i, n;
   struct PNSource *t = (struct PNSource *)self;
   PN out = potion_byte_str(P, potion_ast_names[t->part]);
@@ -47,7 +47,7 @@ PN potion_source_inspect(Potion *P, PN cl, PN self) {
   for (i = 0; i < n; i++) {
     pn_printf(P, out, " ");
     if (i == 0 && n > 1) pn_printf(P, out, "(");
-    potion_bytes_obj_inspect(P, out, t->a[i]);
+    potion_bytes_obj_string(P, out, t->a[i]);
     if (i == n - 1 && n > 1) pn_printf(P, out, ")");
   }
   return out;
@@ -63,8 +63,8 @@ PN potion_source__link(Potion *P, PN cl, PN src, PN link) {
 
 void potion_source_init(Potion *P) {
   PN src_vt = PN_VTABLE(PN_TSOURCE);
-  potion_method(src_vt, "name", potion_source_name, 0);
-  potion_method(src_vt, "inspect", potion_source_inspect, 0);
   potion_method(src_vt, "compile", potion_source_compile, 0); // in compile.c
+  potion_method(src_vt, "name", potion_source_name, 0);
+  potion_method(src_vt, "string", potion_source_string, 0);
   potion_method(src_vt, "~link", potion_source__link, 0);
 }

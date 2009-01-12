@@ -62,10 +62,10 @@ void potion_test_decimal(CuTest *T) {
 }
 
 void potion_test_str(CuTest *T) {
-  CuAssert(T, "string isn't a string", PN_IS_STR(PN_inspect));
-  CuAssert(T, "string isn't a ref", PN_IS_PTR(PN_inspect));
+  CuAssert(T, "string isn't a string", PN_IS_STR(PN_string));
+  CuAssert(T, "string isn't a ref", PN_IS_PTR(PN_string));
   CuAssert(T, "string length isn't working",
-    7 == PN_INT(potion_send(PN_inspect, potion_str(P, "length"))));
+    6 == PN_INT(potion_send(PN_string, potion_str(P, "length"))));
 }
 
 void potion_test_empty(CuTest *T) {
@@ -79,7 +79,7 @@ void potion_test_empty(CuTest *T) {
 void potion_test_tuple(CuTest *T) {
   PN tup = potion_tuple_with_size(P, 3);
   PN_TUPLE_AT(tup, 0) = PN_NIL;
-  PN_TUPLE_AT(tup, 1) = PN_inspect;
+  PN_TUPLE_AT(tup, 1) = PN_string;
   PN_TUPLE_AT(tup, 2) = tup;
   CuAssert(T, "tuple isn't a tuple", PN_IS_TUPLE(tup));
   CuAssert(T, "tuple isn't a ref", PN_IS_PTR(tup));

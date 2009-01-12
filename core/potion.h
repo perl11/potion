@@ -270,8 +270,8 @@ struct PNInlineCache {
   potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
 
 extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
-   PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect, PN__link,
-   PN_lookup, PN_loop, PN_print, PN_while;
+   PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN__link,
+   PN_lookup, PN_loop, PN_print, PN_string, PN_while;
 
 //
 // the Potion functions
@@ -284,7 +284,7 @@ PN potion_str2(Potion *, char *, size_t);
 PN potion_byte_str(Potion *, const char *);
 PN potion_bytes(Potion *, size_t);
 PN_SIZE pn_printf(Potion *, PN, const char *, ...);
-void potion_bytes_obj_inspect(Potion *, PN, PN);
+void potion_bytes_obj_string(Potion *, PN, PN);
 PN potion_bytes_append(Potion *, PN, PN, PN);
 PN potion_allocate(Potion *, PN, PN, PN);
 void potion_release(Potion *, PN);

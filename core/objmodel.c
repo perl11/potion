@@ -31,7 +31,7 @@ PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   return (PN)c;
 }
 
-PN potion_closure_inspect(Potion *P, PN cl, PN self, PN len) {
+PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<closure>");
 }
 
@@ -127,7 +127,7 @@ PN potion_ref(Potion *P, PN data) {
   return PN_SET_REF(ref);
 }
 
-PN potion_ref_inspect(Potion *P, PN cl, PN self, PN len) {
+PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<ref>");
 }
 
@@ -137,7 +137,7 @@ PN potion_ref__link(Potion *P, PN cl, PN self, PN link) {
   return link;
 }
 
-PN potion_object_inspect(Potion *P, PN cl, PN self, PN len) {
+PN potion_object_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<object>");
 }
 
@@ -158,13 +158,13 @@ void potion_object_init(Potion *P) {
   PN clo_vt = PN_VTABLE(PN_TCLOSURE);
   PN ref_vt = PN_VTABLE(PN_TWEAK);
   PN obj_vt = PN_VTABLE(PN_TOBJECT);
-  potion_method(clo_vt, "inspect", potion_closure_inspect, 0);
+  potion_method(clo_vt, "string", potion_closure_string, 0);
   potion_method(clo_vt, "~link", potion_closure__link, 0);
-  potion_method(ref_vt, "inspect", potion_ref_inspect, 0);
+  potion_method(ref_vt, "string", potion_ref_string, 0);
   potion_method(ref_vt, "~link", potion_ref__link, 0);
   potion_method(obj_vt, "forward", potion_object_forward, 0);
-  potion_method(obj_vt, "inspect", potion_object_inspect, 0);
   potion_method(obj_vt, "send", potion_object_send, 0);
+  potion_method(obj_vt, "string", potion_object_string, 0);
   potion_method(obj_vt, "~link", potion_object__link, 0);
 }
 

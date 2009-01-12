@@ -66,7 +66,26 @@ static PN potion_str_eval(Potion *P, PN closure, PN self) {
   return potion_eval(P, PN_STR_PTR(self));
 }
 
-static PN potion_str_inspect(Potion *P, PN closure, PN self) {
+static PN potion_str_number(Potion *P, PN closure, PN self) {
+  char *str = PN_STR_PTR(self);
+  int i = 0, dec = 0, sign = 0, len = PN_STR_LEN(self);
+  if (len < 1) return PN_ZERO;
+
+  sign = (str[0] == '-' ? -1 : 1);
+  if (str[0] == '-' || str[0] == '+') {
+    dec++; str++; len--;
+  }
+  for (i = 0; i < len; i++)
+    if (str[i] < '0' || str[i] > '9')
+      break;
+  if (i < 10 && i == len) {
+    return PN_NUM(sign * PN_ATOI(str, i));
+  }
+
+  return potion_decimal(P, PN_STR_LEN(self), dec + i, PN_STR_PTR(self));
+}
+
+static PN potion_str_string(Potion *P, PN closure, PN self) {
   return self;
 }
 
@@ -151,8 +170,8 @@ PN_SIZE pn_printf(Potion *P, PN bytes, const char *format, ...) {
   return len;
 }
 
-void potion_bytes_obj_inspect(Potion *P, PN bytes, PN obj) {
-  potion_bytes_append(P, 0, bytes, potion_send(obj, PN_inspect));
+void potion_bytes_obj_string(Potion *P, PN bytes, PN obj) {
+  potion_bytes_append(P, 0, bytes, potion_send(obj, PN_string));
 }
 
 PN potion_bytes_append(Potion *P, PN closure, PN self, PN str) {
@@ -186,14 +205,15 @@ void potion_str_init(Potion *P) {
   PN str_vt = PN_VTABLE(PN_TSTRING);
   PN byt_vt = PN_VTABLE(PN_TBYTES);
   potion_method(str_vt, "eval", potion_str_eval, 0);
-  potion_method(str_vt, "inspect", potion_str_inspect, 0);
   potion_method(str_vt, "length", potion_str_length, 0);
+  potion_method(str_vt, "number", potion_str_number, 0);
   potion_method(str_vt, "print", potion_str_print, 0);
+  potion_method(str_vt, "string", potion_str_string, 0);
   potion_method(str_vt, "~link", potion_str__link, 0);
   potion_method(str_vt, "slice", potion_str_slice, "start=N,end=N");
   potion_method(byt_vt, "append", potion_bytes_append, 0);
-  potion_method(byt_vt, "inspect", potion_str_inspect, 0);
   potion_method(byt_vt, "length", potion_bytes_length, 0);
   potion_method(byt_vt, "print", potion_str_print, 0);
+  potion_method(byt_vt, "string", potion_str_string, 0);
   potion_method(byt_vt, "~link", potion_bytes__link, 0);
 }

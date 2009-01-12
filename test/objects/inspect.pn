@@ -1,5 +1,5 @@
-(40) inspect print
-"elephant" length inspect print
-inspect print
+(40) string print
+"elephant" length string print
+string print
 
 # (40)8nilnil

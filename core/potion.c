@@ -22,7 +22,7 @@ static void potion_cmd_usage() {
   printf("usage: potion [options] [script] [arguments]\n"
       "  -B, --bytecode     run with bytecode VM (slower, but cross-platform)\n"
       "  -X, --x86          run with x86 JIT VM (faster, x86 and x86-64)\n"
-      "  -I, --inspect      inspect the return value\n"
+      "  -I, --inspect      print only the return value\n"
       "  -V, --verbose      show bytecode and ast info\n"
       "  -c, --compile      compile the script to bytecode\n"
       "  -h, --help         show this helpful stuff\n"
@@ -74,7 +74,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       code = potion_parse(P, buf);
       if (verbose > 1) {
         printf("\n-- parsed --\n");
-        potion_send(potion_send(code, PN_inspect), PN_print);
+        potion_send(potion_send(code, PN_string), PN_print);
         printf("\n");
       }
       code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
@@ -82,7 +82,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
         printf("\n-- compiled --\n");
     }
     if (verbose > 1) {
-      potion_send(potion_send(code, PN_inspect), PN_print);
+      potion_send(potion_send(code, PN_string), PN_print);
       printf("\n");
     }
     if (exec == 1) {
@@ -90,7 +90,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       if (verbose > 1)
         printf("\n-- returned %lu --\n", code);
       if (verbose) {
-        potion_send(potion_send(code, PN_inspect), PN_print);
+        potion_send(potion_send(code, PN_string), PN_print);
         printf("\n");
       }
     } else if (exec == 2) {
@@ -101,7 +101,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       if (verbose > 1)
         printf("\n-- jit returned %p --\n", func);
       if (verbose) {
-        potion_send(potion_send(val, PN_inspect), PN_print);
+        potion_send(potion_send(val, PN_string), PN_print);
         printf("\n");
       }
 #else

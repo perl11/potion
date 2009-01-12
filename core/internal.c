@@ -13,8 +13,8 @@
 #define TYPE_BATCH_SIZE 64
 
 PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
-   PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect,
-   PN_lookup, PN_loop, PN_print, PN_while, PN__link;
+   PN_def, PN_delegated, PN_else, PN_elsif, PN_if,
+   PN_lookup, PN_loop, PN_print, PN_string, PN_while, PN__link;
 
 static void potion_init(Potion *P) {
   PN vtable = potion_type_new(P, PN_TVTABLE, 0);
@@ -45,10 +45,10 @@ static void potion_init(Potion *P) {
   PN_else = potion_str(P, "else");
   PN_elsif = potion_str(P, "elsif");
   PN_if = potion_str(P, "if");
-  PN_inspect = potion_str(P, "inspect");
   PN_lookup = potion_str(P, "lookup");
   PN_loop = potion_str(P, "loop");
   PN_print = potion_str(P, "print");
+  PN_string = potion_str(P, "string");
   PN_while = potion_str(P, "while");
   PN__link = potion_str(P, "~link");
 
