@@ -129,7 +129,9 @@
     "<<"        => { TOKEN(BITL); };
     ">>"        => { TOKEN(BITR); };
     "+"         => { TOKEN(PLUS); };
+    "++"        => { TOKEN(PPLUS); };
     "-"         => { TOKEN(MINUS); };
+    "--"        => { TOKEN(MMINUS); };
     "*"         => { TOKEN(TIMES); };
     "/"         => { TOKEN(DIV); };
     "%"         => { TOKEN(REM); };

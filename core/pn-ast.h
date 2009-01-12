@@ -31,6 +31,7 @@ enum PN_AST {
   AST_BITR,
   AST_PLUS,
   AST_MINUS,
+  AST_INC,
   AST_TIMES,
   AST_DIV,
   AST_REM,

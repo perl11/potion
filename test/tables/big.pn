@@ -1,0 +1,7 @@
+i = 0
+tbl = (x=6)
+while (i < 4000):
+  tbl put(i, i++).
+ 
+(tbl at(3999), tbl at('x'))
+# (3999, 6)

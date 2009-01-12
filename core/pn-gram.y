@@ -31,6 +31,7 @@
 %left PLUS MINUS.
 %left TIMES DIV REM.
 %right POW.
+%nonassoc PPLUS MMINUS.
 // %right NOT WAVY.
 
 potion(A) ::= all(B). { A = P->source = PN_AST(CODE, B); }
@@ -42,6 +43,10 @@ statements(A) ::= statements(B) SEP statement(C). { A = PN_PUSH(B, C); }
 statements(A) ::= statement(B). { A = PN_TUP(B); }
 
 statement(A) ::= expr(B). { A = PN_AST(EXPR, B); }
+statement(A) ::= name(B) PPLUS. { A = PN_OP(AST_INC, B, 3); }
+statement(A) ::= name(B) MMINUS. { A = PN_OP(AST_INC, B, -3); }
+statement(A) ::= PPLUS name(B). { A = PN_OP(AST_INC, B, 2); }
+statement(A) ::= MMINUS name(B). { A = PN_OP(AST_INC, B, -2); }
 statement(A) ::= name(B) ASSIGN statement(C). { A = PN_AST2(ASSIGN, B, C); }
 statement(A) ::= statement(B) OR statement(D). { A = PN_OP(AST_OR, B, D); }
 statement(A) ::= statement(B) AND statement(D). { A = PN_OP(AST_AND, B, D); }

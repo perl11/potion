@@ -242,6 +242,30 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     }
     break;
 
+    case AST_INC: {
+      u8 breg = reg;
+      struct PNSource *lhs = (struct PNSource *)t->a[0];
+      PN_SIZE num = PN_UPVAL(lhs->a[0]);
+      u8 opcode = OP_SETUPVAL;
+      if (num == PN_NONE) {
+        num = PN_PUT(f->locals, lhs->a[0]);
+        opcode = OP_SETLOCAL;
+      }
+
+      if (opcode == OP_SETUPVAL)
+        PN_ASM2(OP_GETUPVAL, reg, num);
+       else if (opcode == OP_SETLOCAL)
+        PN_ASM2(OP_GETLOCAL, reg, num);
+      if (t->a[1] & PN_NUM_FLAG) {
+        breg++;
+        PN_ASM2(OP_MOVE, breg, reg);
+      }
+      PN_ASM2(OP_LOADPN, breg + 1, (t->a[1] | PN_NUM_FLAG));
+      PN_ASM2(OP_ADD, breg, breg + 1);
+      PN_ASM2(opcode, breg, num);
+    }
+    break;
+
     case AST_CMP: case AST_EQ: case AST_NEQ:
     case AST_GT: case AST_GTE: case AST_LT: case AST_LTE:
     case AST_PLUS: case AST_MINUS: case AST_TIMES: case AST_DIV:
