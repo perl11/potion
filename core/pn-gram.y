@@ -87,7 +87,7 @@ value(A) ::= NIL(B). { A = PN_AST(VALUE, B); }
 value(A) ::= TRUE(B). { A = PN_AST(VALUE, B); }
 value(A) ::= FALSE(B). { A = PN_AST(VALUE, B); }
 value(A) ::= INT(B). { A = PN_AST(VALUE, B); }
-value(A) ::= FLOAT(B). { A = PN_AST(VALUE, B); }
+value(A) ::= DECIMAL(B). { A = PN_AST(VALUE, B); }
 value(A) ::= STRING(B). { A = PN_AST(VALUE, B); }
 value(A) ::= STRING2(B). { A = PN_AST(VALUE, B); }
 value(A) ::= data(B). { A = B; }

@@ -6,6 +6,7 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <math.h>
 #include "potion.h"
 #include "internal.h"
@@ -31,9 +32,47 @@ static PN potion_div(Potion *P, PN closure, PN self, PN num) {
 }
 
 static PN potion_num_inspect(Potion *P, PN closure, PN self) {
-  char ints[21];
-  sprintf(ints, "%ld", PN_INT(self));
-  return potion_byte_str(P, ints);
+  PN str;
+  if (PN_IS_NUM(self)) {
+    char ints[21];
+    sprintf(ints, "%ld", PN_INT(self));
+    str = potion_byte_str(P, ints);
+  } else {
+    struct PNDecimal *n = (struct PNDecimal *)self;
+    char *ints = PN_ALLOC_N(char, n->len + 2);
+    int i, prec;
+    for (prec = 0; prec < PN_PREC; prec++)
+      if (n->digits[n->len - prec] != 0)
+        break;
+    prec--;
+    for (i = 0; i < n->len - prec; i++) {
+      int dot = (i >= n->len - PN_PREC);
+      if (i == n->len - PN_PREC)
+        sprintf(ints + i, ".");
+      sprintf(ints + i + dot, "%d", (int)n->digits[i]);
+    }
+    str = potion_byte_str(P, ints);
+    PN_FREE(ints);
+  }
+  return str;
+}
+
+PN potion_decimal(Potion *P, int len, int intg, char *str) {
+  int i, rlen = intg + PN_PREC;
+  struct PNDecimal *n = PN_OBJ_ALLOC(struct PNDecimal, PN_TNUMBER, sizeof(PN) * rlen);
+
+  n->sign = (str[0] == '-');
+  n->len = rlen;
+  for (i = 0; i < rlen; i++) {
+    int x = i;
+    if (x > intg) x++;
+    if (x > len || str[x] < '0' || str[x] > '9')
+      n->digits[i] = 0;
+    else
+      n->digits[i] = str[x] - '0';
+  }
+
+  return (PN)n;
 }
 
 void potion_num_init(Potion *P) {

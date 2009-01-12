@@ -56,6 +56,11 @@ void potion_test_int3(CuTest *T) {
     -3853 == PN_INT(potion_send(neg, potion_str(P, "+"), num)));
 }
 
+void potion_test_decimal(CuTest *T) {
+  PN dec = potion_decimal(P, 5, 5, "14466");
+  CuAssert(T, "decimal not a number", PN_TYPE(dec) == PN_TNUMBER);
+}
+
 void potion_test_str(CuTest *T) {
   CuAssert(T, "string isn't a string", PN_IS_STR(PN_inspect));
   CuAssert(T, "string isn't a ref", PN_IS_PTR(PN_inspect));
@@ -105,6 +110,7 @@ CuSuite *potion_suite() {
   SUITE_ADD_TEST(S, potion_test_int1);
   SUITE_ADD_TEST(S, potion_test_int2);
   SUITE_ADD_TEST(S, potion_test_int3);
+  SUITE_ADD_TEST(S, potion_test_decimal);
   SUITE_ADD_TEST(S, potion_test_str);
   SUITE_ADD_TEST(S, potion_test_empty);
   SUITE_ADD_TEST(S, potion_test_tuple);

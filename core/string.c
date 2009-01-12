@@ -133,8 +133,7 @@ PN potion_bytes(Potion *P, size_t len) {
   return (PN)s;
 }
 
-PN_SIZE pn_printf(Potion *P, PN bytes, const char *format, ...)
-{
+PN_SIZE pn_printf(Potion *P, PN bytes, const char *format, ...) {
   PN_SIZE len;
   va_list args;
   struct PNBytes *s = (struct PNBytes *)bytes;

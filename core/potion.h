@@ -25,6 +25,7 @@ typedef struct Potion_State Potion;
 struct PNObject;
 struct PNString;
 struct PNBytes;
+struct PNDecimal;
 struct PNClosure;
 struct PNProto;
 struct PNTuple;
@@ -151,6 +152,15 @@ struct PNBytes {
   PN_OBJECT_HEADER
   PN_SIZE len;
   char *chars;
+};
+
+#define PN_PREC 8
+
+struct PNDecimal {
+  PN_OBJECT_HEADER
+  PN_SIZE sign;
+  PN_SIZE len;
+  PN digits[0];
 };
 
 struct PNFile {
@@ -287,6 +297,7 @@ PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, PN_F, PN, PN_SIZE);
 PN potion_ref(Potion *, PN);
 PN potion_sig(Potion *, char *);
+PN potion_decimal(Potion *, int, int, char *);
 PN potion_pow(Potion *, PN, PN, PN);
 
 PN potion_tuple_empty(Potion *);
