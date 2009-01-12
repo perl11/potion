@@ -127,7 +127,7 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
       case OP_SETLOCAL:
       case OP_GETLOCAL:
         pn_printf(P, out, "; ");
-        potion_bytes_obj_inspect(P, out, PN_TUPLE_AT(t->values, pos->b));
+        potion_bytes_obj_inspect(P, out, PN_TUPLE_AT(t->locals, pos->b));
         break;
     }
     pn_printf(P, out, "\n");
