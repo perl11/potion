@@ -113,11 +113,14 @@ test: potion test/api/potion-test
 	${ECHO} running API tests; \
 	test/api/potion-test; \
 	count=0; failed=0; pass=0; \
-	while [ $$pass -lt 2 ]; do \
+	while [ $$pass -lt 3 ]; do \
+	  ${ECHO}; \
 	  if [ $$pass -eq 0 ]; then \
 		   ${ECHO} running VM tests; \
+	  elif [ $$pass -eq 1 ]; then \
+		   ${ECHO} running compiler tests; \
 		else \
-		   ${ECHO}; ${ECHO} running JIT tests; \
+		   ${ECHO} running JIT tests; \
 			 jit=`./potion -v | sed "/jit=1/!d"`; \
 			 if [ "$$jit" = "" ]; then \
 			   ${ECHO} skipping; \
@@ -126,11 +129,15 @@ test: potion test/api/potion-test
 		fi; \
 		for f in test/**/*.pn; do \
 			look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
-			flags=-B; \
-			if [ $$pass -eq 1 ]; then \
-			  flags=-X; \
+			if [ $$pass -eq 0 ]; then \
+				for=`./potion -I -B $$f | sed "s/\n$$//"`; \
+			elif [ $$pass -eq 1 ]; then \
+				./potion -c $$f > /dev/null; \
+				fb="$$f"b; \
+				for=`./potion -I -B $$fb | sed "s/\n$$//"`; \
+			else \
+				for=`./potion -I -X $$f | sed "s/\n$$//"`; \
 			fi; \
-			for=`./potion -I $$flags $$f | sed "s/\n$$//"`; \
 			if [ "$$look" != "$$for" ]; then \
 				${ECHO}; \
 				${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
