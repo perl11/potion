@@ -72,6 +72,7 @@ struct PNGarbage;
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
+#define PN_IS_DECIMAL(v) (PN_IS_PTR(v) && PN_TYPE(v) == PN_TNUMBER)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
 #define PN_IS_REF(v)     (((PN)(v) & PN_PRIMITIVE) == PN_REF_FLAG)
 

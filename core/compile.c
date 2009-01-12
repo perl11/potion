@@ -494,9 +494,18 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
 #define READ_CONST(pn, ptr) ({ \
     PN val = READ_PN(pn, ptr); \
     if (PN_IS_PTR(val)) { \
-      size_t len = (val >> 4) - 1; \
-      val = potion_str2(P, (char *)ptr, len); \
-      ptr += len; \
+      if (val & 2) { \
+        size_t len = ((val ^ 2) >> 4) - 1; \
+        struct PNDecimal *n = PN_OBJ_ALLOC(struct PNDecimal, PN_TNUMBER, sizeof(PN) * len); \
+        n->len = len; n->sign = READ_U8(ptr); \
+        PN_MEMCPY_N(n->digits, ptr, PN, len); \
+        val = (PN)n; \
+        ptr += sizeof(PN) * len; \
+      } else { \
+        size_t len = (val >> 4) - 1; \
+        val = potion_str2(P, (char *)ptr, len); \
+        ptr += len; \
+      } \
     } \
     val; \
   })
@@ -554,6 +563,13 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
       WRITE_PN(count, ptr); \
       PN_MEMCPY_N(ptr, PN_STR_PTR(val), char, PN_STR_LEN(val)); \
       ptr += PN_STR_LEN(val); \
+    } else if (PN_IS_DECIMAL(val)) { \
+      struct PNDecimal *n = (struct PNDecimal *)val; \
+      PN count = ((n->len+1) << 4) | 2; \
+      WRITE_PN(count, ptr); \
+      WRITE_U8(n->sign, ptr); \
+      PN_MEMCPY_N(ptr, n->digits, PN, n->len); \
+      ptr += sizeof(PN) * n->len; \
     } else { \
       PN cval = (PN_IS_PTR(val) ? PN_NIL : val); \
       WRITE_PN(cval, ptr); \
