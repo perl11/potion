@@ -11,7 +11,7 @@ KHASH_MAP_INIT_INT(PN, PN);
 
 struct PNTable {
   PN_OBJECT_HEADER
-  kh_PN_t kh[0];
+  kh_PN_t *kh;
 };
 
 #endif

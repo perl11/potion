@@ -1,0 +1,10 @@
+p = (date='2009-01-12', commit='0cd914e', platform='i686-apple-darwin8', jit=1)
+a = p at('platform')
+
+p put('platform', 'i386-undermydesk-freebsd')
+b = p at('platform')
+
+p remove('date')
+
+(a, b, p length, (i_exist=1) at ('nonexistant'))
+# (i686-apple-darwin8, i386-undermydesk-freebsd, 3, nil)

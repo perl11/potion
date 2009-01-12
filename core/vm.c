@@ -337,6 +337,17 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
         X86(0xFF); X86(0xD0); // callq %rax
         X86_MOV_RBP(0x89, pos->a); // mov %rax local
       break;
+      case OP_SETTABLE:
+        val = PN_TUPLE_AT(f->values, pos->b);
+        X86_ARGO(need - 2, 0);
+        X86_ARGO(pos->a, 1);
+        X86_MOVQ(pos->a, val);
+        X86_ARGO(pos->a, 2);
+        X86_ARGO(pos->a + 1, 3);
+        X86_PRE(); X86(0xB8); X86N(potion_table_set); // mov &potion_tuple_push %rax
+        X86(0xFF); X86(0xD0); // callq %rax
+        X86_MOV_RBP(0x89, pos->a); // mov %rax local
+      break;
       case OP_ADD:
         X86_MATH({
           X86(0x89); X86(0xD1); // mov %rdx %rcx
@@ -661,6 +672,9 @@ reentry:
       break;
       case OP_SETTUPLE:
         reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
+      break;
+      case OP_SETTABLE:
+        potion_table_set(P, reg[pos->a], PN_TUPLE_AT(f->values, pos->b), reg[pos->a+1]);
       break;
       case OP_ADD:
         reg[pos->a] = reg[pos->a] + (reg[pos->b]-1);

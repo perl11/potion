@@ -388,8 +388,17 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
     case AST_TABLE:
       PN_ASM1(OP_NEWTUPLE, reg);
       PN_TUPLE_EACH(t->a[0], i, v, {
-        potion_source_asmb(P, f, (struct PNSource *)v, reg + 1, pos);
-        PN_ASM2(OP_SETTUPLE, reg, reg + 1);
+        if (PN_PART(v) == AST_ASSIGN) {
+          struct PNSource *lhs = (struct PNSource *)PN_S(v, 0);
+          potion_source_asmb(P, f, (struct PNSource *)PN_S(v, 1), reg + 1, pos);
+          if (lhs->part == AST_MESSAGE) {
+            PN_SIZE num = PN_PUT(f->values, lhs->a[0]);
+            PN_ASM2(OP_SETTABLE, reg, num);
+          }
+        } else {
+          potion_source_asmb(P, f, (struct PNSource *)v, reg + 1, pos);
+          PN_ASM2(OP_SETTUPLE, reg, reg + 1);
+        }
       });
     break;
   }

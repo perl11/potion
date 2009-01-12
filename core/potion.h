@@ -68,7 +68,7 @@ struct PNGarbage;
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) == PN_FALSE || (PN)(v) == PN_TRUE)
 #define PN_IS_NUM(v)    ((PN)(v) & PN_NUM_FLAG)
-#define PN_IS_TUPLE(v)  (((PN)(v) & PN_PRIMITIVE) == PN_TUPLE_FLAG)
+#define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
@@ -76,7 +76,6 @@ struct PNGarbage;
 #define PN_IS_REF(v)     (((PN)(v) & PN_PRIMITIVE) == PN_REF_FLAG)
 
 #define PN_NUM_FLAG     0x01
-#define PN_TUPLE_FLAG   0x02
 #define PN_REF_FLAG     0x04
 
 #define PN_NUM(i)       ((PN)(((long)(i))<<1 | PN_NUM_FLAG))
@@ -100,9 +99,9 @@ struct PNGarbage;
 #define PN_TUP(X)       potion_tuple_new(P, X)
 #define PN_PUSH(T, X)   potion_tuple_push(P, T, X)
 #define PN_GET(T, X)    potion_tuple_find(P, T, X)
-#define PN_PUT(T, X)    potion_tuple_put(P, T, X)
-#define PN_SET_TUPLE(t) (((PN)t)|PN_TUPLE_FLAG)
-#define PN_GET_TUPLE(t) ((struct PNTuple *)(((PN)t)^PN_TUPLE_FLAG))
+#define PN_PUT(T, X)    potion_tuple_push_unless(P, T, X)
+#define PN_SET_TUPLE(t) ((PN)t)
+#define PN_GET_TUPLE(t) ((struct PNTuple *)t)
 #define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
 #define PN_TUPLE_COUNT(T, I, B) ({ \
@@ -304,8 +303,9 @@ PN potion_tuple_empty(Potion *);
 PN potion_tuple_with_size(Potion *, PN_SIZE);
 PN potion_tuple_new(Potion *, PN);
 PN potion_tuple_push(Potion *, PN, PN);
-PN_SIZE potion_tuple_put(Potion *, PN, PN);
+PN_SIZE potion_tuple_push_unless(Potion *, PN, PN);
 PN_SIZE potion_tuple_find(Potion *, PN, PN);
+PN potion_table_set(Potion *, PN, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);
