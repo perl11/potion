@@ -20,6 +20,8 @@ CFLAGS += ${DEBUGFLAGS}
 JITFLAGS = `${ECHO} "${JIT}" | sed "s/0/-DNO_JIT/; s/1/-DX86_JIT/"`
 CFLAGS += ${JITFLAGS}
 
+VERSION = `cat core/potion.h | sed "/POTION_VERSION/!d; s/\\\"$$//; s/.*\\\"//"`
+PKG := "potion-${VERSION}"
 DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
 COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
@@ -159,6 +161,17 @@ test: potion test/api/potion-test
 test/api/potion-test: core/version.h ${OBJ_TEST} ${OBJ}
 	@${ECHO} LINK potion-test
 	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
+
+tarball: core/version.h core/pn-scan.c core/pn-gram.c
+	mkdir -p pkg
+	rm -rf ${PKG}
+	git-checkout-index --prefix=${PKG}/ -a
+	rm -f ${PKG}/.gitignore
+	cp core/version.h ${PKG}/core/
+	cp core/pn-scan.c ${PKG}/core/
+	cp core/pn-gram.c ${PKG}/core/
+	tar czvf pkg/${PKG}.tar.gz ${PKG}
+	rm -rf ${PKG}
 
 sloc: clean
 	@cp core/pn-scan.rl core/pn-scan-rl.c
