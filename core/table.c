@@ -14,14 +14,16 @@
 
 PN potion_table_inspect(Potion *P, PN cl, PN self) {
   struct PNTable *t = (struct PNTable *)self;
+  PN out = potion_byte_str(P, "(");
   kh_PN_t *h = t->kh;
   unsigned k;
   for (k = kh_begin(h); k != kh_end(h); ++k)
     if (kh_exist(h, k)) {
-      potion_send(kh_value(h, k), PN_inspect);
-      printf("\n");
+      potion_bytes_obj_inspect(P, out, kh_value(h, k));
+      pn_printf(P, out, "\n");
     }
-  return PN_NIL;
+  pn_printf(P, out, ")");
+  return out;
 }
 
 PN potion_table_length(Potion *P, PN cl, PN self) {
@@ -93,18 +95,18 @@ PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
 }
 
 PN potion_tuple_inspect(Potion *P, PN cl, PN self) {
-  printf("(");
+  PN out = potion_byte_str(P, "(");
   PN_TUPLE_EACH(self, i, v, {
-    if (i > 0) printf(", ");
-    potion_send(v, PN_inspect);
+    if (i > 0) pn_printf(P, out, ", ");
+    potion_bytes_obj_inspect(P, out, v);
   });
-  printf(")");
-  return PN_NIL;
+  pn_printf(P, out, ")");
+  return out;
 }
 
 PN potion_tuple_print(Potion *P, PN cl, PN self) {
   PN_TUPLE_EACH(self, i, v, {
-    potion_send(v, PN_inspect);
+    potion_send(v, PN_print);
   });
   return PN_NIL;
 }

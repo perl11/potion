@@ -31,8 +31,9 @@ static PN potion_div(Potion *P, PN closure, PN self, PN num) {
 }
 
 static PN potion_num_inspect(Potion *P, PN closure, PN self) {
-  printf("%ld", PN_INT(self));
-  return PN_NIL;
+  char ints[21];
+  sprintf(ints, "%ld", PN_INT(self));
+  return potion_byte_str(P, ints);
 }
 
 void potion_num_init(Potion *P) {

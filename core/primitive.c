@@ -10,8 +10,7 @@
 #include "internal.h"
 
 static PN potion_nil_inspect(Potion *P, PN closure, PN self) {
-  printf("nil");
-  return PN_NIL;
+  return potion_byte_str(P, "nil");
 }
 
 static PN potion_nil_is_nil(Potion *P, PN closure, PN self) {
@@ -19,9 +18,8 @@ static PN potion_nil_is_nil(Potion *P, PN closure, PN self) {
 }
 
 static PN potion_bool_inspect(Potion *P, PN closure, PN self) {
-  if (PN_TEST(self)) printf("true");
-  else               printf("false");
-  return PN_NIL;
+  if (PN_TEST(self)) return potion_byte_str(P, "true");
+  return potion_byte_str(P, "false");
 }
 
 PN potion_any_is_nil(Potion *P, PN closure, PN self) {

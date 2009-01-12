@@ -32,8 +32,7 @@ PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
 }
 
 PN potion_closure_inspect(Potion *P, PN cl, PN self, PN len) {
-  printf("#<closure>");
-  return PN_NIL;
+  return potion_byte_str(P, "#<closure>");
 }
 
 PN potion_closure__link(Potion *P, PN cl, PN self, PN link) {
@@ -129,8 +128,7 @@ PN potion_ref(Potion *P, PN data) {
 }
 
 PN potion_ref_inspect(Potion *P, PN cl, PN self, PN len) {
-  printf("#<ref>");
-  return PN_NIL;
+  return potion_byte_str(P, "#<ref>");
 }
 
 PN potion_ref__link(Potion *P, PN cl, PN self, PN link) {
@@ -140,8 +138,7 @@ PN potion_ref__link(Potion *P, PN cl, PN self, PN link) {
 }
 
 PN potion_object_inspect(Potion *P, PN cl, PN self, PN len) {
-  printf("#<object>");
-  return PN_NIL;
+  return potion_byte_str(P, "#<object>");
 }
 
 PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {

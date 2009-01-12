@@ -42,15 +42,15 @@ PN potion_source_name(Potion *P, PN cl, PN self) {
 PN potion_source_inspect(Potion *P, PN cl, PN self) {
   int i, n;
   struct PNSource *t = (struct PNSource *)self;
-  printf("%s", potion_ast_names[t->part]);
+  PN out = potion_byte_str(P, potion_ast_names[t->part]);
   n = potion_ast_sizes[t->part];
   for (i = 0; i < n; i++) {
-    printf(" ");
-    if (i == 0 && n > 1) printf("(");
-    potion_send(t->a[i], PN_inspect);
-    if (i == n - 1 && n > 1) printf(")");
+    pn_printf(P, out, " ");
+    if (i == 0 && n > 1) pn_printf(P, out, "(");
+    potion_bytes_obj_inspect(P, out, t->a[i]);
+    if (i == n - 1 && n > 1) pn_printf(P, out, ")");
   }
-  return PN_NIL;
+  return out;
 }
 
 PN potion_source__link(Potion *P, PN cl, PN src, PN link) {

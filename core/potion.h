@@ -24,6 +24,7 @@ typedef struct Potion_State Potion;
 
 struct PNObject;
 struct PNString;
+struct PNBytes;
 struct PNClosure;
 struct PNProto;
 struct PNTuple;
@@ -79,7 +80,7 @@ struct PNGarbage;
 
 #define PN_NUM(i)       ((PN)(((long)(i))<<1 | PN_NUM_FLAG))
 #define PN_INT(x)       (((long)(x))>>1)
-#define PN_STR_PTR(x)   ((struct PNString *)(x))->chars
+#define PN_STR_PTR(x)   potion_str_ptr((struct PNString *)(x))
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
 #define PN_CLOSURE(x)   ((struct PNClosure *)(x))
 #define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method
@@ -146,6 +147,12 @@ struct PNString {
   char chars[0];
 };
 
+struct PNBytes {
+  PN_OBJECT_HEADER
+  PN_SIZE len;
+  char *chars;
+};
+
 struct PNFile {
   PN_OBJECT_HEADER
   FILE *stream;
@@ -193,6 +200,12 @@ static inline PNType potion_type(PN obj) {
   if (obj & PN_REF_MASK)
     return PN_VTYPE(obj & ~PN_PRIMITIVE);
   return obj & PN_PRIMITIVE;
+}
+
+// quick access to either PNString or PNByte pointer
+static inline char *potion_str_ptr(struct PNString *s) {
+  return s->vt == PN_TBYTES ? ((struct PNBytes *)s)->chars :
+    s->chars;
 }
 
 //
@@ -248,7 +261,7 @@ struct PNInlineCache {
 
 extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
    PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN_inspect, PN__link,
-   PN_lookup, PN_loop, PN_while;
+   PN_lookup, PN_loop, PN_print, PN_while;
 
 //
 // the Potion functions
@@ -258,8 +271,11 @@ void potion_destroy(Potion *);
 PNType potion_kind_of(PN);
 PN potion_str(Potion *, const char *);
 PN potion_str2(Potion *, char *, size_t);
-PN potion_byte_str(Potion *P, const char *);
+PN potion_byte_str(Potion *, const char *);
 PN potion_bytes(Potion *, size_t);
+PN_SIZE pn_printf(Potion *, PN, const char *, ...);
+void potion_bytes_obj_inspect(Potion *, PN, PN);
+PN potion_bytes_append(Potion *, PN, PN, PN);
 PN potion_allocate(Potion *, PN, PN, PN);
 void potion_release(Potion *, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);

@@ -60,80 +60,81 @@ PN potion_proto_inspect(Potion *P, PN cl, PN self) {
   PN_SIZE num = 1;
   PN_SIZE numcols;
   PN_OP *pos, *end;
-  printf("; function definition: %p ; %u bytes\n", t, PN_STR_LEN(t->asmb));
-  printf("; (");
+  PN out = potion_byte_str(P, "; function definition");
+  pn_printf(P, out, ": %p ; %u bytes\n", t, PN_STR_LEN(t->asmb));
+  pn_printf(P, out, "; (");
   PN_TUPLE_EACH(t->sig, i, v, {
     if (PN_IS_NUM(v)) {
       if (i == x)
         x += PN_INT(v);
       else if (v != PN_ZERO)
-        printf("=%c, ", (int)PN_INT(v));
+        pn_printf(P, out, "=%c, ", (int)PN_INT(v));
       else
-        printf(", ");
+        pn_printf(P, out, ", ");
     } else
-      potion_send(v, PN_inspect);
+      potion_bytes_obj_inspect(P, out, v);
   });
-  printf(") %ld registers\n", PN_INT(t->stack));
+  pn_printf(P, out, ") %ld registers\n", PN_INT(t->stack));
   PN_TUPLE_EACH(t->locals, i, v, {
-    printf(".local \"");
-    potion_send(v, PN_inspect);
-    printf("\" ; %u\n", i);
+    pn_printf(P, out, ".local \"");
+    potion_bytes_obj_inspect(P, out, v);
+    pn_printf(P, out, "\" ; %u\n", i);
   });
   PN_TUPLE_EACH(t->upvals, i, v, {
-    printf(".upval \"");
-    potion_send(v, PN_inspect);
-    printf("\" ; %u\n", i);
+    pn_printf(P, out, ".upval \"");
+    potion_bytes_obj_inspect(P, out, v);
+    pn_printf(P, out, "\" ; %u\n", i);
   });
   PN_TUPLE_EACH(t->values, i, v, {
-    printf(".value ");
-    potion_send(v, PN_inspect);
-    printf(" ; %u\n", i);
+    pn_printf(P, out, ".value ");
+    potion_bytes_obj_inspect(P, out, v);
+    pn_printf(P, out, " ; %u\n", i);
   });
   PN_TUPLE_EACH(t->protos, i, v, {
-    potion_send(v, PN_inspect);
+    potion_bytes_obj_inspect(P, out, v);
   });
   pos = (PN_OP *)PN_STR_PTR(t->asmb);
   end = (PN_OP *)(PN_STR_PTR(t->asmb) + PN_STR_LEN(t->asmb));
   numcols = (int)ceil(log10(end - pos));
   while (pos < end) {
     const int commentoffset = 20;
-    int width = printf("[%*u] %-8s %d", numcols, num, potion_op_names[pos->code], pos->a);
+    int width = pn_printf(P, out, "[%*u] %-8s %d", numcols, num, potion_op_names[pos->code], pos->a);
     if (potion_op_args[pos->code] > 1) {
-      width += printf(" %d", pos->b);
+      width += pn_printf(P, out, " %d", pos->b);
     }
     if (width < commentoffset) {
-      printf("%*s", commentoffset - width, "");
+      pn_printf(P, out, "%*s", commentoffset - width, "");
     } else {
-      printf(" ");
+      pn_printf(P, out, " ");
     }
     // TODO: Byte code listing: instead of using tabs, pad with spaces to make everything line up
     switch (pos->code) {
       case OP_JMP:
-        printf("; to %d", num + pos->a + 1);
+        pn_printf(P, out, "; to %d", num + pos->a + 1);
         break;
       case OP_NOTJMP:
       case OP_TESTJMP:
-        printf("; to %d", num + pos->b + 1);
+        pn_printf(P, out, "; to %d", num + pos->b + 1);
         break;
       case OP_LOADPN:
-        printf("; ");
-        potion_send(pos->b, PN_inspect);
+        pn_printf(P, out, "; ");
+        potion_bytes_obj_inspect(P, out, pos->b);
         break;
       case OP_LOADK:
-        printf("; ");
-        potion_send(PN_TUPLE_AT(t->values, pos->b), PN_inspect);
+        pn_printf(P, out, "; ");
+        potion_bytes_obj_inspect(P, out, PN_TUPLE_AT(t->values, pos->b));
         break;
       case OP_SETLOCAL:
       case OP_GETLOCAL:
-        printf("; ");
-        potion_send(PN_TUPLE_AT(t->locals, pos->b), PN_inspect);
+        pn_printf(P, out, "; ");
+        potion_bytes_obj_inspect(P, out, PN_TUPLE_AT(t->values, pos->b));
         break;
     }
-    printf("\n");
+    pn_printf(P, out, "\n");
     pos++; num++;
   }
-  printf("; function end\n");
-  return PN_NIL;
+  pn_printf(P, out, "; function end\n");
+  return out;
 }
 
 #define PN_REG(f, reg) \
