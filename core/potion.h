@@ -79,7 +79,7 @@ struct PNGarbage;
 #define PN_NUM_FLAG     0x01
 #define PN_REF_FLAG     0x04
 
-#define PN_NUM(i)       ((PN)(((long)(i))<<1 | PN_NUM_FLAG))
+#define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_NUM_FLAG))
 #define PN_INT(x)       (((long)(x))>>1)
 #define PN_STR_PTR(x)   potion_str_ptr((struct PNString *)(x))
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len

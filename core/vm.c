@@ -92,8 +92,7 @@ static void potion_x86_put(PNAsm *asmb, PN val, size_t len) {
         X86(0xD1); X86(0xF8); /* sar %eax */ \
         op; /* add, sub, ... */ \
         X86_POST(); /* cltq */ \
-        X86_PRE(); X86(0x01); X86(0xC0); /* add %rax %rax */ \
-        X86_PRE(); X86(0x83); X86(0xC8); X86(0x01); /* or 0x1 %eax */ \
+        X86_PRE(); X86(0x8D); X86(0x44); X86(0x00); X86(0x01); /* lea 0x1(%eax+%eax*1) %eax */ \
         X86_MOV_RBP(0x89, pos->a); /* mov -B(%rbp) %eax */
 #define X86_CMP(op) \
         X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */ \
@@ -520,7 +519,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
       break;
       case OP_RETURN:
         X86_MOV_RBP(0x8B, 0); /* mov -0(%rbp) %eax */ \
-        X86(0xC9); X86(0xC3);
+        X86(0xC9); X86(0xC3); /* leave; ret */
       break;
       case OP_PROTO: {
         struct PNClosure *cl;
