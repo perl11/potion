@@ -137,6 +137,7 @@ test: potion test/api/potion-test
 				./potion -c $$f > /dev/null; \
 				fb="$$f"b; \
 				for=`./potion -I -B $$fb | sed "s/\n$$//"`; \
+				rm -rf $$fb; \
 			else \
 				for=`./potion -I -X $$f | sed "s/\n$$//"`; \
 			fi; \
