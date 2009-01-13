@@ -140,11 +140,6 @@ done:
 int main(int argc, char *argv[]) {
   int i, verbose = 0, exec = 1 + POTION_JIT;
 
-#if defined(__APPLE__) && defined(__MACH__)
-  { char *f = ""; printf(f, 0); } // hack by quag to initialize stdout on Mac OS X.
-                                  // http://github.com/why/potion/commit/edf3ff8#comments
-#endif
-
   if (argc > 1) {
     for (i = 0; i < argc; i++) {
       if (strcmp(argv[i], "-I") == 0 ||
