@@ -454,7 +454,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
         X86_PRE(); X86(0xB8); icname = asmb->ptr; X86N(0); // mov NAME %rax
         X86_PRE(); X86(0x39); X86(0xC2); // cmp %rax %rdx
         X86(0x75); X86(X86C(10, 12)); // jne [d]
-        X86(0xEB); X86(X86C(46, 60)); // jmp [e]
+        X86(0xEB); X86(X86C(46, 55)); // jmp [e]
         // [c] cache new type
         X86_PRE(); X86(0x89); X86(0xD0); // mov %rdx %rax
         X86_PRE(); X86(0x89); X86(0x05); X86I(ictype - (asmb->ptr + 4)); // mov %rax TYPE
