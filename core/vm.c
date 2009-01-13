@@ -228,7 +228,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
    * it expects to be able to use movdqa on things on the stack.
    * we factor in the offset from our saved ebp and return address, so that
    * adds 8 for x86 and 0 (mod 16) for x86_64.  */
-  rsp = X86C(8,0)+((rsp+15)&~(15)); 
+  rsp = X86C(8,0)+((rsp-X86C(8,0)+15)&~(15));
   if (rsp >= 0x80) {
     X86_PRE(); X86(0x81); X86(0xEC); X86I(rsp); /* sub rsp, %esp */
   } else {
