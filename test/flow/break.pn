@@ -1,0 +1,25 @@
+single = ():
+  i = 0
+  while (i < 30):
+    i++
+    if (i >= 10): break..
+  i.
+
+first = ():
+  i = 0
+  while (i < 30):
+    i++
+    if (i >= 10): break.
+    if (i >= 20): break..
+  i.
+
+second = ():
+  i = 0
+  while (i < 30):
+    i++
+    if (i >= 20): break.
+    if (i >= 10): break..
+  i.
+
+(single(), first(), second())
+# (10, 10, 10)
