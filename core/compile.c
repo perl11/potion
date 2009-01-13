@@ -272,6 +272,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, struc
       PN_ASM2(OP_LOADPN, breg + 1, (t->a[1] | PN_NUM_FLAG));
       PN_ASM2(OP_ADD, breg, breg + 1);
       PN_ASM2(opcode, breg, num);
+      PN_REG(f, breg + 1);
     }
     break;
 
