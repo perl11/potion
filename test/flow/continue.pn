@@ -1,0 +1,35 @@
+single = ():
+  i = 0
+  c = 0
+  while (i < 30):
+    i++
+    continue
+    c++.
+  c.
+
+first = ():
+  i = 0
+  c = 0
+  d = 0
+  while (i < 30):
+    i++
+    if (i <= 10): continue.
+    c++
+    if (i <= 20): continue.
+    d++.
+  (c, d).
+
+second = ():
+  i = 0
+  c = 0
+  d = 0
+  while (i < 30):
+    i++
+    if (i <= 20): continue.
+    c++
+    if (i <= 10): continue.
+    d++.
+  (c, d).
+
+(single(), first(), second())
+# (0, (20, 10), (10, 10))

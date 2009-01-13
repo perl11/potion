@@ -92,8 +92,7 @@ static void potion_x86_put(PNAsm *asmb, PN val, size_t len) {
         X86(0xD1); X86(0xF8); /* sar %eax */ \
         op; /* add, sub, ... */ \
         X86_POST(); /* cltq */ \
-        X86_PRE(); X86(0x01); X86(0xC0); /* add %rax %rax */ \
-        X86_PRE(); X86(0x83); X86(0xC8); X86(0x01); /* or 0x1 %eax */ \
+        X86_PRE(); X86(0x8D); X86(0x44); X86(0x00); X86(0x01); /* lea 0x1(%eax+%eax*1) %eax */ \
         X86_MOV_RBP(0x89, pos->a); /* mov -B(%rbp) %eax */
 #define X86_CMP(op) \
         X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */ \
@@ -223,10 +222,16 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   lregs = regs + PN_TUPLE_LEN(f->locals);
   need = lregs + upc + 3;
   rsp = (need + protoargs) * sizeof(PN);
+
+  /* maintain 16-byte stack alignment.  OS X in particular requires it, because
+   * it expects to be able to use movdqa on things on the stack.
+   * we factor in the offset from our saved ebp and return address, so that
+   * adds 8 for x86 and 0 (mod 16) for x86_64.  */
+  rsp = X86C(8,0)+((rsp-X86C(8,0)+15)&~(15));
   if (rsp >= 0x80) {
-    X86_PRE(); X86(0x81); X86(0xEC); X86I(rsp);
+    X86_PRE(); X86(0x81); X86(0xEC); X86I(rsp); /* sub rsp, %esp */
   } else {
-    X86_PRE(); X86(0x83); X86(0xEC); X86(rsp);
+    X86_PRE(); X86(0x83); X86(0xEC); X86(rsp); /* sub rsp, %esp */
   }
 
   // (Potion *, self) in the first argument slot 
@@ -514,7 +519,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
       break;
       case OP_RETURN:
         X86_MOV_RBP(0x8B, 0); /* mov -0(%rbp) %eax */ \
-        X86(0xC9); X86(0xC3);
+        X86(0xC9); X86(0xC3); /* leave; ret */
       break;
       case OP_PROTO: {
         struct PNClosure *cl;

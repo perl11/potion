@@ -1,0 +1,20 @@
+one = ():
+  return(1).
+
+two = ():
+  return(2)
+  -1.
+
+three = ():
+  -1
+  return(3)
+  -2.
+
+nil1 = ():
+  return.
+
+nil2 = ():
+  return(nil).
+
+(one(), two(), three(), nil1(), nil2())
+# (1, 2, 3, nil, nil)
