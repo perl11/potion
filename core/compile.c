@@ -359,6 +359,9 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNSource *t, u8 reg
         potion_source_asmb(P, f, (struct PNSource *)t->a[2], reg, pos);
         PN_ASM1(OP_JMP, (jmp2 - *pos) - 1);
         jmp1->b = (*pos - jmp1) - 1;
+      } else if (t->a[0] == PN_return) {
+        PN_ARG_TABLE(t->a[1], reg, reg);
+        PN_ASM1(OP_RETURN, reg);
       } else {
         u8 breg = reg, opcode = OP_GETUPVAL;
         PN_SIZE num = PN_UPVAL(t->a[0]);
