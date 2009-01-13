@@ -223,10 +223,16 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   lregs = regs + PN_TUPLE_LEN(f->locals);
   need = lregs + upc + 3;
   rsp = (need + protoargs) * sizeof(PN);
+
+  /* maintain 16-byte stack alignment.  OS X in particular requires it, because
+   * it expects to be able to use movdqa on things on the stack.
+   * we factor in the offset from our saved ebp and return address, so that
+   * adds 8 for x86 and 0 (mod 16) for x86_64.  */
+  rsp = X86C(8,0)+((rsp+15)&~(15)); 
   if (rsp >= 0x80) {
-    X86_PRE(); X86(0x81); X86(0xEC); X86I(rsp);
+    X86_PRE(); X86(0x81); X86(0xEC); X86I(rsp); /* sub rsp, %esp */
   } else {
-    X86_PRE(); X86(0x83); X86(0xEC); X86(rsp);
+    X86_PRE(); X86(0x83); X86(0xEC); X86(rsp); /* sub rsp, %esp */
   }
 
   // (Potion *, self) in the first argument slot 
