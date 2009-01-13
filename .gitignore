@@ -8,3 +8,4 @@ core/pn-gram.out
 core/*.o
 test/api/potion-test
 test/api/*.o
+test/*/*.pnb
