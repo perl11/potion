@@ -66,6 +66,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
   buf = potion_bytes(P, stats.st_size);
   if (fread(PN_STR_PTR(buf), 1, stats.st_size, fp) == stats.st_size) {
     PN code;
+    PN_STR_PTR(buf)[stats.st_size] = '\0';
     code = potion_source_load(P, PN_NIL, buf);
     if (PN_IS_PROTO(code)) {
       if (verbose > 1)
