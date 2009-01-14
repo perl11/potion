@@ -29,7 +29,7 @@ COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
 RAGELV = `${RAGEL} -v | sed "/ version /!d; s/.* version //; s/ .*//"`
 
 all: potion
-	@make -s usage
+	+${MAKE} -s usage
 
 rebuild: clean potion test
 
@@ -82,6 +82,10 @@ version:
 core/version.h:
 	@${ECHO} MAKE $@
 	@${MAKE} -s version > core/version.h
+
+%.o: %.c core/version.h
+	@${ECHO} CC $<
+	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
 .c.o: core/version.h
 	@${ECHO} CC $<
