@@ -11,7 +11,6 @@
 #include "potion.h"
 #include "internal.h"
 #include "opcodes.h"
-#include "version.h"
 
 const char potion_banner[] = "potion " POTION_VERSION
                              " (date='" POTION_DATE "', commit='" POTION_COMMIT

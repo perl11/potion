@@ -64,30 +64,34 @@ usage:
 	@${ECHO} " Kindly email your respects and thoughtful queries"
 	@${ECHO} " to _why <why@whytheluckystiff.net>. Thankyou."
 
-version:
-	@${ECHO} "#define POTION_DATE   \"${DATE}\""
-	@${ECHO} "#define POTION_COMMIT \"${COMMIT}\""
-	@${ECHO} "#define POTION_REV    ${REVISION}"
-	@${ECHO}
+config:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
 	@${ECHO} "#define POTION_CFLAGS \"${CFLAGS}\""
 	@${ECHO} "#define POTION_DEBUG  ${DEBUG}"
 	@${ECHO} "#define POTION_JIT    ${JIT}"
 	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
-	@${ECHO} "#define POTION_RAGEL  \"${RAGELV}\""
 	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
 	@${ECHO}
 	@./tools/config.sh ${CC}
 
 core/version.h:
-	@${ECHO} MAKE $@
-	@${MAKE} -s version > core/version.h
+	@${ECHO} "#define POTION_DATE   \"${DATE}\"" > core/version.h
+	@${ECHO} "#define POTION_COMMIT \"${COMMIT}\"" >> core/version.h
+	@${ECHO} "#define POTION_REV    ${REVISION}" >> core/version.h
+	@${ECHO} >> core/version.h
+	@${ECHO} "#define POTION_RAGEL  \"${RAGELV}\"" >> core/version.h
+	@${ECHO} >> core/version.h
 
-%.o: %.c core/version.h
+core/config.h: core/version.h
+	@${ECHO} MAKE $@
+	@cat core/version.h > core/config.h
+	@${MAKE} -s config >> core/config.h
+
+%.o: %.c core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
-.c.o: core/version.h
+.c.o: core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
@@ -191,7 +195,7 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST}
-	@rm -f core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
+	@rm -f core/config.h core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
 	@rm -f potion potion.exe test/api/potion-test
 
 .PHONY: all clean rebuild test

@@ -13,7 +13,7 @@
 #define POTION_VMID     0x79
 
 #include <limits.h>
-#include "version.h"
+#include "config.h"
 
 //
 // types
