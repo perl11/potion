@@ -98,7 +98,7 @@ PN potion_tuple_empty(Potion *P) {
 }
 
 PN potion_tuple_with_size(Potion *P, PN_SIZE size) {
-  NEW_TUPLE(t, size, PN_ALLOC_N(PN, size));
+  NEW_TUPLE(t, size, PN_CALLOC_N(PN, size));
   return PN_SET_TUPLE(t);
 }
 
@@ -179,6 +179,10 @@ PN potion_tuple__link(Potion *P, PN cl, PN self, PN link) {
   return link;
 }
 
+PN potion_lobby_list(Potion *P, PN cl, PN self, PN size) {
+  return potion_tuple_with_size(P, PN_INT(size));
+}
+
 void potion_table_init(Potion *P) {
   PN tbl_vt = PN_VTABLE(PN_TTABLE);
   PN tpl_vt = PN_VTABLE(PN_TTUPLE);
@@ -195,4 +199,5 @@ void potion_table_init(Potion *P) {
   // TODO: add Tuple remove
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
   potion_method(tpl_vt, "~link", potion_tuple__link, 0);
+  potion_method(P->lobby, "list", potion_lobby_list, 0);
 }

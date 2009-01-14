@@ -106,14 +106,18 @@ PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
 }
 
 PN potion_bind(Potion *P, PN rcv, PN msg) {
-  PN closure, vt;
+  PN closure = PN_NIL, vt;
   PNType t = PN_TYPE(rcv);
   if (t >= P->typen) return PN_NIL;
   vt = PN_VTABLE(t);
   // TODO: enable mcache -- need to hash the (t,msg) tuple
-  closure = ((msg == PN_lookup) && (t == PN_TVTABLE))
-    ? potion_lookup(P, 0, vt, msg)
-    : potion_send(vt, PN_lookup, msg);
+  while (vt) {
+    closure = ((msg == PN_lookup) && (t == PN_TVTABLE))
+      ? potion_lookup(P, 0, vt, msg)
+      : potion_send(vt, PN_lookup, msg);
+    if (closure) break;
+    vt = ((struct PNVtable *)vt)->parent; 
+  }
   // TODO: replace with `forward` method call
   if (!closure)
     fprintf(stderr, "lookup failed %lu %s\n", vt, PN_STR_PTR(msg));
@@ -169,5 +173,5 @@ void potion_object_init(Potion *P) {
 }
 
 void potion_lobby_init(Potion *P) {
-  P->lobby = PN_VTABLE(PN_TLOBBY);
+  ;
 }

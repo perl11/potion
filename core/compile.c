@@ -333,41 +333,42 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, struc
     // TODO: this stuff is ugly and repetitive
     case AST_MESSAGE:
     case AST_QUERY: {
+      u8 breg = reg;
       int arg = (t->a[1] != PN_NIL);
       int call = (t->a[2] != PN_NIL || arg);
       if (t->a[0] == PN_if) {
-        PN_OP *jmp;
-        PN_ARG_TABLE(t->a[1], reg, reg);
+        PN_OP *jmp; breg++;
+        PN_ARG_TABLE(t->a[1], breg, breg);
         jmp = *pos;
-        PN_ASM2(OP_NOTJMP, reg, 0);
+        PN_ASM2(OP_NOTJMP, breg, 0);
         potion_source_asmb(P, f, loop, (struct PNSource *)t->a[2], reg, pos);
         jmp->b = (*pos - jmp) - 1;
       } else if (t->a[0] == PN_elsif) {
-        PN_OP *jmp1 = *pos, *jmp2;
-        PN_ASM2(OP_TESTJMP, reg, 0);
-        PN_ARG_TABLE(t->a[1], reg, reg);
+        PN_OP *jmp1 = *pos, *jmp2; breg++;
+        PN_ASM2(OP_TESTJMP, breg, 0);
+        PN_ARG_TABLE(t->a[1], breg, breg);
         jmp2 = *pos;
-        PN_ASM2(OP_NOTJMP, reg, 0);
+        PN_ASM2(OP_NOTJMP, breg, 0);
         potion_source_asmb(P, f, loop, (struct PNSource *)t->a[2], reg, pos);
         jmp1->b = (*pos - jmp1) - 1;
         jmp2->b = (*pos - jmp2) - 1;
       } else if (t->a[0] == PN_else) {
-        PN_OP *jmp = *pos;
-        PN_ASM2(OP_TESTJMP, reg, 0);
+        PN_OP *jmp = *pos; breg++;
+        PN_ASM2(OP_TESTJMP, breg, 0);
         potion_source_asmb(P, f, loop, (struct PNSource *)t->a[2], reg, pos);
         jmp->b = (*pos - jmp) - 1;
       } else if (t->a[0] == PN_loop) {
-        PN_OP *jmp = *pos;
-        PN_ARG_TABLE(t->a[1], reg, reg);
+        PN_OP *jmp = *pos; breg++;
+        PN_ARG_TABLE(t->a[1], breg, breg);
         potion_source_asmb(P, f, loop, (struct PNSource *)t->a[2], reg, pos);
         PN_ASM1(OP_JMP, (jmp - *pos) - 1);
       } else if (t->a[0] == PN_while) {
-        PN_OP *jmp1, *jmp2 = *pos;
+        PN_OP *jmp1, *jmp2 = *pos; breg++;
         struct PNLoop l; l.bjmpc = 0; l.cjmpc = 0;
         int i;
-        PN_ARG_TABLE(t->a[1], reg, reg);
+        PN_ARG_TABLE(t->a[1], breg, breg);
         jmp1 = *pos;
-        PN_ASM2(OP_NOTJMP, reg, 0);
+        PN_ASM2(OP_NOTJMP, breg, 0);
         potion_source_asmb(P, f, &l, (struct PNSource *)t->a[2], reg, pos);
         PN_ASM1(OP_JMP, (jmp2 - *pos) - 1);
         jmp1->b = (*pos - jmp1) - 1;
@@ -395,7 +396,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, struc
           // TODO: Report error: 'continue' outside of loop.
         }
       } else {
-        u8 breg = reg, opcode = OP_GETUPVAL;
+        u8 opcode = OP_GETUPVAL;
         PN_SIZE num = PN_UPVAL(t->a[0]);
         if (num == PN_NONE) {
           num = PN_GET(f->locals, t->a[0]);
@@ -426,8 +427,8 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, struc
           } else
             PN_ASM2(opcode, reg, num);
         }
-        PN_REG(f, breg);
       }
+      PN_REG(f, breg);
     }
     break;
 

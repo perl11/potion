@@ -10,4 +10,8 @@ c = if (true): 12
 . elsif (true): 14
 . else: 16.
 
-(a, b, c) # (14, 16, 12)
+d = 40 if true: string length. else: 10.
+
+e = 40 if true: 10.
+
+(a, b, c, d, e) # (14, 16, 12, 2, 10)

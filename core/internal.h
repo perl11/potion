@@ -14,6 +14,7 @@ typedef unsigned char u8;
 #define PN_ALLOC2(T,C)       (T *)malloc(sizeof(T)+C)
 #define PN_ALLOC_N(T,N)      (T *)malloc(sizeof(T)*(N))
 #define PN_CALLOC(T,C)       (T *)calloc(1, sizeof(T)+C)
+#define PN_CALLOC_N(T,C)     (T *)calloc(C, sizeof(T))
 #define PN_REALLOC(X,T)      (X)=(T *)realloc((char *)(X), sizeof(T))
 #define PN_REALLOC_N(X,T,N)  (X)=(T *)realloc((char *)(X), sizeof(T)*(N))
 #define PN_FREE(T)           free((void *)T)

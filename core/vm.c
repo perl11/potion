@@ -619,7 +619,7 @@ reentry:
   reg = locals + f->localsize + 1;
 
   if (pos == (PN_OP *)PN_STR_PTR(f->asmb)) {
-    reg[0] = PN_VTABLE(PN_TLOBBY);
+    reg[0] = PN_NIL;
     if (upc > 0 && upargs != NULL) {
       PN_SIZE i;
       for (i = 0; i < upc; i++) {
