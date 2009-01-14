@@ -28,38 +28,39 @@ COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
 
 RAGELV = `${RAGEL} -v | sed "/ version /!d; s/.* version //; s/ .*//"`
 
-all: potion usage
+all: potion
+	@make -s usage
 
 rebuild: clean potion test
 
 usage:
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} " ~ using potion ~"
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} " Running a script."
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} "   $$ ./potion example/fib.pn"
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} " Dump the AST and bytecode inspection for a script. "
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} "   $$ ./potion -V example/fib.pn"
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} " Compiling to bytecode."
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} "   $$ ./potion -c example/fib.pn"
 	@${ECHO} "   $$ ./potion example/fib.pnb"
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} " Potion builds its JIT compiler by default, but"
 	@${ECHO} " you can use the bytecode VM by running scripts"
 	@${ECHO} " with the -B flag."
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} " If you built with JIT=0, then the bytecode VM"
 	@${ECHO} " will run by default."
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} " To verify your build,"
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} "   $$ make test"
-	@${ECHO}
+	@${ECHO} " "
 	@${ECHO} " Kindly email your respects and thoughtful queries"
 	@${ECHO} " to _why <why@whytheluckystiff.net>. Thankyou."
 
@@ -79,9 +80,10 @@ version:
 	@./tools/config.sh ${CC}
 
 core/version.h:
+	@${ECHO} MAKE $@
 	@${MAKE} -s version > core/version.h
 
-.c.o:
+.c.o: core/version.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
@@ -102,7 +104,7 @@ tools/lemon: tools/lemon.c
 	@${ECHO} CC tools/lemon.c
 	@${CC} -o tools/lemon tools/lemon.c
 
-potion: core/version.h ${OBJ_POTION} ${OBJ}
+potion: ${OBJ_POTION} ${OBJ}
 	@${ECHO} LINK potion
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
 	@if [ "${DEBUG}" != "1" ]; then \
@@ -159,7 +161,7 @@ test: potion test/api/potion-test
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test: core/version.h ${OBJ_TEST} ${OBJ}
+test/api/potion-test: ${OBJ_TEST} ${OBJ}
 	@${ECHO} LINK potion-test
 	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
 
