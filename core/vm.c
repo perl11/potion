@@ -233,14 +233,12 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
     X86_PRE(); X86(0x83); X86(0xEC); X86(rsp); /* sub rsp, %esp */
   }
 
-  // (Potion *, self) in the first argument slot 
+  // (Potion *, self) in the first argument slot, nil in the first register 
   X86_ARGI(need - 2, 0);
   X86_ARGI(need - 1, 2);
+  X86_MOVQ(0, PN_NIL);
 
   // Read locals
-  for (argx = regs; argx < lregs + upc; argx++) {
-    X86_MOVQ(argx, PN_NIL);
-  }
   if (PN_IS_TUPLE(f->sig)) {
     argx = 0;
     PN_TUPLE_EACH(f->sig, i, v, {
