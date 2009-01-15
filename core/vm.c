@@ -292,10 +292,10 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
         if (jit_protos != NULL) {
           // TODO: optimize to use %rdx rather than jmp
           X86(0x83); X86(0xE0); X86(PN_PRIMITIVE); // and PRIM %eax
-          X86(0x83); X86(0xF8); X86(PN_REF_FLAG); // cmp WEAK %eax
+          X86(0x83); X86(0xF8); X86(PN_TWEAK); // cmp WEAK %eax
           X86(0x75); X86(X86C(11, 13)); // jne 13
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
-          X86(0x83); X86(0xF0); X86(PN_REF_FLAG); // xor REF %eax
+          X86(0x83); X86(0xF0); X86(PN_TWEAK); // xor REF %eax
           X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(PN_GC)); // mov %rax.data %rax
           X86(0xEB); X86(X86C(3, 4)); //  jmp 4
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
@@ -308,10 +308,10 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
           // TODO: optimize to use %rdx rather than jmp
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
           X86(0x83); X86(0xE0); X86(PN_PRIMITIVE); // and PRIM %eax
-          X86(0x83); X86(0xF8); X86(PN_REF_FLAG); // cmp WEAK %eax
+          X86(0x83); X86(0xF8); X86(PN_TWEAK); // cmp WEAK %eax
           X86(0x75); X86(X86C(11, 13)); // jne 13
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
-          X86(0x83); X86(0xF0); X86(PN_REF_FLAG); // xor REF %eax
+          X86(0x83); X86(0xF0); X86(PN_TWEAK); // xor REF %eax
           X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(PN_GC)); // mov %rdx %rax.data
           X86(0xEB); X86(X86C(3, 4)); //  jmp 4
         }

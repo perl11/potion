@@ -15,6 +15,7 @@ LIBS = -lm
 RAGEL = ragel
 STRIP ?= `./tools/config.sh ${CC} strip`
 
+# TODO: -O2 doesn't include -fno-stack-protector
 DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2 -DICACHE -DMCACHE/; s/1/-g -DDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
 JITFLAGS = `${ECHO} "${JIT}" | sed "s/0/-DNO_JIT/; s/1/-DX86_JIT/"`

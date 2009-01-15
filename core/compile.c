@@ -265,11 +265,11 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, struc
         PN_ASM2(OP_GETUPVAL, reg, num);
        else if (opcode == OP_SETLOCAL)
         PN_ASM2(OP_GETLOCAL, reg, num);
-      if (t->a[1] & PN_NUM_FLAG) {
+      if (PN_IS_NUM(t->a[1])) {
         breg++;
         PN_ASM2(OP_MOVE, breg, reg);
       }
-      PN_ASM2(OP_LOADPN, breg + 1, (t->a[1] | PN_NUM_FLAG));
+      PN_ASM2(OP_LOADPN, breg + 1, (t->a[1] | PN_TNUMBER));
       PN_ASM2(OP_ADD, breg, breg + 1);
       PN_ASM2(opcode, breg, num);
       PN_REG(f, breg + 1);

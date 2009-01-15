@@ -34,11 +34,11 @@ struct PNGarbage;
 
 #define PN_TNIL         0
 #define PN_TNUMBER      1
-#define PN_TTUPLE       2
+#define PN_TBOOLEAN     2
 #define PN_TSTRING      3
 #define PN_TWEAK        4
 #define PN_TCLOSURE     5
-#define PN_TBOOLEAN     6
+#define PN_TTUPLE       6
 #define PN_TSTATE       7
 #define PN_TFILE        8
 #define PN_TOBJECT      9
@@ -56,30 +56,27 @@ struct PNGarbage;
 
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)
+#define PN_FALSE        ((PN)2)
 #define PN_TRUE         ((PN)6)
-#define PN_FALSE        ((PN)14)
 #define PN_PRIMITIVE    7
-#define PN_REF_MASK     ~15
+#define PN_REF_MASK     ~7
 #define PN_NONE         ((PN_SIZE)-1)
 
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE)
 #define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_PTR(v)    (!PN_IS_NUM(v) && ((v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
-#define PN_IS_BOOL(v)   ((PN)(v) == PN_FALSE || (PN)(v) == PN_TRUE)
-#define PN_IS_NUM(v)    ((PN)(v) & PN_NUM_FLAG)
+#define PN_IS_BOOL(v)   ((PN)(v) & PN_TBOOLEAN)
+#define PN_IS_NUM(v)    ((PN)(v) & PN_TNUMBER)
 #define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
 #define PN_IS_DECIMAL(v) (PN_IS_PTR(v) && PN_TYPE(v) == PN_TNUMBER)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
-#define PN_IS_REF(v)     (((PN)(v) & PN_PRIMITIVE) == PN_REF_FLAG)
+#define PN_IS_REF(v)     (((PN)(v) & PN_PRIMITIVE) == PN_TWEAK)
 
-#define PN_NUM_FLAG     0x01
-#define PN_REF_FLAG     0x04
-
-#define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_NUM_FLAG))
+#define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_TNUMBER))
 #define PN_INT(x)       (((long)(x))>>1)
 #define PN_STR_PTR(x)   potion_str_ptr((struct PNString *)(x))
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
@@ -87,8 +84,8 @@ struct PNGarbage;
 #define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method
 #define PN_PROTO(x)     ((struct PNProto *)(x))
 #define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0)
-#define PN_SET_REF(t)   (((PN)t)+PN_REF_FLAG)
-#define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_REF_FLAG))
+#define PN_SET_REF(t)   (((PN)t)+PN_TWEAK)
+#define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_TWEAK))
 #define PN_DEREF(x)     PN_GET_REF(x)->data
 #define PN_GB(x)        ((struct PNGarbage *)x)->next = 1
 #define PN_GBN(x)       ((struct PNGarbage *)x)->next
@@ -207,9 +204,9 @@ struct PNWeakRef {
 // the potion type is the 't' in the vtable tuple (m,t)
 static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
-  if (obj & PN_REF_MASK)
-    return PN_VTYPE(obj & ~PN_PRIMITIVE);
-  return obj & PN_PRIMITIVE;
+  if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
+  if (PN_IS_NIL(obj))  return PN_TNIL;
+  return PN_VTYPE(obj & PN_REF_MASK);
 }
 
 // quick access to either PNString or PNByte pointer
