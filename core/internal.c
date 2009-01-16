@@ -32,7 +32,6 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TSOURCE, obj_vt);
   potion_type_new(P, PN_TBYTES, obj_vt);
   potion_type_new(P, PN_TPROTO, obj_vt);
-  potion_type_new(P, PN_TLOBBY, 0);
   potion_type_new(P, PN_TWEAK, obj_vt);
   potion_str_hash_init(P);
 

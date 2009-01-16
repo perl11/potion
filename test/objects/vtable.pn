@@ -1,3 +1,8 @@
 1 kind def ("test", (x): self + 2.)
-1 test
-# 3
+
+String def ("length2", (): length.)
+
+Number def ("zero", 0)
+
+(1 test, "Potion" length2, 4 zero)
+# (3, 6, 0)
