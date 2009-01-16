@@ -158,6 +158,16 @@ PN potion_object__link(Potion *P, PN cl, PN self, PN link) {
   return link;
 }
 
+PN potion_lobby_self(Potion *P, PN cl, PN self) {
+  return self;
+}
+
+PN potion_lobby_kind(Potion *P, PN cl, PN self) {
+  PNType t = PN_TYPE(self);
+  if (t >= P->typen) return PN_NIL; // TODO: error
+  return PN_VTABLE(t);
+}
+
 void potion_object_init(Potion *P) {
   PN clo_vt = PN_VTABLE(PN_TCLOSURE);
   PN ref_vt = PN_VTABLE(PN_TWEAK);
@@ -173,5 +183,6 @@ void potion_object_init(Potion *P) {
 }
 
 void potion_lobby_init(Potion *P) {
-  ;
+  potion_method(P->lobby, "self", potion_lobby_self, 0);
+  potion_method(P->lobby, "kind", potion_lobby_kind, 0);
 }

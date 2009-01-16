@@ -21,7 +21,8 @@
 extern char *potion_op_names[];
 extern u8 potion_op_args[];
 
-PN potion_vm_proto(Potion *P, PN cl, PN self, PN args) {
+// TODO: this is being circumvented right now, but it's broken without varargs.
+PN potion_vm_proto(Potion *P, PN cl, PN args) {
   return potion_vm(P, PN_CLOSURE(cl)->data[0], args,
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
@@ -233,10 +234,10 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
     X86_PRE(); X86(0x83); X86(0xEC); X86(rsp); /* sub rsp, %esp */
   }
 
-  // (Potion *, self) in the first argument slot, nil in the first register 
+  // (Potion *, self) in the first argument slot, self in the first register 
   X86_ARGI(need - 2, 0);
   X86_ARGI(need - 1, 2);
-  X86_MOVQ(0, PN_NIL);
+  X86_ARGI(0, 2);
 
   // Read locals
   if (PN_IS_TUPLE(f->sig)) {
@@ -283,6 +284,12 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
       case OP_LOADK:
         val = PN_TUPLE_AT(f->values, pos->b);
         X86_MOVQ(pos->a, val);
+      break;
+      case OP_SELF:
+        // TODO: optimize so that if this is followed by a BIND, it'll just
+        // use the self register directly.
+        X86_MOV_RBP(0x8B, need - 1);
+        X86_MOV_RBP(0x89, pos->a);
       break;
       case OP_GETLOCAL:
         // TODO: optimize to do the ref check only if there are upvals
@@ -388,7 +395,6 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
       break;
       case OP_POW:
         X86_ARGO(need - 2, 0);
-        X86_ARGO(need - 1, 1);
         X86_ARGO(pos->a, 2);
         X86_ARGO(pos->b, 3);
         X86_PRE(); X86(0xB8); X86N(potion_pow); // mov &potion_tuple_push %rax
@@ -594,7 +600,7 @@ PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {
 
   // these variables persist as we jump around
   PN *stack = PN_ALLOC_N(PN, STACK_MAX);
-  PN val = PN_NIL;
+  PN val = PN_NIL, self = PN_NIL;
 
   // these variables change from proto to proto
   // current = upvals | locals | self | reg
@@ -617,7 +623,7 @@ reentry:
   reg = locals + f->localsize + 1;
 
   if (pos == (PN_OP *)PN_STR_PTR(f->asmb)) {
-    reg[0] = PN_NIL;
+    reg[-1] = reg[0] = self;
     if (upc > 0 && upargs != NULL) {
       PN_SIZE i;
       for (i = 0; i < upc; i++) {
@@ -648,6 +654,9 @@ reentry:
       break;
       case OP_LOADPN:
         reg[pos->a] = (PN)pos->b;
+      break;
+      case OP_SELF:
+        reg[pos->a] = reg[-1];
       break;
       case OP_GETLOCAL:
         if (PN_IS_REF(locals[pos->b]))
@@ -745,6 +754,7 @@ reentry:
           if (PN_CLOSURE(reg[pos->b])->method != (PN_F)potion_vm_proto) {
             reg[pos->a] = potion_call(P, reg[pos->b], pos->b - pos->a, reg + pos->a);
           } else {
+            self = reg[pos->a];
             args = &reg[pos->a+1];
             upc = PN_CLOSURE(reg[pos->b])->extra - 1;
             upargs = &PN_CLOSURE(reg[pos->b])->data[1];

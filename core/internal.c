@@ -19,7 +19,7 @@ PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue, PN_def,
 static void potion_init(Potion *P) {
   PN vtable, obj_vt;
   P->lobby = potion_type_new(P, PN_TLOBBY, 0);
-  vtable = potion_type_new(P, PN_TVTABLE, 0);
+  vtable = potion_type_new(P, PN_TVTABLE, P->lobby);
   obj_vt = potion_type_new(P, PN_TOBJECT, P->lobby);
   potion_type_new(P, PN_TNIL, obj_vt);
   potion_type_new(P, PN_TNUMBER, obj_vt);
@@ -35,7 +35,6 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TLOBBY, 0);
   potion_type_new(P, PN_TWEAK, obj_vt);
   potion_str_hash_init(P);
-  potion_lobby_init(P);
 
   PN_allocate = potion_str(P, "allocate");
   PN_break = potion_str(P, "break");
@@ -61,6 +60,7 @@ static void potion_init(Potion *P) {
   potion_send(vtable, PN_def, PN_allocate, PN_FUNC(potion_allocate, 0));
   potion_send(vtable, PN_def, PN_delegated, PN_FUNC(potion_delegated, 0));
 
+  potion_lobby_init(P);
   potion_object_init(P);
   potion_primitive_init(P);
   potion_num_init(P);
