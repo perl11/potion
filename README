@@ -74,7 +74,7 @@
   ~ a whiff of potion ~
 
     add = (x, y): x + y.
-    add(2, 4) inspect
+    add(2, 4) string print
 
   Or,
 
