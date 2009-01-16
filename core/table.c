@@ -140,6 +140,13 @@ PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
   return PN_TUPLE_AT(self, i);
 }
 
+PN potion_tuple_clone(Potion *P, PN cl, PN self) {
+  struct PNTuple *t1 = PN_GET_TUPLE(self);
+  NEW_TUPLE(t2, t1->len, PN_ALLOC_N(PN, t1->len));
+  PN_MEMCPY_N(t2->set, t1->set, PN, t1->len);
+  return PN_SET_TUPLE(t2);
+}
+
 PN potion_tuple_string(Potion *P, PN cl, PN self) {
   PN out = potion_byte_str(P, "(");
   PN_TUPLE_EACH(self, i, v, {
@@ -193,6 +200,7 @@ void potion_table_init(Potion *P) {
   potion_method(tbl_vt, "string", potion_table_string, 0);
   potion_method(tpl_vt, "~link", potion_table__link, 0);
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
+  potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
   potion_method(tpl_vt, "length", potion_tuple_length, 0);
   potion_method(tpl_vt, "print", potion_tuple_print, 0);
   potion_method(tpl_vt, "put", potion_tuple_put, "index=o,value=o");

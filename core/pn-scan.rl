@@ -57,7 +57,6 @@
   true        = "true";
   false       = "false";
   int         = [0-9]{1,9};
-  int2        = "-" int;
   dec         = ("0" | [1-9] [0-9]*) %{ tm = NULL; }
                 ("." %{ tm = p; } [0-9]+)? ("e" [\-+] [0-9]+)?;
   schar1      = utf8 -- "\\'";
@@ -154,7 +153,6 @@
     true        => { TOKEN2(TRUE, PN_TRUE); };
     false       => { TOKEN2(FALSE, PN_FALSE); };
     int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts))); };
-    int2        => { TOKEN2(INT, PN_NUM(-PN_ATOI(ts + 1, te - (ts + 1)))); };
     dec         => { TOKEN2(DECIMAL, 
       potion_decimal(P, te - ts, (tm == NULL ? te : tm - 1) - ts, ts)); };
     quote1      => { nbuf = 0; fgoto string1; };
