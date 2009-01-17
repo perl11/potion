@@ -254,13 +254,12 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
   // if CL passed in with upvals, load them
   // TODO: optimize the PN_IS_CLOSURE call here
   if (upc > 0) {
+    X86_ARGI(1, 1);
     for (upi = 0; upi < upc; upi++) {
-      X86_ARGI(0, 1);
-      X86_MOV_RBP(0x8B, 0);
+      X86_MOV_RBP(0x8B, 1);
       X86_PRE(); X86(0x8B); X86(0x40);
         X86(sizeof(struct PNClosure) + (upi * sizeof(PN))); // 0x30(%rax)
       X86_MOV_RBP(0x89, lregs + upi);
-      upc--;
     }
   }
 
@@ -301,7 +300,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
           X86(0x75); X86(X86C(11, 13)); // jne 13
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
           X86(0x83); X86(0xF0); X86(PN_TWEAK); // xor REF %eax
-          X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(PN_GC)); // mov %rax.data %rax
+          X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(struct PNGarbage)); // mov %rax.data %rax
           X86(0xEB); X86(X86C(3, 4)); //  jmp 4
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
         }
@@ -317,20 +316,20 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
           X86(0x75); X86(X86C(11, 13)); // jne 13
           X86_MOV_RBP(0x8B, regs + pos->b); // mov %rsp(B) %rax
           X86(0x83); X86(0xF0); X86(PN_TWEAK); // xor REF %eax
-          X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(PN_GC)); // mov %rdx %rax.data
+          X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(struct PNGarbage)); // mov %rdx %rax.data
           X86(0xEB); X86(X86C(3, 4)); //  jmp 4
         }
         X86_PRE(); X86(0x89); X86(0x55); X86(RBP(regs + pos->b)); // mov %rdx %rsp(B)
       break;
       case OP_GETUPVAL:
         X86_MOV_RBP(0x8B, lregs + pos->b);
-        X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(PN_GC));
+        X86_PRE(); X86(0x8B); X86(0x40); X86(sizeof(struct PNGarbage));
         X86_MOV_RBP(0x89, pos->a);
       break;
       case OP_SETUPVAL:
         X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->a)); /*  mov -A(%rbp) %edx */
         X86_MOV_RBP(0x8B, lregs + pos->b); // mov %rsp(B) %rax
-        X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(PN_GC)); // mov %rdx %rax.data
+        X86_PRE(); X86(0x89); X86(0x50); X86(sizeof(struct PNGarbage)); // mov %rdx %rax.data
       break;
       case OP_NEWTUPLE:
         X86_ARGO(need - 2, 0);
