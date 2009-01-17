@@ -17,7 +17,7 @@ struct PNVtable {
   PN_OBJECT_HEADER
   PNType type;
   PN parent;
-  kh_PN_t kh[0];
+  kh_str_t kh[0];
 };
 
 PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
@@ -65,7 +65,7 @@ void potion_destroy(Potion *P) {
 }
 
 PN potion_type_new(Potion *P, PNType t, PN self) {
-  struct PNVtable *vt = PN_CALLOC(struct PNVtable, sizeof(kh_PN_t));
+  struct PNVtable *vt = PN_CALLOC(struct PNVtable, sizeof(kh_str_t));
   PN_GB(vt);
   vt->vt = PN_TVTABLE;
   vt->type = t;
@@ -86,7 +86,7 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int ret;
   PN cl;
   struct PNVtable *vt = (struct PNVtable *)self;
-  unsigned k = kh_put(PN, vt->kh, key, &ret);
+  unsigned k = kh_put(str, vt->kh, ((struct PNString *)key)->hash, &ret);
   if (!PN_IS_CLOSURE(method)) {
     if (PN_IS_PROTO(method))
       cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_NIL, 1);
@@ -99,11 +99,10 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
 }
 
 PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
-  int ret;
   struct PNVtable *vt = (struct PNVtable *)self;
-  unsigned k = kh_put(PN, vt->kh, key, &ret);
-  if (ret) return PN_NIL;
-  return kh_value(vt->kh, k);
+  unsigned k = kh_get(str, vt->kh, ((struct PNString *)key)->hash);
+  if (k != kh_end(vt->kh)) return kh_value(vt->kh, k);
+  return PN_NIL;
 }
 
 PN potion_bind(Potion *P, PN rcv, PN msg) {

@@ -7,7 +7,13 @@
 #ifndef POTION_TABLE_H
 #define POTION_TABLE_H
 
+#if __WORDSIZE != 64
 KHASH_MAP_INIT_INT(PN, PN);
+#else
+KHASH_MAP_INIT_INT64(PN, PN);
+#endif
+
+KHASH_MAP_INIT_INT(str, PN);
 
 struct PNTable {
   PN_OBJECT_HEADER

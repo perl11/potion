@@ -11,40 +11,41 @@
 #include "potion.h"
 #include "internal.h"
 #include "khash.h"
-
-KHASH_MAP_INIT_STR(str, PN);
+#include "table.h"
 
 struct PNStrTable {
   PN_OBJECT_HEADER
   kh_str_t kh[0];
 };
 
-void potion_add_str(PN self, const char *str, PN id) {
+void potion_add_str(PN self, unsigned int hash, PN id) {
   int ret;
   struct PNStrTable *t = (struct PNStrTable *)self;
-  unsigned k = kh_put(str, t->kh, str, &ret);
+  unsigned k = kh_put(str, t->kh, hash, &ret);
   if (!ret) kh_del(str, t->kh, k);
   kh_value(t->kh, k) = id;
 }
 
-PN potion_lookup_str(PN self, const char *str) {
+PN potion_lookup_str(PN self, unsigned int hash) {
   struct PNStrTable *t = (struct PNStrTable *)self;
-  unsigned k = kh_get(str, t->kh, str);
+  unsigned k = kh_get(str, t->kh, hash);
   if (k != kh_end(t->kh)) return kh_value(t->kh, k);
   return PN_NIL;
 }
 
 PN potion_str(Potion *P, const char *str) {
-  PN id = potion_lookup_str(P->strings, str);
+  unsigned int hash = __ac_X31_hash_string(str);
+  PN id = potion_lookup_str(P->strings, hash);
   if (!id) {
     size_t len = strlen(str);
     struct PNString *s = PN_BOOT_OBJ_ALLOC(struct PNString, PN_TSTRING, len + 1);
     s->len = (unsigned int)len;
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
+    s->hash = hash;
     id = (PN)s;
 
-    potion_add_str(P->strings, s->chars, id);
+    potion_add_str(P->strings, hash, id);
   }
   return id;
 }
