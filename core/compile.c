@@ -427,6 +427,7 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, PN_SI
             if (t->a[2] != PN_NIL)
               PN_BLOCK(++breg, t->a[2], PN_NIL);
             PN_ASM2(opcode, ++breg, num);
+            PN_ASM1(OP_SELF, reg);
             PN_ASM2(OP_CALL, reg, breg);
           } else
             PN_ASM2(opcode, reg, num);
