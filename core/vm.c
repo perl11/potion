@@ -12,9 +12,6 @@
 #include "opcodes.h"
 
 #ifdef X86_JIT
-#ifndef __MINGW32__
-#include <sys/mman.h>
-#endif
 #include <string.h>
 #endif
 
@@ -436,7 +433,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
 #ifdef JIT_ICACHE
         u8 *ictype, *icname;
         // place the receiver's class in %eax
-        X86_PRE(); X86(0xB8); X86I(1); // mov 0x1 %rax
+        X86(0xB8); X86I(1); // mov 0x1 %rax
         X86_PRE(); X86(0x8B); X86(0x55); X86(RBP(pos->b)); // mov %rbp(B) %rdx
         X86(0xF6); X86(0xC2); X86(0x01); // test 0x1 %dl
         X86(0x75); X86(X86C(21, 23)); // jne [b]

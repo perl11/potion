@@ -13,10 +13,17 @@
 #include "khash.h"
 #include "table.h"
 
+#ifdef JIT_MCACHE
+typedef PN (*PN_MCACHE_FUNC)(unsigned int hash);
+#endif
+
 struct PNVtable {
   PN_OBJECT_HEADER
   PNType type;
   PN parent;
+#ifdef JIT_MCACHE
+  PN_MCACHE_FUNC mcache;
+#endif
   kh_str_t kh[0];
 };
 
@@ -70,6 +77,9 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
   vt->vt = PN_TVTABLE;
   vt->type = t;
   vt->parent = self;
+#ifdef JIT_MCACHE
+  vt->mcache = (PN_MCACHE_FUNC)PN_ALLOC_FUNC(8192);
+#endif
   PN_VTABLE(t) = (PN)vt;
   return (PN)vt;
 }
@@ -95,14 +105,39 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
     PN_CLOSURE(cl)->data[0] = method;
     method = cl;
   }
-  return kh_value(vt->kh, k) = method;
+  kh_value(vt->kh, k) = method;
+#ifdef JIT_MCACHE
+#define X86(ins) *asmb = (u8)(ins); asmb++
+#define X86I(pn) *((unsigned int *)asmb) = (unsigned int)(pn); asmb += sizeof(unsigned int)
+#define X86N(pn) *((PN *)asmb) = (PN)(pn); asmb += sizeof(PN)
+  {
+    u8 *asmb = (u8 *)vt->mcache;
+    printf("KH: (%u, %u)\n", kh_begin(vt->kh), kh_end(vt->kh));
+    for (k = kh_end(vt->kh); k > kh_begin(vt->kh); k--) {
+      printf("K: %u\n", k);
+      if (kh_exist(vt->kh, k - 1)) {
+        X86(0x81); X86(0xFF); X86I(kh_key(vt->kh, k - 1)); // cmp NAME %edi
+        X86(0x75); X86(11); // jne +11
+        X86(0x48); X86(0xB8); X86N(kh_value(vt->kh, k - 1)); // mov CL %rax
+        X86(0xC3); // retq
+      }
+    }
+    X86(0xB8); X86I(0); // mov NIL %eax
+    X86(0xC3); // retq
+  }
+#endif
+  return method;
 }
 
 PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   struct PNVtable *vt = (struct PNVtable *)self;
+#ifdef JIT_MCACHE
+  return vt->mcache(((struct PNString *)key)->hash);
+#else
   unsigned k = kh_get(str, vt->kh, ((struct PNString *)key)->hash);
   if (k != kh_end(vt->kh)) return kh_value(vt->kh, k);
   return PN_NIL;
+#endif
 }
 
 PN potion_bind(Potion *P, PN rcv, PN msg) {
