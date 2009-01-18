@@ -112,17 +112,30 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
 #define X86N(pn) *((PN *)asmb) = (PN)(pn); asmb += sizeof(PN)
   {
     u8 *asmb = (u8 *)vt->mcache;
-    printf("KH: (%u, %u)\n", kh_begin(vt->kh), kh_end(vt->kh));
+#if __WORDSIZE != 64
+    X86(0x55); // push %ebp
+    X86(0x89); X86(0xE5); // mov %esp %ebp
+    X86(0x8B); X86(0x55); X86(0x08); // mov 0x8(%ebp) %edx
+#define X86C(op32, op64) op32
+#else
+#define X86C(op32, op64) op64
+#endif
     for (k = kh_end(vt->kh); k > kh_begin(vt->kh); k--) {
-      printf("K: %u\n", k);
       if (kh_exist(vt->kh, k - 1)) {
-        X86(0x81); X86(0xFF); X86I(kh_key(vt->kh, k - 1)); // cmp NAME %edi
-        X86(0x75); X86(11); // jne +11
+        X86(0x81); X86(X86C(0xFA, 0xFF));
+          X86I(kh_key(vt->kh, k - 1)); // cmp NAME %edi
+        X86(0x75); X86(X86C(8, 11)); // jne +11
         X86(0x48); X86(0xB8); X86N(kh_value(vt->kh, k - 1)); // mov CL %rax
+#if __WORDSIZE != 64
+        X86(0x5D);
+#endif
         X86(0xC3); // retq
       }
     }
     X86(0xB8); X86I(0); // mov NIL %eax
+#if __WORDSIZE != 64
+    X86(0x5D);
+#endif
     X86(0xC3); // retq
   }
 #endif
