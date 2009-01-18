@@ -18,36 +18,34 @@ struct PNStrTable {
   kh_str_t kh[0];
 };
 
-void potion_add_str(PN self, unsigned int hash, PN id) {
+unsigned potion_add_str(PN self, const char *str, PN id) {
   int ret;
   struct PNStrTable *t = (struct PNStrTable *)self;
-  unsigned k = kh_put(str, t->kh, hash, &ret);
+  unsigned k = kh_put(str, t->kh, str, &ret);
   if (!ret) kh_del(str, t->kh, k);
   kh_value(t->kh, k) = id;
+  return k;
 }
 
-PN potion_lookup_str(PN self, unsigned int hash) {
+PN potion_lookup_str(PN self, const char *str) {
   struct PNStrTable *t = (struct PNStrTable *)self;
-  unsigned k = kh_get(str, t->kh, hash);
+  unsigned k = kh_get(str, t->kh, str);
   if (k != kh_end(t->kh)) return kh_value(t->kh, k);
   return PN_NIL;
 }
 
 PN potion_str(Potion *P, const char *str) {
-  unsigned int hash = __ac_X31_hash_string(str);
-  PN id = potion_lookup_str(P->strings, hash);
-  if (!id) {
+  PN val = potion_lookup_str(P->strings, str);
+  if (!val) {
     size_t len = strlen(str);
     struct PNString *s = PN_BOOT_OBJ_ALLOC(struct PNString, PN_TSTRING, len + 1);
     s->len = (unsigned int)len;
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
-    s->hash = hash;
-    id = (PN)s;
-
-    potion_add_str(P->strings, hash, id);
+    s->id = potion_add_str(P->strings, s->chars, (PN)s);
+    val = (PN)s;
   }
-  return id;
+  return val;
 }
 
 PN potion_str2(Potion *P, char *str, size_t len) {

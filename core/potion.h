@@ -142,7 +142,7 @@ struct PNObject {
 struct PNString {
   PN_OBJECT_HEADER
   PN_SIZE len;
-  unsigned int hash;
+  unsigned int id;
   char chars[0];
 };
 

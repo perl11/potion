@@ -24,7 +24,7 @@ struct PNVtable {
 #ifdef JIT_MCACHE
   PN_MCACHE_FUNC mcache;
 #endif
-  kh_str_t kh[0];
+  kh_id_t kh[0];
 };
 
 PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
@@ -72,7 +72,7 @@ void potion_destroy(Potion *P) {
 }
 
 PN potion_type_new(Potion *P, PNType t, PN self) {
-  struct PNVtable *vt = PN_CALLOC(struct PNVtable, sizeof(kh_str_t));
+  struct PNVtable *vt = PN_CALLOC(struct PNVtable, sizeof(kh_id_t));
   PN_GB(vt);
   vt->vt = PN_TVTABLE;
   vt->type = t;
@@ -96,7 +96,7 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int ret;
   PN cl;
   struct PNVtable *vt = (struct PNVtable *)self;
-  unsigned k = kh_put(str, vt->kh, ((struct PNString *)key)->hash, &ret);
+  unsigned k = kh_put(id, vt->kh, ((struct PNString *)key)->id, &ret);
   if (!PN_IS_CLOSURE(method)) {
     if (PN_IS_PROTO(method))
       cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_NIL, 1);
@@ -145,9 +145,9 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
 PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   struct PNVtable *vt = (struct PNVtable *)self;
 #ifdef JIT_MCACHE
-  return vt->mcache(((struct PNString *)key)->hash);
+  return vt->mcache(((struct PNString *)key)->id);
 #else
-  unsigned k = kh_get(str, vt->kh, ((struct PNString *)key)->hash);
+  unsigned k = kh_get(id, vt->kh, ((struct PNString *)key)->id);
   if (k != kh_end(vt->kh)) return kh_value(vt->kh, k);
   return PN_NIL;
 #endif
