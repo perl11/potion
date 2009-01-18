@@ -576,12 +576,13 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
 #endif
 #endif
 
-#ifdef DEBUG
+#ifdef JIT_DEBUG
   printf("JIT(%p): ", fn);
   long ai = 0;
   for (ai = 0; ai < asmb->capa; ai++) {
     printf("%x ", asmb->start[ai]);
   }
+  printf("\n");
 #endif
   PN_MEMCPY_N(fn, asmb->start, u8, asmb->capa);
   PN_FREE(asmb->start);
