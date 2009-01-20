@@ -43,6 +43,7 @@ PN potion_str(Potion *P, const char *str) {
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
     s->id = potion_add_str(P->strings, s->chars, (PN)s);
+    s->id = P->next_string_id++;
     val = (PN)s;
   }
   return val;
@@ -198,6 +199,7 @@ void potion_str_hash_init(Potion *P) {
   PN_GB(t);
   t->vt = PN_TTABLE;
   P->strings = (PN)t;
+  P->next_string_id = 0;
 }
 
 void potion_str_init(Potion *P) {

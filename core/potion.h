@@ -222,6 +222,7 @@ static inline char *potion_str_ptr(struct PNString *s) {
 struct Potion_State {
   PN_OBJECT_HEADER
   PN strings; /* table of all strings */
+  unsigned int next_string_id;
   PN lobby; /* root namespace */
   PN *vts;
   int typen; /* number of actual types in circulation */
