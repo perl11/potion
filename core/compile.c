@@ -26,28 +26,19 @@
     (*pos)++; \
   })
 
-const char *potion_op_names[] = {
-  "noop", "move", "loadk", "loadpn",
-  "self", "newtuple", "settuple",
-  "getlocal", "setlocal", "getupval", "setupval",
-  "gettable", "settable", "getpath", "setpath",
-  "add", "sub", "mult", "div", "mod", "pow",
-  "not", "cmp", "eq", "neq",
-  "lt", "lte", "gt", "gte", "bitl", "bitr",
-  "bind", "jump", "test", "testjmp", "notjmp",
-  "call", "tailcall", "return", "proto"
-};
-
-const u8 potion_op_args[] = {
-  0, 2, 2, 2,
-  1, 2, 2,
-  2, 2, 2, 2,
-  2, 2, 2, 2,
-  2, 2, 2, 2, 2, 2,
-  1, 2, 2, 2,
-  2, 2, 2, 2, 2, 2,
-  2, 1, 2, 2, 2,
-  2, 2, 1, 2
+const struct {
+  const char *name;
+  const u8 args;
+} potion_ops[] = {
+  { "noop", 0 }, { "move", 2 }, { "loadk", 2 }, { "loadpn", 2 }, { "self", 1 },
+  { "newtuple", 2 }, { "settuple", 2 }, { "getlocal", 2 }, { "setlocal", 2 },
+  { "getupval", 2 }, { "setupval", 2 }, { "gettable", 2 }, { "settable", 2 },
+  { "getpath", 2 }, { "setpath", 2 }, { "add", 2 }, { "sub", 2 }, { "mult", 2 },
+  { "div", 2 }, { "mod", 2 }, { "pow", 2 }, { "not", 1 }, { "cmp", 2 },
+  { "eq", 2 }, { "neq", 2 }, { "lt", 2 }, { "lte", 2 }, { "gt", 2 }, { "gte", 2 },
+  { "bitl", 2 }, { "bitr", 2 }, { "bind", 2 }, { "jump", 1 }, { "test", 2 },
+  { "testjmp", 2 }, { "notjmp", 2 }, { "call", 2 }, { "tailcall", 2 },
+  { "return", 1 }, { "proto", 2 },
 };
 
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
@@ -98,8 +89,8 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   numcols = (int)ceil(log10(end - pos));
   while (pos < end) {
     const int commentoffset = 20;
-    int width = pn_printf(P, out, "[%*u] %-8s %d", numcols, num, potion_op_names[pos->code], pos->a);
-    if (potion_op_args[pos->code] > 1) {
+    int width = pn_printf(P, out, "[%*u] %-8s %d", numcols, num, potion_ops[pos->code].name, pos->a);
+    if (potion_ops[pos->code].args > 1) {
       width += pn_printf(P, out, " %d", pos->b);
     }
     if (width < commentoffset) {
