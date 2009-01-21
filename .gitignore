@@ -1,6 +1,7 @@
 potion
 tools/lemon
 tools/config.c
+core/config.h
 core/version.h
 core/pn-scan.c
 core/pn-gram.[ch]
