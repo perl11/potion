@@ -141,7 +141,15 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   if (reg >= PN_INT(f->stack)) \
     f->stack = PN_NUM(reg + 1)
 #define PN_ARG(n, reg) \
-  potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[n], reg, pos)
+  if (PN_PART(t->a[n]) == AST_EXPR && PN_PART(PN_TUPLE_AT(PN_S(t->a[n], 0), 0)) == AST_TABLE) { \
+    PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n], 0), 0), 0); \
+    if (!PN_IS_NIL(test)) { \
+      PN_TUPLE_EACH(test, i, v, { \
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg, pos); }); \
+    } \
+  } else { \
+    potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[n], reg, pos); \
+  }
 #define PN_BLOCK(reg, blk, sig) ({ \
   PN block = potion_send(blk, PN_compile, (PN)f, sig); \
   PN_SIZE num = PN_PUT(f->protos, block); \

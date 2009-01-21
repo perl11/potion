@@ -51,8 +51,6 @@ static void potion_init(Potion *P) {
   PN_return = potion_str(P, "return");
   PN_string = potion_str(P, "string");
   PN_while = potion_str(P, "while");
-  potion_str(P, "one");
-  potion_str(P, "two");
   PN__link = potion_str(P, "~link");
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup, 0));
