@@ -289,6 +289,7 @@ PN potion_call(Potion *, PN, PN_SIZE, PN *);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, PN_F, PN, PN_SIZE);
+PN potion_callcc(Potion *, PN, PN);
 PN potion_ref(Potion *, PN);
 PN potion_sig(Potion *, char *);
 PN potion_decimal(Potion *, int, int, char *);

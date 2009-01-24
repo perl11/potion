@@ -215,7 +215,7 @@ PN_F potion_x86_proto(Potion *P, PN proto) {
 
   regs = PN_INT(f->stack);
   lregs = regs + PN_TUPLE_LEN(f->locals);
-  need = lregs + upc + 3;
+  need = lregs + upc + 2;
   rsp = (need + protoargs) * sizeof(PN);
 
   /* maintain 16-byte stack alignment.  OS X in particular requires it, because

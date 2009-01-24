@@ -247,6 +247,7 @@ void potion_lobby_init(Potion *P) {
   potion_send(P->lobby, PN_def, potion_str(P, "Compiled"), PN_VTABLE(PN_TPROTO));
   potion_send(P->lobby, PN_def, potion_str(P, "Ref"),      PN_VTABLE(PN_TWEAK));
 
+  potion_method(P->lobby, "callcc", potion_callcc, 0);
   potion_method(P->lobby, "self", potion_lobby_self, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);
 }

@@ -1,4 +1,4 @@
-SRC = core/compile.c core/contrib.c core/file.c core/internal.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/pn-gram.c core/pn-scan.c core/string.c core/table.c core/vm.c
+SRC = core/callcc.c core/compile.c core/contrib.c core/file.c core/internal.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/pn-gram.c core/pn-scan.c core/string.c core/table.c core/vm.c
 OBJ = ${SRC:.c=.o}
 OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
@@ -87,6 +87,10 @@ core/config.h: core/version.h
 	@${ECHO} MAKE $@
 	@cat core/version.h > core/config.h
 	@${MAKE} -s config >> core/config.h
+
+core/callcc.o: core/callcc.c
+	@${ECHO} CC $< +frame-pointer
+	@${CC} -c -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 %.o: %.c core/config.h
 	@${ECHO} CC $<
