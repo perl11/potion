@@ -30,15 +30,15 @@ const struct {
   const char *name;
   const u8 args;
 } potion_ops[] = {
-  { "noop", 0 }, { "move", 2 }, { "loadk", 2 }, { "loadpn", 2 }, { "self", 1 },
-  { "newtuple", 2 }, { "settuple", 2 }, { "getlocal", 2 }, { "setlocal", 2 },
-  { "getupval", 2 }, { "setupval", 2 }, { "gettable", 2 }, { "settable", 2 },
-  { "getpath", 2 }, { "setpath", 2 }, { "add", 2 }, { "sub", 2 }, { "mult", 2 },
-  { "div", 2 }, { "mod", 2 }, { "pow", 2 }, { "not", 1 }, { "cmp", 2 },
-  { "eq", 2 }, { "neq", 2 }, { "lt", 2 }, { "lte", 2 }, { "gt", 2 }, { "gte", 2 },
-  { "bitl", 2 }, { "bitr", 2 }, { "bind", 2 }, { "jump", 1 }, { "test", 2 },
-  { "testjmp", 2 }, { "notjmp", 2 }, { "call", 2 }, { "tailcall", 2 },
-  { "return", 1 }, { "proto", 2 },
+  {"noop", 0}, {"move", 2}, {"loadk", 2}, {"loadpn", 2}, {"self", 1},
+  {"newtuple", 2}, {"settuple", 2}, {"search", 2}, {"getlocal", 2}, {"setlocal", 2},
+  {"getupval", 2}, {"setupval", 2}, {"gettable", 2}, {"settable", 2},
+  {"getpath", 2}, {"setpath", 2}, {"add", 2}, {"sub", 2}, {"mult", 2},
+  {"div", 2}, {"mod", 2}, {"pow", 2}, {"not", 1}, {"cmp", 2},
+  {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2}, {"gt", 2}, {"gte", 2},
+  {"bitl", 2}, {"bitr", 2}, {"bind", 2}, {"jump", 1}, {"test", 2},
+  {"testjmp", 2}, {"notjmp", 2}, {"call", 2}, {"tailcall", 2},
+  {"return", 1}, {"proto", 2},
 };
 
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
@@ -446,6 +446,13 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, PN_SI
         PN_ASM2(OP_TEST, reg, breg);
       else
         PN_ASM2(OP_MOVE, reg, breg);
+    }
+    break;
+
+    case AST_SEARCH: {
+      PN_ARG(0, reg + 1);
+      PN_ASM2(OP_SEARCH, reg, reg + 1);
+      PN_REG(f, reg + 1);
     }
     break;
 

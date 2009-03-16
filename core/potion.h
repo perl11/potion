@@ -301,6 +301,7 @@ PN potion_tuple_new(Potion *, PN);
 PN potion_tuple_push(Potion *, PN, PN);
 PN_SIZE potion_tuple_push_unless(Potion *, PN, PN);
 PN_SIZE potion_tuple_find(Potion *, PN, PN);
+PN potion_tuple_at(Potion *, PN, PN, PN);
 PN potion_table_set(Potion *, PN, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);

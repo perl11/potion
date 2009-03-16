@@ -55,6 +55,15 @@
      4,000 or something. Install sloccount
      and run: make sloc.
 
+   * Reified AST and bytecode structures. This
+     is very important to me. By giving access
+     to the parser and compiler, it allows people
+     to target other platforms, write code analysis
+     tools and even fully bootstrapped VMs. I'm
+     not as concerned about the Potion VM being
+     fully bootstrapped, especially as it is tied
+     into the JIT so closely.
+
   However, some warnings:
 
    * Strings are immutable (like Lua) and byte
@@ -173,8 +182,9 @@
 
     But it also includes a data language.
 
-      Build [html [body [p "TEST" (font="Arial")]]]
-
+     ### EXAMPLE REMOVED
+     ... the data format is being redesigned
+      
     The code and data languages can be interleaved
     over and over again. In a way, I'm trying to find
     a middle ground between s-expressions and stuff like
@@ -240,7 +250,7 @@
 
   * Named block args.
 
-      [1, 2, 3] map (item=x, index=i): i display, x + 1.
+      (1, 2, 3) map (item=x, index=i): i display, x + 1.
 
 
   ~ license ~
