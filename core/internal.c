@@ -83,12 +83,12 @@ Potion *potion_create() {
 
 PN potion_delegated(Potion *P, PN closure, PN self) {
   PNType t = P->typen++;
-  PN vt = potion_type_new(P, t, self);
+  if (P->typea < P->typen) {
+    PN_REALLOC_N(P->vts, PN, P->typea + TYPE_BATCH_SIZE);
+    P->typea += TYPE_BATCH_SIZE;
+  }
 
-  // TODO: expand the main vtable if full
-  if (P->typea == P->typen)
-    printf("Vtable out of room!\n");
-  return vt;
+  return potion_type_new(P, t, self);
 }
 
 PN potion_call(Potion *P, PN cl, PN_SIZE argc, PN *argv) {

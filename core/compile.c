@@ -90,14 +90,15 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   while (pos < end) {
     const int commentoffset = 20;
     int width = pn_printf(P, out, "[%*u] %-8s %d", numcols, num, potion_ops[pos->code].name, pos->a);
-    if (potion_ops[pos->code].args > 1) {
+
+    if (potion_ops[pos->code].args > 1)
       width += pn_printf(P, out, " %d", pos->b);
-    }
-    if (width < commentoffset) {
+
+    if (width < commentoffset)
       pn_printf(P, out, "%*s", commentoffset - width, "");
-    } else {
+    else
       pn_printf(P, out, " ");
-    }
+
     // TODO: Byte code listing: instead of using tabs, pad with spaces to make everything line up
     switch (pos->code) {
       case OP_JMP:

@@ -42,7 +42,7 @@ PN potion_str(Potion *P, const char *str) {
     s->len = (unsigned int)len;
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
-    s->id = potion_add_str(P->strings, s->chars, (PN)s);
+    potion_add_str(P->strings, s->chars, (PN)s);
     s->id = P->next_string_id++;
     val = (PN)s;
   }
@@ -100,13 +100,10 @@ static PN potion_str__link(Potion *P, PN closure, PN self, PN link) {
 
 static size_t potion_utf8char_offset(const char *s, size_t index) {
   int i;
-  for (i = 0; s[i]; i++) {
-    if ((s[i] & 0xC0) != 0x80) {
-      if (index-- == 0) {
+  for (i = 0; s[i]; i++)
+    if ((s[i] & 0xC0) != 0x80)
+      if (index-- == 0)
         return i;
-      }
-    }
-  }
   return i;
 }
 
