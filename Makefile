@@ -22,12 +22,14 @@ JITFLAGS = `${ECHO} "${JIT}" | sed "s/0/-DNO_JIT/; s/1/-DX86_JIT/"`
 CFLAGS += ${JITFLAGS}
 
 VERSION = `cat core/potion.h | sed "/POTION_VERSION/!d; s/\\\"$$//; s/.*\\\"//"`
-PKG := "potion-${VERSION}"
 DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l`
 COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
 
 RAGELV = `${RAGEL} -v | sed "/ version /!d; s/.* version //; s/ .*//"`
+
+RELEASE ?= ${VERSION}.${REVISION}
+PKG := "potion-${RELEASE}"
 
 all: potion
 	+${MAKE} -s usage
