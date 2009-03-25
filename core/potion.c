@@ -94,9 +94,9 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
         printf("\n");
       }
     } else if (exec == 2) {
-#ifdef X86_JIT
+#if POTION_JIT == 1
       PN val;
-      PN_F func = potion_x86_proto(P, code);
+      PN_F func = potion_jit_proto(P, code, POTION_JIT_TARGET);
       val = func(P, PN_NIL, PN_NIL);
       if (verbose > 1)
         printf("\n-- jit returned %p --\n", func);

@@ -12,6 +12,8 @@ if [ "$MINGW_GCC" = "" ]; then
 else
   MINGW=1
 fi
+JIT_X86=`echo "$TARGET" | sed "/x86/!d"`
+JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
 
 if [ $MINGW -eq 0 ]; then
   LONG=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(long)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
@@ -46,6 +48,11 @@ elif [ "$2" = "strip" ]; then
     echo "ls"
   fi
 else
+  if [ "$JIT_X86" != "" ]; then
+    echo "#define POTION_JIT_TARGET POTION_X86"
+  elif [ "$JIT_PPC" != "" ]; then
+    echo "#define POTION_JIT_TARGET POTION_PPC"
+  fi
   echo "#define POTION_PLATFORM \"$TARGET\""
   echo "#define POTION_WIN32    $MINGW"
   echo

@@ -6,10 +6,12 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include "potion.h"
 #include "internal.h"
 #include "opcodes.h"
+#include "asm.h"
 
 // TODO: this is being circumvented right now, but it's broken without varargs.
 PN potion_vm_proto(Potion *P, PN cl, PN args) {
@@ -18,6 +20,153 @@ PN potion_vm_proto(Potion *P, PN cl, PN args) {
 }
 
 #define STACK_MAX 1048576
+#define JUMPS_MAX 1024
+
+PNTarget potion_target_asm[POTION_TARGETS] = {
+  {
+    .setup = potion_x86_setup,
+    .stack = potion_x86_stack,
+    .registers = potion_x86_registers,
+    .local = potion_x86_local,
+    .upvals = potion_x86_upvals,
+    .op = potion_x86_op,
+    .finish = potion_x86_finish
+  },
+  {
+    .setup = potion_x86_setup,
+    .stack = potion_x86_stack,
+    .registers = potion_x86_registers,
+    .local = potion_x86_local,
+    .upvals = potion_x86_upvals,
+    .op = potion_x86_op,
+    .finish = potion_x86_finish
+  }
+};
+
+PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
+  long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
+  PN_OP *start, *pos, *end;
+  PNJumps jmps[JUMPS_MAX]; size_t offs[JUMPS_MAX]; int jmpc = 0, jmpi = 0;
+  struct PNProto *f = (struct PNProto *)proto;
+  int upc = PN_TUPLE_LEN(f->upvals);
+  PNAsm *asmb = potion_asm_new();
+  u8 *fn;
+  PN_F *jit_protos = NULL;
+  PNTarget *target = &potion_target_asm[target_id];
+  target->setup(asmb);
+
+  start = pos = ((PN_OP *)PN_STR_PTR(f->asmb));
+  end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
+
+  if (PN_TUPLE_LEN(f->protos) > 0) {
+    jit_protos = PN_ALLOC_N(PN_F, PN_TUPLE_LEN(f->protos));
+    PN_TUPLE_EACH(f->protos, i, proto2, {
+      int p2args = 3;
+      struct PNProto *f2 = (struct PNProto *)proto2;
+      // TODO: i'm repeating this a lot. sad.
+      if (PN_IS_TUPLE(f2->sig)) {
+        PN_TUPLE_EACH(f2->sig, i, v, {
+          if (PN_IS_STR(v)) p2args++;
+        });
+      }
+      jit_protos[i] = potion_jit_proto(P, proto2, target_id);
+      if (p2args > protoargs)
+        protoargs = p2args;
+    });
+  }
+
+  regs = PN_INT(f->stack);
+  lregs = regs + PN_TUPLE_LEN(f->locals);
+  need = lregs + upc + 2;
+  rsp = (need + protoargs) * sizeof(PN);
+
+  target->stack(asmb, rsp);
+  target->registers(asmb, need);
+
+  // Read locals
+  if (PN_IS_TUPLE(f->sig)) {
+    argx = 0;
+    PN_TUPLE_EACH(f->sig, i, v, {
+      if (PN_IS_STR(v)) {
+        PN_SIZE num = PN_GET(f->locals, v);
+        target->local(asmb, regs + num, argx);
+        argx++;
+      }
+    });
+  }
+
+  // if CL passed in with upvals, load them
+  if (upc > 0)
+    target->upvals(asmb, lregs, upc);
+
+  while (pos < end) {
+    offs[pos - start] = asmb->ptr - asmb->start;
+    for (jmpi = 0; jmpi < jmpc; jmpi++) {
+      if (jmps[jmpi].to == pos) {
+        u8 *asmj = asmb->start + jmps[jmpi].from;
+        *((int *)asmj) = (int)((asmb->ptr - asmb->start) - (jmps[jmpi].from + 4));
+      }
+    }
+
+    switch (pos->code) {
+      case OP_MOVE:      target->move(asmb, pos); break;
+      case OP_LOADPN:    target->loadpn(asmb, pos); break; 
+      case OP_LOADK:     target->loadk(asmb, pos, f->values); break;
+      case OP_SELF:      target->self(asmb, pos, need); break;
+      case OP_GETLOCAL:  target->getlocal(asmb, pos, regs, jit_protos); break;
+      case OP_SETLOCAL:  target->setlocal(asmb, pos, regs, jit_protos); break;
+      case OP_GETUPVAL:  target->getupval(asmb, pos, lregs); break;
+      case OP_SETUPVAL:  target->setupval(asmb, pos, lregs); break;
+      case OP_NEWTUPLE:  target->newtuple(asmb, pos, need); break;
+      case OP_SETTUPLE:  target->settuple(asmb, pos, need); break;
+      case OP_SEARCH:    target->search(asmb, pos, need); break;
+      case OP_SETTABLE:  target->settable(asmb, pos, need, f->values); break;
+      case OP_ADD:       target->add(asmb, pos); break;
+      case OP_SUB:       target->sub(asmb, pos); break;
+      case OP_MULT:      target->mult(asmb, pos); break;
+      case OP_DIV:       target->div(asmb, pos); break;
+      case OP_REM:       target->rem(asmb, pos); break;
+      case OP_POW:       target->pow(asmb, pos, need); break;
+      case OP_NEQ:       target->neq(asmb, pos); break;
+      case OP_EQ:        target->eq(asmb, pos); break;
+      case OP_LT:        target->lt(asmb, pos); break;
+      case OP_LTE:       target->lte(asmb, pos); break;
+      case OP_GT:        target->gt(asmb, pos); break;
+      case OP_GTE:       target->gte(asmb, pos); break;
+      case OP_BITL:      target->bitl(asmb, pos); break;
+      case OP_BITR:      target->bitr(asmb, pos); break;
+      case OP_BIND:      target->bitr(asmb, pos, need); break;
+      case OP_JMP:       target->jmp(asmb, pos, XJMP); break;
+      case OP_TEST:      target->test(asmb, pos); break;
+      case OP_NOT:       target->not(asmb, pos); break;
+      case OP_TESTJMP:   target->testjmp(asmb, pos, XJMP); break;
+      case OP_NOTJMP:    target->notjmp(asmb, pos, XJMP); break;
+      case OP_CALL:      target->call(asmb, pos, need); break;
+      case OP_RETURN:    target->ret(asmb, pos); break;
+      case OP_PROTO:     target->method(P, asmb, &pos, jit_protos, f->protos, lregs, need, regs); break;
+    }
+    pos++;
+  }
+
+  asmb->capa = asmb->ptr - asmb->start;
+  fn = PN_ALLOC_FUNC(asmb->capa);
+
+  target->finish(asmb);
+
+#ifdef JIT_DEBUG
+  printf("JIT(%p): ", fn);
+  long ai = 0;
+  for (ai = 0; ai < asmb->capa; ai++) {
+    printf("%x ", asmb->start[ai]);
+  }
+  printf("\n");
+#endif
+  PN_MEMCPY_N(fn, asmb->start, u8, asmb->capa);
+  PN_FREE(asmb->start);
+  PN_FREE(asmb);
+
+  return (PN_F)fn;
+}
 
 PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {
   struct PNProto *f = (struct PNProto *)proto;

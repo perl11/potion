@@ -12,6 +12,10 @@
 #define POTION_SIG      "p\07\10n"
 #define POTION_VMID     0x79
 
+#define POTION_X86      0
+#define POTION_PPC      1
+#define POTION_TARGETS  2
+
 #include <limits.h>
 #include "config.h"
 
@@ -323,9 +327,6 @@ PN potion_parse(Potion *, PN);
 PN potion_vm(Potion *, PN, PN, PN_SIZE, PN *);
 PN potion_eval(Potion *, const char *);
 PN potion_run(Potion *, PN);
-
-#ifdef X86_JIT
-PN_F potion_x86_proto(Potion *, PN);
-#endif
+PN_F potion_jit_proto(Potion *, PN, PN);
 
 #endif
