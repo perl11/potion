@@ -294,3 +294,19 @@
   potion_x86_c_arg. To shuttle the arguments
   in and out, depending on the architecture.
 
+  ~ using disassemblers ~
+
+  I don't really know the x86 instruction set
+  too well and most often I just write something
+  in C and disassemble it.
+
+    $ gcc test.c -o test
+    $ objdump --disassemble-all test
+
+  However, objdump doesn't come with the OS X
+  dev tools, so you can use the included
+  machodis.pl by Robert Kelp to inspect the
+  binary.
+
+    $ ./tools/machodis.pl test
+
