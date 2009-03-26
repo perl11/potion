@@ -12,8 +12,37 @@
 #include "opcodes.h"
 #include "asm.h"
 
+// STACK LAYOUT
+//
+// Like on other platforms, Potion attempts to match the conventions
+// used by C compilers. In C, the stack layout looks something like:
+//
+//   sp | linkage (24 bytes) | parameters | locals | saved |
+//
+// Note that while PowerPC has an EA, registers and stack space are
+// the same. This is actually pretty ideal for Potion, since I can
+// use the parameters area (the general-purpose registers) as if
+// they were Potion's registers, then copy everything to the
+// saved registers area when it comes time to make a call. This
+// cuts down the assembler in every operation except for OP_CALL.
+//
+// Now, if OP_CALL proves to be slow, I've considered an optimization.
+// Since Potion already uses a contiguous set of registers to pass
+// arguments, maybe I could just save the registers and the linkage,
+// shift the stack pointer, then set it back once the call is done.
+//
+// Alternatively, maybe it would be nice to give Potion's VM its
+// own set of parameter registers, as a hint to the JIT.
+
 #define RBP(x) (0x18 + (x * sizeof(PN)))
-#define REG(x) (x == 0 ? 0 : (x == 1 ? 2 : x + 3))
+
+// The EABI reserves GPR1 for a stack pointer, GPR3-GPR7 for function
+// argument passing, and GPR3 for function return values. (In Potion,
+// it's the same but GPR3 is also used as scratch space and GPR4-7 act
+// as general registers when not being used for parameters.)
+#define REG(x) (x == 0 ? 0 : (x == 1 ? 2 : x + 2))
+// The scratch space, register 3, is referred to as rD in the notation.
+#define REG_TMP 3
 
 #define PPC(ins, a, b, c, d) \
   ASM((ins << 2) | ((a >> 2) & 0x3)); \
@@ -124,6 +153,11 @@ void potion_ppc_div(PNAsm *asmb, PN_OP *op) {
 }
 
 void potion_ppc_rem(PNAsm *asmb, PN_OP *op) {
+  PPC_MATH({
+    PPC(31, REG_TMP, REG(op->a), REG(op->b) << 3 | 0x3, 0xD6); // divw rD,rA,rB
+    PPC(31, REG_TMP, REG_TMP, REG(op->b) << 3 | 0x1, 0xD6); // mullw rD,rD,rB
+    PPC(31, REG(op->a), REG_TMP, REG(op->a) << 3, 0x50); // subf rA,rD,rA
+  });
 }
 
 void potion_ppc_pow(PNAsm *asmb, PN_OP *op, long start) {
@@ -183,7 +217,7 @@ void potion_ppc_call(PNAsm *asmb, PN_OP *op, long start) {
 }
 
 void potion_ppc_return(PNAsm *asmb, PN_OP *op) {
-  PPC_MOV(3, REG(op->a)); // or r3,r0,r0
+  PPC_MOV(3, REG(op->a)); // or r3,rA,rA
   PPC3(32, 1, 1, 0); // lwz r1,(r1)
   PPC3(46, 30, 1, 0xFFF8); // lmw r30,-8(r1)
   ASMI(0x4e800020); // blr
