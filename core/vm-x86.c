@@ -483,7 +483,7 @@ void potion_x86_method(PNAsm *asmb, Potion *P, PN_OP **pos, PN_F *jit_protos, PN
   cl->method = (PN_F)func2;
   X86_MOVL(op->a, cl);
   PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
-    op = *pos++;
+    op = *pos = *pos + 1;
     if (op->code == OP_GETUPVAL) {
       X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(lregs + op->b)); // mov upval %rdx
     } else if (op->code == OP_GETLOCAL) {

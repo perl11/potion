@@ -98,7 +98,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     switch (pos->code) {
       CASE_OP(MOVE, (asmb, pos))
       CASE_OP(LOADPN, (asmb, pos)) 
-      CASE_OP(LOADK, (asmb, pos, f))
+      CASE_OP(LOADK, (asmb, pos, f->values))
       CASE_OP(SELF, (asmb, pos, need))
       CASE_OP(GETLOCAL, (asmb, pos, regs, jit_protos))
       CASE_OP(SETLOCAL, (asmb, pos, regs, jit_protos))
@@ -107,7 +107,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(NEWTUPLE, (asmb, pos, need))
       CASE_OP(SETTUPLE, (asmb, pos, need))
       CASE_OP(SEARCH, (asmb, pos, need))
-      CASE_OP(SETTABLE, (asmb, pos, need, f))
+      CASE_OP(SETTABLE, (asmb, pos, need, f->values))
       CASE_OP(ADD, (asmb, pos))
       CASE_OP(SUB, (asmb, pos))
       CASE_OP(MULT, (asmb, pos))
