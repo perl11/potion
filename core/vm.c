@@ -91,8 +91,8 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     offs[pos - start] = asmb->ptr - asmb->start;
     for (jmpi = 0; jmpi < jmpc; jmpi++) {
       if (jmps[jmpi].to == pos) {
-        u8 *asmj = asmb->start + jmps[jmpi].from;
-        *((int *)asmj) = (int)((asmb->ptr - asmb->start) - (jmps[jmpi].from + 4));
+        unsigned char *asmj = asmb->start + jmps[jmpi].from;
+        target->jmpedit(asmb, asmj, (asmb->ptr - asmb->start) - (jmps[jmpi].from + 4));
       }
     }
 

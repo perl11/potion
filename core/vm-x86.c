@@ -170,6 +170,10 @@ void potion_x86_upvals(PNAsm *asmb, long lregs, int upc) {
   }
 }
 
+void potion_x86_jmpedit(PNAsm *asmb, unsigned char *asmj, int dist) {
+  *((int *)asmj) = dist;
+}
+
 void potion_x86_move(PNAsm *asmb, PN_OP *op) {
   X86_MOV_RBP(0x8B, op->b);
   X86_MOV_RBP(0x89, op->a);

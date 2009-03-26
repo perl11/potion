@@ -21,6 +21,7 @@ typedef struct {
     .registers = potion_##arch##_registers, \
     .local = potion_##arch##_local, \
     .upvals = potion_##arch##_upvals, \
+    .jmpedit = potion_##arch##_jmpedit, \
     .op = { \
       (OP_F)NULL, \
       (OP_F)potion_##arch##_move, \
@@ -68,15 +69,9 @@ typedef struct {
   }
 
 #define ASM(ins) potion_asm_put(asmb, (PN)ins, sizeof(u8))
+#define ASM2(pn) potion_asm_put(asmb, (PN)(pn), 2)
 #define ASMI(pn) potion_asm_put(asmb, (PN)(pn), sizeof(int))
 #define ASMN(pn) potion_asm_put(asmb, (PN)pn, sizeof(PN))
 
 PNAsm *potion_asm_new();
 void potion_asm_put(PNAsm *, PN, size_t);
-
-void potion_x86_setup(PNAsm *);
-void potion_x86_stack(PNAsm *, long);
-void potion_x86_registers(PNAsm *, long);
-void potion_x86_local(PNAsm *, long, long);
-void potion_x86_upvals(PNAsm *, long, int);
-void potion_x86_finish(PNAsm *);

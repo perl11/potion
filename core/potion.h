@@ -234,6 +234,7 @@ typedef struct {
   void (*registers)(struct PNJitAsm *, long);
   void (*local)    (struct PNJitAsm *, long, long);
   void (*upvals)   (struct PNJitAsm *, long, int);
+  void (*jmpedit)  (struct PNJitAsm *, unsigned char *, int);
   OP_F op[OP_MAX];
   void (*finish)   (struct PNJitAsm *);
 } PNTarget;

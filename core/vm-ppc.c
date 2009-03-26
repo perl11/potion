@@ -75,6 +75,21 @@
   PPC2(14, REG(op->a), PN_TRUE); /* li rA,TRUE */ \
   ASMI(0x48000008); /* b +8 */ \
   PPC2(14, REG(op->a), PN_FALSE); /* li rA,FALSE */
+#define TAG_JMP(ins, jpos) \
+  if (jpos >= op) { \
+    jmps[*jmpc].from = asmb->ptr - asmb->start; \
+    ASMI(ins); \
+    jmps[*jmpc].to = jpos + 1; \
+    *jmpc = *jmpc + 1; \
+  } else if (jpos < op) { \
+    int off = (offs[(jpos + 1) - start] - (asmb->ptr - asmb->start)); \
+    if (ins == 0x48000000) \
+      ASMI(ins | (off & 0x3FFFFFF)); \
+    else \
+      ASMI(ins | (off & 0xFFFF)); \
+  } else { \
+    ASMI(ins); \
+  }
 
 void potion_ppc_setup(PNAsm *asmb) {
   PPC3(47, 30, 1, 0xFFF8); // stmw r30,-8(r1)
@@ -93,6 +108,15 @@ void potion_ppc_local(PNAsm *asmb, long reg, long arg) {
 }
 
 void potion_ppc_upvals(PNAsm *asmb, long lregs, int upc) {
+}
+
+void potion_ppc_jmpedit(PNAsm *asmb, unsigned char *asmj, int dist) {
+  if (asmj[0] == 0x48) {
+    asmj[0] |= (dist >> 24) & 3;
+    asmj[1] = dist >> 16;
+  }
+  asmj[2] = dist >> 8;
+  asmj[3] = dist + 4;
 }
 
 void potion_ppc_move(PNAsm *asmb, PN_OP *op) {
@@ -222,6 +246,7 @@ void potion_ppc_bind(PNAsm *asmb, PN_OP *op, long start) {
 }
 
 void potion_ppc_jmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
+  TAG_JMP(0x48000000, op + op->a); // b
 }
 
 void potion_ppc_test_asm(PNAsm *asmb, PN_OP *op, int test) {
@@ -239,9 +264,13 @@ void potion_ppc_cmp(PNAsm *asmb, PN_OP *op) {
 }
 
 void potion_ppc_testjmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
+  PPC(11, 7 << 2, REG(op->a), 0, PN_FALSE); // cmpwi cr7,rA,0x0
+  TAG_JMP(0x409E0000, op + op->b); // bne
 }
 
 void potion_ppc_notjmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
+  PPC(11, 7 << 2, REG(op->a), 0, PN_FALSE); // cmpwi cr7,rA,0x0
+  TAG_JMP(0x419E0000, op + op->b); // beq
 }
 
 void potion_ppc_call(PNAsm *asmb, PN_OP *op, long start) {
