@@ -13,7 +13,7 @@
 #include "opcodes.h"
 #include "asm.h"
 
-extern PNTarget potion_target_x86;
+extern PNTarget potion_target_x86, potion_target_ppc;
 
 // TODO: this is being circumvented right now, but it's broken without varargs.
 PN potion_vm_proto(Potion *P, PN cl, PN args) {
@@ -26,6 +26,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN args) {
 
 void potion_vm_init(Potion *P) {
   P->targets[POTION_X86] = potion_target_x86;
+  P->targets[POTION_PPC] = potion_target_ppc;
 }
 
 #define CASE_OP(name, args) case OP_##name: target->op[OP_##name]args; break;
