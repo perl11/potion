@@ -55,16 +55,26 @@
 #define PPCN(ins, a) \
   ASM(ins << 2); \
   ASM(a >> 16); ASM(a >> 8); ASM(a)
+
 #define PPC_MOV(a, b) \
   PPC(31, b, a, (b << 3) | 0x3, 0x78); // or rA,rB,rB
-#define PPC_MATH(do) \
+#define PPC_UNBOX() \
   PPC(31, REG(op->a), REG(op->a), 0x0e, 0x70); /* srawi rA,rA,1 */ \
-  PPC(31, REG(op->b), REG(op->b), 0x0e, 0x70); /* srawi rB,rB,1 */ \
+  PPC(31, REG(op->b), REG(op->b), 0x0e, 0x70) /* srawi rB,rB,1 */
+#define PPC_MATH(do) \
+  PPC_UNBOX(); \
   do; /* add, sub, ... */ \
   PPC(21, REG(op->a), REG(op->a), 0x08, 0x3c); /* rlwin rA,rA,1,0,30 */ \
   PPC3(24, REG(op->a), REG(op->a), 1); /* ori rA,1 */ \
   PPC(21, REG(op->b), REG(op->b), 0x08, 0x3c); /* rlwin rB,rB,1,0,30 */ \
   PPC3(24, REG(op->b), REG(op->b), 1); /* ori rB,1 */
+#define PPC_CMP(cmp) \
+  PPC_UNBOX(); \
+  PPC(31, 7 << 2, REG(op->a), REG(op->b) << 3, 0); /* cmplw cr7,rA,rB */ \
+  ASMI(cmp | 12); /* bCMP +12 */ \
+  PPC2(14, REG(op->a), PN_TRUE); /* li rA,TRUE */ \
+  ASMI(0x48000008); /* b +8 */ \
+  PPC2(14, REG(op->a), PN_FALSE); /* li rA,FALSE */
 
 void potion_ppc_setup(PNAsm *asmb) {
   PPC3(47, 30, 1, 0xFFF8); // stmw r30,-8(r1)
@@ -173,21 +183,27 @@ void potion_ppc_pow(PNAsm *asmb, PN_OP *op, long start) {
 }
 
 void potion_ppc_neq(PNAsm *asmb, PN_OP *op) {
+  PPC_CMP(0x419E0000); // beq
 }
 
 void potion_ppc_eq(PNAsm *asmb, PN_OP *op) {
+  PPC_CMP(0x409E0000); // bne
 }
 
 void potion_ppc_lt(PNAsm *asmb, PN_OP *op) {
+  PPC_CMP(0x409C0000); // bge
 }
 
 void potion_ppc_lte(PNAsm *asmb, PN_OP *op) {
+  PPC_CMP(0x419D0000); // bgt
 }
 
 void potion_ppc_gt(PNAsm *asmb, PN_OP *op) {
+  PPC_CMP(0x409D0000); // ble
 }
 
 void potion_ppc_gte(PNAsm *asmb, PN_OP *op) {
+  PPC_CMP(0x419C0000); // blt
 }
 
 void potion_ppc_bitl(PNAsm *asmb, PN_OP *op) {

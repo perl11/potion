@@ -42,20 +42,19 @@
         X86_PRE(); ASM(0xC7); /* movl */ \
         ASM(0x45); ASM(RBP(reg)); /* -A(%rbp) */ \
         ASMI((PN)(x))
-#define X86_MATH(do) \
+#define X86_UNBOX() \
         X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->a)); /* mov -A(%rbp) %edx */ \
         ASM(0xD1); ASM(0xFA); /* sar %edx */ \
         X86_MOV_RBP(0x8B, op->b); /* mov -B(%rbp) %eax */ \
-        ASM(0xD1); ASM(0xF8); /* sar %eax */ \
+        ASM(0xD1); ASM(0xF8) /* sar %eax */
+#define X86_MATH(do) \
+        X86_UNBOX(); \
         do; /* add, sub, ... */ \
         X86_POST(); /* cltq */ \
         X86_PRE(); ASM(0x8D); ASM(0x44); ASM(0x00); ASM(0x01); /* lea 0x1(%eax+%eax*1) %eax */ \
         X86_MOV_RBP(0x89, op->a); /* mov -B(%rbp) %eax */
 #define X86_CMP(do) \
-        X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->a)); /*  mov -A(%rbp) %edx */ \
-        ASM(0xD1); ASM(0xFA); /*  sar %edx */ \
-        X86_MOV_RBP(0x8B, op->b); /*  mov -B(%rbp) %eax */ \
-        ASM(0xD1); ASM(0xF8); /*  sar %eax */ \
+        X86_UNBOX(); \
         ASM(0x39); ASM(0xC2); /*  cmp %eax %edx */ \
         ASM(do); ASM(0x9 + X86_PRE_T); /*  jle +10 */ \
         X86_MOVQ(op->a, PN_TRUE); /*  -A(%rbp) = TRUE */ \
