@@ -70,7 +70,7 @@
   PPC3(24, REG(op->b), REG(op->b), 1); /* ori rB,1 */
 #define PPC_CMP(cmp) \
   PPC_UNBOX(); \
-  PPC(31, 7 << 2, REG(op->a), REG(op->b) << 3, 0); /* cmplw cr7,rA,rB */ \
+  PPC(31, 7 << 2, REG(op->a), REG(op->b) << 3, 0x40); /* cmplw cr7,rA,rB */ \
   ASMI(cmp | 12); /* bCMP +12 */ \
   PPC2(14, REG(op->a), PN_TRUE); /* li rA,TRUE */ \
   ASMI(0x48000008); /* b +8 */ \
@@ -170,7 +170,7 @@ void potion_ppc_add(PNAsm *asmb, PN_OP *op) {
 
 void potion_ppc_sub(PNAsm *asmb, PN_OP *op) {
   PPC_MATH({
-    PPC(31, REG(op->a), REG(op->a), REG(op->b) << 3, 0x50); // subf rA,rA,rB
+    PPC(31, REG(op->a), REG(op->b), REG(op->a) << 3, 0x50); // subf rA,rA,rB
   });
 }
 
