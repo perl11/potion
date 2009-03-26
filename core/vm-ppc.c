@@ -103,11 +103,11 @@ void potion_ppc_self(PNAsm *asmb, PN_OP *op, long start) {
 }
 
 void potion_ppc_getlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
-  PPC3(32, REG(op->a), 30, RBP(op->b));
+  PPC3(32, REG(op->a), 30, RBP(op->b)); // lwz rA,-B(rsp)
 }
 
 void potion_ppc_setlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
-  PPC3(36, REG(op->a), 30, RBP(op->b));
+  PPC3(36, REG(op->a), 30, RBP(op->b)); // stw rA,-B(rsp)
 }
 
 void potion_ppc_getupval(PNAsm *asmb, PN_OP *op, long lregs) {
@@ -160,7 +160,16 @@ void potion_ppc_rem(PNAsm *asmb, PN_OP *op) {
   });
 }
 
+// TODO: need to keep rB in the saved registers, it gets clobbered.
 void potion_ppc_pow(PNAsm *asmb, PN_OP *op, long start) {
+  PPC_MATH({
+    PPC_MOV(REG_TMP, REG(op->a)); // mov rD,rB
+    PPC(14, REG(op->b), REG(op->b), 0xFF, 0xFF); // addi rD,rD,-1
+    PPC(11, 7 << 2, REG(op->b), 0, 0); // cmpwi cr7,rD,0x0
+    ASMI(0x409D000C); // ble cr7,-12
+    PPC(31, REG(op->a), REG(op->a), REG_TMP << 3 | 0x1, 0xD6); // mullw rA,rA,rA
+    ASMI(0x4BFFFFF0); // b -16
+  });
 }
 
 void potion_ppc_neq(PNAsm *asmb, PN_OP *op) {
@@ -182,9 +191,15 @@ void potion_ppc_gte(PNAsm *asmb, PN_OP *op) {
 }
 
 void potion_ppc_bitl(PNAsm *asmb, PN_OP *op) {
+  PPC_MATH({
+    PPC(31, REG(op->a), REG(op->a), REG(op->b) << 3, 0x30); // slw rA,rA,rB
+  });
 }
 
 void potion_ppc_bitr(PNAsm *asmb, PN_OP *op) {
+  PPC_MATH({
+    PPC(31, REG(op->a), REG(op->a), REG(op->b) << 3 | 0x6, 0x30); // sraw rA,rA,rB
+  });
 }
 
 void potion_ppc_bind(PNAsm *asmb, PN_OP *op, long start) {
