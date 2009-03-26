@@ -35,7 +35,6 @@ struct PNProto;
 struct PNTuple;
 struct PNWeakRef;
 struct PNGarbage;
-struct PNJitTarget;
 struct PNJitAsm;
 
 #define PN_TNIL         0

@@ -28,6 +28,8 @@ void potion_vm_init(Potion *P) {
   P->targets[POTION_X86] = potion_target_x86;
 }
 
+#define CASE_OP(name, args) case OP_##name: target->op[OP_##name]args; break;
+
 PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
   PN_OP *start, *pos, *end;
@@ -94,41 +96,42 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     }
 
     switch (pos->code) {
-      case OP_MOVE:      target->op[OP_MOVE](asmb, pos); break;
-      case OP_LOADPN:    target->op[OP_LOADPN](asmb, pos); break; 
-      case OP_LOADK:     target->op[OP_LOADK](asmb, pos, f); break;
-      case OP_SELF:      target->op[OP_SELF](asmb, pos, need); break;
-      case OP_GETLOCAL:  target->op[OP_GETLOCAL](asmb, pos, regs, jit_protos); break;
-      case OP_SETLOCAL:  target->op[OP_SETLOCAL](asmb, pos, regs, jit_protos); break;
-      case OP_GETUPVAL:  target->op[OP_GETUPVAL](asmb, pos, lregs); break;
-      case OP_SETUPVAL:  target->op[OP_SETUPVAL](asmb, pos, lregs); break;
-      case OP_NEWTUPLE:  target->op[OP_NEWTUPLE](asmb, pos, need); break;
-      case OP_SETTUPLE:  target->op[OP_SETTUPLE](asmb, pos, need); break;
-      case OP_SEARCH:    target->op[OP_SEARCH](asmb, pos, need); break;
-      case OP_SETTABLE:  target->op[OP_SETTABLE](asmb, pos, need, f); break;
-      case OP_ADD:       target->op[OP_ADD](asmb, pos); break;
-      case OP_SUB:       target->op[OP_SUB](asmb, pos); break;
-      case OP_MULT:      target->op[OP_MULT](asmb, pos); break;
-      case OP_DIV:       target->op[OP_DIV](asmb, pos); break;
-      case OP_REM:       target->op[OP_REM](asmb, pos); break;
-      case OP_POW:       target->op[OP_POW](asmb, pos, need); break;
-      case OP_NEQ:       target->op[OP_NEQ](asmb, pos); break;
-      case OP_EQ:        target->op[OP_EQ](asmb, pos); break;
-      case OP_LT:        target->op[OP_LT](asmb, pos); break;
-      case OP_LTE:       target->op[OP_LTE](asmb, pos); break;
-      case OP_GT:        target->op[OP_GT](asmb, pos); break;
-      case OP_GTE:       target->op[OP_GTE](asmb, pos); break;
-      case OP_BITL:      target->op[OP_BITL](asmb, pos); break;
-      case OP_BITR:      target->op[OP_BITR](asmb, pos); break;
-      case OP_BIND:      target->op[OP_BIND](asmb, pos, need); break;
-      case OP_JMP:       target->op[OP_JMP](asmb, pos, start, jmps, offs, &jmpc); break;
-      case OP_TEST:      target->op[OP_TEST](asmb, pos); break;
-      case OP_NOT:       target->op[OP_NOT](asmb, pos); break;
-      case OP_TESTJMP:   target->op[OP_TESTJMP](asmb, pos, start, jmps, offs, &jmpc); break;
-      case OP_NOTJMP:    target->op[OP_NOTJMP](asmb, pos, start, jmps, offs, &jmpc); break;
-      case OP_CALL:      target->op[OP_CALL](asmb, pos, need); break;
-      case OP_RETURN:    target->op[OP_RETURN](asmb, pos); break;
-      case OP_PROTO:     target->op[OP_PROTO](asmb, P, &pos, jit_protos, f, lregs, need, regs); break;
+      CASE_OP(MOVE, (asmb, pos))
+      CASE_OP(LOADPN, (asmb, pos)) 
+      CASE_OP(LOADK, (asmb, pos, f))
+      CASE_OP(SELF, (asmb, pos, need))
+      CASE_OP(GETLOCAL, (asmb, pos, regs, jit_protos))
+      CASE_OP(SETLOCAL, (asmb, pos, regs, jit_protos))
+      CASE_OP(GETUPVAL, (asmb, pos, lregs))
+      CASE_OP(SETUPVAL, (asmb, pos, lregs))
+      CASE_OP(NEWTUPLE, (asmb, pos, need))
+      CASE_OP(SETTUPLE, (asmb, pos, need))
+      CASE_OP(SEARCH, (asmb, pos, need))
+      CASE_OP(SETTABLE, (asmb, pos, need, f))
+      CASE_OP(ADD, (asmb, pos))
+      CASE_OP(SUB, (asmb, pos))
+      CASE_OP(MULT, (asmb, pos))
+      CASE_OP(DIV, (asmb, pos))
+      CASE_OP(REM, (asmb, pos))
+      CASE_OP(POW, (asmb, pos, need))
+      CASE_OP(NEQ, (asmb, pos))
+      CASE_OP(EQ, (asmb, pos))
+      CASE_OP(LT, (asmb, pos))
+      CASE_OP(LTE, (asmb, pos))
+      CASE_OP(GT, (asmb, pos))
+      CASE_OP(GTE, (asmb, pos))
+      CASE_OP(BITL, (asmb, pos))
+      CASE_OP(BITR, (asmb, pos))
+      CASE_OP(BIND, (asmb, pos, need))
+      CASE_OP(JMP, (asmb, pos, start, jmps, offs, &jmpc))
+      CASE_OP(TEST, (asmb, pos))
+      CASE_OP(NOT, (asmb, pos))
+      CASE_OP(CMP, (asmb, pos))
+      CASE_OP(TESTJMP, (asmb, pos, start, jmps, offs, &jmpc))
+      CASE_OP(NOTJMP, (asmb, pos, start, jmps, offs, &jmpc))
+      CASE_OP(CALL, (asmb, pos, need))
+      CASE_OP(RETURN, (asmb, pos))
+      CASE_OP(PROTO, (asmb, P, &pos, jit_protos, f->protos, lregs, need, regs))
     }
     pos++;
   }

@@ -69,7 +69,7 @@
           jmps[*jmpc].from = asmb->ptr - asmb->start; \
           ASMI(0); \
           jmps[*jmpc].to = jpos + 1; \
-          *jmpc++; \
+          *jmpc = *jmpc + 1; \
         } else if (jpos < op) { \
           ASMI(offs[(jpos + 1) - start] - ((asmb->ptr - asmb->start) + 4)); \
         } else { \
@@ -431,6 +431,10 @@ void potion_x86_test(PNAsm *asmb, PN_OP *op) {
 }
 
 void potion_x86_not(PNAsm *asmb, PN_OP *op) {
+  potion_x86_test_asm(asmb, op, 0);
+}
+
+void potion_x86_cmp(PNAsm *asmb, PN_OP *op) {
   potion_x86_test_asm(asmb, op, 0);
 }
 

@@ -22,26 +22,32 @@ typedef struct {
     .local = potion_##arch##_local, \
     .upvals = potion_##arch##_upvals, \
     .op = { \
+      (OP_F)NULL, \
       (OP_F)potion_##arch##_move, \
-      (OP_F)potion_##arch##_loadpn, \
       (OP_F)potion_##arch##_loadk, \
+      (OP_F)potion_##arch##_loadpn, \
       (OP_F)potion_##arch##_self, \
+      (OP_F)potion_##arch##_newtuple, \
+      (OP_F)potion_##arch##_settuple, \
+      (OP_F)potion_##arch##_search, \
       (OP_F)potion_##arch##_getlocal, \
       (OP_F)potion_##arch##_setlocal, \
       (OP_F)potion_##arch##_getupval, \
       (OP_F)potion_##arch##_setupval, \
-      (OP_F)potion_##arch##_newtuple, \
-      (OP_F)potion_##arch##_settuple, \
-      (OP_F)potion_##arch##_search, \
+      (OP_F)NULL, \
       (OP_F)potion_##arch##_settable, \
+      (OP_F)NULL, \
+      (OP_F)NULL, \
       (OP_F)potion_##arch##_add, \
       (OP_F)potion_##arch##_sub, \
       (OP_F)potion_##arch##_mult, \
       (OP_F)potion_##arch##_div, \
       (OP_F)potion_##arch##_rem, \
       (OP_F)potion_##arch##_pow, \
-      (OP_F)potion_##arch##_neq, \
+      (OP_F)potion_##arch##_not, \
+      (OP_F)potion_##arch##_cmp, \
       (OP_F)potion_##arch##_eq, \
+      (OP_F)potion_##arch##_neq, \
       (OP_F)potion_##arch##_lt, \
       (OP_F)potion_##arch##_lte, \
       (OP_F)potion_##arch##_gt, \
@@ -51,10 +57,10 @@ typedef struct {
       (OP_F)potion_##arch##_bind, \
       (OP_F)potion_##arch##_jmp, \
       (OP_F)potion_##arch##_test, \
-      (OP_F)potion_##arch##_not, \
       (OP_F)potion_##arch##_testjmp, \
       (OP_F)potion_##arch##_notjmp, \
       (OP_F)potion_##arch##_call, \
+      (OP_F)NULL, \
       (OP_F)potion_##arch##_return, \
       (OP_F)potion_##arch##_method, \
     }, \
