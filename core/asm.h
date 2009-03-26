@@ -5,7 +5,7 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 
-typedef struct {
+typedef struct PNJitAsm {
   u8 *start, *ptr;
   long capa;
 } PNAsm;
@@ -15,15 +15,51 @@ typedef struct {
   PN_OP *to;
 } PNJumps;
 
-typedef struct {
-  void (*setup)    (PNAsm *);
-  void (*stack)    (PNAsm *, long);
-  void (*registers)(PNAsm *, long);
-  void (*local)    (PNAsm *, long, long);
-  void (*upvals)   (PNAsm *, long, int);
-  void (*op)       (PNAsm *, PN_OP *, long, PN, PN);
-  void (*finish)   (PNAsm *);
-} PNTarget;
+#define MAKE_TARGET(arch) PNTarget potion_target_##arch = { \
+    .setup = potion_##arch##_setup, \
+    .stack = potion_##arch##_stack, \
+    .registers = potion_##arch##_registers, \
+    .local = potion_##arch##_local, \
+    .upvals = potion_##arch##_upvals, \
+    .op = { \
+      (OP_F)potion_##arch##_move, \
+      (OP_F)potion_##arch##_loadpn, \
+      (OP_F)potion_##arch##_loadk, \
+      (OP_F)potion_##arch##_self, \
+      (OP_F)potion_##arch##_getlocal, \
+      (OP_F)potion_##arch##_setlocal, \
+      (OP_F)potion_##arch##_getupval, \
+      (OP_F)potion_##arch##_setupval, \
+      (OP_F)potion_##arch##_newtuple, \
+      (OP_F)potion_##arch##_settuple, \
+      (OP_F)potion_##arch##_search, \
+      (OP_F)potion_##arch##_settable, \
+      (OP_F)potion_##arch##_add, \
+      (OP_F)potion_##arch##_sub, \
+      (OP_F)potion_##arch##_mult, \
+      (OP_F)potion_##arch##_div, \
+      (OP_F)potion_##arch##_rem, \
+      (OP_F)potion_##arch##_pow, \
+      (OP_F)potion_##arch##_neq, \
+      (OP_F)potion_##arch##_eq, \
+      (OP_F)potion_##arch##_lt, \
+      (OP_F)potion_##arch##_lte, \
+      (OP_F)potion_##arch##_gt, \
+      (OP_F)potion_##arch##_gte, \
+      (OP_F)potion_##arch##_bitl, \
+      (OP_F)potion_##arch##_bitr, \
+      (OP_F)potion_##arch##_bind, \
+      (OP_F)potion_##arch##_jmp, \
+      (OP_F)potion_##arch##_test, \
+      (OP_F)potion_##arch##_not, \
+      (OP_F)potion_##arch##_testjmp, \
+      (OP_F)potion_##arch##_notjmp, \
+      (OP_F)potion_##arch##_call, \
+      (OP_F)potion_##arch##_return, \
+      (OP_F)potion_##arch##_method, \
+    }, \
+    .finish = potion_##arch##_finish \
+  }
 
 #define ASM(ins) potion_asm_put(asmb, (PN)ins, sizeof(u8))
 #define ASMI(pn) potion_asm_put(asmb, (PN)(pn), sizeof(int))
@@ -37,5 +73,4 @@ void potion_x86_stack(PNAsm *, long);
 void potion_x86_registers(PNAsm *, long);
 void potion_x86_local(PNAsm *, long, long);
 void potion_x86_upvals(PNAsm *, long, int);
-void potion_x86_op(PNAsm *, PN_OP *, long, PN, PN);
 void potion_x86_finish(PNAsm *);

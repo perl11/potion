@@ -35,6 +35,8 @@ struct PNProto;
 struct PNTuple;
 struct PNWeakRef;
 struct PNGarbage;
+struct PNJitTarget;
+struct PNJitAsm;
 
 #define PN_TNIL         0
 #define PN_TNUMBER      1
@@ -221,10 +223,28 @@ static inline char *potion_str_ptr(struct PNString *s) {
 }
 
 //
+// the jit
+//
+#define OP_MAX 64
+
+typedef void (*OP_F)(struct PNJitAsm *, ...);
+
+typedef struct {
+  void (*setup)    (struct PNJitAsm *);
+  void (*stack)    (struct PNJitAsm *, long);
+  void (*registers)(struct PNJitAsm *, long);
+  void (*local)    (struct PNJitAsm *, long, long);
+  void (*upvals)   (struct PNJitAsm *, long, int);
+  OP_F op[OP_MAX];
+  void (*finish)   (struct PNJitAsm *);
+} PNTarget;
+
+//
 // the interpreter
 //
 struct Potion_State {
   PN_OBJECT_HEADER
+  PNTarget targets[POTION_TARGETS];
   PN strings; /* table of all strings */
   unsigned int next_string_id;
   PN lobby; /* root namespace */
@@ -320,6 +340,7 @@ void potion_str_init(Potion *);
 void potion_table_init(Potion *);
 void potion_source_init(Potion *);
 void potion_compiler_init(Potion *);
+void potion_vm_init(Potion *);
 
 PN potion_any_is_nil(Potion *, PN, PN);
 

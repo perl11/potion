@@ -468,7 +468,7 @@ void potion_x86_return(PNAsm *asmb, PN_OP *op) {
   ASM(0xC9); ASM(0xC3); /* leave; ret */
 }
 
-void potion_x86_method(Potion *P, PNAsm *asmb, PN_OP **pos, PN_F *jit_protos, PN protos, long lregs, long start, long regs) {
+void potion_x86_method(PNAsm *asmb, Potion *P, PN_OP **pos, PN_F *jit_protos, PN protos, long lregs, long start, long regs) {
   struct PNClosure *cl;
   PN_OP *op = *pos;
   PN func2 = (PN)jit_protos[op->b];
@@ -519,3 +519,5 @@ void potion_x86_finish(PNAsm *asmb) {
 #endif
 #endif
 }
+
+MAKE_TARGET(x86);

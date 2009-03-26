@@ -59,6 +59,7 @@ static void potion_init(Potion *P) {
   potion_send(vtable, PN_def, PN_allocate, PN_FUNC(potion_allocate, 0));
   potion_send(vtable, PN_def, PN_delegated, PN_FUNC(potion_delegated, 0));
 
+  potion_vm_init(P);
   potion_lobby_init(P);
   potion_object_init(P);
   potion_primitive_init(P);
