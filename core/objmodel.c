@@ -156,7 +156,7 @@ PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
 PN potion_bind(Potion *P, PN rcv, PN msg) {
   PN closure = PN_NIL, vt;
   PNType t = PN_TYPE(rcv);
-  if (t >= P->typen) return PN_NIL;
+  if (t >= PN_FLEX_SIZE(P->vts)) return PN_NIL;
   vt = PN_VTABLE(t);
   // TODO: enable mcache -- need to hash the (t,msg) tuple
   while (vt) {
@@ -212,7 +212,7 @@ PN potion_lobby_self(Potion *P, PN cl, PN self) {
 
 PN potion_lobby_kind(Potion *P, PN cl, PN self) {
   PNType t = PN_TYPE(self);
-  if (t >= P->typen) return PN_NIL; // TODO: error
+  if (t >= PN_FLEX_SIZE(P->vts)) return PN_NIL; // TODO: error
   return PN_VTABLE(t);
 }
 

@@ -57,7 +57,7 @@ struct PNJitAsm;
 
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
-#define PN_VTABLE(t)    (P->vts[t])
+#define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, t))
 
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)
@@ -96,6 +96,17 @@ struct PNJitAsm;
 #define PN_GBN(x)       ((struct PNGarbage *)x)->next
 #define PN_LINK(x)      if (link) potion_release(P, x)
 #define PN_CLINK(x)     if (link && PN_GBN(x) == 1) { PN_FREE(x); }
+
+#define PN_FLEX(N, T) struct { T *ptr; size_t capa; size_t len; } N;
+#define PN_FLEX_NEW(N, T, S) \
+  N.ptr = PN_ALLOC_N(T, S); \
+  N.capa = S; \
+  N.len = 0
+#define PN_FLEX_NEEDS_1(N, T, S) \
+  if (N.capa < ++N.len) \
+    PN_REALLOC_N(N.ptr, T, (N.capa += S))
+#define PN_FLEX_AT(N, I) N.ptr[I]
+#define PN_FLEX_SIZE(N)  N.len
 
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
 #define PN_TUP0()       potion_tuple_empty(P)
@@ -248,9 +259,7 @@ struct Potion_State {
   PN strings; /* table of all strings */
   unsigned int next_string_id;
   PN lobby; /* root namespace */
-  PN *vts;
-  int typen; /* number of actual types in circulation */
-  int typea; /* type space allocated */ 
+  PN_FLEX(vts, PN); /* built in types */
   PN source; /* temporary ast node */
   PN unclosed; /* used by parser for named block endings */
   int dast; /* parsing depth */
@@ -275,7 +284,7 @@ struct Potion_State {
     static int prevTN = 0; \
     static PN closure = 0; \
     PNType thisVT = potion_type(r); \
-    int thisTN = P->typen; \
+    int thisTN = PN_FLEX_SIZE(P->vts); \
     thisVT == prevVT && prevTN == thisTN ? closure : \
       (prevVT = thisVT, prevTN = thisTN, closure = potion_bind(P, r, (MSG))); \
     ((struct PNClosure *)closure)->method(P, closure, r, ##ARGS); \
