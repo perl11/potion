@@ -34,53 +34,36 @@
 
                      ~
 
-  On a related note, I would like to say
-  something to all of the parties working on
-  languages atop abstracted runtimes, such as the
-  JVM and .Net and Parrot.
+  This doc is going to touch quite a bit on
+  the JIT, compiling straight to x86 and PowerPC
+  instructions. So many languages are targetting
+  the JVM and .Net these days... it made me
+  wonder what the hurdles are to generating
+  machine code directly.
 
-  The first thing is: you should try target-
-  ting x86. It's very popular!
+  Clearly, the biggest benefit of having a
+  common runtime is garbage collection. The
+  JVM has some wild GC algorithms built in.
+  And that's actually a huge benefit. I only
+  wish that more garbage collectors were
+  available as libraries.
 
-  How big is Java? How big is .Net?
-  Caesar's Hounds, people. Java has a systray
-  icon and update alerts and browser toolbar. Are
-  those features? x86 gets by without!
+  Anyways, my favorite language has been Ruby
+  for many years, that's partially because
+  I like how easy it is to script from C,
+  for some efficiency where I need it. So
+  Potion is my little attempt to make a
+  language that feels easy, but compiles
+  to machine code, to give me the speed of
+  (un-optimized) C code and to use all the
+  C function call conventions so that I
+  can link to other C libs. I want to see
+  if its still possible to enroach on C.
 
-  My JIT is a few hundred lines of code.
-  That turns out to be like a 100k.
-  Why is everyone so afraid of assembler??
-
-  Well, sure, I can't run on ARM. But give me
-  another few hundred lines of code.
-
-  I'm not suggesting that x86 is my favorite
-  architecture. Just that it's everywhere, it's
-  easy to write for, and it's got no excess when
-  compared to these big, entrenched abstractions.
-
-                     ~
-
-  LLVM is a neat exercise, but I found it to be
-  much scarier than assembler. I'm sure I'd see
-  a lot of benefits by using LLVM to squeeze out
-  some optimization. But it wouldn't be any less
-  code and it would take me a lot longer to sort
-  through the docs.
-
-  What would be great is an LLVM where you just
-  write x86 machine code and then it'll optimize
-  it or translate to other machine codes. But
-  small enough to statically link into your
-  program.
-
-  Again, LLVM is megs of stuff. What about a
-  C include that acts as a simple assembler into
-  a string buffer and makes some common
-  optimizations?
-
-  Enough opinions. Man alive. Now then. A round
-  of apologies, on the house.
+  I should say that O'Caml and Haskell
+  already do a fine job as C competitors,
+  so it's not like anything here is that
+  new.
 
 
   ~ lua's influence ~
