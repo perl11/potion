@@ -17,24 +17,18 @@
 
 PNAsm *potion_asm_new() {
   PNAsm *asmb = PN_ALLOC(PNAsm);
-  asmb->start = asmb->ptr = PN_ALLOC_N(u8, (asmb->capa = ASM_UNIT));
+  PN_FLEX_NEW(*asmb, u8, ASM_UNIT);
   return asmb;
 }
 
 void potion_asm_put(PNAsm *asmb, PN val, size_t len) {
-  if (asmb->capa - (asmb->ptr - asmb->start) < len) {
-    size_t dist = asmb->ptr - asmb->start;
-    asmb->capa += ASM_UNIT;
-    asmb->start = PN_REALLOC_N(asmb->start, u8, asmb->capa);
-    asmb->ptr = asmb->start + dist;
-  }
+  u8 *ptr = asmb->ptr + asmb->len;
+  PN_FLEX_NEEDS(len, *asmb, u8, ASM_UNIT);
 
   if (len == sizeof(u8))
-    *asmb->ptr = (u8)val;
+    *ptr = (u8)val;
   else if (len == sizeof(int))
-    *((int *)asmb->ptr) = (int)val;
+    *((int *)ptr) = (int)val;
   else if (len == sizeof(PN))
-    *((PN *)asmb->ptr) = val;
-  asmb->ptr += len;
+    *((PN *)ptr) = val;
 }
-

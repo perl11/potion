@@ -65,12 +65,12 @@
 #define TAG_JMP(jpos) \
         ASM(0xE9); \
         if (jpos >= op) { \
-          jmps[*jmpc].from = asmb->ptr - asmb->start; \
+          jmps[*jmpc].from = asmb->len; \
           ASMI(0); \
           jmps[*jmpc].to = jpos + 1; \
           *jmpc = *jmpc + 1; \
         } else if (jpos < op) { \
-          ASMI(offs[(jpos + 1) - start] - ((asmb->ptr - asmb->start) + 4)); \
+          ASMI(offs[(jpos + 1) - start] - ((asmb->len) + 4)); \
         } else { \
           ASMI(0); \
         }

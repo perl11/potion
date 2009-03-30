@@ -83,7 +83,7 @@ Potion *potion_create() {
 
 PN potion_delegated(Potion *P, PN closure, PN self) {
   PNType t = PN_FLEX_SIZE(P->vts);
-  PN_FLEX_NEEDS_1(P->vts, PN, TYPE_BATCH_SIZE);
+  PN_FLEX_NEEDS(1, P->vts, PN, TYPE_BATCH_SIZE);
   return potion_type_new(P, t, self);
 }
 

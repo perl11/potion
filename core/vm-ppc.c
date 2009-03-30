@@ -77,12 +77,12 @@
   PPC2(14, REG(op->a), PN_FALSE); /* li rA,FALSE */
 #define TAG_JMP(ins, jpos) \
   if (jpos >= op) { \
-    jmps[*jmpc].from = asmb->ptr - asmb->start; \
+    jmps[*jmpc].from = asmb->len; \
     ASMI(ins); \
     jmps[*jmpc].to = jpos + 1; \
     *jmpc = *jmpc + 1; \
   } else if (jpos < op) { \
-    int off = (offs[(jpos + 1) - start] - (asmb->ptr - asmb->start)); \
+    int off = (offs[(jpos + 1) - start] - (asmb->len)); \
     if (ins == 0x48000000) \
       ASMI(ins | (off & 0x3FFFFFF)); \
     else \

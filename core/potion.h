@@ -97,14 +97,16 @@ struct PNJitAsm;
 #define PN_LINK(x)      if (link) potion_release(P, x)
 #define PN_CLINK(x)     if (link && PN_GBN(x) == 1) { PN_FREE(x); }
 
-#define PN_FLEX(N, T) struct { T *ptr; size_t capa; size_t len; } N;
+#define PN_FLEX(N, T) struct { T *ptr; PN_SIZE capa; PN_SIZE len; } N;
 #define PN_FLEX_NEW(N, T, S) \
-  N.ptr = PN_ALLOC_N(T, S); \
-  N.capa = S; \
-  N.len = 0
-#define PN_FLEX_NEEDS_1(N, T, S) \
-  if (N.capa < ++N.len) \
-    PN_REALLOC_N(N.ptr, T, (N.capa += S))
+  (N).ptr = PN_ALLOC_N(T, S); \
+  (N).capa = S; \
+  (N).len = 0
+#define PN_FLEX_NEEDS(X, N, T, S) \
+  while ((N).capa < (N).len + X) \
+    (N).capa += S; \
+  PN_REALLOC_N((N).ptr, T, (N).capa); \
+  (N).len += X
 #define PN_FLEX_AT(N, I) N.ptr[I]
 #define PN_FLEX_SIZE(N)  N.len
 

@@ -88,11 +88,11 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     target->upvals(asmb, lregs, upc);
 
   while (pos < end) {
-    offs[pos - start] = asmb->ptr - asmb->start;
+    offs[pos - start] = asmb->len;
     for (jmpi = 0; jmpi < jmpc; jmpi++) {
       if (jmps[jmpi].to == pos) {
-        unsigned char *asmj = asmb->start + jmps[jmpi].from;
-        target->jmpedit(asmb, asmj, (asmb->ptr - asmb->start) - (jmps[jmpi].from + 4));
+        unsigned char *asmj = asmb->ptr + jmps[jmpi].from;
+        target->jmpedit(asmb, asmj, asmb->len - (jmps[jmpi].from + 4));
       }
     }
 
@@ -137,21 +137,20 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     pos++;
   }
 
-  asmb->capa = asmb->ptr - asmb->start;
-  fn = PN_ALLOC_FUNC(asmb->capa);
+  fn = PN_ALLOC_FUNC(asmb->len);
 
   target->finish(asmb);
 
 #ifdef JIT_DEBUG
   printf("JIT(%p): ", fn);
   long ai = 0;
-  for (ai = 0; ai < asmb->capa; ai++) {
-    printf("%x ", asmb->start[ai]);
+  for (ai = 0; ai < asmb->len; ai++) {
+    printf("%x ", asmb->ptr[ai]);
   }
   printf("\n");
 #endif
-  PN_MEMCPY_N(fn, asmb->start, u8, asmb->capa);
-  PN_FREE(asmb->start);
+  PN_MEMCPY_N(fn, asmb->ptr, u8, asmb->len);
+  PN_FREE(asmb->ptr);
   PN_FREE(asmb);
 
   return (PN_F)fn;

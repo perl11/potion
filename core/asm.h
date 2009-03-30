@@ -6,8 +6,8 @@
 //
 
 typedef struct PNJitAsm {
-  u8 *start, *ptr;
-  long capa;
+  u8 *ptr;
+  PN_SIZE len, capa;
 } PNAsm;
 
 typedef struct {
