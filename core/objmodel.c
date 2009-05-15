@@ -6,6 +6,7 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include "potion.h"
@@ -21,6 +22,7 @@ struct PNVtable {
   PN_OBJECT_HEADER
   PNType type;
   PN parent;
+  PN_F func;
 #ifdef JIT_MCACHE
   PN_MCACHE_FUNC mcache;
 #endif
@@ -77,11 +79,27 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
   vt->vt = PN_TVTABLE;
   vt->type = t;
   vt->parent = self;
+  vt->func = NULL;
 #ifdef JIT_MCACHE
   vt->mcache = (PN_MCACHE_FUNC)PN_ALLOC_FUNC(8192);
 #endif
   PN_VTABLE(t) = (PN)vt;
   return (PN)vt;
+}
+
+void potion_type_func(PN vt, PN_F func) {
+  ((struct PNVtable *)vt)->func = func;
+}
+
+PN potion_obj_call(Potion *P, PN cl, PN count, ...) {
+  struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(PN_VTYPE(cl));
+  if (vt->func != NULL) {
+    va_list args;
+    va_start(args, count);
+    cl = vt->func(P, PN_NIL, cl, va_arg(args, PN));
+    va_end(args);
+  }
+  return cl;
 }
 
 PN potion_proto_method(Potion *P, PN cl, PN self, PN args) {

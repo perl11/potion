@@ -5,7 +5,6 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #include <stdio.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -154,28 +153,6 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   PN_FREE(asmb);
 
   return (PN_F)fn;
-}
-
-PN potion_jit_callout(Potion *P, PN cl, PN count, ...) {
-  va_list args;
-  va_start(args, count);
-
-  switch (PN_TYPE(cl)) {
-    case PN_TTUPLE:
-      cl = potion_tuple_at(P, PN_NIL, cl, va_arg(args, PN));
-    break;
-
-    case PN_TTABLE:
-      cl = potion_table_at(P, PN_NIL, cl, va_arg(args, PN));
-    break;
-
-    default:
-      cl = potion_send(cl, PN_call);
-    break;
-  }
-
-  va_end(args);
-  return cl;
 }
 
 PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {

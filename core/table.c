@@ -202,12 +202,14 @@ PN potion_lobby_list(Potion *P, PN cl, PN self, PN size) {
 void potion_table_init(Potion *P) {
   PN tbl_vt = PN_VTABLE(PN_TTABLE);
   PN tpl_vt = PN_VTABLE(PN_TTUPLE);
+  potion_type_func(tbl_vt, (PN_F)potion_table_at);
   potion_method(tbl_vt, "at", potion_table_at, "index=o");
   potion_method(tbl_vt, "length", potion_table_length, 0);
   potion_method(tbl_vt, "put", potion_table_put, "index=o,value=o");
   potion_method(tbl_vt, "remove", potion_table_remove, "index=o");
   potion_method(tbl_vt, "string", potion_table_string, 0);
   potion_method(tpl_vt, "~link", potion_table__link, 0);
+  potion_type_func(tpl_vt, (PN_F)potion_tuple_at);
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
   potion_method(tpl_vt, "join", potion_tuple_join, 0);

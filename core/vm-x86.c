@@ -473,7 +473,7 @@ void potion_x86_call(PNAsm *asmb, PN_OP *op, long start) {
   // if not a closure, send to potion_jit_callout
   X86_MOVQ(op->a, op->b - op->a - 1); // mov -A(%rbp) NUM
   X86_ARGO(op->a, 2);
-  X86_PRE(); ASM(0xB8); ASMN(potion_jit_callout); // mov &potion_jit_callout %rax
+  X86_PRE(); ASM(0xB8); ASMN(potion_obj_call); // mov &potion_obj_call %rax
 
   ASM(0xFF); ASM(0xD0); // [b] callq *%rax
   X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op->a)); /* mov %rbp(A) %rax */

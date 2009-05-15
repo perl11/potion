@@ -186,7 +186,7 @@ struct PNFile {
   PN mode;
 };
 
-typedef PN (*PN_F)(Potion *P, PN closure, PN receiver, ...);
+typedef PN (*PN_F)(Potion *, PN, PN, ...);
 
 struct PNClosure {
   PN_OBJECT_HEADER
@@ -319,6 +319,8 @@ PN potion_allocate(Potion *, PN, PN, PN);
 void potion_release(Potion *, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);
+void potion_type_func(PN, PN_F);
+PN potion_obj_call(Potion *, PN, PN, ...);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_call(Potion *, PN, PN_SIZE, PN *);
 PN potion_lookup(Potion *, PN, PN, PN);
@@ -357,7 +359,6 @@ void potion_vm_init(Potion *);
 PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
-PN potion_jit_callout(Potion *, PN, PN, ...);
 PN potion_vm(Potion *, PN, PN, PN_SIZE, PN *);
 PN potion_eval(Potion *, const char *);
 PN potion_run(Potion *, PN);
