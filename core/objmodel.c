@@ -210,10 +210,6 @@ static PN potion_lobby_self(Potion *P, PN cl, PN self) {
   return self;
 }
 
-static PN potion_lobby_string(Potion *P, PN closure, PN self) {
-  return potion_str(P, "Lobby");
-}
-
 PN potion_lobby_kind(Potion *P, PN cl, PN self) {
   PNType t = PN_TYPE(self);
   if (t >= PN_FLEX_SIZE(P->vts)) return PN_NIL; // TODO: error
@@ -254,5 +250,5 @@ void potion_lobby_init(Potion *P) {
   potion_method(P->lobby, "callcc", potion_callcc, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);
   potion_method(P->lobby, "self", potion_lobby_self, 0);
-  potion_method(P->lobby, "string", potion_lobby_string, 0);
+  potion_send(P->lobby, PN_def, PN_string, potion_str(P, "Lobby"));
 }

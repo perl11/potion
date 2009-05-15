@@ -1,0 +1,7 @@
+(10 kind == Number,
+ nil kind == NilKind,
+ "mailbox" kind == String,
+ 10 kind == Boolean,
+ nil kind == Boolean,
+ "mailbox" kind == Boolean)
+# (true, true, true, false, false, false)
