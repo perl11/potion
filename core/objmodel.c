@@ -92,7 +92,7 @@ void potion_type_func(PN vt, PN_F func) {
 }
 
 PN potion_obj_call(Potion *P, PN cl, PN count, ...) {
-  struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(PN_VTYPE(cl));
+  struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(PN_TYPE(cl));
   if (vt->func != NULL) {
     va_list args;
     va_start(args, count);
