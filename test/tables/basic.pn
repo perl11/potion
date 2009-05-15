@@ -6,5 +6,6 @@ b = p at('platform')
 
 p remove('date')
 
-(a, b, p length, (i_exist=1) at ('nonexistant'), ('does', 'exists') [1])
+c = ('does', 'exists')
+(a, b, p length, (i_exist=1) at ('nonexistant'), c(1))
 # (i686-apple-darwin8, i386-undermydesk-freebsd, 3, nil, exists)
