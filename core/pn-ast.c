@@ -11,7 +11,7 @@
 #include "pn-ast.h"
 
 const char *potion_ast_names[] = {
-  "code", "value", "assign", "or", "and", "cmp", "eq", "neq",
+  "code", "value", "assign", "not", "or", "and", "cmp", "eq", "neq",
   "gt", "gte", "lt", "lte", "pipe", "caret", "amp", "bitl",
   "bitr", "plus", "minus", "inc", "times", "div", "rem", "pow",
   "message", "path", "query", "pathq", "expr", "table",
@@ -19,7 +19,7 @@ const char *potion_ast_names[] = {
 };
 
 const int potion_ast_sizes[] = {
-  1, 1, 2, 2, 2, 2, 2, 2,
+  1, 1, 2, 1, 2, 2, 2, 2, 2,
   2, 2, 2, 2, 2, 2, 2, 2,
   2, 2, 2, 2, 2, 2, 2, 2,
   3, 1, 1, 1, 1, 1, 1, 1,

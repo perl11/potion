@@ -420,11 +420,11 @@ void potion_x86_test_asm(PNAsm *asmb, PN_OP *op, int test) {
 }
 
 void potion_x86_test(PNAsm *asmb, PN_OP *op) {
-  potion_x86_test_asm(asmb, op, 1);
+  potion_x86_test_asm(asmb, op, 0);
 }
 
 void potion_x86_not(PNAsm *asmb, PN_OP *op) {
-  potion_x86_test_asm(asmb, op, 0);
+  potion_x86_test_asm(asmb, op, 1);
 }
 
 void potion_x86_cmp(PNAsm *asmb, PN_OP *op) {

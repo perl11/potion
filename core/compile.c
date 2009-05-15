@@ -303,6 +303,11 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, PN_SI
     }
     break;
 
+    case AST_NOT:
+      PN_ARG(0, reg);
+      PN_ASM2(OP_NOT, reg, reg);
+    break;
+
     case AST_AND: case AST_OR: {
       PN_OP *jmp;
       PN_ARG(0, reg);

@@ -112,9 +112,9 @@
     whitespace;
     comment;
 
+    "!"|"not"   => { TOKEN(NOT); };
     "||"|"or"   => { TOKEN(OR); };
     "&&"|"and"  => { TOKEN(AND); };
-#   "!"|"not"   => { TOKEN(NOT); };
     "<=>"       => { TOKEN(CMP); };
     "=="        => { TOKEN(EQ); };
     "!="        => { TOKEN(NEQ); };

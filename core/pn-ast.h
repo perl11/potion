@@ -15,6 +15,7 @@ enum PN_AST {
   AST_CODE,
   AST_VALUE,
   AST_ASSIGN,
+  AST_NOT,
   AST_OR,
   AST_AND,
   AST_CMP,

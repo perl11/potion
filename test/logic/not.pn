@@ -1,0 +1,2 @@
+(not true, not false, not 2, not "kxxx!", not not true, !!true, !!false, !false)
+# (false, true, false, false, true, true, false, true)
