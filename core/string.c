@@ -133,6 +133,13 @@ static PN potion_str_slice(Potion *P, PN closure, PN self, PN start, PN end) {
   return potion_str2(P, str + startoffset, endoffset - startoffset);
 }
 
+static PN potion_str_at(Potion *P, PN closure, PN self, PN index) {
+  char *str = PN_STR_PTR(self);
+  size_t len = potion_cp_strlen_utf8(str);
+  size_t offset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(index, len, 0)));
+  return potion_str2(P, str + offset, 1);
+}
+
 PN potion_byte_str(Potion *P, const char *str) {
   size_t len = strlen(str);
   struct PNBytes *s = (struct PNBytes *)potion_bytes(P, len + 1);
@@ -202,6 +209,7 @@ void potion_str_hash_init(Potion *P) {
 void potion_str_init(Potion *P) {
   PN str_vt = PN_VTABLE(PN_TSTRING);
   PN byt_vt = PN_VTABLE(PN_TBYTES);
+  potion_type_func(str_vt, (PN_F)potion_str_at);
   potion_method(str_vt, "eval", potion_str_eval, 0);
   potion_method(str_vt, "length", potion_str_length, 0);
   potion_method(str_vt, "number", potion_str_number, 0);

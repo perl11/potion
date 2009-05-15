@@ -328,16 +328,8 @@ reentry:
             }
           break;
           
-          case PN_TTUPLE:
-            reg[pos->a] = potion_tuple_at(P, PN_NIL, reg[pos->b], reg[pos->a+1]);
-          break;
-
-          case PN_TTABLE:
-            reg[pos->a] = potion_table_at(P, PN_NIL, reg[pos->b], reg[pos->a+1]);
-          break;
-
           default:
-            reg[pos->a] = potion_send(reg[pos->b], PN_call);
+            reg[pos->a] = potion_obj_call(P, reg[pos->b], 1, reg[pos->a+1]);
           break;
         }
       break;
