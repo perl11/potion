@@ -338,6 +338,7 @@ PN_SIZE potion_tuple_push_unless(Potion *, PN, PN);
 PN_SIZE potion_tuple_find(Potion *, PN, PN);
 PN potion_tuple_at(Potion *, PN, PN, PN);
 PN potion_table_set(Potion *, PN, PN, PN);
+PN potion_table_at(Potion *, PN, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);
@@ -356,6 +357,7 @@ void potion_vm_init(Potion *);
 PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
+PN potion_jit_callout(Potion *, PN, PN, ...);
 PN potion_vm(Potion *, PN, PN, PN_SIZE, PN *);
 PN potion_eval(Potion *, const char *);
 PN potion_run(Potion *, PN);

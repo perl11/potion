@@ -71,7 +71,6 @@ statement(A) ::= statement(B) REM statement(D). { A = PN_OP(AST_REM, B, D); }
 statement(A) ::= statement(B) POW statement(D). { A = PN_OP(AST_POW, B, D); }
 
 expr(A) ::= expr(B) call(C). { A = PN_PUSH(B, C); }
-expr(A) ::= expr(B) BEGIN_DATA statement(C) END_DATA. { A = PN_PUSH(B, PN_AST(SEARCH, C)); }
 expr(A) ::= arg(B). { A = PN_TUP(B.b == PN_NIL ? B.v : PN_AST2(PROTO, B.v, B.b)); }
 expr(A) ::= call(B). { A = PN_TUP(B); }
 

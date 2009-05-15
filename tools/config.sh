@@ -12,7 +12,7 @@ if [ "$MINGW_GCC" = "" ]; then
 else
   MINGW=1
 fi
-JIT_X86=`echo "$TARGET" | sed "/x86/!d"`
+JIT_X86=`echo "$TARGET" | sed "/86/!d"`
 JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
 
 if [ $MINGW -eq 0 ]; then

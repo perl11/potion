@@ -256,16 +256,6 @@ void potion_x86_settuple(PNAsm *asmb, PN_OP *op, long start) {
   X86_MOV_RBP(0x89, op->a); // mov %rax local
 }
 
-void potion_x86_search(PNAsm *asmb, PN_OP *op, long start) {
-  // TODO: make this a more generic 'at' call
-  X86_ARGO(start - 2, 0);
-  X86_ARGO(op->a, 2);
-  X86_ARGO(op->b, 3);
-  X86_PRE(); ASM(0xB8); ASMN(potion_tuple_at); // mov &potion_tuple_at %rax
-  ASM(0xFF); ASM(0xD0); // callq %rax
-  X86_MOV_RBP(0x89, op->a); // mov %rax local
-}
-
 void potion_x86_settable(PNAsm *asmb, PN_OP *op, long start, PN values) {
   PN val = PN_TUPLE_AT(values, op->b);
   X86_ARGO(start - 2, 0);
@@ -457,17 +447,36 @@ void potion_x86_notjmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size
   TAG_JMP(op + op->b);
 }
 
+// TODO: check for bytecode nodes and jit them as well?
 void potion_x86_call(PNAsm *asmb, PN_OP *op, long start) {
   int argc = op->b - op->a;
   // (Potion *, CL) as the first argument
   X86_ARGO(start - 2, 0);
   X86_ARGO(op->b, 1);
   while (--argc >= 0) X86_ARGO(op->a + argc, argc + 2);
-  // TODO: check for bytecode nodes and jit them as well?
-  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op->b)); /* mov -preg(%ebp) %rax */
-  X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); /* mov N(%rax) %rax */
-  ASM(0xFF); ASM(0xD0); /* callq *%rax */
-  X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op->a)); /* mov -preg(%ebp) %rax */
+
+  // check type of the closure
+  X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->b)); // mov %rbp(B) %rdx
+  ASM(0xF6); ASM(0xC2); ASM(0x01); // test 0x1 %dl
+  ASM(0x75); ASM(X86C(24, 26)); // jne [a]
+  ASM(0xF7); ASM(0xC2); ASMI(PN_REF_MASK); // test REFMASK %edx
+  ASM(0x74); ASM(X86C(16, 18)); // je [a]
+  ASM(0x83); ASM(0xE2); ASM(0xF8); // and ~PRIMITIVE %edx
+  X86_PRE(); ASM(0x8B); ASM(0x42); ASM(sizeof(PNType)); // mov N(%rdx) %rax
+  ASM(0x83); ASM(0xF8); ASM(PN_TCLOSURE); // cmp CLOSURE %eax
+  ASM(0x75); ASM(X86C(5, 6)); // jne [a]
+
+  // if a closure, load the function pointer
+  X86_PRE(); ASM(0x8B); ASM(0x42); ASM(sizeof(struct PNGarbage)); // mov N(%rdx) %rax
+  ASM(0xEB); ASM(X86C(19, 22)); // jmp [b]
+
+  // if not a closure, send to potion_jit_callout
+  X86_MOVQ(op->a, op->b - op->a - 1); // mov -A(%rbp) NUM
+  X86_ARGO(op->a, 2);
+  X86_PRE(); ASM(0xB8); ASMN(potion_jit_callout); // mov &potion_jit_callout %rax
+
+  ASM(0xFF); ASM(0xD0); // [b] callq *%rax
+  X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op->a)); /* mov %rbp(A) %rax */
 }
 
 void potion_x86_return(PNAsm *asmb, PN_OP *op) {

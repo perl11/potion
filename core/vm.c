@@ -5,6 +5,7 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -107,7 +108,6 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(SETUPVAL, (asmb, pos, lregs))
       CASE_OP(NEWTUPLE, (asmb, pos, need))
       CASE_OP(SETTUPLE, (asmb, pos, need))
-      CASE_OP(SEARCH, (asmb, pos, need))
       CASE_OP(SETTABLE, (asmb, pos, need, f->values))
       CASE_OP(ADD, (asmb, pos))
       CASE_OP(SUB, (asmb, pos))
@@ -154,6 +154,28 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   PN_FREE(asmb);
 
   return (PN_F)fn;
+}
+
+PN potion_jit_callout(Potion *P, PN cl, PN count, ...) {
+  va_list args;
+  va_start(args, count);
+
+  switch (PN_TYPE(cl)) {
+    case PN_TTUPLE:
+      cl = potion_tuple_at(P, PN_NIL, cl, va_arg(args, PN));
+    break;
+
+    case PN_TTABLE:
+      cl = potion_table_at(P, PN_NIL, cl, va_arg(args, PN));
+    break;
+
+    default:
+      cl = potion_send(cl, PN_call);
+    break;
+  }
+
+  va_end(args);
+  return cl;
 }
 
 PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {
@@ -242,9 +264,6 @@ reentry:
       case OP_SETTUPLE:
         reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
       break;
-      case OP_SEARCH:
-        reg[pos->a] = potion_tuple_at(P, PN_NIL, reg[pos->a], reg[pos->b]);
-      break;
       case OP_SETTABLE:
         potion_table_set(P, reg[pos->a], PN_TUPLE_AT(f->values, pos->b), reg[pos->a+1]);
       break;
@@ -313,24 +332,36 @@ reentry:
         if (!PN_TEST(reg[pos->a])) pos += pos->b;
       break;
       case OP_CALL:
-        if (PN_TYPE(reg[pos->b]) == PN_TCLOSURE) {
-          if (PN_CLOSURE(reg[pos->b])->method != (PN_F)potion_vm_proto) {
-            reg[pos->a] = potion_call(P, reg[pos->b], pos->b - pos->a, reg + pos->a);
-          } else {
-            self = reg[pos->a];
-            args = &reg[pos->a+1];
-            upc = PN_CLOSURE(reg[pos->b])->extra - 1;
-            upargs = &PN_CLOSURE(reg[pos->b])->data[1];
-            current = reg + PN_INT(f->stack) + 2;
-            current[-2] = (PN)f;
-            current[-1] = (PN)pos;
+        switch (PN_TYPE(reg[pos->b])) {
+          case PN_TCLOSURE:
+            if (PN_CLOSURE(reg[pos->b])->method != (PN_F)potion_vm_proto) {
+              reg[pos->a] = potion_call(P, reg[pos->b], pos->b - pos->a, reg + pos->a);
+            } else {
+              self = reg[pos->a];
+              args = &reg[pos->a+1];
+              upc = PN_CLOSURE(reg[pos->b])->extra - 1;
+              upargs = &PN_CLOSURE(reg[pos->b])->data[1];
+              current = reg + PN_INT(f->stack) + 2;
+              current[-2] = (PN)f;
+              current[-1] = (PN)pos;
 
-            f = PN_PROTO(PN_CLOSURE(reg[pos->b])->data[0]);
-            pos = ((PN_OP *)PN_STR_PTR(f->asmb));
-            goto reentry;
-          }
-        } else {
-          reg[pos->a] = potion_send(reg[pos->b], PN_call);
+              f = PN_PROTO(PN_CLOSURE(reg[pos->b])->data[0]);
+              pos = ((PN_OP *)PN_STR_PTR(f->asmb));
+              goto reentry;
+            }
+          break;
+          
+          case PN_TTUPLE:
+            reg[pos->a] = potion_tuple_at(P, PN_NIL, reg[pos->b], reg[pos->a+1]);
+          break;
+
+          case PN_TTABLE:
+            reg[pos->a] = potion_table_at(P, PN_NIL, reg[pos->b], reg[pos->a+1]);
+          break;
+
+          default:
+            reg[pos->a] = potion_send(reg[pos->b], PN_call);
+          break;
         }
       break;
       case OP_RETURN:

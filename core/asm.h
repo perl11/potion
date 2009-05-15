@@ -30,7 +30,6 @@ typedef struct {
       (OP_F)potion_##arch##_self, \
       (OP_F)potion_##arch##_newtuple, \
       (OP_F)potion_##arch##_settuple, \
-      (OP_F)potion_##arch##_search, \
       (OP_F)potion_##arch##_getlocal, \
       (OP_F)potion_##arch##_setlocal, \
       (OP_F)potion_##arch##_getupval, \

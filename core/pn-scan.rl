@@ -140,8 +140,8 @@
 
     begin_table => { TOKEN2(BEGIN_TABLE, PN_TUP0()); };
     end_table   => { TOKEN(END_TABLE); };
-    begin_data  => { TOKEN(BEGIN_DATA); };
-    end_data    => { TOKEN(END_DATA); };
+#   begin_data  => { TOKEN(BEGIN_DATA); };
+#   end_data    => { TOKEN(END_DATA); };
     begin_block => { TOKEN(BEGIN_BLOCK); P->dast++; };
     end_block   => { TOKEN(END_BLOCK); P->dast--; };
     end_blocks  => { 
