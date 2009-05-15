@@ -206,8 +206,12 @@ PN potion_object__link(Potion *P, PN cl, PN self, PN link) {
   return link;
 }
 
-PN potion_lobby_self(Potion *P, PN cl, PN self) {
+static PN potion_lobby_self(Potion *P, PN cl, PN self) {
   return self;
+}
+
+static PN potion_lobby_string(Potion *P, PN closure, PN self) {
+  return potion_str(P, "Lobby");
 }
 
 PN potion_lobby_kind(Potion *P, PN cl, PN self) {
@@ -248,6 +252,7 @@ void potion_lobby_init(Potion *P) {
   potion_send(P->lobby, PN_def, potion_str(P, "Ref"),      PN_VTABLE(PN_TWEAK));
 
   potion_method(P->lobby, "callcc", potion_callcc, 0);
-  potion_method(P->lobby, "self", potion_lobby_self, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);
+  potion_method(P->lobby, "self", potion_lobby_self, 0);
+  potion_method(P->lobby, "string", potion_lobby_string, 0);
 }

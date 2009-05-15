@@ -183,7 +183,7 @@ PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {
 
   // these variables persist as we jump around
   PN *stack = PN_ALLOC_N(PN, STACK_MAX);
-  PN val = PN_NIL, self = PN_NIL;
+  PN val = PN_NIL, self = P->lobby;
 
   // these variables change from proto to proto
   // current = upvals | locals | self | reg

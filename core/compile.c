@@ -677,7 +677,7 @@ PN potion_source_dump(Potion *P, PN cl, PN proto) {
 PN potion_run(Potion *P, PN code) {
 #if POTION_JIT == 1
   PN_F func = potion_jit_proto(P, code, POTION_JIT_TARGET);
-  return func(P, PN_NIL, PN_NIL);
+  return func(P, PN_NIL, P->lobby);
 #else
   return potion_vm(P, code, PN_NIL, 0, NULL);
 #endif

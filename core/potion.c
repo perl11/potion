@@ -97,7 +97,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
 #if POTION_JIT == 1
       PN val;
       PN_F func = potion_jit_proto(P, code, POTION_JIT_TARGET);
-      val = func(P, PN_NIL, PN_NIL);
+      val = func(P, PN_NIL, P->lobby);
       if (verbose > 1)
         printf("\n-- jit returned %p --\n", func);
       if (verbose) {
