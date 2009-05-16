@@ -219,6 +219,10 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, PN_SI
       PN_SIZE num = PN_NONE;
       u8 opcode = OP_SETUPVAL;
 
+      // TODO: handle assignment to function calls
+      if (lhs->part == AST_EXPR)
+        lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
+
       if (lhs->part == AST_MESSAGE || lhs->part == AST_QUERY) {
         num = PN_UPVAL(lhs->a[0]);
         if (num == PN_NONE) {
@@ -461,13 +465,25 @@ void potion_source_asmb(Potion *P, struct PNProto *f, struct PNLoop *loop, PN_SI
         if (PN_PART(v) == AST_ASSIGN) {
           struct PNSource *lhs = (struct PNSource *)PN_S(v, 0);
           potion_source_asmb(P, f, loop, i, (struct PNSource *)PN_S(v, 1), reg + 1, pos);
-          if (lhs->part == AST_MESSAGE) {
-            PN_SIZE num = PN_PUT(f->values, lhs->a[0]);
-            PN_ASM2(OP_SETTABLE, reg, num);
+          if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
+          {
+            lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
+            if (lhs->part == AST_MESSAGE) {
+              PN_SIZE num = PN_PUT(f->values, lhs->a[0]);
+              PN_ASM2(OP_LOADK, reg + 2, num);
+              lhs = NULL;
+            }
           }
+
+          if (lhs != NULL)
+            potion_source_asmb(P, f, loop, 0, (struct PNSource *)lhs, reg + 2, pos);
+
+          PN_ASM2(OP_SETTABLE, reg, reg + 2);
+          PN_REG(f, reg + 2);
         } else {
           potion_source_asmb(P, f, loop, i, (struct PNSource *)v, reg + 1, pos);
           PN_ASM2(OP_SETTUPLE, reg, reg + 1);
+          PN_REG(f, reg + 1);
         }
       });
     break;

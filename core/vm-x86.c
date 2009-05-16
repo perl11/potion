@@ -257,11 +257,9 @@ void potion_x86_settuple(PNAsm *asmb, PN_OP *op, long start) {
 }
 
 void potion_x86_settable(PNAsm *asmb, PN_OP *op, long start, PN values) {
-  PN val = PN_TUPLE_AT(values, op->b);
   X86_ARGO(start - 2, 0);
   X86_ARGO(op->a, 1);
-  X86_MOVQ(op->a, val);
-  X86_ARGO(op->a, 2);
+  X86_ARGO(op->b, 2);
   X86_ARGO(op->a + 1, 3);
   X86_PRE(); ASM(0xB8); ASMN(potion_table_set); // mov &potion_tuple_push %rax
   ASM(0xFF); ASM(0xD0); // callq %rax

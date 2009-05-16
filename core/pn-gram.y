@@ -47,7 +47,7 @@ statement(A) ::= name(B) PPLUS. { A = PN_OP(AST_INC, B, PN_NUM(1)); }
 statement(A) ::= name(B) MMINUS. { A = PN_OP(AST_INC, B, PN_NUM(-1)); }
 statement(A) ::= PPLUS name(B). { A = PN_OP(AST_INC, B, PN_NUM(1) ^ 1); }
 statement(A) ::= MMINUS name(B). { A = PN_OP(AST_INC, B, PN_NUM(-1) ^ 1); }
-statement(A) ::= name(B) ASSIGN statement(C). { A = PN_AST2(ASSIGN, B, C); }
+statement(A) ::= statement(B) ASSIGN statement(C). { A = PN_AST2(ASSIGN, B, C); }
 statement(A) ::= MINUS statement(B). { A = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), B); }
 statement(A) ::= NOT statement(B). { A = PN_AST(NOT, B); }
 statement(A) ::= statement(B) OR statement(D). { A = PN_OP(AST_OR, B, D); }

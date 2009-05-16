@@ -242,7 +242,7 @@ reentry:
         reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
       break;
       case OP_SETTABLE:
-        potion_table_set(P, reg[pos->a], PN_TUPLE_AT(f->values, pos->b), reg[pos->a+1]);
+        potion_table_set(P, reg[pos->a], reg[pos->b], reg[pos->a+1]);
       break;
       case OP_ADD:
         reg[pos->a] = reg[pos->a] + (reg[pos->b]-1);
