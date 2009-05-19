@@ -22,8 +22,8 @@
 //
 // types
 //
-typedef unsigned long PN;
-typedef unsigned int PNType, PN_GC, PN_SIZE;
+typedef unsigned long PNType, PN;
+typedef unsigned int PN_SIZE;
 typedef struct Potion_State Potion;
 
 struct PNObject;
@@ -92,10 +92,8 @@ struct PNJitAsm;
 #define PN_SET_REF(t)   (((PN)t)+PN_TWEAK)
 #define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_TWEAK))
 #define PN_DEREF(x)     PN_GET_REF(x)->data
-#define PN_GB(x)        ((struct PNGarbage *)x)->next = 1
-#define PN_GBN(x)       ((struct PNGarbage *)x)->next
-#define PN_LINK(x)      if (link) potion_release(P, x)
-#define PN_CLINK(x)     if (link && PN_GBN(x) == 1) { PN_FREE(x); }
+// TODO: redef PN_LINK in terms of new gc
+#define PN_LINK(x)      link
 
 #define PN_FLEX(N, T) struct { T *ptr; PN_SIZE capa; PN_SIZE len; } N;
 #define PN_FLEX_NEW(N, T, S) \
@@ -139,12 +137,10 @@ struct PNJitAsm;
   })
 
 struct PNGarbage {
-  PN_GC next;
   PNType vt;
 };
 
 #define PN_OBJECT_HEADER \
-  PN_GC next; \
   PNType vt;
 
 #define PN_BOOT_OBJ_ALLOC(S, T, L) \

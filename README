@@ -64,6 +64,10 @@
      fully bootstrapped, especially as it is tied
      into the JIT so closely.
 
+   * A lightweight generational GC, based on
+     Basile Starynkevitch's work on Qish.
+     <http://starynkevitch.net/Basile/qishintro.html>
+
   However, some warnings:
 
    * Strings are immutable (like Lua) and byte
@@ -74,10 +78,6 @@
    * No error handling. I'm wary of just tossing
      in exceptions and feeling rather uninspired
      on the matter. Let's hear from you.
-
-   * GC is reference counting. I know, I know,
-     but I put my eggs in other baskets. At
-     least it's quick.
 
 
   ~ a whiff of potion ~

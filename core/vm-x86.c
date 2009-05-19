@@ -205,7 +205,7 @@ void potion_x86_getlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
     ASM(0x75); ASM(X86C(11, 13)); // jne 13
     X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
     ASM(0x83); ASM(0xF0); ASM(PN_TWEAK); // xor REF %eax
-    X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNGarbage)); // mov %rax.data %rax
+    X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); // mov %rax.data %rax
     ASM(0xEB); ASM(X86C(3, 4)); //  jmp 4
     X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
   }
@@ -222,7 +222,7 @@ void potion_x86_setlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
     ASM(0x75); ASM(X86C(11, 13)); // jne 13
     X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
     ASM(0x83); ASM(0xF0); ASM(PN_TWEAK); // xor REF %eax
-    X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNGarbage)); // mov %rdx %rax.data
+    X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
     ASM(0xEB); ASM(X86C(3, 4)); //  jmp 4
   }
   X86_PRE(); ASM(0x89); ASM(0x55); ASM(RBP(regs + op->b)); // mov %rdx %rsp(B)
@@ -230,14 +230,14 @@ void potion_x86_setlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
 
 void potion_x86_getupval(PNAsm *asmb, PN_OP *op, long lregs) {
   X86_MOV_RBP(0x8B, lregs + op->b);
-  X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNGarbage));
+  X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject));
   X86_MOV_RBP(0x89, op->a);
 }
 
 void potion_x86_setupval(PNAsm *asmb, PN_OP *op, long lregs) {
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->a)); /*  mov -A(%rbp) %edx */
   X86_MOV_RBP(0x8B, lregs + op->b); // mov %rsp(B) %rax
-  X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNGarbage)); // mov %rdx %rax.data
+  X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
 }
 
 void potion_x86_newtuple(PNAsm *asmb, PN_OP *op, long start) {
@@ -370,7 +370,7 @@ void potion_x86_bind(PNAsm *asmb, PN_OP *op, long start) {
   ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and 0x7 %eax
   ASM(0xEB); ASM(X86C(6, 7)); // jmp [b]
   ASM(0x83); ASM(0xE2); ASM(0xF8); // [a] and ~PRIMITIVE %edx
-  X86_PRE(); ASM(0x8B); ASM(0x42); ASM(sizeof(PN_GC)); // %rdx.vt %rax
+  X86_PRE(); ASM(0x8B); ASM(0x42); ASM(0); // %rdx.vt %rax
   // [b] compare to TYPE 
   X86_PRE(); ASM(0x89); ASM(0xC2); // mov %rax %rdx
   X86_PRE(); ASM(0xB8); ictype = asmb->ptr; ASMN(0); // mov TYPE %rax
@@ -460,7 +460,7 @@ void potion_x86_call(PNAsm *asmb, PN_OP *op, long start) {
   ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); // test REFMASK %eax
   ASM(0x74); ASM(X86C(19, 21)); // je [a]
   ASM(0x83); ASM(0xE0); ASM(0xF8); // and ~PRIMITIVE %eax
-  ASM(0x8B); ASM(0x40); ASM(sizeof(PNType)); // mov N(%eax) %eax
+  ASM(0x8B); ASM(0x40); ASM(0); // mov N(%eax) %eax
   ASM(0x83); ASM(0xF8); ASM(PN_TCLOSURE); // cmp CLOSURE %eax
   ASM(0x75); ASM(X86C(8, 10)); // jne [a]
 

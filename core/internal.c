@@ -73,7 +73,6 @@ static void potion_init(Potion *P) {
 Potion *potion_create() {
   Potion *P = PN_ALLOC(Potion);
   PN_MEMZERO(P, Potion);
-  PN_GB(P);
   P->vt = PN_TSTATE;
   PN_FLEX_NEW(P->vts, PN, TYPE_BATCH_SIZE);
   PN_FLEX_SIZE(P->vts) = PN_TUSER;

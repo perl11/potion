@@ -193,14 +193,11 @@ static PN potion_bytes_length(Potion *P, PN closure, PN self) {
 }
 
 static PN potion_bytes__link(Potion *P, PN closure, PN self, PN link) {
-  struct PNBytes *s = (struct PNBytes *)self;
-  PN_CLINK(s->chars);
   return link;
 }
 
 void potion_str_hash_init(Potion *P) {
   struct PNStrTable *t = PN_CALLOC(struct PNStrTable, sizeof(kh_str_t));
-  PN_GB(t);
   t->vt = PN_TTABLE;
   P->strings = (PN)t;
   P->next_string_id = 0;

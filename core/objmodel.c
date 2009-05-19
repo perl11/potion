@@ -44,38 +44,15 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<closure>");
 }
 
-PN potion_closure__link(Potion *P, PN cl, PN self, PN link) {
-  PN_SIZE i;
-  struct PNClosure *c = PN_CLOSURE(self);
-  // TODO: link function code if allocated by the jit
-  PN_LINK(c->sig);
-  for (i = 0; i < c->extra; i++)
-    PN_LINK(c->data[i]);
-  return link;
-}
-
 PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
   struct PNVtable *vt = (struct PNVtable *)self;
   struct PNObject *o = PN_ALLOC2(struct PNObject, PN_INT(len));
-  PN_GB(o);
   o->vt = vt->type;
   return (PN)o;
 }
 
-void potion_release(Potion *P, PN obj) {
-  struct PNGarbage *ptr;
-  if (!PN_IS_PTR(obj)) return;
-  ptr = (struct PNGarbage *)(obj & PN_REF_MASK);
-  if (--ptr->next < 1) PN_FREE(ptr);
-}
-
-void potion_destroy(Potion *P) {
-  potion_release(P, (PN)P);
-}
-
 PN potion_type_new(Potion *P, PNType t, PN self) {
   struct PNVtable *vt = PN_CALLOC(struct PNVtable, sizeof(kh_id_t));
-  PN_GB(vt);
   vt->vt = PN_TVTABLE;
   vt->type = t;
   vt->parent = self;
@@ -201,12 +178,6 @@ PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<ref>");
 }
 
-PN potion_ref__link(Potion *P, PN cl, PN self, PN link) {
-  struct PNWeakRef *r = PN_GET_REF(self);
-  PN_LINK(r->data);
-  return link;
-}
-
 PN potion_object_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<object>");
 }
@@ -218,10 +189,6 @@ PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {
 
 PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
   return potion_send_dyn(self, method);
-}
-
-PN potion_object__link(Potion *P, PN cl, PN self, PN link) {
-  return link;
 }
 
 static PN potion_lobby_self(Potion *P, PN cl, PN self) {
@@ -239,13 +206,10 @@ void potion_object_init(Potion *P) {
   PN ref_vt = PN_VTABLE(PN_TWEAK);
   PN obj_vt = PN_VTABLE(PN_TOBJECT);
   potion_method(clo_vt, "string", potion_closure_string, 0);
-  potion_method(clo_vt, "~link", potion_closure__link, 0);
   potion_method(ref_vt, "string", potion_ref_string, 0);
-  potion_method(ref_vt, "~link", potion_ref__link, 0);
   potion_method(obj_vt, "forward", potion_object_forward, 0);
   potion_method(obj_vt, "send", potion_object_send, 0);
   potion_method(obj_vt, "string", potion_object_string, 0);
-  potion_method(obj_vt, "~link", potion_object__link, 0);
 }
 
 void potion_lobby_init(Potion *P) {

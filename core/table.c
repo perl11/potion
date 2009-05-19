@@ -77,16 +77,6 @@ PN potion_table_length(Potion *P, PN cl, PN self) {
   return PN_NUM(kh_size(t->kh));
 }
 
-PN potion_table__link(Potion *P, PN cl, PN self, PN link) {
-  struct PNTable *t = (struct PNTable *)self;
-  kh_PN_t *h = t->kh;
-  unsigned k;
-  for (k = kh_begin(h); k != kh_end(h); ++k)
-    if (kh_exist(h, k))
-      PN_LINK(kh_value(h, k));
-  return link;
-}
-
 #define NEW_TUPLE(t, size, ptr) \
   struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, 0); \
   t->len = size; \
@@ -188,13 +178,6 @@ PN potion_tuple_length(Potion *P, PN cl, PN self) {
   return PN_NUM(PN_TUPLE_LEN(self));
 }
 
-PN potion_tuple__link(Potion *P, PN cl, PN self, PN link) {
-  PN_TUPLE_EACH(self, i, v, {
-    PN_LINK(v);
-  });
-  return link;
-}
-
 PN potion_lobby_list(Potion *P, PN cl, PN self, PN size) {
   return potion_tuple_with_size(P, PN_INT(size));
 }
@@ -208,7 +191,6 @@ void potion_table_init(Potion *P) {
   potion_method(tbl_vt, "put", potion_table_put, "index=o,value=o");
   potion_method(tbl_vt, "remove", potion_table_remove, "index=o");
   potion_method(tbl_vt, "string", potion_table_string, 0);
-  potion_method(tpl_vt, "~link", potion_table__link, 0);
   potion_type_func(tpl_vt, (PN_F)potion_tuple_at);
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
@@ -218,6 +200,5 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "put", potion_tuple_put, "index=o,value=o");
   // TODO: add Tuple remove
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
-  potion_method(tpl_vt, "~link", potion_tuple__link, 0);
   potion_method(P->lobby, "list", potion_lobby_list, 0);
 }

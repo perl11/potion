@@ -36,8 +36,8 @@ static void potion_cmd_usage() {
 }
 
 static void potion_cmd_stats() {
-  printf("sizeof(PN): %d\nsizeof(PNGarbage): %d\nsizeof(PNObject): %d\n",
-      (int)sizeof(PN), (int)sizeof(struct PNGarbage), (int)sizeof(struct PNObject));
+  printf("sizeof(PN): %d\nsizeof(PNObject): %d\n",
+      (int)sizeof(PN), (int)sizeof(struct PNObject));
   printf("sizeof(PNTuple): %d\nsizeof(PN + PNTuple): %d\n",
       (int)sizeof(struct PNTuple), (int)(sizeof(PN) + sizeof(struct PNTuple)));
 }
@@ -48,7 +48,7 @@ static void potion_cmd_version() {
 
 static void potion_cmd_compile(char *filename, int exec, int verbose) {
   PN buf;
-  FILE *fp;
+  FILE *fp = NULL;
   struct stat stats;
   Potion *P = potion_create();
   if (stat(filename, &stats) == -1) {
@@ -130,10 +130,9 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
     fprintf(stderr, "** could not read entire file.");
   }
 
-  fclose(fp);
-
 done:
-  potion_destroy(P);
+  if (fp)
+    fclose(fp);
 }
 
 int main(int argc, char *argv[]) {
