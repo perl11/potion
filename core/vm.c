@@ -16,7 +16,7 @@
 extern PNTarget potion_target_x86, potion_target_ppc;
 
 // TODO: this is being circumvented right now, but it's broken without varargs.
-PN potion_vm_proto(Potionv P, PNv cl, PNv args) {
+PN potion_vm_proto(Potion *P, PN cl, PN args) {
   return potion_vm(P, PN_CLOSURE(cl)->data[0], args,
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }

@@ -55,18 +55,9 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
   return out;
 }
 
-PN potion_source__link(Potion *P, PN cl, PN src, PN link) {
-  struct PNSource *t = (struct PNSource *)src;
-  PN_LINK(t->a[0]);
-  if (potion_ast_sizes[t->part] > 1) PN_LINK(t->a[1]);
-  if (potion_ast_sizes[t->part] > 2) PN_LINK(t->a[2]);
-  return link;
-}
-
 void potion_source_init(Potion *P) {
   PN src_vt = PN_VTABLE(PN_TSOURCE);
   potion_method(src_vt, "compile", potion_source_compile, 0); // in compile.c
   potion_method(src_vt, "name", potion_source_name, 0);
   potion_method(src_vt, "string", potion_source_string, 0);
-  potion_method(src_vt, "~link", potion_source__link, 0);
 }
