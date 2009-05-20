@@ -152,7 +152,7 @@ PN potion_byte_str(Potion *P, const char *str) {
 PN potion_bytes(Potion *P, size_t len) {
   struct PNBytes *s = PN_OBJ_ALLOC(struct PNBytes, PN_TBYTES, 0);
   s->len = (PN_SIZE)len;
-  s->chars = PN_ALLOC_N(char, len);
+  s->chars = OLD_ALLOC_N(char, len);
   return (PN)s;
 }
 
@@ -164,7 +164,7 @@ PN_SIZE pn_printf(Potion *P, PN bytes, const char *format, ...) {
   va_start(args, format);
   len = (PN_SIZE)vsnprintf(NULL, 0, format, args);
   va_end(args);
-  PN_REALLOC_N(s->chars, char, s->len + len + 1);
+  OLD_REALLOC_N(s->chars, char, s->len + len + 1);
 
   va_start(args, format);
   vsnprintf(s->chars + s->len, len + 1, format, args);
@@ -181,7 +181,7 @@ void potion_bytes_obj_string(Potion *P, PN bytes, PN obj) {
 PN potion_bytes_append(Potion *P, PN closure, PN self, PN str) {
   struct PNBytes *s = (struct PNBytes *)self;
   PN_SIZE len = PN_STR_LEN(str);
-  PN_REALLOC_N(s->chars, char, s->len + len + 1);
+  OLD_REALLOC_N(s->chars, char, s->len + len + 1);
   PN_MEMCPY_N(s->chars + s->len, PN_STR_PTR(str), char, len);
   s->len += len;
   s->chars[s->len] = '\0';

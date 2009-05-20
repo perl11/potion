@@ -15,7 +15,7 @@
 
 #define ASM_UNIT 4096
 
-PNAsm *potion_asm_new() {
+PNAsm *potion_asm_new(Potion *P) {
   PNAsm *asmb = PN_ALLOC(PNAsm);
   PN_FLEX_NEW(*asmb, u8, ASM_UNIT);
   return asmb;

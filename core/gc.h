@@ -21,17 +21,4 @@
 #define POTION_GC_THRESHOLD (3 * POTION_BIRTH_SIZE)
 #define POTION_GC_PERIOD 256
 
-struct PNMemory {
-  // the birth region
-  volatile void *birth_lo, *birth_hi, *birth_cur;
-  volatile void **birth_storeptr;
-  volatile int birth_changedconstrank;
-
-  // the old region (TODO: consider making the old region common to all threads)
-  volatile void *old_lo, *old_hi, *old_cur;
-
-  volatile struct PNFrame *frame;
-  volatile int collecting, dirty;
-};
-
 #endif

@@ -17,6 +17,7 @@
 #define POTION_TARGETS  2
 
 #include <limits.h>
+#include <string.h>
 #include "config.h"
 
 //
@@ -97,13 +98,13 @@ struct PNJitAsm;
 #define PN_ALIGN(o, x)  (((((o) - 1) / (x)) + 1) * (x))
 #define PN_FLEX(N, T) struct { T *ptr; PN_SIZE capa; PN_SIZE len; } N;
 #define PN_FLEX_NEW(N, T, S) \
-  (N).ptr = PN_ALLOC_N(T, S); \
+  (N).ptr = OLD_ALLOC_N(T, S); \
   (N).capa = S; \
   (N).len = 0
 #define PN_FLEX_NEEDS(X, N, T, S) \
   while ((N).capa < (N).len + X) \
     (N).capa += S; \
-  PN_REALLOC_N((N).ptr, T, (N).capa); \
+  OLD_REALLOC_N((N).ptr, T, (N).capa); \
   (N).len += X
 #define PN_FLEX_AT(N, I) N.ptr[I]
 #define PN_FLEX_SIZE(N)  N.len
@@ -299,6 +300,41 @@ struct Potion_State {
   int xast; /* extra ast allocations */
   struct PNMemory *mem; /* allocator/gc */
 };
+
+//
+// the garbage collector
+//
+struct PNMemory {
+  // the birth region
+  volatile void *birth_lo, *birth_hi, *birth_cur;
+  volatile void **birth_storeptr;
+  volatile int birth_changedconstrank;
+
+  // the old region (TODO: consider making the old region common to all threads)
+  volatile void *old_lo, *old_hi, *old_cur;
+
+  volatile struct PNFrame *frame;
+  volatile int collecting, dirty;
+};
+
+void potion_garbagecollect(int, int);
+
+// quick inline allocation
+static inline void *potion_alloc(Potion *P, int siz) {
+  volatile void *res = 0;
+  siz = PN_ALIGN(siz, sizeof(void *));
+  if (P->mem->dirty || (char *)P->mem->birth_cur + siz >= (char *)P->mem->birth_storeptr - 2)
+    potion_garbagecollect(siz + 4 * sizeof(double), 0);
+  res = P->mem->birth_cur;
+  P->mem->birth_cur = (char *)res + siz;
+  return (void *)res;
+}
+
+static inline void *potion_calloc(Potion *P, int siz) {
+  void *res = potion_alloc(P, siz);
+  memset(res, 0, siz);
+  return res;
+}
 
 //
 // method caches

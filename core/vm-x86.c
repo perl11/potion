@@ -185,7 +185,7 @@ void potion_x86_loadpn(PNAsm *asmb, PN_OP *op) {
 
 void potion_x86_loadk(PNAsm *asmb, PN_OP *op, PN values) {
   PN val = PN_TUPLE_AT(values, op->b);
-  X86_MOVQ(op->a, val);
+  X86_MOVL(op->a, val);
 }
 
 void potion_x86_self(PNAsm *asmb, PN_OP *op, long start) {
@@ -363,13 +363,13 @@ void potion_x86_bind(PNAsm *asmb, PN_OP *op, long start) {
   ASM(0xB8); ASMI(1); // mov 0x1 %rax
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->b)); // mov %rbp(B) %rdx
   ASM(0xF6); ASM(0xC2); ASM(0x01); // test 0x1 %dl
-  ASM(0x75); ASM(X86C(21, 23)); // jne [b]
+  ASM(0x75); ASM(X86C(21, 24)); // jne [b]
   ASM(0xF7); ASM(0xC2); ASMI(PN_REF_MASK); // test REFMASK %edx
   ASM(0x75); ASM(X86C(7, 8)); // jne [a]
   X86_PRE(); ASM(0x89); ASM(0xD0); // mov %rdx %rax
   ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and 0x7 %eax
-  ASM(0xEB); ASM(X86C(6, 7)); // jmp [b]
-  ASM(0x83); ASM(0xE2); ASM(0xF8); // [a] and ~PRIMITIVE %edx
+  ASM(0xEB); ASM(X86C(6, 8)); // jmp [b]
+  X86_PRE(); ASM(0x83); ASM(0xE2); ASM(0xF8); // [a] and ~PRIMITIVE %edx
   X86_PRE(); ASM(0x8B); ASM(0x42); ASM(0); // %rdx.vt %rax
   // [b] compare to TYPE 
   X86_PRE(); ASM(0x89); ASM(0xC2); // mov %rax %rdx
@@ -456,12 +456,12 @@ void potion_x86_call(PNAsm *asmb, PN_OP *op, long start) {
   // check type of the closure
   X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op->b)); // mov %rbp(B) %rax
   ASM(0xF6); ASM(0xC0); ASM(0x01); // test 0x1 %al
-  ASM(0x75); ASM(X86C(27, 29)); // jne [a]
+  ASM(0x75); ASM(X86C(27, 30)); // jne [a]
   ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); // test REFMASK %eax
-  ASM(0x74); ASM(X86C(19, 21)); // je [a]
-  ASM(0x83); ASM(0xE0); ASM(0xF8); // and ~PRIMITIVE %eax
-  ASM(0x8B); ASM(0x40); ASM(0); // mov N(%eax) %eax
-  ASM(0x83); ASM(0xF8); ASM(PN_TCLOSURE); // cmp CLOSURE %eax
+  ASM(0x74); ASM(X86C(19, 22)); // je [a]
+  X86_PRE(); ASM(0x83); ASM(0xE0); ASM(0xF8); // and ~PRIMITIVE %rax
+  ASM(0x8B); ASM(0x40); ASM(0); // mov N(%rax) %rax
+  ASM(0x83); ASM(0xF8); ASM(PN_TCLOSURE); // cmp CLOSURE %rax
   ASM(0x75); ASM(X86C(8, 10)); // jne [a]
 
   // if a closure, load the function pointer

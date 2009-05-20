@@ -25,13 +25,18 @@ static void pngc_page_delete(void *mem, int sz)
   potion_munmap(mem, PN_ALIGN(sz, POTION_PAGESIZE));
 }
 
+void potion_garbagecollect(int siz, int full)
+{
+  fprintf(stderr, "** warning: garbage collector full!\n");
+}
+
 void potion_gc_init(Potion *P)
 {
   int oldsiz = 4 * POTION_BIRTH_SIZE;
   int birthsiz = 2 * POTION_BIRTH_SIZE;
   if (P->mem != NULL) return;
 
-  P->mem = PN_CALLOC(struct PNMemory, 0);
+  P->mem = OLD_CALLOC(struct PNMemory, 0);
 
   P->mem->birth_lo = pngc_page_new(birthsiz, 0);
   P->mem->birth_cur = P->mem->birth_lo + 2 * sizeof(void *);

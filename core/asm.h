@@ -72,5 +72,5 @@ typedef struct {
 #define ASMI(pn) potion_asm_put(asmb, (PN)(pn), sizeof(int))
 #define ASMN(pn) potion_asm_put(asmb, (PN)pn, sizeof(PN))
 
-PNAsm *potion_asm_new();
+PNAsm *potion_asm_new(Potion *);
 void potion_asm_put(PNAsm *, PN, size_t);

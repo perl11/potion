@@ -72,7 +72,7 @@ static void potion_init(Potion *P) {
 }
 
 Potion *potion_create() {
-  Potion *P = PN_ALLOC(Potion);
+  Potion *P = (Potion *)malloc(sizeof(Potion));
   PN_MEMZERO(P, Potion);
   P->vt = PN_TSTATE;
   PN_FLEX_NEW(P->vts, PN, TYPE_BATCH_SIZE);

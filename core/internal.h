@@ -10,14 +10,21 @@ struct Potion_State;
 
 typedef unsigned char u8;
 
-#define PN_ALLOC(T)          (T *)malloc(sizeof(T))
-#define PN_ALLOC2(T,C)       (T *)malloc(sizeof(T)+C)
-#define PN_ALLOC_N(T,N)      (T *)malloc(sizeof(T)*(N))
-#define PN_CALLOC(T,C)       (T *)calloc(1, sizeof(T)+C)
-#define PN_CALLOC_N(T,C)     (T *)calloc(C, sizeof(T))
-#define PN_REALLOC(X,T)      (X)=(T *)realloc((char *)(X), sizeof(T))
-#define PN_REALLOC_N(X,T,N)  (X)=(T *)realloc((char *)(X), sizeof(T)*(N))
-#define PN_FREE(T)           free((void *)T)
+#define PN_ALLOC(T)          (T *)potion_alloc(P, sizeof(T))
+#define PN_ALLOC2(T,C)       (T *)potion_alloc(P, sizeof(T)+C)
+#define PN_ALLOC_N(T,N)      (T *)potion_alloc(P, sizeof(T)*(N))
+#define PN_CALLOC(T,C)       (T *)potion_calloc(P, sizeof(T)+C)
+#define PN_CALLOC_N(T,N)     (T *)potion_calloc(P, sizeof(T)*N)
+#define PN_FREE(T)
+
+#define OLD_ALLOC(T)         (T *)malloc(sizeof(T))
+#define OLD_ALLOC2(T,C)      (T *)malloc(sizeof(T)+C)
+#define OLD_ALLOC_N(T,N)     (T *)malloc(sizeof(T)*(N))
+#define OLD_CALLOC(T,C)      (T *)calloc(1, sizeof(T)+C)
+#define OLD_CALLOC_N(T,C)    (T *)calloc(C, sizeof(T))
+#define OLD_REALLOC(X,T)     (X)=(T *)realloc((char *)(X), sizeof(T))
+#define OLD_REALLOC_N(X,T,N) (X)=(T *)realloc((char *)(X), sizeof(T)*(N))
+#define OLD_FREE(T)          free((void *)T)
 
 #define PN_MEMZERO(X,T)      memset((X), 0, sizeof(T))
 #define PN_MEMZERO_N(X,T,N)  memset((X), 0, sizeof(T)*(N))
