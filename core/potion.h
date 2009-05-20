@@ -34,7 +34,7 @@ struct PNClosure;
 struct PNProto;
 struct PNTuple;
 struct PNWeakRef;
-struct PNGarbage;
+struct PNMemory;
 struct PNJitAsm;
 
 #define PN_TNIL         0
@@ -55,6 +55,7 @@ struct PNJitAsm;
 #define PN_TTABLE       15
 #define PN_TUSER        16
 
+#define PNv             PN volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
 #define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, t))
@@ -92,8 +93,6 @@ struct PNJitAsm;
 #define PN_SET_REF(t)   (((PN)t)+PN_TWEAK)
 #define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_TWEAK))
 #define PN_DEREF(x)     PN_GET_REF(x)->data
-// TODO: redef PN_LINK in terms of new gc
-#define PN_LINK(x)      link
 
 #define PN_ALIGN(o, x)  (((((o) - 1) / (x)) + 1) * (x))
 #define PN_FLEX(N, T) struct { T *ptr; PN_SIZE capa; PN_SIZE len; } N;
@@ -137,10 +136,6 @@ struct PNJitAsm;
     } \
   })
 
-struct PNGarbage {
-  PNType vt;
-};
-
 #define PN_OBJECT_HEADER \
   PNType vt;
 
@@ -149,11 +144,21 @@ struct PNGarbage {
 #define PN_OBJ_ALLOC(S, T, L) \
   ((S *)potion_send(PN_VTABLE(T), PN_allocate, PN_NUM((sizeof(S)-sizeof(struct PNObject))+(L))))
 
+//
+// standard objects act like C structs
+// the fields are defined by the type
+// and it's a fixed size, not volatile.
+//
 struct PNObject {
   PN_OBJECT_HEADER
   char data[0];
 };
 
+//
+// strings are immutable UTF-8, the ID is
+// incremental and they may be garbage
+// collected. (non-volatile)
+//
 struct PNString {
   PN_OBJECT_HEADER
   PN_SIZE len;
@@ -161,6 +166,10 @@ struct PNString {
   char chars[0];
 };
 
+//
+// byte strings are raw character data,
+// volatile, may be appended/changed.
+//
 struct PNBytes {
   PN_OBJECT_HEADER
   PN_SIZE len;
@@ -169,6 +178,10 @@ struct PNBytes {
 
 #define PN_PREC 8
 
+//
+// decimals are floating point numbers
+// stored as binary data. immutable.
+//
 struct PNDecimal {
   PN_OBJECT_HEADER
   PN_SIZE sign;
@@ -176,6 +189,10 @@ struct PNDecimal {
   PN digits[0];
 };
 
+//
+// a file is wrapper around a file
+// descriptor, non-volatile but mutable.
+//
 struct PNFile {
   PN_OBJECT_HEADER
   FILE *stream;
@@ -185,6 +202,10 @@ struct PNFile {
 
 typedef PN (*PN_F)(Potion *, PN, PN, ...);
 
+//
+// a closure is an anonymous function,
+// non-volatile.
+//
 struct PNClosure {
   PN_OBJECT_HEADER
   PN_F method;
@@ -193,6 +214,10 @@ struct PNClosure {
   PN data[0];
 };
 
+//
+// a prototype is compiled source code,
+// non-volatile.
+//
 struct PNProto {
   PN_OBJECT_HEADER
   PN source; // program name or enclosing scope
@@ -206,12 +231,20 @@ struct PNProto {
   PN asmb;   // assembled instructions
 };
 
+//
+// a tuple is an ordered list,
+// volatile.
+//
 struct PNTuple {
   PN_OBJECT_HEADER
   PN_SIZE len;
   PN *set;
 };
 
+//
+// a weak ref is used for upvals, it acts as
+// a memory slot, non-volatile but mutable.
+//
 struct PNWeakRef {
   PN_OBJECT_HEADER
   PN data;
@@ -251,6 +284,7 @@ typedef struct {
 
 //
 // the interpreter
+// (one per thread, houses its own garbage collector)
 //
 struct Potion_State {
   PN_OBJECT_HEADER
@@ -263,6 +297,7 @@ struct Potion_State {
   PN unclosed; /* used by parser for named block endings */
   int dast; /* parsing depth */
   int xast; /* extra ast allocations */
+  struct PNMemory *mem; /* allocator/gc */
 };
 
 //
@@ -342,6 +377,7 @@ PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);
 
+void potion_gc_init(Potion *);
 void potion_lobby_init(Potion *);
 void potion_object_init(Potion *);
 void potion_primitive_init(Potion *);
