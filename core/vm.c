@@ -47,7 +47,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
 
   if (PN_TUPLE_LEN(f->protos) > 0) {
-    jit_protos = OLD_ALLOC_N(PN_F, PN_TUPLE_LEN(f->protos));
+    jit_protos = SYS_ALLOC_N(PN_F, PN_TUPLE_LEN(f->protos));
     PN_TUPLE_EACH(f->protos, i, proto2, {
       int p2args = 3;
       struct PNProto *f2 = (struct PNProto *)proto2;
@@ -159,7 +159,7 @@ PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {
   struct PNProto *f = (struct PNProto *)proto;
 
   // these variables persist as we jump around
-  PN *stack = OLD_ALLOC_N(PN, STACK_MAX);
+  PN *stack = SYS_ALLOC_N(PN, STACK_MAX);
   PN val = PN_NIL, self = P->lobby;
 
   // these variables change from proto to proto

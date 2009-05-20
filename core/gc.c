@@ -36,7 +36,7 @@ void potion_gc_init(Potion *P)
   int birthsiz = 2 * POTION_BIRTH_SIZE;
   if (P->mem != NULL) return;
 
-  P->mem = OLD_CALLOC(struct PNMemory, 0);
+  P->mem = SYS_CALLOC(struct PNMemory, 0);
 
   P->mem->birth_lo = pngc_page_new(birthsiz, 0);
   P->mem->birth_cur = P->mem->birth_lo + 2 * sizeof(void *);

@@ -88,12 +88,12 @@ PN potion_tuple_empty(Potion *P) {
 }
 
 PN potion_tuple_with_size(Potion *P, PN_SIZE size) {
-  NEW_TUPLE(t, size, OLD_CALLOC_N(PN, size));
+  NEW_TUPLE(t, size, SYS_CALLOC_N(PN, size));
   return PN_SET_TUPLE(t);
 }
 
 PN potion_tuple_new(Potion *P, PN value) {
-  NEW_TUPLE(t, 1, OLD_ALLOC_N(PN, 1));
+  NEW_TUPLE(t, 1, SYS_ALLOC_N(PN, 1));
   t->set[0] = value;
   return PN_SET_TUPLE(t);
 }
@@ -101,9 +101,9 @@ PN potion_tuple_new(Potion *P, PN value) {
 PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   struct PNTuple *t = PN_GET_TUPLE(tuple);
   if (t->set == NULL)
-    t->set = OLD_ALLOC_N(PN, ++t->len);
+    t->set = SYS_ALLOC_N(PN, ++t->len);
   else
-    OLD_REALLOC_N(t->set, PN, ++t->len);
+    SYS_REALLOC_N(t->set, PN, ++t->len);
   t->set[t->len-1] = value;
   return tuple;
 }
@@ -132,7 +132,7 @@ PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
 
 PN potion_tuple_clone(Potion *P, PN cl, PN self) {
   struct PNTuple *t1 = PN_GET_TUPLE(self);
-  NEW_TUPLE(t2, t1->len, OLD_ALLOC_N(PN, t1->len));
+  NEW_TUPLE(t2, t1->len, SYS_ALLOC_N(PN, t1->len));
   PN_MEMCPY_N(t2->set, t1->set, PN, t1->len);
   return PN_SET_TUPLE(t2);
 }

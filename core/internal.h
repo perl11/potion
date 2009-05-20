@@ -17,19 +17,29 @@ typedef unsigned char u8;
 #define PN_CALLOC_N(T,N)     (T *)potion_gc_calloc(P, sizeof(T)*N)
 #define PN_FREE(T)
 
-#define OLD_ALLOC(T)         (T *)malloc(sizeof(T))
-#define OLD_ALLOC2(T,C)      (T *)malloc(sizeof(T)+C)
-#define OLD_ALLOC_N(T,N)     (T *)malloc(sizeof(T)*(N))
-#define OLD_CALLOC(T,C)      (T *)calloc(1, sizeof(T)+C)
-#define OLD_CALLOC_N(T,C)    (T *)calloc(C, sizeof(T))
-#define OLD_REALLOC(X,T)     (X)=(T *)realloc((char *)(X), sizeof(T))
-#define OLD_REALLOC_N(X,T,N) (X)=(T *)realloc((char *)(X), sizeof(T)*(N))
-#define OLD_FREE(T)          free((void *)T)
+#define SYS_ALLOC(T)         (T *)malloc(sizeof(T))
+#define SYS_ALLOC2(T,C)      (T *)malloc(sizeof(T)+C)
+#define SYS_ALLOC_N(T,N)     (T *)malloc(sizeof(T)*(N))
+#define SYS_CALLOC(T,C)      (T *)calloc(1, sizeof(T)+C)
+#define SYS_CALLOC_N(T,C)    (T *)calloc(C, sizeof(T))
+#define SYS_REALLOC(X,T)     (X)=(T *)realloc((char *)(X), sizeof(T))
+#define SYS_REALLOC_N(X,T,N) (X)=(T *)realloc((char *)(X), sizeof(T)*(N))
+#define SYS_FREE(T)          free((void *)T)
 
 #define PN_MEMZERO(X,T)      memset((X), 0, sizeof(T))
 #define PN_MEMZERO_N(X,T,N)  memset((X), 0, sizeof(T)*(N))
 #define PN_MEMCPY(X,Y,T)     memcpy((X), (Y), sizeof(T))
 #define PN_MEMCPY_N(X,Y,T,N) memcpy((X), (Y), sizeof(T)*(N))
+
+#define PN_FLEX_NEW(N, T, S) \
+  (N).ptr = SYS_ALLOC_N(T, S); \
+  (N).capa = S; \
+  (N).len = 0
+#define PN_FLEX_NEEDS(X, N, T, S) \
+  while ((N).capa < (N).len + X) \
+    (N).capa += S; \
+  SYS_REALLOC_N((N).ptr, T, (N).capa); \
+  (N).len += X
 
 #define PN_ATOI(X,N) ({ \
   char *Ap = X; \

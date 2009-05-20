@@ -95,17 +95,8 @@ struct PNJitAsm;
 #define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_TWEAK))
 #define PN_DEREF(x)     PN_GET_REF(x)->data
 
-#define PN_ALIGN(o, x)  (((((o) - 1) / (x)) + 1) * (x))
-#define PN_FLEX(N, T) struct { T *ptr; PN_SIZE capa; PN_SIZE len; } N;
-#define PN_FLEX_NEW(N, T, S) \
-  (N).ptr = OLD_ALLOC_N(T, S); \
-  (N).capa = S; \
-  (N).len = 0
-#define PN_FLEX_NEEDS(X, N, T, S) \
-  while ((N).capa < (N).len + X) \
-    (N).capa += S; \
-  OLD_REALLOC_N((N).ptr, T, (N).capa); \
-  (N).len += X
+#define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
+#define PN_FLEX(N, T)    struct { T *ptr; PN_SIZE capa; PN_SIZE len; } N;
 #define PN_FLEX_AT(N, I) N.ptr[I]
 #define PN_FLEX_SIZE(N)  N.len
 
