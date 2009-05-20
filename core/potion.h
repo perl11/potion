@@ -28,6 +28,7 @@ typedef unsigned int PN_SIZE;
 typedef struct Potion_State Potion;
 
 struct PNObject;
+struct PNData;
 struct PNString;
 struct PNBytes;
 struct PNDecimal;
@@ -143,7 +144,17 @@ struct PNJitAsm;
 //
 struct PNObject {
   PN_OBJECT_HEADER
-  char data[0];
+  PN data[0];
+};
+
+//
+// struct to wrap arbitrary data that
+// we may want to allocate from Potion.
+//
+struct PNData {
+  PN_OBJECT_HEADER
+  PN_SIZE len;
+  char data[0]; 
 };
 
 //
