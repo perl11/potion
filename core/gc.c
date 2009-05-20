@@ -9,7 +9,7 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 #include "potion.h"
 #include "internal.h"
 #include "gc.h"

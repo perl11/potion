@@ -320,9 +320,9 @@ struct PNMemory {
 void potion_garbagecollect(int, int);
 
 // quick inline allocation
-static inline void *potion_alloc(Potion *P, int siz) {
+static inline void *potion_gc_alloc(Potion *P, int siz) {
   volatile void *res = 0;
-  siz = PN_ALIGN(siz, sizeof(void *));
+  siz = PN_ALIGN(siz, 8); // force 64-bit alignment
   if (P->mem->dirty || (char *)P->mem->birth_cur + siz >= (char *)P->mem->birth_storeptr - 2)
     potion_garbagecollect(siz + 4 * sizeof(double), 0);
   res = P->mem->birth_cur;
@@ -330,8 +330,8 @@ static inline void *potion_alloc(Potion *P, int siz) {
   return (void *)res;
 }
 
-static inline void *potion_calloc(Potion *P, int siz) {
-  void *res = potion_alloc(P, siz);
+static inline void *potion_gc_calloc(Potion *P, int siz) {
+  void *res = potion_gc_alloc(P, siz);
   memset(res, 0, siz);
   return res;
 }
@@ -367,7 +367,7 @@ static inline void *potion_calloc(Potion *P, int siz) {
   potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
 
 extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
-   PN_def, PN_delegated, PN_else, PN_elsif, PN_if, PN__link,
+   PN_def, PN_delegated, PN_else, PN_elsif, PN_if,
    PN_lookup, PN_loop, PN_print, PN_return, PN_string, PN_while;
 
 //
