@@ -23,7 +23,9 @@ if [ $MINGW -eq 0 ]; then
   LLONG=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(long long)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   DOUBLE=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(double)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   LILEND=`echo "#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\"%d\\", (int)byte[0]); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+  PAGESIZE=`echo "#include <stdio.h>#include <unistd.h>int main() { printf(\\"%d\\", (int)sysconf(_SC_PAGE_SIZE)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
 else
+  # hard coded win32 values
   CHAR="1"
   SHORT="2"
   LONG="4"
@@ -31,6 +33,7 @@ else
   DOUBLE="8"
   LLONG="8"
   LILEND="1"
+  PAGESIZE="4096"
 fi
 
 if [ "$2" = "mingw" ]; then
@@ -64,4 +67,5 @@ else
   echo "#define CHAR_SIZE_T   $CHAR"
   echo "#define LONGLONG_SIZE_T   $LLONG"
   echo "#define PN_LITTLE_ENDIAN  $LILEND"
+  echo "#define POTION_PAGESIZE   $PAGESIZE"
 fi

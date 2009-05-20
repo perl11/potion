@@ -95,6 +95,7 @@ struct PNJitAsm;
 // TODO: redef PN_LINK in terms of new gc
 #define PN_LINK(x)      link
 
+#define PN_ALIGN(o, x)  (((((o) - 1) / (x)) + 1) * (x))
 #define PN_FLEX(N, T) struct { T *ptr; PN_SIZE capa; PN_SIZE len; } N;
 #define PN_FLEX_NEW(N, T, S) \
   (N).ptr = PN_ALLOC_N(T, S); \

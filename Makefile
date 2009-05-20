@@ -1,4 +1,4 @@
-SRC = core/asm.c core/callcc.c core/compile.c core/contrib.c core/file.c core/internal.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/pn-gram.c core/pn-scan.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
+SRC = core/asm.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/pn-gram.c core/pn-scan.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 OBJ = ${SRC:.c=.o}
 OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o

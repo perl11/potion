@@ -49,10 +49,11 @@ done:
 #include <windows.h>
 #include <sys/unistd.h>
 
-void *mingw_mmap(size_t length)
+void *potion_mmap(size_t length, const char exec)
 { 
   void *start;
-  HANDLE handle = CreateFileMapping(0, NULL, PAGE_EXECUTE_READWRITE,
+  HANDLE handle = CreateFileMapping(0, NULL,
+    exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE,
     0, length, NULL);
  
   if (handle == NULL)
@@ -63,4 +64,27 @@ void *mingw_mmap(size_t length)
   
   return start;
 }
+
+int potion_munmap(void *mem, size_t len)
+{
+  return UnmapViewOfFile(mem) != 0 ? 0 : -1;
+}
+
+#else
+#include <sys/mman.h>
+
+void *potion_mmap(size_t length, const char exec)
+{
+  int prot = exec ? PROT_EXEC : 0;
+  void *mem = mmap(NULL, length, prot|PROT_READ|PROT_WRITE, \
+    (MAP_PRIVATE|MAP_ANON), -1, 0);
+  if (mem == MAP_FAILED) return NULL;
+  return mem;
+}
+
+int potion_munmap(void *mem, size_t len)
+{
+  return munmap(mem, len);
+}
+
 #endif
