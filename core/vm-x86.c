@@ -202,9 +202,9 @@ void potion_x86_getlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
     // TODO: optimize to use %rdx rather than jmp
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
     ASM(0x83); ASM(0xF8); ASM(PN_TWEAK); // cmp WEAK %eax
-    ASM(0x75); ASM(X86C(11, 13)); // jne 13
+    ASM(0x75); ASM(X86C(11, 14)); // jne 13
     X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
-    ASM(0x83); ASM(0xF0); ASM(PN_TWEAK); // xor REF %eax
+    X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_TWEAK); // xor REF %eax
     X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); // mov %rax.data %rax
     ASM(0xEB); ASM(X86C(3, 4)); //  jmp 4
     X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
@@ -219,9 +219,9 @@ void potion_x86_setlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
     X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
     ASM(0x83); ASM(0xF8); ASM(PN_TWEAK); // cmp WEAK %eax
-    ASM(0x75); ASM(X86C(11, 13)); // jne 13
+    ASM(0x75); ASM(X86C(11, 14)); // jne 13
     X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
-    ASM(0x83); ASM(0xF0); ASM(PN_TWEAK); // xor REF %eax
+    X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_TWEAK); // xor REF %eax
     X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
     ASM(0xEB); ASM(X86C(3, 4)); //  jmp 4
   }
@@ -503,7 +503,7 @@ void potion_x86_method(PNAsm *asmb, Potion *P, PN_OP **pos, PN_F *jit_protos, PN
       X86_PRE(); ASM(0xB8); ASMN(potion_ref); // mov &potion_ref %rax
       ASM(0xFF); ASM(0xD0); // callq %rax
       X86_MOV_RBP(0x89, regs + op->b); // mov %rax local
-      ASM(0x83); ASM(0xF0); ASM(0x04); // xor REF %rax
+      X86_PRE(); ASM(0x83); ASM(0xF0); ASM(0x04); // xor REF %rax
       X86_PRE(); ASM(0x89); ASM(0xC2); // mov %rax %rdx
     } else {
       fprintf(stderr, "** missing an upval to proto %p\n", (void *)proto);
