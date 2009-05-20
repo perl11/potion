@@ -12,7 +12,7 @@ if [ "$MINGW_GCC" = "" ]; then
 else
   MINGW=1
 fi
-JIT_X86=`echo "$TARGET" | sed "/86\|w32/!d"`
+JIT_X86=`echo "$TARGET" | sed "/86/!d"`
 JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
 
 if [ $MINGW -eq 0 ]; then
@@ -51,7 +51,7 @@ elif [ "$2" = "strip" ]; then
     echo "ls"
   fi
 else
-  if [ "$JIT_X86" != "" ]; then
+  if [ "$JIT_X86$MINGW_GCC" != "" ]; then
     echo "#define POTION_JIT_TARGET POTION_X86"
   elif [ "$JIT_PPC" != "" ]; then
     echo "#define POTION_JIT_TARGET POTION_PPC"
