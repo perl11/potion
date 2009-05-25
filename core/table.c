@@ -12,32 +12,31 @@
 #include "khash.h"
 #include "table.h"
 
-PN potion_table_string(Potion *P, PN cl, PN self) {
-  struct PNTable *t = (struct PNTable *)self;
-  PN out = potion_byte_str(P, "(");
-  kh_PN_t *h = t->kh;
+PN potion_table_string(Potion *P, PNv cl, PNv self) {
+  struct PNTable * volatile t = (struct PNTable *)self;
+  PNv out = potion_byte_str(P, "(");
   unsigned k, i = 0;
-  for (k = kh_begin(h); k != kh_end(h); ++k)
-    if (kh_exist(h, k)) {
+  for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
+    if (kh_exist(t->kh, k)) {
       if (i++ > 0) pn_printf(P, out, ", ");
-      potion_bytes_obj_string(P, out, kh_key(h, k));
+      potion_bytes_obj_string(P, out, kh_key(t->kh, k));
       pn_printf(P, out, "=");
-      potion_bytes_obj_string(P, out, kh_value(h, k));
+      potion_bytes_obj_string(P, out, kh_value(t->kh, k));
     }
   pn_printf(P, out, ")");
   return out;
 }
 
-PN potion_table_cast(Potion *P, PN self) {
+PN potion_table_cast(Potion *P, PNv self) {
   if (PN_IS_TUPLE(self)) {
     int ret; unsigned k;
-    kh_PN_t *kh = PN_CALLOC(kh_PN_t, 0);
-    struct PNTuple *t = PN_GET_TUPLE(self);
+    kh__PN_t *kh = PN_CALLOC(kh__PN_t, 0);
+    struct PNTuple * volatile t = PN_GET_TUPLE(self);
     PN_TUPLE_EACH(t, i, v, {
-      k = kh_put(PN, kh, PN_NUM(i), &ret);
+      k = kh_put(_PN, kh, PN_NUM(i), &ret);
       kh_value(kh, k) = v;
     });
-    PN_FREE(t->set);
+    SYS_FREE(t->set);
     t->vt = PN_TTABLE;
     ((struct PNTable *)self)->kh = kh;
   }
@@ -47,7 +46,7 @@ PN potion_table_cast(Potion *P, PN self) {
 PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
   int ret;
   struct PNTable *t = (struct PNTable *)self;
-  unsigned k = kh_put(PN, t->kh, key, &ret);
+  unsigned k = kh_put(_PN, t->kh, key, &ret);
   if (ret) return PN_NIL;
   return kh_value(t->kh, k);
 }
@@ -55,7 +54,7 @@ PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
 PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
   int ret;
   struct PNTable *t = (struct PNTable *)self;
-  unsigned k = kh_put(PN, t->kh, key, &ret);
+  unsigned k = kh_put(_PN, t->kh, key, &ret);
   kh_value(t->kh, k) = value;
   return self;
 }
@@ -63,8 +62,8 @@ PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
 PN potion_table_remove(Potion *P, PN cl, PN self, PN key) {
   int ret;
   struct PNTable *t = (struct PNTable *)self;
-  unsigned k = kh_put(PN, t->kh, key, &ret);
-	if (!ret) kh_del(PN, t->kh, k);
+  unsigned k = kh_put(_PN, t->kh, key, &ret);
+	if (!ret) kh_del(_PN, t->kh, k);
   return self;
 }
 

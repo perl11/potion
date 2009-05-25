@@ -16,7 +16,7 @@
 extern PNTarget potion_target_x86, potion_target_ppc;
 
 // TODO: this is being circumvented right now, but it's broken without varargs.
-PN potion_vm_proto(Potion *P, PN cl, PN args) {
+PN potion_vm_proto(Potion *P, PNv cl, PNv args) {
   return potion_vm(P, PN_CLOSURE(cl)->data[0], args,
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
@@ -31,13 +31,13 @@ void potion_vm_init(Potion *P) {
 
 #define CASE_OP(name, args) case OP_##name: target->op[OP_##name]args; break;
 
-PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
+PN_F potion_jit_proto(Potion *P, PNv proto, PNv target_id) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
   PN_OP *start, *pos, *end;
   PNJumps jmps[JUMPS_MAX]; size_t offs[JUMPS_MAX]; int jmpc = 0, jmpi = 0;
-  struct PNProto *f = (struct PNProto *)proto;
+  struct PNProto * volatile f = (struct PNProto *)proto;
   int upc = PN_TUPLE_LEN(f->upvals);
-  PNAsm *asmb = potion_asm_new(P);
+  PNAsm * volatile asmb = potion_asm_new(P);
   u8 *fn;
   PN_F *jit_protos = NULL;
   PNTarget *target = &P->targets[target_id];
@@ -149,25 +149,25 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   printf("\n");
 #endif
   PN_MEMCPY_N(fn, asmb->ptr, u8, asmb->len);
-  PN_FREE(asmb->ptr);
-  PN_FREE(asmb);
+  SYS_FREE(asmb->ptr);
 
   return (PN_F)fn;
 }
 
-PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN* upargs) {
+PN potion_vm(Potion *P, PNv proto, PNv vargs, PN_SIZE upc, PNv * volatile upargs) {
   struct PNProto *f = (struct PNProto *)proto;
 
   // these variables persist as we jump around
-  PN *stack = SYS_ALLOC_N(PN, STACK_MAX);
-  PN val = PN_NIL, self = P->lobby;
+  PN * volatile stack = SYS_ALLOC_N(PN, STACK_MAX);
+  PNv val = PN_NIL;
+  PNv self = P->lobby;
 
   // these variables change from proto to proto
   // current = upvals | locals | self | reg
   PN_OP *pos, *end;
   long argx = 0;
-  PN *args = NULL, *upvals, *locals, *reg;
-  PN *current = stack;
+  PN * volatile args = NULL, * volatile upvals, * volatile locals, * volatile reg;
+  PN * volatile current = stack;
 
   pos = ((PN_OP *)PN_STR_PTR(f->asmb));
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
@@ -350,7 +350,7 @@ reentry:
         }
       break;
       case OP_PROTO: {
-        struct PNClosure *cl;
+        struct PNClosure * volatile cl;
         unsigned areg = pos->a;
         proto = PN_TUPLE_AT(f->protos, pos->b);
         cl = (struct PNClosure *)potion_closure_new(P, (PN_F)potion_vm_proto, PN_NIL,
@@ -375,6 +375,6 @@ reentry:
 
 done:
   val = reg[0];
-  PN_FREE(stack);
+  SYS_FREE(stack);
   return val;
 }

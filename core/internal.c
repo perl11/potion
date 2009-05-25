@@ -17,7 +17,7 @@ PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue, PN_def,
    PN_return, PN_string, PN_while;
 
 static void potion_init(Potion *P) {
-  PN vtable, obj_vt;
+  PNv vtable, obj_vt;
   potion_gc_init(P);
   P->lobby = potion_type_new(P, PN_TLOBBY, 0);
   vtable = potion_type_new(P, PN_TVTABLE, P->lobby);
@@ -80,14 +80,14 @@ Potion *potion_create() {
   return P;
 }
 
-PN potion_delegated(Potion *P, PN closure, PN self) {
+PN potion_delegated(Potion *P, PNv closure, PNv self) {
   PNType t = PN_FLEX_SIZE(P->vts);
   PN_FLEX_NEEDS(1, P->vts, PN, TYPE_BATCH_SIZE);
   return potion_type_new(P, t, self);
 }
 
-PN potion_call(Potion *P, PN cl, PN_SIZE argc, PN *argv) {
-  struct PNClosure *c = PN_CLOSURE(cl);
+PN potion_call(Potion *P, PNv cl, PN_SIZE argc, PNv * volatile argv) {
+  struct PNClosure * volatile c = PN_CLOSURE(cl);
   switch (argc) {
     case 0:
     return c->method(P, cl, cl);

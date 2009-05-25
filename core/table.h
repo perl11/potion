@@ -8,17 +8,17 @@
 #define POTION_TABLE_H
 
 #if __WORDSIZE != 64
-KHASH_MAP_INIT_INT(PN, PN);
+KHASH_MAP_INIT_INT(_PN, _PN);
 #else
-KHASH_MAP_INIT_INT64(PN, PN);
+KHASH_MAP_INIT_INT64(_PN, _PN);
 #endif
 
-KHASH_MAP_INIT_STR(str, PN);
-KHASH_MAP_INIT_INT(id, PN);
+KHASH_MAP_INIT_STR(str, _PN);
+KHASH_MAP_INIT_INT(id, _PN);
 
 struct PNTable {
   PN_OBJECT_HEADER
-  kh_PN_t *kh;
+  kh__PN_t *kh;
 };
 
 #endif

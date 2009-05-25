@@ -170,12 +170,13 @@
   write data nofinal;
 }%%
 
-PN potion_parse(Potion *P, PN code) {
+PN potion_parse(Potion *P, PNv code) {
   int cs, act;
   char *p, *pe, *ts, *te, *tm = 0, *eof = 0;
   int lineno = 0, nbuf = 0;
   void *pParser = LemonPotionAlloc(malloc);
-  PN last = PN_NIL, sbuf = potion_bytes(P, 4096);
+  PNv last = PN_NIL;
+  PNv sbuf = potion_bytes(P, 4096);
 
   P->dast = 0;
   P->xast = 1;
@@ -231,7 +232,7 @@ PN potion_parse(Potion *P, PN code) {
 }%%
 
 PN potion_sig(Potion *P, char *fmt) {
-  PN sig;
+  PNv sig;
   int cs, act, x = 0;
   char *p, *pe, *ts, *te, *eof = 0;
   char cast = 0, *eql = NULL;

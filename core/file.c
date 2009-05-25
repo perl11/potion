@@ -10,7 +10,7 @@
 #include "potion.h"
 #include "internal.h"
 
-PN potion_file_with(Potion *P, PN cl, PN self, PN path) {
+PN potion_file_with(Potion *P, PNv cl, PNv self, PNv path) {
   return PN_NIL;
 }
 

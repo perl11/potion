@@ -44,7 +44,7 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
            :"a"(cc->data[1])
           );
   rbp = (unsigned long *)cc->data[1];
-  PN_MEMCPY_N(rbp, cc->data + 2, PN, cc->extra - 2);
+  PN_MEMCPY_N(rbp, (char *)cc->data + 2, PN, cc->extra - 2);
   __asm__ ("mov %%rcx, %%rbp;"
            "jmpq *%%rax"
            : /* no output */
@@ -66,7 +66,7 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   cc = (struct PNClosure *)potion_closure_new(P, (PN_F)potion_callcc_yield, PN_NIL, (rbp - rsp) + 2);
   cc->data[0] = (PN)rbp;
   cc->data[1] = (PN)rsp;
-  PN_MEMCPY_N(cc->data + 2, rsp, PN, rbp - rsp);
+  PN_MEMCPY_N((char *)cc->data + 2, rsp, PN, rbp - rsp);
   return (PN)cc;
 #else
   fprintf(stderr, "** TODO: callcc for 32-bit.\n");

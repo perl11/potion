@@ -15,7 +15,6 @@ typedef unsigned char u8;
 #define PN_ALLOC_N(T,N)      (T *)potion_gc_alloc(P, sizeof(T)*(N))
 #define PN_CALLOC(T,C)       (T *)potion_gc_calloc(P, sizeof(T)+C)
 #define PN_CALLOC_N(T,N)     (T *)potion_gc_calloc(P, sizeof(T)*N)
-#define PN_FREE(T)
 
 #define SYS_ALLOC(T)         (T *)malloc(sizeof(T))
 #define SYS_ALLOC2(T,C)      (T *)malloc(sizeof(T)+C)
@@ -28,8 +27,8 @@ typedef unsigned char u8;
 
 #define PN_MEMZERO(X,T)      memset((X), 0, sizeof(T))
 #define PN_MEMZERO_N(X,T,N)  memset((X), 0, sizeof(T)*(N))
-#define PN_MEMCPY(X,Y,T)     memcpy((X), (Y), sizeof(T))
-#define PN_MEMCPY_N(X,Y,T,N) memcpy((X), (Y), sizeof(T)*(N))
+#define PN_MEMCPY(X,Y,T)     memcpy((void *)(X), (void *)(Y), sizeof(T))
+#define PN_MEMCPY_N(X,Y,T,N) memcpy((void *)(X), (void *)(Y), sizeof(T)*(N))
 
 #define PN_FLEX_NEW(N, T, S) \
   (N).ptr = SYS_ALLOC_N(T, S); \

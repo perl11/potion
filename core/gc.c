@@ -30,6 +30,24 @@ void potion_garbagecollect(int siz, int full)
   fprintf(stderr, "** warning: garbage collector full!\n");
 }
 
+//
+// Potion's GC is a generational copying GC. This is why the
+// volatile keyword is used so liberally throughout the source
+// code. PN types may suddenly move during any collection phase.
+// They move from the birth area to the old area.
+//
+// Potion actually begins by allocating an old area. This is for
+// two reasons. First, the script may be too short to require an
+// old area, so we want to avoid allocating two areas to start with.
+// And second, since Potion loads its core classes into GC first,
+// we save ourselves a severe promotion step by beginning with an
+// automatic promotion to second generation. (Oh and this allows
+// the core Potion struct pointer to be non-volatile.)
+//
+// While this may pay a slight penalty in memory size for long-running
+// scripts, perhaps I could add some occassional compaction to solve
+// that as well.
+//
 void potion_gc_init(Potion *P)
 {
   int oldsiz = 4 * POTION_BIRTH_SIZE;

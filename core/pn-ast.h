@@ -8,7 +8,8 @@
 #define POTION_AST_H
 
 typedef struct {
-  PN v, b;
+  PNv v;
+  PNv b;
 } PNArg;
 
 enum PN_AST {
@@ -51,7 +52,7 @@ enum PN_AST {
 struct PNSource {
   PN_OBJECT_HEADER
   u8 part;
-  PN a[0];
+  PNv a[0];
 };
 
 #define PN_AST(T, A)  potion_source(P, AST_##T, A, PN_NIL, PN_NIL)
@@ -61,7 +62,7 @@ struct PNSource {
 #define PN_PART(S)    ((struct PNSource *)S)->part
 #define PN_S(S, N)    ((struct PNSource *)S)->a[N]
 #define PN_CLOSE(B) ({ \
-    PN endname = B; \
+    PNv endname = B; \
     if (PN_IS_TUPLE(endname)) endname = PN_TUPLE_AT(endname, 0); \
     if (endname != PN_NIL) { \
       if (PN_PART(endname) == AST_EXPR) endname = PN_TUPLE_AT(PN_S(endname, 0), 0); \
