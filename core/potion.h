@@ -317,17 +317,17 @@ struct PNMemory {
   volatile void *old_lo, *old_hi, *old_cur;
 
   volatile struct PNFrame *frame;
-  volatile int collecting, dirty;
+  volatile int collecting, dirty, pass;
 };
 
-void potion_garbagecollect(int, int);
+void potion_garbagecollect(struct PNMemory *, int, int);
 
 // quick inline allocation
 static inline void *potion_gc_alloc(Potion *P, int siz) {
   volatile void *res = 0;
   siz = PN_ALIGN(siz, 8); // force 64-bit alignment
   if (P->mem->dirty || (char *)P->mem->birth_cur + siz >= (char *)P->mem->birth_storeptr - 2)
-    potion_garbagecollect(siz + 4 * sizeof(double), 0);
+    potion_garbagecollect(P->mem, siz + 4 * sizeof(double), 0);
   res = P->mem->birth_cur;
   P->mem->birth_cur = (char *)res + siz;
   return (void *)res;
