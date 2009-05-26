@@ -51,8 +51,9 @@ void potion_garbagecollect(int siz, int full)
 // scripts, perhaps I could add some occassional compaction to solve
 // that as well.
 //
-struct PNMemory *potion_gc_init()
+Potion *potion_gc_boot()
 {
+  Potion *P;
   void *page1 = pngc_page_new(POTION_BIRTH_SIZE, 0);
   struct PNMemory *M = (struct PNMemory *)page1;
   PN_MEMZERO(M, struct PNMemory);
@@ -63,5 +64,10 @@ struct PNMemory *potion_gc_init()
   M->birth_storeptr = (void *)(((void **)M->birth_hi) - 4);
 
   M->birth_cur += PN_ALIGN(sizeof(struct PNMemory), 8);
-  return M;
+  P = (Potion *)M->birth_cur;
+  PN_MEMZERO(P, Potion);
+  P->mem = M;
+
+  M->birth_cur += PN_ALIGN(sizeof(Potion), 8);
+  return P;
 }

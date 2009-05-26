@@ -18,7 +18,6 @@ PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue, PN_def,
 
 static void potion_init(Potion *P) {
   PN vtable, obj_vt;
-  P->mem = potion_gc_init();
   P->lobby = potion_type_new(P, PN_TLOBBY, 0);
   vtable = potion_type_new(P, PN_TVTABLE, P->lobby);
   obj_vt = potion_type_new(P, PN_TOBJECT, P->lobby);
@@ -71,8 +70,7 @@ static void potion_init(Potion *P) {
 }
 
 Potion *potion_create() {
-  Potion *P = (Potion *)malloc(sizeof(Potion));
-  PN_MEMZERO(P, Potion);
+  Potion *P = potion_gc_boot();
   P->vt = PN_TSTATE;
   PN_FLEX_NEW(P->vts, PN, TYPE_BATCH_SIZE);
   PN_FLEX_SIZE(P->vts) = PN_TUSER;

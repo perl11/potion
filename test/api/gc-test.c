@@ -28,7 +28,7 @@ CuSuite *gc_suite() {
 
 int main(void) {
   int count;
-  M = potion_gc_init();
+  M = potion_gc_boot()->mem;
   CuString *out = CuStringNew();
   CuSuite *suite = gc_suite();
   CuSuiteRun(suite);
