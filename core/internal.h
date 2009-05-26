@@ -10,11 +10,11 @@ struct Potion_State;
 
 typedef unsigned char u8;
 
-#define PN_ALLOC(T)          (T *)potion_gc_alloc(P, sizeof(T))
-#define PN_ALLOC2(T,C)       (T *)potion_gc_alloc(P, sizeof(T)+C)
-#define PN_ALLOC_N(T,N)      (T *)potion_gc_alloc(P, sizeof(T)*(N))
-#define PN_CALLOC(T,C)       (T *)potion_gc_calloc(P, sizeof(T)+C)
-#define PN_CALLOC_N(T,N)     (T *)potion_gc_calloc(P, sizeof(T)*N)
+#define PN_ALLOC(T)          (T *)potion_gc_alloc(P->mem, sizeof(T))
+#define PN_ALLOC2(T,C)       (T *)potion_gc_alloc(P->mem, sizeof(T)+C)
+#define PN_ALLOC_N(T,N)      (T *)potion_gc_alloc(P->mem, sizeof(T)*(N))
+#define PN_CALLOC(T,C)       (T *)potion_gc_calloc(P->mem, sizeof(T)+C)
+#define PN_CALLOC_N(T,N)     (T *)potion_gc_calloc(P->mem, sizeof(T)*N)
 
 #define SYS_ALLOC(T)         (T *)malloc(sizeof(T))
 #define SYS_ALLOC2(T,C)      (T *)malloc(sizeof(T)+C)
@@ -71,5 +71,25 @@ size_t potion_cp_strlen_utf8(const char *);
 void *potion_mmap(size_t, const char);
 int potion_munmap(void *, size_t);
 #define PN_ALLOC_FUNC(size) potion_mmap(size, 1)
+
+//
+// stack manipulation routines
+//
+#ifdef __i386
+#define POTION_ESP(p) __asm__("mov %%esp, %0" : "=r" (*p))
+#else
+#ifdef POTION_X86
+#define POTION_ESP(p) __asm__("mov %%rsp, %0" : "=r" (*p))
+#else
+__attribute__ ((noinline)) void potion_esp(void **);
+#define POTION_ESP(p) potion_esp(p)
+#endif
+#endif
+
+#if POTION_STACK_DIR > 0
+#define STACK_UPPER(a, b) a
+#elif POTION_STACK_DIR < 0
+#define STACK_UPPER(a, b) b
+#endif
 
 #endif

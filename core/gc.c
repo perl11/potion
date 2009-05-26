@@ -14,6 +14,40 @@
 #include "internal.h"
 #include "gc.h"
 
+PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
+  _PN *esp, *c = M->cstack;
+  POTION_ESP(&esp);
+  if (p) *p = STACK_UPPER(c, esp);
+  return esp < c ? c - esp : esp - c + 1;
+}
+
+static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register long n) {
+  _PN v;
+  PN_SIZE i = 0;
+  while (n--) {
+    v = *x;
+    if (IS_NEW_PTR(v))
+      i++;
+    x++;
+  }
+  return i;
+}
+
+PN_SIZE potion_mark_stack(struct PNMemory *M) {
+  long n;
+  _PN *end, *start = M->cstack;
+  POTION_ESP(&end);
+#if POTION_STACK_DIR > 0
+  n = end - start;
+#else
+  n = start - end + 1;
+  start = end;
+  end = M->cstack;
+#endif
+  if (n <= 0) return;
+  return pngc_mark_array(M, start, n);
+}
+
 #define SET_GEN(t, p, s) \
   M->t##_lo = p; \
   M->t##_cur = p + 2 * sizeof(void *); \
@@ -30,7 +64,21 @@ static void pngc_page_delete(void *mem, int sz) {
   potion_munmap(mem, PN_ALIGN(sz, POTION_PAGESIZE));
 }
 
-static void potion_gc_minor(struct PNMemory *M, int sz) {
+static int potion_gc_minor(struct PNMemory *M, int sz) {
+  struct PNFrame *f = 0;
+  int n = 0;
+  void *birthlo = (void *) M->birth_lo;
+  void *birthhi = (void *) M->birth_hi;
+  void *scanptr = (void *) M->old_cur;
+  void *newad = 0;
+  void **storead = 0;
+
+  if (sz < 0)
+    sz = 0;
+  else if (sz >= POTION_MAX_BIRTH_SIZE)
+    return POTION_NO_MEM;
+
+  return POTION_OK;
 }
 
 static void potion_gc_full(struct PNMemory *M, int sz,
@@ -95,7 +143,7 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
 // that as well.
 //
 
-Potion *potion_gc_boot() {
+Potion *potion_gc_boot(void *sp) {
   Potion *P;
   void *page1 = pngc_page_new(POTION_BIRTH_SIZE, 0);
   struct PNMemory *M = (struct PNMemory *)page1;
@@ -104,6 +152,7 @@ Potion *potion_gc_boot() {
   SET_GEN(birth, page1, POTION_BIRTH_SIZE);
   SET_STOREPTR(4);
 
+  M->cstack = sp;
   M->birth_cur += PN_ALIGN(sizeof(struct PNMemory), 8);
   P = (Potion *)M->birth_cur;
   PN_MEMZERO(P, Potion);

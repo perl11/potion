@@ -46,11 +46,11 @@ static void potion_cmd_version() {
   printf(potion_banner, POTION_JIT);
 }
 
-static void potion_cmd_compile(char *filename, int exec, int verbose) {
+static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) {
   PN buf;
   FILE *fp = NULL;
   struct stat stats;
-  Potion *P = potion_create();
+  Potion *P = potion_create(sp);
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
     goto done;
@@ -136,6 +136,7 @@ done:
 }
 
 int main(int argc, char *argv[]) {
+  POTION_INIT_STACK(sp);
   int i, verbose = 0, exec = 1 + POTION_JIT;
 
   if (argc > 1) {
@@ -186,7 +187,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    potion_cmd_compile(argv[argc-1], exec, verbose);
+    potion_cmd_compile(argv[argc-1], exec, verbose, sp);
     return 0;
   }
 

@@ -26,6 +26,7 @@
 typedef unsigned long PNType, _PN;
 typedef unsigned int PN_SIZE;
 typedef struct Potion_State Potion;
+typedef volatile _PN PN;
 
 struct PNObject;
 struct PNData;
@@ -57,7 +58,6 @@ struct PNJitAsm;
 #define PN_TTABLE       15
 #define PN_TUSER        16
 
-#define PN              volatile _PN
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
@@ -311,33 +311,41 @@ struct PNMemory {
   // the birth region
   volatile void *birth_lo, *birth_hi, *birth_cur;
   volatile void **birth_storeptr;
-  volatile int birth_changedconstrank;
 
   // the old region (TODO: consider making the old region common to all threads)
   volatile void *old_lo, *old_hi, *old_cur;
 
-  volatile struct PNFrame *frame;
   volatile int collecting, dirty, pass;
+  void *cstack; /* machine stack start */
 };
+
+#define POTION_INIT_STACK(x) \
+  PN __##x = 0x571FF; void *x = (void *)&__##x
 
 void potion_garbagecollect(struct PNMemory *, int, int);
 
 // quick inline allocation
-static inline void *potion_gc_alloc(Potion *P, int siz) {
+static inline void *potion_gc_alloc(struct PNMemory *M, int siz) {
   volatile void *res = 0;
   siz = PN_ALIGN(siz, 8); // force 64-bit alignment
-  if (P->mem->dirty || (char *)P->mem->birth_cur + siz >= (char *)P->mem->birth_storeptr - 2)
-    potion_garbagecollect(P->mem, siz + 4 * sizeof(double), 0);
-  res = P->mem->birth_cur;
-  P->mem->birth_cur = (char *)res + siz;
+  if (M->dirty || (char *)M->birth_cur + siz >= (char *)M->birth_storeptr - 2)
+    potion_garbagecollect(M, siz + 4 * sizeof(double), 0);
+  res = M->birth_cur;
+  M->birth_cur = (char *)res + siz;
   return (void *)res;
 }
 
-static inline void *potion_gc_calloc(Potion *P, int siz) {
-  void *res = potion_gc_alloc(P, siz);
+static inline void *potion_gc_calloc(struct PNMemory *M, int siz) {
+  void *res = potion_gc_alloc(M, siz);
   memset(res, 0, siz);
   return res;
 }
+
+//
+// internal errors
+//
+#define POTION_OK       0
+#define POTION_NO_MEM   8910
 
 //
 // method caches
@@ -376,7 +384,7 @@ extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
 //
 // the Potion functions
 //
-Potion *potion_create();
+Potion *potion_create(void *);
 void potion_destroy(Potion *);
 PNType potion_kind_of(PN);
 PN potion_str(Potion *, const char *);
@@ -416,7 +424,7 @@ PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);
 
-Potion *potion_gc_boot();
+Potion *potion_gc_boot(void *);
 void potion_lobby_init(Potion *);
 void potion_object_init(Potion *);
 void potion_primitive_init(Potion *);

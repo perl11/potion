@@ -69,8 +69,8 @@ static void potion_init(Potion *P) {
   potion_compiler_init(P);
 }
 
-Potion *potion_create() {
-  Potion *P = potion_gc_boot();
+Potion *potion_create(void *sp) {
+  Potion *P = potion_gc_boot(sp);
   P->vt = PN_TSTATE;
   PN_FLEX_NEW(P->vts, PN, TYPE_BATCH_SIZE);
   PN_FLEX_SIZE(P->vts) = PN_TUSER;
@@ -138,4 +138,9 @@ PN potion_call(Potion *P, PN cl, PN_SIZE argc, PN * volatile argv) {
 
 PNType potion_kind_of(PN obj) {
   return potion_type(obj);
+}
+
+void potion_esp(void **esp) {
+  PN x;
+  *esp = (void *)&x;
 }

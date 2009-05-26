@@ -120,8 +120,9 @@ CuSuite *potion_suite() {
 }
 
 int main(void) {
+  POTION_INIT_STACK(sp);
   int count;
-  P = potion_create();
+  P = potion_create(sp);
   CuString *out = CuStringNew();
   CuSuite *suite = potion_suite();
   CuSuiteRun(suite);
