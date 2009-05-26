@@ -26,7 +26,7 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
   PN_SIZE i = 0;
   while (n--) {
     v = *x;
-    if (IS_NEW_PTR(v))
+    if ((_PN)M != v && IS_NEW_PTR(v))
       i++;
     x++;
   }
