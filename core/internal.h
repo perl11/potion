@@ -92,4 +92,6 @@ __attribute__ ((noinline)) void potion_esp(void **);
 #define STACK_UPPER(a, b) b
 #endif
 
+#define GC_PROTECT(M) M->protect = (void *)M->birth_cur
+
 #endif

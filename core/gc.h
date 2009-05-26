@@ -40,7 +40,7 @@
   (PN_IS_PTR(p) && IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p))
 
 #define GC_FORWARD(p) do { \
-  struct PNObject *_pnobj = *(p); \
+  struct PNObject *_pnobj = *((struct PNObject **)p); \
   if (_pnobj->vt == PN_NIL) { \
     *(p) = _pnobj->data[0]; \
   } else { \
@@ -53,6 +53,6 @@
 PN_SIZE potion_stack_len(struct PNMemory *, _PN **);
 PN_SIZE potion_mark_stack(struct PNMemory *, int);
 void *potion_gc_copy(struct PNMemory *, const struct PNObject *);
-void *pngc_page_new(int, const char);
+void *pngc_page_new(int *, const char);
 
 #endif

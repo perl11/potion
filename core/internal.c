@@ -68,7 +68,7 @@ static void potion_init(Potion *P) {
   potion_source_init(P);
   potion_compiler_init(P);
 
-  P->mem->protect = P->mem->birth_cur;
+  GC_PROTECT(P->mem);
 }
 
 Potion *potion_create(void *sp) {

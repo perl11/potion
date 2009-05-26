@@ -75,8 +75,9 @@ int main(void) {
   // manually initialize the older generation
   M = potion_gc_boot(sp)->mem;
   if (M->old_lo == NULL) {
-    void *page = pngc_page_new(POTION_BIRTH_SIZE * 2, 0);
-    SET_GEN(old, page, POTION_BIRTH_SIZE * 2);
+    int gensz = POTION_BIRTH_SIZE * 2;
+    void *page = pngc_page_new(&gensz, 0);
+    SET_GEN(old, page, gensz);
   }
 
   CuString *out = CuStringNew();

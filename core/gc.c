@@ -59,9 +59,10 @@ PN_SIZE potion_mark_stack(struct PNMemory *M, int forward) {
   return pngc_mark_array(M, start, n, forward);
 }
 
-void *pngc_page_new(int sz, const char exec) {
+void *pngc_page_new(int *sz, const char exec) {
   // TODO: why does qish allocate pages before and after?
-  return potion_mmap(PN_ALIGN(sz, POTION_PAGESIZE), exec);
+  *sz = PN_ALIGN(*sz, POTION_PAGESIZE);
+  return potion_mmap(*sz, exec);
 }
 
 void pngc_page_delete(void *mem, int sz) {
@@ -97,15 +98,17 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
   // TODO: take sz into account
   // TODO: promote first page to first 2nd gen
   if (M->birth_lo == M) {
-    void *page = pngc_page_new(POTION_BIRTH_SIZE, 0);
-    SET_GEN(birth, page, POTION_BIRTH_SIZE);
+    int gensz = POTION_BIRTH_SIZE;
+    void *page = pngc_page_new(&gensz, 0);
+    SET_GEN(birth, page, gensz);
     SET_STOREPTR(5);
     return;
   }
 
   if (M->old_lo == NULL) {
-    void *page = pngc_page_new(POTION_BIRTH_SIZE * 2, 0);
-    SET_GEN(old, page, POTION_BIRTH_SIZE * 2);
+    int gensz = POTION_BIRTH_SIZE * 2;
+    void *page = pngc_page_new(&gensz, 0);
+    SET_GEN(old, page, gensz);
   }
 
   if ((char *) M->old_cur + sz + POTION_BIRTH_SIZE +
@@ -126,7 +129,7 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
 }
 
 void *potion_gc_copy(struct PNMemory *M, const struct PNObject *ptr) {
-  void *dst = M->old_cur;
+  void *dst = (void *)M->old_cur;
   PN_SIZE sz = 0;
 
   switch (ptr->vt) {
@@ -203,11 +206,12 @@ void *potion_gc_copy(struct PNMemory *M, const struct PNObject *ptr) {
 //
 Potion *potion_gc_boot(void *sp) {
   Potion *P;
-  void *page1 = pngc_page_new(POTION_BIRTH_SIZE, 0);
+  int bootsz = POTION_BIRTH_SIZE;
+  void *page1 = pngc_page_new(&bootsz, 0);
   struct PNMemory *M = (struct PNMemory *)page1;
   PN_MEMZERO(M, struct PNMemory);
 
-  SET_GEN(birth, page1, POTION_BIRTH_SIZE);
+  SET_GEN(birth, page1, bootsz);
   SET_STOREPTR(4);
 
   M->cstack = sp;
@@ -217,6 +221,6 @@ Potion *potion_gc_boot(void *sp) {
   P->mem = M;
 
   M->birth_cur += PN_ALIGN(sizeof(Potion), 8);
-  M->protect = M->birth_cur;
+  GC_PROTECT(M);
   return P;
 }
