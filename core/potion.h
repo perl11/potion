@@ -113,14 +113,14 @@ struct PNJitAsm;
 #define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
 #define PN_TUPLE_COUNT(T, I, B) ({ \
-    vPN(Tuple) __t##I = PN_GET_TUPLE(T); \
+    struct PNTuple * volatile __t##I = PN_GET_TUPLE(T); \
     if (__t##I->len != 0) { \
       PN_SIZE I; \
       for (I = 0; I < __t##I->len; I++) B \
     } \
   })
 #define PN_TUPLE_EACH(T, I, V, B) ({ \
-    vPN(Tuple) *__t##V = PN_GET_TUPLE(T); \
+    struct PNTuple * volatile __t##V = PN_GET_TUPLE(T); \
     if (__t##V->len != 0) { \
       PN_SIZE I; \
       for (I = 0; I < __t##V->len; I++) { \
