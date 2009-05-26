@@ -219,6 +219,15 @@ struct PNClosure {
 };
 
 //
+// An AST fragment, non-volatile.
+//
+struct PNSource {
+  PN_OBJECT_HEADER
+  unsigned char part;
+  PN a[0];
+};
+
+//
 // a prototype is compiled source code,
 // non-volatile.
 //
@@ -317,6 +326,7 @@ struct PNMemory {
 
   volatile int collecting, dirty, pass;
   void *cstack; /* machine stack start */
+  void *protect; /* end of protected memory */
 };
 
 #define POTION_INIT_STACK(x) \
@@ -339,6 +349,13 @@ static inline void *potion_gc_calloc(struct PNMemory *M, int siz) {
   void *res = potion_gc_alloc(M, siz);
   memset(res, 0, siz);
   return res;
+}
+
+static inline PN potion_data_alloc(struct PNMemory *M, int siz) {
+  struct PNData *data = potion_gc_alloc(M, sizeof(struct PNData) + siz);
+  data->vt = PN_TUSER;
+  data->len = siz;
+  return (PN)data;
 }
 
 //

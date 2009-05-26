@@ -67,13 +67,15 @@ static void potion_init(Potion *P) {
   potion_table_init(P);
   potion_source_init(P);
   potion_compiler_init(P);
+
+  P->mem->protect = P->mem->birth_cur;
 }
 
 Potion *potion_create(void *sp) {
   Potion *P = potion_gc_boot(sp);
   P->vt = PN_TSTATE;
   PN_FLEX_NEW(P->vts, PN, TYPE_BATCH_SIZE);
-  PN_FLEX_SIZE(P->vts) = PN_TUSER;
+  PN_FLEX_SIZE(P->vts) = PN_TUSER + 1;
   potion_init(P);
   return P;
 }

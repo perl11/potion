@@ -21,24 +21,64 @@ void gc_test_start(CuTest *T) {
   CuAssert(T, "stack length is not a positive number", potion_stack_len(M, NULL) > 0);
 }
 
+//
+// everything allocated in alloc1 and alloc4 tests goes out of scope, so will
+// not be moved to the old generation. data in the `forward` test will be copied.
+//
 void gc_test_alloc1(CuTest *T) {
-  PN ptr = potion_gc_alloc(M, 16);
-  PN_SIZE count = potion_mark_stack(M);
+  PN ptr = (PN)potion_gc_alloc(M, 16);
+  PN_SIZE count = potion_mark_stack(M, 0);
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr));
   CuAssertIntEquals(T, "only one allocation should be found", count, 1);
+}
+
+void gc_test_alloc4(CuTest *T) {
+  PN ptr = (PN)potion_gc_alloc(M, 16);
+  PN ptr2 = (PN)potion_gc_alloc(M, 16);
+  PN ptr3 = (PN)potion_gc_alloc(M, 16);
+  PN ptr4 = (PN)potion_gc_alloc(M, 16);
+  PN_SIZE count = potion_mark_stack(M, 0);
+  CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr));
+  CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr2));
+  CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr3));
+  CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr4));
+  CuAssertIntEquals(T, "four allocations should be found", count, 4);
+}
+
+void gc_test_forward(CuTest *T) {
+  PN_SIZE count;
+  char *fj = "frances johnson.";
+  PN ptr = potion_data_alloc(M, 16);
+  register unsigned long old = ptr & 0xFFFF;
+  memcpy(((struct PNData *)ptr)->data, fj, 16);
+
+  count = potion_mark_stack(M, 1);
+  CuAssert(T, "copied location identical to original", (old & 0xFFFF) != ptr);
+  CuAssertIntEquals(T, "copied object not still PN_TUSER", ((struct PNData *)ptr)->vt, PN_TUSER);
+  CuAssert(T, "copied data not identical to original",
+    strncmp(((struct PNData *)ptr)->data, fj, 16) == 0);
 }
 
 CuSuite *gc_suite() {
   CuSuite *S = CuSuiteNew();
   SUITE_ADD_TEST(S, gc_test_start);
   SUITE_ADD_TEST(S, gc_test_alloc1);
+  SUITE_ADD_TEST(S, gc_test_alloc4);
+  SUITE_ADD_TEST(S, gc_test_forward);
   return S;
 }
 
 int main(void) {
   POTION_INIT_STACK(sp);
   int count;
+
+  // manually initialize the older generation
   M = potion_gc_boot(sp)->mem;
+  if (M->old_lo == NULL) {
+    void *page = pngc_page_new(POTION_BIRTH_SIZE * 2, 0);
+    SET_GEN(old, page, POTION_BIRTH_SIZE * 2);
+  }
+
   CuString *out = CuStringNew();
   CuSuite *suite = gc_suite();
   CuSuiteRun(suite);

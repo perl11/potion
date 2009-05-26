@@ -21,19 +21,30 @@ PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
   return esp < c ? c - esp : esp - c + 1;
 }
 
-static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register long n) {
+static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register long n, int forward) {
   _PN v;
   PN_SIZE i = 0;
   while (n--) {
     v = *x;
-    if ((_PN)M != v && IS_NEW_PTR(v))
+#if 0
+    if ((_PN)M == v)
+      printf("pnmemory @ %ld\n", n);
+    else if (IS_NEW_PTR(v))
+      printf("pointer  @ %ld: %p\n", n, v);
+    else
+      printf("non-pointer  @ %ld: %p\n", n, v);
+#endif
+    if ((_PN)M != v && IS_NEW_PTR(v)) {
+      if (forward)
+        GC_FORWARD(x);
       i++;
+    }
     x++;
   }
   return i;
 }
 
-PN_SIZE potion_mark_stack(struct PNMemory *M) {
+PN_SIZE potion_mark_stack(struct PNMemory *M, int forward) {
   long n;
   _PN *end, *start = M->cstack;
   POTION_ESP(&end);
@@ -45,22 +56,15 @@ PN_SIZE potion_mark_stack(struct PNMemory *M) {
   end = M->cstack;
 #endif
   if (n <= 0) return;
-  return pngc_mark_array(M, start, n);
+  return pngc_mark_array(M, start, n, forward);
 }
 
-#define SET_GEN(t, p, s) \
-  M->t##_lo = p; \
-  M->t##_cur = p + 2 * sizeof(void *); \
-  M->t##_hi = p + (s);
-#define SET_STOREPTR(n) \
-  M->birth_storeptr = (void *)(((void **)M->birth_hi) - n)
-
-static void *pngc_page_new(int sz, const char exec) {
+void *pngc_page_new(int sz, const char exec) {
   // TODO: why does qish allocate pages before and after?
   return potion_mmap(PN_ALIGN(sz, POTION_PAGESIZE), exec);
 }
 
-static void pngc_page_delete(void *mem, int sz) {
+void pngc_page_delete(void *mem, int sz) {
   potion_munmap(mem, PN_ALIGN(sz, POTION_PAGESIZE));
 }
 
@@ -121,6 +125,61 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
   M->collecting = 0;
 }
 
+void *potion_gc_copy(struct PNMemory *M, const struct PNObject *ptr) {
+  void *dst = M->old_cur;
+  PN_SIZE sz = 0;
+
+  switch (ptr->vt) {
+    case PN_TSTRING:
+      sz = sizeof(struct PNString) + PN_STR_LEN(ptr) + 1;
+    break;
+    case PN_TWEAK:
+      sz = sizeof(struct PNWeakRef);
+    break;
+    case PN_TCLOSURE:
+      sz = sizeof(struct PNClosure) + (PN_CLOSURE(ptr)->extra * sizeof(PN));
+    break;
+    case PN_TTUPLE:
+      sz = sizeof(struct PNTuple);
+    break;
+    case PN_TFILE:
+      sz = sizeof(struct PNFile);
+    break;
+    // TODO: look up class fields and copy full object length
+    case PN_TOBJECT:
+      sz = sizeof(struct PNObject);
+    break;
+    case PN_TSOURCE:
+    // TODO: look up ast size (see core/pn-ast.c)
+      sz = sizeof(struct PNSource) + (3 * sizeof(PN));
+    break;
+    case PN_TBYTES:
+      sz = sizeof(struct PNBytes) + PN_STR_LEN(ptr) + 1;
+    break;
+    case PN_TPROTO:
+      sz = sizeof(struct PNProto);
+    break;
+    case PN_TTABLE:
+      // TODO: include table.h or something
+      sz = sizeof(struct PNObject) + sizeof(void *);
+    break;
+    case PN_TUSER:
+      // TODO: include table.h or something
+      sz = sizeof(struct PNData) + ((struct PNData *)ptr)->len;
+    break;
+  }
+
+  if (sz == 0) {
+    fprintf(stderr, "** warning: gc asked to copy zero-length object!\n");
+    return dst;
+  }
+
+  memcpy(dst, ptr, sz);
+  sz = PN_ALIGN(sz, 8); // force 64-bit alignment
+  M->old_cur = (char *)dst + sz;
+  return dst;
+}
+
 //
 // Potion's GC is a generational copying GC. This is why the
 // volatile keyword is used so liberally throughout the source
@@ -142,7 +201,6 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
 // scripts, perhaps I could add some occassional compaction to solve
 // that as well.
 //
-
 Potion *potion_gc_boot(void *sp) {
   Potion *P;
   void *page1 = pngc_page_new(POTION_BIRTH_SIZE, 0);
@@ -159,5 +217,6 @@ Potion *potion_gc_boot(void *sp) {
   P->mem = M;
 
   M->birth_cur += PN_ALIGN(sizeof(Potion), 8);
+  M->protect = M->birth_cur;
   return P;
 }

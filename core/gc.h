@@ -22,17 +22,37 @@
 #define POTION_GC_PERIOD    256
 #define POTION_NB_ROOTS     64
 
+#define SET_GEN(t, p, s) \
+  M->t##_lo = p; \
+  M->t##_cur = p + 2 * sizeof(void *); \
+  M->t##_hi = p + (s);
+
+#define SET_STOREPTR(n) \
+  M->birth_storeptr = (void *)(((void **)M->birth_hi) - n)
+
+#define IS_GC_PROTECTED(p) \
+  ((_PN)(p) >= (_PN)M && (_PN)(p) < (_PN)M->protect)
+
 #define IN_BIRTH_REGION(p) \
-  ((_PN)(p) >= (_PN)M->birth_lo && (_PN)(p) <= (_PN)M->birth_hi)
+  ((_PN)(p) >= (_PN)M->birth_lo && (_PN)(p) < (_PN)M->birth_hi)
 
 #define IS_NEW_PTR(p) \
-  (PN_IS_PTR(p) && IN_BIRTH_REGION(p))
+  (PN_IS_PTR(p) && IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p))
 
-#define MINOR_UPDATE(p) { \
-  if (IN_BIRTH_REGION(p) && ((_PN)(p) & 3) == 0) \
-    GC_FORWARD(&(p)); }
+#define GC_FORWARD(p) do { \
+  struct PNObject *_pnobj = *(p); \
+  if (_pnobj->vt == PN_NIL) { \
+    *(p) = _pnobj->data[0]; \
+  } else { \
+    void *_pnad = potion_gc_copy(M, (const struct PNObject *)_pnobj); \
+    _pnobj->vt = 0; \
+    *(p) = _pnobj->data[0] = (_PN)_pnad; \
+  } \
+}  while(0)
 
 PN_SIZE potion_stack_len(struct PNMemory *, _PN **);
-PN_SIZE potion_mark_stack(struct PNMemory *);
+PN_SIZE potion_mark_stack(struct PNMemory *, int);
+void *potion_gc_copy(struct PNMemory *, const struct PNObject *);
+void *pngc_page_new(int, const char);
 
 #endif
