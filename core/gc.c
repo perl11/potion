@@ -70,10 +70,6 @@ void pngc_page_delete(void *mem, int sz) {
 }
 
 static int potion_gc_minor(struct PNMemory *M, int sz) {
-  struct PNFrame *f = 0;
-  int n = 0;
-  void *birthlo = (void *) M->birth_lo;
-  void *birthhi = (void *) M->birth_hi;
   void *scanptr = (void *) M->old_cur;
   void *newad = 0;
   void **storead = 0;
@@ -82,6 +78,31 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
     sz = 0;
   else if (sz >= POTION_MAX_BIRTH_SIZE)
     return POTION_NO_MEM;
+
+  potion_mark_stack(M, 1);
+
+  for (storead = ((void **) M->birth_storeptr) - 1;
+       storead < (void **) M->birth_hi; storead++) {
+    PN v = (PN)*storead;
+    if (PN_IS_PTR(v))
+      potion_mark_minor(M, (const struct PNObject *)v);
+  }
+
+  while ((PN)scanptr < (PN)M->old_cur) {
+    scanptr = potion_mark_minor(M, scanptr);
+    while ((PN)scanptr < (PN)M->old_cur && (*(void **)scanptr) == 0)
+      scanptr = ((void **)scanptr) + 1;
+  }
+
+  sz += 2 * POTION_PAGESIZE;
+  sz = max(sz, POTION_BIRTH_SIZE);
+
+  newad = pngc_page_new(&sz, 0);
+  pngc_page_delete((void *)M->birth_lo,
+		(char *)M->birth_hi - (char *)M->birth_lo);
+  SET_GEN(birth, newad, sz);
+  SET_STOREPTR(5);
+  M->minors++;
 
   return POTION_OK;
 }
@@ -181,6 +202,10 @@ void *potion_gc_copy(struct PNMemory *M, const struct PNObject *ptr) {
   sz = PN_ALIGN(sz, 8); // force 64-bit alignment
   M->old_cur = (char *)dst + sz;
   return dst;
+}
+
+void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
+  return (void *)ptr;
 }
 
 //

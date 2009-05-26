@@ -324,7 +324,7 @@ struct PNMemory {
   // the old region (TODO: consider making the old region common to all threads)
   volatile void *old_lo, *old_hi, *old_cur;
 
-  volatile int collecting, dirty, pass;
+  volatile int collecting, dirty, pass, majors, minors;
   void *cstack; /* machine stack start */
   void *protect; /* end of protected memory */
 };
@@ -356,6 +356,17 @@ static inline PN potion_data_alloc(struct PNMemory *M, int siz) {
   data->vt = PN_TUSER;
   data->len = siz;
   return (PN)data;
+}
+
+static inline void potion_gc_update(struct PNMemory *M, PN x) {
+  if (x < (PN)M->old_lo || x > (PN)M->old_hi ||
+      x == (PN)M->birth_storeptr[1] ||
+      x == (PN)M->birth_storeptr[2] ||
+      x == (PN)M->birth_storeptr[3])
+       return;
+  *(M->birth_storeptr--) = (void *)x;
+  if ((void **)M->birth_storeptr - 4 <= (void **)M->birth_cur)
+    potion_garbagecollect(M, POTION_PAGESIZE, 0);
 }
 
 //

@@ -30,6 +30,14 @@ typedef unsigned char u8;
 #define PN_MEMCPY(X,Y,T)     memcpy((void *)(X), (void *)(Y), sizeof(T))
 #define PN_MEMCPY_N(X,Y,T,N) memcpy((void *)(X), (void *)(Y), sizeof(T)*(N))
 
+#ifndef min
+#define min(a, b) ((a) <= (b) ? (a) : (b))
+#endif
+
+#ifndef max
+#define max(a, b) ((a) >= (b) ? (a) : (b))
+#endif
+
 #define PN_FLEX_NEW(N, T, S) \
   (N).ptr = SYS_ALLOC_N(T, S); \
   (N).capa = S; \

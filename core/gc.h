@@ -50,9 +50,32 @@
   } \
 }  while(0)
 
+#define GC_MINOR_UPDATE(p) do { \
+  PN _p; \
+  GC_FOLLOW_FORWARD(p); \
+  _p = (PN)(p); \
+  if (_p >= (PN)M->birth_lo && _p < (PN)M->birth_hi) \
+    { GC_FORWARD((void**)&(p)); } \
+} while(0)
+
+#define GC_FULL_UPDATE(p) do { \
+  PN _p; \
+  GC_FOLLOW_FORWARD(p); \
+  _p = (PN)(p); \
+  if ((_p >= (PN)M->birth_lo && _p < (PN)M->birth_hi) || \
+      (_p >= (PN)M->old_lo && _p < (PN)M->old_hi)) \
+    {GC_FORWARD((void**)&(p));} \
+} while(0)
+
+#define GC_FOLLOW_FORWARD(p) do { \
+  while ((PN)(p) > (PN)POTION_PAGESIZE && *((PN *)(p)) == 0) \
+    (p) = (void*)(((PN *)(p))[1]); \
+} while(0)
+
 PN_SIZE potion_stack_len(struct PNMemory *, _PN **);
 PN_SIZE potion_mark_stack(struct PNMemory *, int);
 void *potion_gc_copy(struct PNMemory *, const struct PNObject *);
 void *pngc_page_new(int *, const char);
+void *potion_mark_minor(struct PNMemory *, const struct PNObject *);
 
 #endif
