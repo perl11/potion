@@ -44,24 +44,24 @@ void potion_garbagecollect(int siz, int full)
 // automatic promotion to second generation. (Oh and this allows
 // the core Potion struct pointer to be non-volatile.)
 //
+// In short, this first page is never released, since the GC struct
+// itself is on that page.
+//
 // While this may pay a slight penalty in memory size for long-running
 // scripts, perhaps I could add some occassional compaction to solve
 // that as well.
 //
-void potion_gc_init(Potion *P)
+struct PNMemory *potion_gc_init()
 {
-  int oldsiz = 4 * POTION_BIRTH_SIZE;
-  int birthsiz = 2 * POTION_BIRTH_SIZE;
-  if (P->mem != NULL) return;
+  void *page1 = pngc_page_new(POTION_BIRTH_SIZE, 0);
+  struct PNMemory *M = (struct PNMemory *)page1;
+  PN_MEMZERO(M, struct PNMemory);
 
-  P->mem = SYS_CALLOC(struct PNMemory, 0);
+  M->birth_lo = page1;
+  M->birth_cur = page1 + 2 * sizeof(void *);
+  M->birth_hi = page1 + POTION_BIRTH_SIZE;
+  M->birth_storeptr = (void *)(((void **)M->birth_hi) - 4);
 
-  P->mem->birth_lo = pngc_page_new(birthsiz, 0);
-  P->mem->birth_cur = P->mem->birth_lo + 2 * sizeof(void *);
-  P->mem->birth_hi = P->mem->birth_lo + birthsiz;
-  P->mem->birth_storeptr = (void *) (((void **)P->mem->birth_hi) - 4);
-
-  P->mem->old_lo = pngc_page_new(oldsiz, 0);
-  P->mem->old_cur = P->mem->old_lo + 2 * sizeof(void *);
-  P->mem->old_hi = P->mem->old_lo + oldsiz;
+  M->birth_cur += PN_ALIGN(sizeof(struct PNMemory), 8);
+  return M;
 }

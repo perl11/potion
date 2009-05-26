@@ -2,6 +2,7 @@ SRC = core/asm.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc
 OBJ = ${SRC:.c=.o}
 OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
+OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 
 PREFIX = /usr/local
 CC = gcc
@@ -127,10 +128,12 @@ potion: ${OBJ_POTION} ${OBJ}
 	  ${STRIP} potion; \
 	fi
 
-test: potion test/api/potion-test
+test: potion test/api/potion-test test/api/gc-test
 	@${ECHO}; \
 	${ECHO} running API tests; \
 	test/api/potion-test; \
+	${ECHO} running GC tests; \
+	test/api/gc-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
@@ -180,6 +183,10 @@ test/api/potion-test: ${OBJ_TEST} ${OBJ}
 	@${ECHO} LINK potion-test
 	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
 
+test/api/gc-test: ${OBJ_GC_TEST} ${OBJ}
+	@${ECHO} LINK gc-test
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${LIBS} -o $@
+
 tarball: core/version.h core/pn-scan.c core/pn-gram.c
 	mkdir -p pkg
 	rm -rf ${PKG}
@@ -201,8 +208,8 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST}
+	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST}
 	@rm -f core/config.h core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
-	@rm -f potion potion.exe test/api/potion-test
+	@rm -f potion potion.exe test/api/potion-test test/api/gc-test
 
 .PHONY: all clean rebuild test

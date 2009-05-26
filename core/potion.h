@@ -416,7 +416,7 @@ PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);
 
-void potion_gc_init(Potion *);
+struct PNMemory *potion_gc_init();
 void potion_lobby_init(Potion *);
 void potion_object_init(Potion *);
 void potion_primitive_init(Potion *);

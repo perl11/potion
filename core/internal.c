@@ -18,7 +18,7 @@ PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue, PN_def,
 
 static void potion_init(Potion *P) {
   PN vtable, obj_vt;
-  potion_gc_init(P);
+  P->mem = potion_gc_init();
   P->lobby = potion_type_new(P, PN_TLOBBY, 0);
   vtable = potion_type_new(P, PN_TVTABLE, P->lobby);
   obj_vt = potion_type_new(P, PN_TOBJECT, P->lobby);
