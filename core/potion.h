@@ -57,8 +57,8 @@ struct PNJitAsm;
 #define PN_TTABLE       15
 #define PN_TUSER        16
 
-#define PNv             _PN volatile
-#define PN              _PN volatile
+#define PN              volatile _PN
+#define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
 #define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, t))
@@ -113,14 +113,14 @@ struct PNJitAsm;
 #define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
 #define PN_TUPLE_COUNT(T, I, B) ({ \
-    struct PNTuple volatile *__t##I = PN_GET_TUPLE(T); \
+    vPN(Tuple) __t##I = PN_GET_TUPLE(T); \
     if (__t##I->len != 0) { \
       PN_SIZE I; \
       for (I = 0; I < __t##I->len; I++) B \
     } \
   })
 #define PN_TUPLE_EACH(T, I, V, B) ({ \
-    struct PNTuple volatile *__t##V = PN_GET_TUPLE(T); \
+    vPN(Tuple) *__t##V = PN_GET_TUPLE(T); \
     if (__t##V->len != 0) { \
       PN_SIZE I; \
       for (I = 0; I < __t##V->len; I++) { \
@@ -145,7 +145,7 @@ struct PNJitAsm;
 //
 struct PNObject {
   PN_OBJECT_HEADER
-  PNv data[0];
+  PN data[0];
 };
 
 //
@@ -200,8 +200,8 @@ struct PNDecimal {
 struct PNFile {
   PN_OBJECT_HEADER
   FILE *stream;
-  PNv path;
-  PNv mode;
+  PN path;
+  PN mode;
 };
 
 typedef PN (*PN_F)(Potion *, PN, PN, ...);
@@ -213,9 +213,9 @@ typedef PN (*PN_F)(Potion *, PN, PN, ...);
 struct PNClosure {
   PN_OBJECT_HEADER
   PN_F method;
-  PNv sig;
+  PN sig;
   PN_SIZE extra;
-  PNv data[0];
+  PN data[0];
 };
 
 //
@@ -224,15 +224,15 @@ struct PNClosure {
 //
 struct PNProto {
   PN_OBJECT_HEADER
-  PNv source; // program name or enclosing scope
-  PNv sig;    // argument signature
-  PNv stack;  // size of the stack
-  PNv locals; // local variables
-  PNv upvals; // variables in upper scopes
-  PNv values; // numbers, strings, etc.
-  PNv protos; // nested closures
+  PN source; // program name or enclosing scope
+  PN sig;    // argument signature
+  PN stack;  // size of the stack
+  PN locals; // local variables
+  PN upvals; // variables in upper scopes
+  PN values; // numbers, strings, etc.
+  PN protos; // nested closures
   PN_SIZE localsize, upvalsize;
-  PNv asmb;   // assembled instructions
+  PN asmb;   // assembled instructions
 };
 
 //
@@ -251,7 +251,7 @@ struct PNTuple {
 //
 struct PNWeakRef {
   PN_OBJECT_HEADER
-  PNv data;
+  PN data;
 };
 
 // the potion type is the 't' in the vtable tuple (m,t)
@@ -293,12 +293,12 @@ typedef struct {
 struct Potion_State {
   PN_OBJECT_HEADER
   PNTarget targets[POTION_TARGETS];
-  PNv strings; /* table of all strings */
+  PN strings; /* table of all strings */
   unsigned int next_string_id;
-  PNv lobby; /* root namespace */
+  PN lobby; /* root namespace */
   PN_FLEX(vts, PN); /* built in types */
-  PNv source; /* temporary ast node */
-  PNv unclosed; /* used by parser for named block endings */
+  PN source; /* temporary ast node */
+  PN unclosed; /* used by parser for named block endings */
   int dast; /* parsing depth */
   int xast; /* extra ast allocations */
   struct PNMemory *mem; /* allocator/gc */
@@ -346,16 +346,16 @@ static inline void *potion_gc_calloc(Potion *P, int siz) {
 // TODO: make the ICACHE per-thread
 //
 #define potion_send_dyn(RCV, MSG, ARGS...) ({ \
-    PNv r = (PN)(RCV); \
-    PNv c = potion_bind(P, r, (MSG)); \
+    PN r = (PN)(RCV); \
+    PN c = potion_bind(P, r, (MSG)); \
     ((struct PNClosure *)c)->method(P, c, r, ##ARGS); \
   })
 #if ICACHE
 #define potion_send(RCV, MSG, ARGS...) ({ \
-    PNv r = (PN)(RCV); \
+    PN r = (PN)(RCV); \
     static PNType prevVT = 0; \
     static int prevTN = 0; \
-    static PNv closure = 0; \
+    static PN closure = 0; \
     PNType thisVT = potion_type(r); \
     int thisTN = PN_FLEX_SIZE(P->vts); \
     thisVT == prevVT && prevTN == thisTN ? closure : \
@@ -393,7 +393,7 @@ PN potion_type_new(Potion *, PNType, PN);
 void potion_type_func(PN, PN_F);
 PN potion_obj_call(Potion *, PN, PN, ...);
 PN potion_delegated(Potion *, PN, PN);
-PN potion_call(Potion *, PNv, PN_SIZE, PNv * volatile);
+PN potion_call(Potion *, PN, PN_SIZE, PN * volatile);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
 PN potion_closure_new(Potion *, PN_F, PN, PN_SIZE);
@@ -431,9 +431,9 @@ void potion_vm_init(Potion *);
 PN potion_any_is_nil(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
-PN potion_vm(Potion *, PNv, PNv, PN_SIZE, PNv * volatile);
+PN potion_vm(Potion *, PN, PN, PN_SIZE, PN * volatile);
 PN potion_eval(Potion *, const char *);
 PN potion_run(Potion *, PN);
-PN_F potion_jit_proto(Potion *, PNv, PNv);
+PN_F potion_jit_proto(Potion *, PN, PN);
 
 #endif

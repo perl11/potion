@@ -21,7 +21,7 @@ PNAsm *potion_asm_new(Potion *P) {
   return asmb;
 }
 
-void potion_asm_put(PNAsm * volatile asmb, PNv val, size_t len) {
+void potion_asm_put(PNAsm * volatile asmb, PN val, size_t len) {
   u8 *ptr = asmb->ptr + asmb->len;
   PN_FLEX_NEEDS(len, *asmb, u8, ASM_UNIT);
 

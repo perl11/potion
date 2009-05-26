@@ -41,17 +41,17 @@ const struct {
   {"return", 1}, {"proto", 2},
 };
 
-PN potion_proto_call(Potion *P, PNv cl, PNv self, PNv args) {
+PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
   return potion_vm(P, self, args, 0, NULL);
 }
 
-PN potion_proto_string(Potion *P, PNv cl, PNv self) {
-  struct PNProto * volatile t = (struct PNProto *)self;
+PN potion_proto_string(Potion *P, PN cl, PN self) {
+  vPN(Proto) t = (struct PNProto *)self;
   int x = 0;
   PN_SIZE num = 1;
   PN_SIZE numcols;
   PN_OP *pos, *end;
-  PNv out = potion_byte_str(P, "; function definition");
+  PN out = potion_byte_str(P, "; function definition");
   pn_printf(P, out, ": %p ; %u bytes\n", t, PN_STR_LEN(t->asmb));
   pn_printf(P, out, "; (");
   PN_TUPLE_EACH(t->sig, i, v, {
@@ -134,7 +134,7 @@ PN potion_proto_string(Potion *P, PNv cl, PNv self) {
     f->stack = PN_NUM(reg + 1)
 #define PN_ARG(n, reg) \
   if (PN_PART(t->a[n]) == AST_EXPR && PN_PART(PN_TUPLE_AT(PN_S(t->a[n], 0), 0)) == AST_TABLE) { \
-    PNv test = PN_S(PN_TUPLE_AT(PN_S(t->a[n], 0), 0), 0); \
+    PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n], 0), 0), 0); \
     if (!PN_IS_NIL(test)) { \
       PN_TUPLE_EACH(test, i, v, { \
         potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg, pos); }); \
@@ -143,7 +143,7 @@ PN potion_proto_string(Potion *P, PNv cl, PNv self) {
     potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[n], reg, pos); \
   }
 #define PN_BLOCK(reg, blk, sig) ({ \
-  PNv block = potion_send(blk, PN_compile, (PN)f, sig); \
+  PN block = potion_send(blk, PN_compile, (PN)f, sig); \
   PN_SIZE num = PN_PUT(f->protos, block); \
   PN_ASM2(OP_PROTO, reg, num); \
   PN_TUPLE_EACH(((struct PNProto *)block)->upvals, i, v, { \
@@ -158,7 +158,7 @@ PN potion_proto_string(Potion *P, PNv cl, PNv self) {
   if (numl == PN_NONE) { \
     numup = PN_GET(f->upvals, name); \
     if (numup == PN_NONE) { \
-      struct PNProto * volatile up = f; \
+      vPN(Proto) up = f; \
       int depth = 1; \
       while (PN_IS_PROTO(up->source)) { \
         up = (struct PNProto *)up->source; \
@@ -187,8 +187,8 @@ struct PNLoop {
   int cjmpc;
 };
 
-void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop, PN_SIZE count,
-                        struct PNSource * volatile t, u8 reg, PN_OP **pos) {
+void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE count,
+                        vPN(Source) t, u8 reg, PN_OP **pos) {
   PN_REG(f, reg);
 
   switch (t->part) {
@@ -215,7 +215,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
     break;
 
     case AST_ASSIGN: {
-      struct PNSource * volatile lhs = (struct PNSource *)t->a[0];
+      vPN(Source) lhs = (struct PNSource *)t->a[0];
       PN_SIZE num = PN_NONE;
       u8 opcode = OP_SETUPVAL;
 
@@ -258,7 +258,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 
     case AST_INC: {
       u8 breg = reg;
-      struct PNSource * volatile lhs = (struct PNSource *)t->a[0];
+      vPN(Source) lhs = (struct PNSource *)t->a[0];
       PN_SIZE num = PN_UPVAL(lhs->a[0]);
       u8 opcode = OP_SETUPVAL;
       if (num == PN_NONE) {
@@ -327,7 +327,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 
 #define PN_ARG_TABLE(args, reg1, reg2) \
   if (arg) { \
-    PNv test = args; \
+    PN test = args; \
     if (PN_PART(test) == AST_TABLE) { \
       test = PN_S(args, 0); \
       if (!PN_IS_NIL(test)) { \
@@ -463,7 +463,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       PN_ASM1(OP_NEWTUPLE, reg);
       PN_TUPLE_EACH(t->a[0], i, v, {
         if (PN_PART(v) == AST_ASSIGN) {
-          struct PNSource * volatile lhs = (struct PNSource *)PN_S(v, 0);
+          vPN(Source) lhs = (struct PNSource *)PN_S(v, 0);
           potion_source_asmb(P, f, loop, i, (struct PNSource *)PN_S(v, 1), reg + 1, pos);
           if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
           {
@@ -490,22 +490,22 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
   }
 }
 
-PN potion_sig_compile(Potion *P, struct PNProto * volatile f, PNv src) {
+PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   PN sig = PN_TUP0();
-  struct PNSource * volatile t = (struct PNSource *)src;
+  vPN(Source) t = (struct PNSource *)src;
   if (t->part == AST_TABLE && t->a[0] != PN_NIL) {
     sig = PN_PUSH(sig, PN_NUM(0));
     PN_TUPLE_EACH(t->a[0], i, v, {
-      struct PNSource * volatile expr = (struct PNSource *)v;
+      vPN(Source) expr = (struct PNSource *)v;
       if (expr->part == AST_EXPR) {
-        struct PNSource * volatile name = (struct PNSource *)PN_TUPLE_AT(expr->a[0], 0);
+        vPN(Source) name = (struct PNSource *)PN_TUPLE_AT(expr->a[0], 0);
         if (name->part == AST_MESSAGE)
         {
           PN_PUT(f->locals, name->a[0]);
           sig = PN_PUSH(sig, name->a[0]);
         }
       } else if (expr->part == AST_ASSIGN) {
-        struct PNSource * volatile name = (struct PNSource *)expr->a[0];
+        vPN(Source) name = (struct PNSource *)expr->a[0];
         if (name->part == AST_MESSAGE)
         {
           PN_PUT(f->locals, name->a[0]);
@@ -519,9 +519,9 @@ PN potion_sig_compile(Potion *P, struct PNProto * volatile f, PNv src) {
   return sig;
 }
 
-PN potion_source_compile(Potion *P, PNv cl, PNv self, PNv source, PNv sig) {
-  struct PNProto * volatile f;
-  struct PNSource * volatile t = (struct PNSource *)self;
+PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
+  vPN(Proto) f;
+  vPN(Source) t = (struct PNSource *)self;
   char *start;
   PN_OP **pos, *ptr;
   switch (t->part) {
@@ -554,11 +554,11 @@ PN potion_source_compile(Potion *P, PNv cl, PNv self, PNv source, PNv sig) {
 #define READ_U8(ptr) ({u8 rpu = *ptr; ptr += sizeof(u8); rpu;})
 #define READ_PN(pn, ptr) ({PN rpn = *(PN *)ptr; ptr += pn; rpn;})
 #define READ_CONST(pn, ptr) ({ \
-    PNv val = READ_PN(pn, ptr); \
+    PN val = READ_PN(pn, ptr); \
     if (PN_IS_PTR(val)) { \
       if (val & 2) { \
         size_t len = ((val ^ 2) >> 4) - 1; \
-        struct PNDecimal *n = PN_OBJ_ALLOC(struct PNDecimal, PN_TNUMBER, sizeof(PN) * len); \
+        vPN(Decimal) n = PN_OBJ_ALLOC(struct PNDecimal, PN_TNUMBER, sizeof(PN) * len); \
         n->len = len; n->sign = READ_U8(ptr); \
         PN_MEMCPY_N(n->digits, ptr, PN, len); \
         val = (PN)n; \
@@ -574,7 +574,7 @@ PN potion_source_compile(Potion *P, PNv cl, PNv self, PNv source, PNv sig) {
 
 #define READ_TUPLE(ptr) \
   long i = 0, count = READ_U8(ptr); \
-  PNv tup = potion_tuple_with_size(P, (PN_SIZE)count); \
+  PN tup = potion_tuple_with_size(P, (PN_SIZE)count); \
   for (; i < count; i++)
 #define READ_VALUES(pn, ptr) ({ \
     READ_TUPLE(ptr) PN_TUPLE_AT(tup, i) = READ_CONST(pn, ptr); \
@@ -585,9 +585,9 @@ PN potion_source_compile(Potion *P, PNv cl, PNv self, PNv source, PNv sig) {
     tup; \
   })
 
-PN potion_proto_load(Potion *P, PNv up, u8 pn, u8 **ptr) {
+PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   PN len = 0;
-  struct PNProto * volatile f = PN_OBJ_ALLOC(struct PNProto, PN_TPROTO, 0);
+  vPN(Proto) f = PN_OBJ_ALLOC(struct PNProto, PN_TPROTO, 0);
   f->source = READ_CONST(pn, *ptr);
   if (f->source == PN_NIL) f->source = up; 
   f->sig = READ_VALUES(pn, *ptr);
@@ -606,9 +606,9 @@ PN potion_proto_load(Potion *P, PNv up, u8 pn, u8 **ptr) {
 }
 
 // TODO: load from a stream
-PN potion_source_load(Potion *P, PNv cl, PNv buf) {
+PN potion_source_load(Potion *P, PN cl, PN buf) {
   u8 *ptr;
-  struct PNBHeader * volatile h = (struct PNBHeader *)PN_STR_PTR(buf);
+  vPN(BHeader) h = (struct PNBHeader *)PN_STR_PTR(buf);
   if ((size_t)PN_STR_LEN(buf) <= sizeof(struct PNBHeader) || 
       strncmp((char *)h->sig, POTION_SIG, 4) != 0)
     return PN_NIL;
@@ -621,19 +621,19 @@ PN potion_source_load(Potion *P, PNv cl, PNv buf) {
 #define WRITE_PN(pn, ptr) ({*(PN *)ptr = pn; ptr += sizeof(PN);})
 #define WRITE_CONST(val, ptr) ({ \
     if (PN_IS_STR(val)) { \
-      PNv count = (PN_STR_LEN(val)+1) << 4; \
+      PN count = (PN_STR_LEN(val)+1) << 4; \
       WRITE_PN(count, ptr); \
       PN_MEMCPY_N(ptr, PN_STR_PTR(val), char, PN_STR_LEN(val)); \
       ptr += PN_STR_LEN(val); \
     } else if (PN_IS_DECIMAL(val)) { \
-      struct PNDecimal * volatile n = (struct PNDecimal *)val; \
-      PNv count = ((n->len+1) << 4) | 2; \
+      vPN(Decimal) n = (struct PNDecimal *)val; \
+      PN count = ((n->len+1) << 4) | 2; \
       WRITE_PN(count, ptr); \
       WRITE_U8(n->sign, ptr); \
       PN_MEMCPY_N(ptr, n->digits, PN, n->len); \
       ptr += sizeof(PN) * n->len; \
     } else { \
-      PNv cval = (PN_IS_PTR(val) ? PN_NIL : val); \
+      PN cval = (PN_IS_PTR(val) ? PN_NIL : val); \
       WRITE_PN(cval, ptr); \
     } \
   })
@@ -649,8 +649,8 @@ PN potion_source_load(Potion *P, PNv cl, PNv buf) {
         out, (char *)ptr - PN_STR_PTR(out)); \
   })
 
-long potion_proto_dump(Potion *P, PNv proto, PNv out, long pos) {
-  struct PNProto * volatile f = (struct PNProto *)proto;
+long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
+  vPN(Proto) f = (struct PNProto *)proto;
   char *start = PN_STR_PTR(out) + pos;
   u8 *ptr = (u8 *)start;
   WRITE_CONST(f->source, ptr);
@@ -667,8 +667,8 @@ long potion_proto_dump(Potion *P, PNv proto, PNv out, long pos) {
 }
 
 // TODO: dump to a stream
-PN potion_source_dump(Potion *P, PNv cl, PNv proto) {
-  PNv pnb = potion_bytes(P, 8192);
+PN potion_source_dump(Potion *P, PN cl, PN proto) {
+  PN pnb = potion_bytes(P, 8192);
   struct PNBHeader h;
   PN_MEMCPY_N(h.sig, POTION_SIG, u8, 4);
   h.major = POTION_MAJOR;
@@ -682,7 +682,7 @@ PN potion_source_dump(Potion *P, PNv cl, PNv proto) {
   return pnb;
 }
 
-PN potion_run(Potion *P, PNv code) {
+PN potion_run(Potion *P, PN code) {
 #if POTION_JIT == 1
   PN_F func = potion_jit_proto(P, code, POTION_JIT_TARGET);
   return func(P, PN_NIL, P->lobby);
@@ -692,14 +692,14 @@ PN potion_run(Potion *P, PNv code) {
 }
 
 PN potion_eval(Potion *P, const char *str) {
-  PNv bytes = potion_byte_str(P, str);
-  PNv code = potion_parse(P, bytes);
+  PN bytes = potion_byte_str(P, str);
+  PN code = potion_parse(P, bytes);
   code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
   return potion_run(P, code);
 }
 
 void potion_compiler_init(Potion *P) {
-  PNv pro_vt = PN_VTABLE(PN_TPROTO);
+  PN pro_vt = PN_VTABLE(PN_TPROTO);
   potion_method(pro_vt, "call", potion_proto_call, 0);
   potion_method(pro_vt, "string", potion_proto_string, 0);
 }

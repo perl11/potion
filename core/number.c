@@ -35,14 +35,14 @@ static PN potion_num_number(Potion *P, PN closure, PN self) {
   return self;
 }
 
-static PN potion_num_string(Potion *P, PNv closure, PNv self) {
-  PNv str;
+static PN potion_num_string(Potion *P, PN closure, PN self) {
+  PN str;
   if (PN_IS_NUM(self)) {
     char ints[21];
     sprintf(ints, "%ld", PN_INT(self));
     str = potion_byte_str(P, ints);
   } else {
-    struct PNDecimal * volatile n = (struct PNDecimal *)self;
+    vPN(Decimal) n = (struct PNDecimal *)self;
     char *ints = PN_ALLOC_N(char, n->len + 2);
     int i, prec;
     for (prec = 1; prec < PN_PREC; prec++)
@@ -63,7 +63,7 @@ static PN potion_num_string(Potion *P, PNv closure, PNv self) {
 
 PN potion_decimal(Potion *P, int len, int intg, char *str) {
   int i, rlen = intg + PN_PREC;
-  struct PNDecimal *n = PN_OBJ_ALLOC(struct PNDecimal, PN_TNUMBER, sizeof(PN) * rlen);
+  vPN(Decimal) n = PN_OBJ_ALLOC(struct PNDecimal, PN_TNUMBER, sizeof(PN) * rlen);
 
   n->sign = (str[0] == '-');
   n->len = rlen;
@@ -80,7 +80,7 @@ PN potion_decimal(Potion *P, int len, int intg, char *str) {
 }
 
 void potion_num_init(Potion *P) {
-  PNv num_vt = PN_VTABLE(PN_TNUMBER);
+  PN num_vt = PN_VTABLE(PN_TNUMBER);
   potion_method(num_vt, "+", potion_add,  "value=N");
   potion_method(num_vt, "-", potion_sub,  "value=N");
   potion_method(num_vt, "*", potion_mult, "value=N");

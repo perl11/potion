@@ -47,7 +47,7 @@ static void potion_cmd_version() {
 }
 
 static void potion_cmd_compile(char *filename, int exec, int verbose) {
-  PNv buf;
+  PN buf;
   FILE *fp = NULL;
   struct stat stats;
   Potion *P = potion_create();
@@ -64,7 +64,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
 
   buf = potion_bytes(P, stats.st_size + 1);
   if (fread(PN_STR_PTR(buf), 1, stats.st_size, fp) == stats.st_size) {
-    PNv code;
+    PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
     code = potion_source_load(P, PN_NIL, buf);
     if (PN_IS_PROTO(code)) {
@@ -95,7 +95,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose) {
       }
     } else if (exec == 2) {
 #if POTION_JIT == 1
-      PNv val;
+      PN val;
       PN_F func = potion_jit_proto(P, code, POTION_JIT_TARGET);
       val = func(P, PN_NIL, P->lobby);
       if (verbose > 1)

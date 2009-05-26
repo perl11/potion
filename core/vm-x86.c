@@ -484,7 +484,7 @@ void potion_x86_return(PNAsm *asmb, PN_OP *op) {
 }
 
 void potion_x86_method(PNAsm *asmb, Potion *P, PN_OP **pos, PN_F *jit_protos, PN protos, long lregs, long start, long regs) {
-  struct PNClosure *cl;
+  vPN(Closure) cl;
   PN_OP *op = *pos;
   PN func2 = (PN)jit_protos[op->b];
   PN proto = PN_TUPLE_AT(protos, op->b);

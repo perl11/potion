@@ -12,9 +12,9 @@
 #include "khash.h"
 #include "table.h"
 
-PN potion_table_string(Potion *P, PNv cl, PNv self) {
-  struct PNTable * volatile t = (struct PNTable *)self;
-  PNv out = potion_byte_str(P, "(");
+PN potion_table_string(Potion *P, PN cl, PN self) {
+  vPN(Table) t = (struct PNTable *)self;
+  PN out = potion_byte_str(P, "(");
   unsigned k, i = 0;
   for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
     if (kh_exist(t->kh, k)) {
@@ -27,11 +27,11 @@ PN potion_table_string(Potion *P, PNv cl, PNv self) {
   return out;
 }
 
-PN potion_table_cast(Potion *P, PNv self) {
+PN potion_table_cast(Potion *P, PN self) {
   if (PN_IS_TUPLE(self)) {
     int ret; unsigned k;
     kh__PN_t *kh = PN_CALLOC(kh__PN_t, 0);
-    struct PNTuple * volatile t = PN_GET_TUPLE(self);
+    vPN(Tuple) t = PN_GET_TUPLE(self);
     PN_TUPLE_EACH(t, i, v, {
       k = kh_put(_PN, kh, PN_NUM(i), &ret);
       kh_value(kh, k) = v;
@@ -45,7 +45,7 @@ PN potion_table_cast(Potion *P, PNv self) {
 
 PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
   int ret;
-  struct PNTable *t = (struct PNTable *)self;
+  vPN(Table) t = (struct PNTable *)self;
   unsigned k = kh_put(_PN, t->kh, key, &ret);
   if (ret) return PN_NIL;
   return kh_value(t->kh, k);
@@ -53,7 +53,7 @@ PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
 
 PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
   int ret;
-  struct PNTable *t = (struct PNTable *)self;
+  vPN(Table) t = (struct PNTable *)self;
   unsigned k = kh_put(_PN, t->kh, key, &ret);
   kh_value(t->kh, k) = value;
   return self;
@@ -61,7 +61,7 @@ PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
 
 PN potion_table_remove(Potion *P, PN cl, PN self, PN key) {
   int ret;
-  struct PNTable *t = (struct PNTable *)self;
+  vPN(Table) t = (struct PNTable *)self;
   unsigned k = kh_put(_PN, t->kh, key, &ret);
 	if (!ret) kh_del(_PN, t->kh, k);
   return self;
@@ -72,12 +72,12 @@ PN potion_table_set(Potion *P, PN self, PN key, PN value) {
 }
 
 PN potion_table_length(Potion *P, PN cl, PN self) {
-  struct PNTable *t = (struct PNTable *)self;
+  vPN(Table) t = (struct PNTable *)self;
   return PN_NUM(kh_size(t->kh));
 }
 
 #define NEW_TUPLE(t, size, ptr) \
-  struct PNTuple *t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, 0); \
+  vPN(Tuple) t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, 0); \
   t->len = size; \
   t->set = ptr
 
@@ -98,7 +98,7 @@ PN potion_tuple_new(Potion *P, PN value) {
 }
 
 PN potion_tuple_push(Potion *P, PN tuple, PN value) {
-  struct PNTuple *t = PN_GET_TUPLE(tuple);
+  vPN(Tuple) t = PN_GET_TUPLE(tuple);
   if (t->set == NULL)
     t->set = SYS_ALLOC_N(PN, ++t->len);
   else
@@ -130,7 +130,7 @@ PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
 }
 
 PN potion_tuple_clone(Potion *P, PN cl, PN self) {
-  struct PNTuple *t1 = PN_GET_TUPLE(self);
+  vPN(Tuple) t1 = PN_GET_TUPLE(self);
   NEW_TUPLE(t2, t1->len, SYS_ALLOC_N(PN, t1->len));
   PN_MEMCPY_N(t2->set, t1->set, PN, t1->len);
   return PN_SET_TUPLE(t2);

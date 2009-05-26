@@ -26,8 +26,8 @@ const int potion_ast_sizes[] = {
   2
 };
 
-PN potion_source(Potion *P, u8 p, PNv a, PNv b, PNv c) {
-  struct PNSource * volatile t = PN_OBJ_ALLOC(struct PNSource, PN_TSOURCE,
+PN potion_source(Potion *P, u8 p, PN a, PN b, PN c) {
+  vPN(Source) t = PN_OBJ_ALLOC(struct PNSource, PN_TSOURCE,
     potion_ast_sizes[p] * sizeof(PN));
   t->part = p;
   t->a[0] = a;
@@ -36,15 +36,15 @@ PN potion_source(Potion *P, u8 p, PNv a, PNv b, PNv c) {
   return (PN)t;
 }
 
-PN potion_source_name(Potion *P, PNv cl, PNv self) {
-  struct PNSource * volatile t = (struct PNSource *)self;
+PN potion_source_name(Potion *P, PN cl, PN self) {
+  vPN(Source) t = (struct PNSource *)self;
   return potion_str(P, potion_ast_names[t->part]);
 }
 
-PN potion_source_string(Potion *P, PNv cl, PNv self) {
+PN potion_source_string(Potion *P, PN cl, PN self) {
   int i, n;
-  struct PNSource * volatile t = (struct PNSource *)self;
-  PNv out = potion_byte_str(P, potion_ast_names[t->part]);
+  vPN(Source) t = (struct PNSource *)self;
+  PN out = potion_byte_str(P, potion_ast_names[t->part]);
   n = potion_ast_sizes[t->part];
   for (i = 0; i < n; i++) {
     pn_printf(P, out, " ");
@@ -56,7 +56,7 @@ PN potion_source_string(Potion *P, PNv cl, PNv self) {
 }
 
 void potion_source_init(Potion *P) {
-  PNv src_vt = PN_VTABLE(PN_TSOURCE);
+  PN src_vt = PN_VTABLE(PN_TSOURCE);
   potion_method(src_vt, "compile", potion_source_compile, 0); // in compile.c
   potion_method(src_vt, "name", potion_source_name, 0);
   potion_method(src_vt, "string", potion_source_string, 0);

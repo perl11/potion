@@ -21,7 +21,7 @@ typedef PN (*PN_MCACHE_FUNC)(unsigned int hash);
 struct PNVtable {
   PN_OBJECT_HEADER
   PNType type;
-  PNv parent;
+  PN parent;
   PN_F func;
 #ifdef JIT_MCACHE
   PN_MCACHE_FUNC mcache;
@@ -29,9 +29,9 @@ struct PNVtable {
   kh_id_t kh[0];
 };
 
-PN potion_closure_new(Potion *P, PN_F meth, PNv sig, PN_SIZE extra) {
+PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   PN_SIZE i;
-  struct PNClosure * volatile c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, extra * sizeof(PN));
+  vPN(Closure) c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, extra * sizeof(PN));
   c->method = meth;
   c->sig = sig;
   c->extra = extra;
@@ -40,19 +40,19 @@ PN potion_closure_new(Potion *P, PN_F meth, PNv sig, PN_SIZE extra) {
   return (PN)c;
 }
 
-PN potion_closure_string(Potion *P, PNv cl, PNv self, PNv len) {
+PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<closure>");
 }
 
-PN potion_allocate(Potion *P, PNv closure, PNv self, PNv len) {
-  struct PNObject * volatile o = PN_ALLOC2(struct PNObject, PN_INT(len));
-  struct PNVtable * volatile vt = (struct PNVtable *)self;
+PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
+  vPN(Object) o = PN_ALLOC2(struct PNObject, PN_INT(len));
+  vPN(Vtable) vt = (struct PNVtable *)self;
   o->vt = vt->type;
   return (PN)o;
 }
 
-PN potion_type_new(Potion *P, PNType t, PNv self) {
-  struct PNVtable * volatile vt = PN_CALLOC(struct PNVtable, sizeof(kh_id_t));
+PN potion_type_new(Potion *P, PNType t, PN self) {
+  vPN(Vtable) vt = PN_CALLOC(struct PNVtable, sizeof(kh_id_t));
   vt->vt = PN_TVTABLE;
   vt->type = t;
   vt->parent = self;
@@ -64,12 +64,12 @@ PN potion_type_new(Potion *P, PNType t, PNv self) {
   return (PN)vt;
 }
 
-void potion_type_func(PNv vt, PN_F func) {
+void potion_type_func(PN vt, PN_F func) {
   ((struct PNVtable *)vt)->func = func;
 }
 
-PN potion_obj_call(Potion *P, PNv cl, PNv count, ...) {
-  struct PNVtable * volatile vt = (struct PNVtable *)PN_VTABLE(PN_TYPE(cl));
+PN potion_obj_call(Potion *P, PN cl, PN count, ...) {
+  vPN(Vtable) vt = (struct PNVtable *)PN_VTABLE(PN_TYPE(cl));
   if (vt->func != NULL) {
     va_list args;
     va_start(args, count);
@@ -79,18 +79,18 @@ PN potion_obj_call(Potion *P, PNv cl, PNv count, ...) {
   return cl;
 }
 
-PN potion_proto_method(Potion *P, PNv cl, PNv self, PNv args) {
+PN potion_proto_method(Potion *P, PN cl, PN self, PN args) {
   return potion_vm(P, PN_CLOSURE(cl)->data[0], args, 0, NULL);
 }
 
-PN potion_getter_method(Potion *P, PNv cl, PNv self) {
+PN potion_getter_method(Potion *P, PN cl, PN self) {
   return PN_CLOSURE(cl)->data[0];
 }
 
-PN potion_def_method(Potion *P, PNv closure, PNv self, PNv key, PNv method) {
+PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int ret;
-  PNv cl;
-  struct PNVtable * volatile vt = (struct PNVtable *)self;
+  PN cl;
+  vPN(Vtable) vt = (struct PNVtable *)self;
   unsigned k = kh_put(id, vt->kh, ((struct PNString *)key)->id, &ret);
   if (!PN_IS_CLOSURE(method)) {
     if (PN_IS_PROTO(method))
@@ -137,8 +137,8 @@ PN potion_def_method(Potion *P, PNv closure, PNv self, PNv key, PNv method) {
   return method;
 }
 
-PN potion_lookup(Potion *P, PNv closure, PNv self, PNv key) {
-  struct PNVtable * volatile vt = (struct PNVtable *)self;
+PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
+  vPN(Vtable) vt = (struct PNVtable *)self;
 #ifdef JIT_MCACHE
   return vt->mcache(((struct PNString *)key)->id);
 #else
@@ -148,9 +148,9 @@ PN potion_lookup(Potion *P, PNv closure, PNv self, PNv key) {
 #endif
 }
 
-PN potion_bind(Potion *P, PNv rcv, PNv msg) {
-  PNv closure = PN_NIL;
-  PNv vt = PN_NIL;
+PN potion_bind(Potion *P, PN rcv, PN msg) {
+  PN closure = PN_NIL;
+  PN vt = PN_NIL;
   PNType t = PN_TYPE(rcv);
   if (t >= PN_FLEX_SIZE(P->vts)) return PN_NIL;
   vt = PN_VTABLE(t);
@@ -168,44 +168,44 @@ PN potion_bind(Potion *P, PNv rcv, PNv msg) {
   return closure;
 }
 
-PN potion_ref(Potion *P, PNv data) {
+PN potion_ref(Potion *P, PN data) {
   if (PN_IS_REF(data)) return data;
-  struct PNWeakRef *ref = PN_BOOT_OBJ_ALLOC(struct PNWeakRef, PN_TWEAK, 0);
+  vPN(WeakRef) ref = PN_BOOT_OBJ_ALLOC(struct PNWeakRef, PN_TWEAK, 0);
   ref->data = data;
   return PN_SET_REF(ref);
 }
 
-PN potion_ref_string(Potion *P, PNv cl, PNv self, PNv len) {
+PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<ref>");
 }
 
-PN potion_object_string(Potion *P, PNv cl, PNv self, PNv len) {
+PN potion_object_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<object>");
 }
 
-PN potion_object_forward(Potion *P, PNv cl, PNv self, PNv method) {
+PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {
   printf("#<object>");
   return PN_NIL;
 }
 
-PN potion_object_send(Potion *P, PNv cl, PNv self, PNv method) {
+PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
   return potion_send_dyn(self, method);
 }
 
-static PN potion_lobby_self(Potion *P, PNv cl, PNv self) {
+static PN potion_lobby_self(Potion *P, PN cl, PN self) {
   return self;
 }
 
-PN potion_lobby_kind(Potion *P, PNv cl, PNv self) {
+PN potion_lobby_kind(Potion *P, PN cl, PN self) {
   PNType t = PN_TYPE(self);
   if (t >= PN_FLEX_SIZE(P->vts)) return PN_NIL; // TODO: error
   return PN_VTABLE(t);
 }
 
 void potion_object_init(Potion *P) {
-  PNv clo_vt = PN_VTABLE(PN_TCLOSURE);
-  PNv ref_vt = PN_VTABLE(PN_TWEAK);
-  PNv obj_vt = PN_VTABLE(PN_TOBJECT);
+  PN clo_vt = PN_VTABLE(PN_TCLOSURE);
+  PN ref_vt = PN_VTABLE(PN_TWEAK);
+  PN obj_vt = PN_VTABLE(PN_TOBJECT);
   potion_method(clo_vt, "string", potion_closure_string, 0);
   potion_method(ref_vt, "string", potion_ref_string, 0);
   potion_method(obj_vt, "forward", potion_object_forward, 0);

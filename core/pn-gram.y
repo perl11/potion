@@ -13,7 +13,7 @@
 #include "pn-ast.h"
 }
 %extra_argument { Potion *P }
-%token_type { PNv }
+%token_type { PN }
 %type arg { PNArg }
 %token_prefix PN_TOK_
 %token_destructor { if (PN_IS_PTR($$)) { P->xast++; } }
