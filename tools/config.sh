@@ -24,6 +24,8 @@ if [ $MINGW -eq 0 ]; then
   DOUBLE=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(double)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   LILEND=`echo "#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\"%d\\", (int)byte[0]); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   PAGESIZE=`echo "#include <stdio.h>#include <unistd.h>int main() { printf(\\"%d\\", (int)sysconf(_SC_PAGE_SIZE)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+  STACKDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)((&b - a) / abs(&b - a))); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+  ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
 else
   # hard coded win32 values
   CHAR="1"
@@ -68,4 +70,6 @@ else
   echo "#define LONGLONG_SIZE_T   $LLONG"
   echo "#define PN_LITTLE_ENDIAN  $LILEND"
   echo "#define POTION_PAGESIZE   $PAGESIZE"
+  echo "#define POTION_STACK_DIR  $STACKDIR"
+  echo "#define POTION_ARGS_DIR   $ARGDIR"
 fi
