@@ -177,6 +177,7 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
 }
 
 void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
+  if (M->collecting) return;
   M->pass++;
   M->collecting = 1;
 

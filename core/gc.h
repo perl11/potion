@@ -7,7 +7,7 @@
 #define POTION_GC_H
 
 #ifndef POTION_BIRTH_SIZE
-#define POTION_BIRTH_SIZE  (1 << 20)
+#define POTION_BIRTH_SIZE  (PN_SIZE_T << 16)
 #endif
 
 #ifndef POTION_MAX_BIRTH_SIZE
