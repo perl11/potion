@@ -51,23 +51,16 @@ done:
 
 void *potion_mmap(size_t length, const char exec)
 { 
-  void *start;
-  HANDLE handle = CreateFileMapping(0, NULL,
-    exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE,
-    0, length, NULL);
- 
-  if (handle == NULL)
-    fprintf(stderr, "** mingw_mmap failed");
-  
-  start = MapViewOfFile(handle, FILE_MAP_ALL_ACCESS, 0, 0, length);
-  CloseHandle(handle);
-  
-  return start;
+  void *mem = VirtualAlloc(NULL, length, MEM_COMMIT,
+    exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
+  if (mem == NULL)
+    fprintf(stderr, "** potion_mmap failed");
+  return mem;
 }
 
 int potion_munmap(void *mem, size_t len)
 {
-  return UnmapViewOfFile(mem) != 0 ? 0 : -1;
+  return VirtualFree(mem, len, MEM_DECOMMIT) != 0 ? 0 : -1;
 }
 
 #else
@@ -76,7 +69,7 @@ int potion_munmap(void *mem, size_t len)
 void *potion_mmap(size_t length, const char exec)
 {
   int prot = exec ? PROT_EXEC : 0;
-  void *mem = mmap(NULL, length, prot|PROT_READ|PROT_WRITE, \
+  void *mem = mmap(NULL, length, prot|PROT_READ|PROT_WRITE,
     (MAP_PRIVATE|MAP_ANON), -1, 0);
   if (mem == MAP_FAILED) return NULL;
   return mem;

@@ -36,6 +36,9 @@
 #define IN_BIRTH_REGION(p) \
   ((_PN)(p) >= (_PN)M->birth_lo && (_PN)(p) < (_PN)M->birth_hi)
 
+#define IN_OLDER_REGION(p) \
+  ((_PN)(p) >= (_PN)M->old_lo && (_PN)(p) < (_PN)M->old_hi)
+
 #define IS_NEW_PTR(p) \
   (PN_IS_PTR(p) && IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p))
 
@@ -51,23 +54,18 @@
 }  while(0)
 
 #define GC_MINOR_UPDATE(p) do { \
-  PN _p; \
   if (PN_IS_PTR(p)) { \
     GC_FOLLOW_FORWARD(p); \
-    _p = (PN)(p); \
-    if (_p >= (PN)M->birth_lo && _p < (PN)M->birth_hi) \
+    if (IN_BIRTH_REGION(p)) \
       { GC_FORWARD(&(p)); } \
   } \
 } while(0)
 
-#define GC_FULL_UPDATE(p) do { \
-  PN _p; \
+#define GC_MAJOR_UPDATE(p) do { \
   if (PN_IS_PTR(p)) { \
     GC_FOLLOW_FORWARD(p); \
-    _p = (PN)(p); \
-    if ((_p >= (PN)M->birth_lo && _p < (PN)M->birth_hi) || \
-        (_p >= (PN)M->old_lo && _p < (PN)M->old_hi)) \
-      {GC_FORWARD((void**)&(p));} \
+    if (IN_BIRTH_REGION(p) || IN_OLDER_REGION(p)) \
+      {GC_FORWARD((_PN *)&(p));} \
   } \
 } while(0)
 
@@ -81,5 +79,6 @@ PN_SIZE potion_mark_stack(struct PNMemory *, int);
 void *potion_gc_copy(struct PNMemory *, const struct PNObject *);
 void *pngc_page_new(int *, const char);
 void *potion_mark_minor(struct PNMemory *, const struct PNObject *);
+void *potion_mark_major(struct PNMemory *, const struct PNObject *);
 
 #endif
