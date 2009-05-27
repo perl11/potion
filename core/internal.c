@@ -80,6 +80,10 @@ Potion *potion_create(void *sp) {
   return P;
 }
 
+void potion_destroy(Potion *P) {
+  potion_gc_release(P->mem);
+}
+
 PN potion_delegated(Potion *P, PN closure, PN self) {
   PNType t = PN_FLEX_SIZE(P->vts);
   PN_FLEX_NEEDS(1, P->vts, PN, TYPE_BATCH_SIZE);

@@ -39,11 +39,12 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
     if ((_PN)M != v && IS_NEW_PTR(v)) {
       switch (forward) {
         case 1:
-          GC_FORWARD(x);
+          if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v))
+            GC_FORWARD(x);
         break;
         case 2:
           GC_FOLLOW_FORWARD(v);
-          if (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v))
+          if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)))
             GC_FORWARD(x);
         break;
       }
@@ -76,7 +77,7 @@ void *pngc_page_new(int *sz, const char exec) {
 }
 
 void pngc_page_delete(void *mem, int sz) {
-  potion_munmap(mem, sz);
+  potion_munmap(mem, PN_ALIGN(sz, POTION_PAGESIZE));
 }
 
 //
@@ -115,8 +116,7 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
   sz = max(sz, POTION_BIRTH_SIZE);
 
   newad = pngc_page_new(&sz, 0);
-  pngc_page_delete((void *)M->birth_lo,
-		(char *)M->birth_hi - (char *)M->birth_lo);
+  DEL_BIRTH_REGION();
   SET_GEN(birth, newad, sz);
   SET_STOREPTR(5);
   M->minors++;
@@ -157,7 +157,7 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
   birthsiz = siz + POTION_BIRTH_SIZE;
   newbirth = pngc_page_new(&birthsiz, 0);
   
-  pngc_page_delete((void *)M->birth_lo, (char *)M->birth_hi - (char *)M->birth_lo);
+  DEL_BIRTH_REGION();
   SET_GEN(birth, newbirth, birthsiz);
   SET_STOREPTR(5);
 
@@ -180,17 +180,6 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
   M->pass++;
   M->collecting = 1;
 
-  // first page is full, allocate new birth area
-  // TODO: take sz into account
-  // TODO: promote first page to first 2nd gen
-  if (M->birth_lo == M) {
-    int gensz = POTION_BIRTH_SIZE;
-    void *page = pngc_page_new(&gensz, 0);
-    SET_GEN(birth, page, gensz);
-    SET_STOREPTR(5);
-    return;
-  }
-
   if (M->old_lo == NULL) {
     int gensz = POTION_BIRTH_SIZE * 2;
     void *page = pngc_page_new(&gensz, 0);
@@ -210,6 +199,7 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
     potion_gc_major(M, sz);
   else
     potion_gc_minor(M, sz);
+
   M->dirty = 0;
   M->collecting = 0;
 }
@@ -471,4 +461,21 @@ Potion *potion_gc_boot(void *sp) {
   M->birth_cur += PN_ALIGN(sizeof(Potion), 8);
   GC_PROTECT(M);
   return P;
+}
+
+// TODO: release memory allocated by the user
+void potion_gc_release(struct PNMemory *M) {
+  void *birthlo = (void *)M->birth_lo;
+  void *birthhi = (void *)M->birth_hi;
+  void *oldlo = (void *)M->old_lo;
+  void *oldhi = (void *)M->old_hi;
+
+  if (M->birth_lo != M) {
+    void *protend = (void *)PN_ALIGN((_PN)M->protect, POTION_PAGESIZE);
+    pngc_page_delete((void *)M->birth_lo, (char *)protend - (char *)M->birth_lo);
+  }
+
+  pngc_page_delete(birthlo, birthhi - birthlo);
+  if (oldlo != NULL)
+    pngc_page_delete(oldlo, oldhi - oldlo);
 }

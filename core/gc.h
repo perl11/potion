@@ -30,6 +30,14 @@
 #define SET_STOREPTR(n) \
   M->birth_storeptr = (void *)(((void **)M->birth_hi) - n)
 
+#define DEL_BIRTH_REGION() \
+  if (M->birth_lo == M && IN_BIRTH_REGION(M->protect)) { \
+    void *protend = (void *)PN_ALIGN((_PN)M->protect, POTION_PAGESIZE); \
+    pngc_page_delete(protend, (char *)M->birth_hi - (char *)protend); \
+  } else { \
+    pngc_page_delete((void *)M->birth_lo, (char *)M->birth_hi - (char *)M->birth_lo); \
+  }
+
 #define IS_GC_PROTECTED(p) \
   ((_PN)(p) >= (_PN)M && (_PN)(p) < (_PN)M->protect)
 
@@ -56,7 +64,7 @@
 #define GC_MINOR_UPDATE(p) do { \
   if (PN_IS_PTR(p)) { \
     GC_FOLLOW_FORWARD(p); \
-    if (IN_BIRTH_REGION(p)) \
+    if (IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p)) \
       { GC_FORWARD(&(p)); } \
   } \
 } while(0)
@@ -64,7 +72,8 @@
 #define GC_MAJOR_UPDATE(p) do { \
   if (PN_IS_PTR(p)) { \
     GC_FOLLOW_FORWARD(p); \
-    if (IN_BIRTH_REGION(p) || IN_OLDER_REGION(p)) \
+    if (!IS_GC_PROTECTED(p) && \
+        (IN_BIRTH_REGION(p) || IN_OLDER_REGION(p))) \
       {GC_FORWARD((_PN *)&(p));} \
   } \
 } while(0)

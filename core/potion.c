@@ -133,6 +133,8 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
 done:
   if (fp)
     fclose(fp);
+  if (P)
+    potion_destroy(P);
 }
 
 int main(int argc, char *argv[]) {

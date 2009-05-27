@@ -453,6 +453,7 @@ PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);
 
 Potion *potion_gc_boot(void *);
+void potion_gc_release(struct PNMemory *);
 void potion_lobby_init(Potion *);
 void potion_object_init(Potion *);
 void potion_primitive_init(Potion *);
