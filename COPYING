@@ -12,7 +12,7 @@
   Be it known, parts of the object model taken from obj.c
     (c) 2007 Ian Piumarta
     <http://www.piumarta.com/software/id-objmodel/> (MIT licensed)
-  And, also, much of the VM is from Lua
+  And, also, the design of the VM bytecode is from Lua
     (c) 1994-2006 Lua.org, PUC-Rio
     <http://lua.org/license.html> (MIT licensed)
     <http://luaforge.net/docman/view.php/83/98/ANoFrillsIntroToLua51VMInstructions.pdf>

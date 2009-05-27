@@ -277,6 +277,7 @@
   potion_x86_c_arg. To shuttle the arguments
   in and out, depending on the architecture.
 
+
   ~ using disassemblers ~
 
   I don't really know the x86 instruction set
@@ -292,4 +293,144 @@
   binary.
 
     $ ./tools/machodis.pl test
+
+
+  ~ the garbage collector ~
+
+  Potion's garbage collector is based on the
+  work Basile Starynkevitch performed with his
+  small generational GC entitled Qish. As with
+  everything else in Potion, the goal isn't to
+  be the best, but to experiment with what sort
+  of advanced features can be squeezed into a
+  language while keeping the code compact.
+
+  Since Potion interpreters are per-thread,
+  each interpreter has its own GC heap. This
+  allows interpreters to run in parallel and
+  to start up and shut down independently.
+  Perhaps one day the GC will run in parallel.
+ 
+  Qish is a two-finger generational collector.
+  (Also called a Cheney loop.) This collector
+  only has two generations. When the time for
+  garbage collection arrives, everything from
+  the call stack is scanned and moved from the
+  young gen to the older gen. The insides of
+  all those objects are then scanned and moved
+  as well. The goal is simply to wipe out the
+  birth region and replace it with another.
+
+  What about objects from the birth region
+  that are stored off in some old hashtable
+  somewhere? Or stuff added to a global object?
+
+  The birth region has a write barrier: an
+  array of pointers to any object which has
+  recently changed. If a new object is added
+  to a tuple, it's the tuple's job to notify
+  GC so that the tuple will get scanned on
+  the next GC pass.
+
+  What happens when the old generation runs
+  out of room? A new old generation is
+  allocated and we do a major collection:
+  the birth region AND the full-to-the-brim
+  older region are both scanned and moved on
+  to the new generation.
+
+  This all has some obvious pitfalls. First,
+  that's a lot of memory moving around all
+  the time -- pointers moving around. And,
+  second, that's a lot of scanning to do:
+  does the entire heap have to be scanned
+  every time there's a major collection?
+
+  Yes, it's a lot of work and I hope to get
+  some real benchmarks and determine a new
+  strategy to buy some speed: either through
+  introducing a third generation or by
+  defragmenting memory or by allowing pages
+  to be partially unmapped. Probably the last
+  one: I'll weight sections of the older
+  generation and then clear out those sections
+  as they become more sparse.
+
+  As for moving pointers around, that's
+  why the volatile keyword is a part of the
+  PN typedef.
+
+
+  ~ the volatile keyword ~
+
+  Since objects move freely about, Potion
+  requires use of the volatile keyword for
+  all access to object ids (PN) from C.
+  As most people don't readily understand
+  the volatile keyword, let's go over it.
+
+  There are three common uses of the volatile
+  keyword in Potion code:
+
+    PN string = potion_byte_str("...");
+
+  Since `volatile` is part of the PN typedef
+  this code actually means:
+
+    volatile unsigned long string =
+      potion_byte_str("...");
+
+  In this case, the `volatile` keyword will
+  generally prevent the PN from being stored
+  in a system register when the code is
+  optimized. Even for caching purposes.
+
+  So any time the `string` variable is used,
+  it'll be looked up directly on the stack.
+  This means the code won't be optimized fully,
+  but it also means the value will be looked
+  up every time we use it, in case GC has changed
+  the object's place on us.
+
+    struct PNObject * volatile string = ...;
+
+  If we cast the string to a PNObject pointer,
+  we need to be sure to place the `volatile`
+  keyword after the star. This tells the compiler
+  that the _pointer_ is the volatile one, not the
+  struct itself.
+
+    struct PNUserType {
+      PN_OBJECT_HEADER
+      PN a, b, c;
+    };
+
+  Lastly, in any structs which are wrapped by
+  a Potion object, you need to be sure that any
+  object handles are marked volatile as well.
+  In the above case, the PN typedef handles that.
+
+  This is a bit tedious to keep in mind, but
+  is compensated for by Potion's automatic stack
+  scanning (a technique which has brought easy
+  C extensions to Ruby) and object convention
+  (if your object pointers are all 8-byte aligned,
+  you won't need to write a GC marking function.)
+
+
+  ~ the fixed memory section ~
+
+  Potion does have one other section of
+  memory: a permanent generation containing
+  all of the objects that are used to bootstrap
+  Potion's environment. The Lobby object, the
+  class lookup table, the GC structures, etc.
+
+  This section of memory is positioned at the
+  beginning of the first birth area. After the
+  birth area, fills that memory is detached
+  (like the saucer section of the Enterprise)
+  and lives its life independantly of the other
+  regions, not to be moved or released until
+  the Potion interpreter is destroyed.
 
