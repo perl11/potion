@@ -13,6 +13,8 @@
 #include "potion.h"
 #include "internal.h"
 #include "gc.h"
+#include "khash.h"
+#include "table.h"
 
 PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
   _PN *esp, *c = M->cstack;
@@ -184,11 +186,9 @@ void *potion_gc_copy(struct PNMemory *M, const struct PNObject *ptr) {
       sz = sizeof(struct PNProto);
     break;
     case PN_TTABLE:
-      // TODO: include table.h or something
-      sz = sizeof(struct PNObject) + sizeof(void *);
+      sz = sizeof(struct PNObject) + sizeof(kh__PN_t *);
     break;
     case PN_TUSER:
-      // TODO: include table.h or something
       sz = sizeof(struct PNData) + ((struct PNData *)ptr)->len;
     break;
   }
@@ -205,7 +205,85 @@ void *potion_gc_copy(struct PNMemory *M, const struct PNObject *ptr) {
 }
 
 void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
-  return (void *)ptr;
+  PN_SIZE i;
+  PN_SIZE sz = 16;
+
+  switch (ptr->vt) {
+    case PN_TSTRING:
+      sz = sizeof(struct PNString) + PN_STR_LEN(ptr) + 1;
+    break;
+    case PN_TWEAK:
+      GC_MINOR_UPDATE(((struct PNWeakRef *)ptr)->data);
+      sz = sizeof(struct PNWeakRef);
+    break;
+    case PN_TCLOSURE:
+      GC_MINOR_UPDATE(((struct PNClosure *)ptr)->sig);
+      for (i = 0; i < ((struct PNClosure *)ptr)->extra; i++)
+        GC_MINOR_UPDATE(((struct PNClosure *)ptr)->data[i]);
+      sz = sizeof(struct PNClosure) + (PN_CLOSURE(ptr)->extra * sizeof(PN));
+    break;
+    case PN_TTUPLE:
+      for (i = 0; i < ((struct PNTuple *)ptr)->len; i++)
+        GC_MINOR_UPDATE(((struct PNTuple *)ptr)->set[i]);
+      sz = sizeof(struct PNTuple);
+    break;
+    case PN_TFILE:
+      GC_MINOR_UPDATE(((struct PNFile *)ptr)->path);
+      sz = sizeof(struct PNFile);
+    break;
+    // TODO: look up class fields and copy full object length
+    case PN_TOBJECT:
+      sz = sizeof(struct PNObject);
+    break;
+    case PN_TSOURCE:
+    // TODO: look up ast size (see core/pn-ast.c)
+      GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[0]);
+      GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[1]);
+      GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[2]);
+      sz = sizeof(struct PNSource) + (3 * sizeof(PN));
+    break;
+    case PN_TBYTES:
+      sz = sizeof(struct PNBytes) + PN_STR_LEN(ptr) + 1;
+    break;
+    case PN_TPROTO:
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->source);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->sig);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->stack);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->locals);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->upvals);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->values);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->protos);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->asmb);
+      sz = sizeof(struct PNProto);
+    break;
+    case PN_TTABLE: {
+      unsigned k;
+      kh__PN_t *kh = ((struct PNTable *)ptr)->kh;
+      for (k = kh_begin(kh); k != kh_end(kh); ++k)
+        if (kh_exist(kh, k)) {
+          PN v1 = kh_key(kh, k);
+          PN v2 = kh_value(kh, k);
+          GC_MINOR_UPDATE(v1);
+          GC_MINOR_UPDATE(v2);
+          if (kh_key(kh, k) != v1) {
+            int ret;
+            unsigned kn;
+            kh_del(_PN, kh, k);
+            kn = kh_put(_PN, kh, v1, &ret);
+            kh_value(kh, kn) = v2;
+            if (kn < k)
+              k = kn;
+          }
+        }
+      sz = sizeof(struct PNObject) + sizeof(kh__PN_t *);
+    }
+    break;
+    case PN_TUSER:
+      sz = sizeof(struct PNData) + ((struct PNData *)ptr)->len;
+    break;
+  }
+
+  return (void *)((char *)ptr + sz);
 }
 
 //

@@ -28,7 +28,9 @@ const int potion_ast_sizes[] = {
 
 PN potion_source(Potion *P, u8 p, PN a, PN b, PN c) {
   vPN(Source) t = PN_OBJ_ALLOC(struct PNSource, PN_TSOURCE, 3 * sizeof(PN));
+  t->a[0] = t->a[1] = t->a[2] = 0;
     // TODO: potion_ast_sizes[p] * sizeof(PN) (then fix gc_copy)
+
   t->part = p;
   t->a[0] = a;
   if (potion_ast_sizes[p] > 1) t->a[1] = b;
