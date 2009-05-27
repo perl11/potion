@@ -124,9 +124,7 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
   return POTION_OK;
 }
 
-static int potion_gc_major(struct PNMemory *M, int siz,
-  int nbforw, PN *oldforw, PN *newforw) {
-  int n = 0;
+static int potion_gc_major(struct PNMemory *M, int siz) {
   void *prevoldlo = (void *)M->old_lo;
   void *prevoldhi = (void *)M->old_hi;
   void *prevoldcur = (void *)M->old_cur;
@@ -137,7 +135,6 @@ static int potion_gc_major(struct PNMemory *M, int siz,
   int newoldsiz = 0;
   int oldsiz = 0;
 
-  M->old_cur = 0;
   if (siz < 0)
     siz = 0;
   else if (siz >= POTION_BIRTH_SIZE)
@@ -145,17 +142,8 @@ static int potion_gc_major(struct PNMemory *M, int siz,
 
   newoldsiz = (((char *)prevoldcur - (char *)prevoldlo) + siz + POTION_BIRTH_SIZE +
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
-  newold = pngc_page_new(&newoldsiz, 0);
-  M->old_cur = scanptr = (char *)newold + 32 * sizeof (void *);
+  M->old_cur = scanptr = newold = pngc_page_new(&newoldsiz, 0);
 
-  for (n = 0; n < nbforw; n++) {
-    GC_MAJOR_UPDATE(newforw[n]);
-    if (PN_IS_PTR(oldforw[n])) {
-      ((struct PNObject *)(oldforw[n]))->vt = 0;
-      ((struct PNObject *)(oldforw[n]))->data[0] = newforw[n];
-    }
-  }
- 
   potion_mark_stack(M, 2);
 
   while ((PN)scanptr < (PN)M->old_cur) {
@@ -178,11 +166,11 @@ static int potion_gc_major(struct PNMemory *M, int siz,
   oldsiz = PN_ALIGN(oldsiz, POTION_PAGESIZE);
   if (oldsiz < newoldsiz) {
     pngc_page_delete((void *)newold + oldsiz, newoldsiz - oldsiz);
-    M->old_hi = (char *)M->old_lo + oldsiz;
+    newoldsiz = oldsiz;
   }
 
   M->old_lo = newold;
-  M->old_hi = (char *)newold + oldsiz;
+  M->old_hi = (char *)newold + newoldsiz;
   M->majors++;
 
   return POTION_OK;
@@ -219,7 +207,7 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
 #endif
 
   if (full)
-    potion_gc_major(M, sz, 0, 0, 0);
+    potion_gc_major(M, sz);
   else
     potion_gc_minor(M, sz);
   M->dirty = 0;
