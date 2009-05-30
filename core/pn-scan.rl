@@ -239,7 +239,7 @@ PN potion_sig(Potion *P, char *fmt) {
   if (fmt == NULL) return PN_NIL; // no signature, arg check off
   if (fmt[0] == '\0') return PN_FALSE; // empty signature, no args
 
-  fmt = strdup(fmt);
+  fmt = potion_strdup(P, fmt);
   p = fmt, pe = fmt + strlen(fmt);
   sig = PN_TUP(PN_NUM(0));
 
@@ -248,6 +248,5 @@ PN potion_sig(Potion *P, char *fmt) {
 
   ARG_END();
 
-  free(fmt);
   return sig;
 }

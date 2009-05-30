@@ -91,7 +91,7 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int ret;
   PN cl;
   vPN(Vtable) vt = (struct PNVtable *)self;
-  unsigned k = kh_put(id, vt->kh, ((struct PNString *)key)->id, &ret);
+  unsigned k = kh_put(id, P->mem, vt->kh, ((struct PNString *)key)->id, &ret);
   if (!PN_IS_CLOSURE(method)) {
     if (PN_IS_PROTO(method))
       cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_NIL, 1);

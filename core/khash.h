@@ -116,17 +116,10 @@ static const double __ac_HASH_UPPER = 0.77;
 		khkey_t *keys;													\
 		khval_t *vals;													\
 	} kh_##name##_t;													\
-	static inline kh_##name##_t *kh_init_##name() {						\
-		return (kh_##name##_t*)calloc(1, sizeof(kh_##name##_t));		\
+	static inline kh_##name##_t *kh_init_##name(struct PNMemory *M) {						\
+		return (kh_##name##_t *)potion_gc_calloc(M, sizeof(kh_##name##_t));		\
 	}																	\
-	static inline void kh_destroy_##name(kh_##name##_t *h)				\
-	{																	\
-		if (h) {														\
-			free(h->keys); free(h->flags);								\
-			free(h->vals);												\
-			free(h);													\
-		}																\
-	}																	\
+	static inline void kh_destroy_##name(kh_##name##_t *h) {} \
 	static inline void kh_clear_##name(kh_##name##_t *h)				\
 	{																	\
 		if (h && h->flags) { \
@@ -148,7 +141,7 @@ static const double __ac_HASH_UPPER = 0.77;
 			return __ac_iseither(h->flags, i)? h->n_buckets : i;			\
 		} else return 0;												\
 	}																	\
-	static inline void kh_resize_##name(kh_##name##_t *h, khint_t new_n_buckets) \
+	static inline void kh_resize_##name(struct PNMemory *M, kh_##name##_t *h, khint_t new_n_buckets) \
 	{																	\
 		uint32_t *new_flags = 0;										\
 		khint_t j = 1;													\
@@ -158,12 +151,12 @@ static const double __ac_HASH_UPPER = 0.77;
 			new_n_buckets = __ac_prime_list[t+1];						\
 			if (h->size >= (khint_t)(new_n_buckets * __ac_HASH_UPPER + 0.5)) j = 0;	\
 			else {														\
-				new_flags = (uint32_t*)malloc(((new_n_buckets>>4) + 1) * sizeof(uint32_t));	\
+				new_flags = (uint32_t*)potion_gc_alloc(M, ((new_n_buckets>>4) + 1) * sizeof(uint32_t));	\
 				memset(new_flags, 0xaa, ((new_n_buckets>>4) + 1) * sizeof(uint32_t)); \
 				if (h->n_buckets < new_n_buckets) {						\
-					h->keys = (khkey_t*)realloc(h->keys, new_n_buckets * sizeof(khkey_t)); \
+          h->keys = (khkey_t*)potion_gc_realloc(M, h->keys, new_n_buckets * sizeof(khkey_t)); \
 					if (kh_is_map)										\
-						h->vals = (khval_t*)realloc(h->vals, new_n_buckets * sizeof(khval_t)); \
+            h->vals = (khval_t*)potion_gc_realloc(M, h->vals, new_n_buckets * sizeof(khval_t)); \
 				}														\
 			}															\
 		}																\
@@ -197,23 +190,22 @@ static const double __ac_HASH_UPPER = 0.77;
 				}														\
 			}															\
 			if (h->n_buckets > new_n_buckets) {							\
-				h->keys = (khkey_t*)realloc(h->keys, new_n_buckets * sizeof(khkey_t)); \
-				if (kh_is_map)											\
-					h->vals = (khval_t*)realloc(h->vals, new_n_buckets * sizeof(khval_t)); \
+        h->keys = (khkey_t*)potion_gc_realloc(M, h->keys, new_n_buckets * sizeof(khkey_t)); \
+        if (kh_is_map)										\
+          h->vals = (khval_t*)potion_gc_realloc(M, h->vals, new_n_buckets * sizeof(khval_t)); \
 			}															\
-			free(h->flags);												\
 			h->flags = new_flags;										\
 			h->n_buckets = new_n_buckets;								\
 			h->n_occupied = h->size;									\
 			h->upper_bound = (khint_t)(h->n_buckets * __ac_HASH_UPPER + 0.5); \
 		}																\
 	}																	\
-	static inline khint_t kh_put_##name(kh_##name##_t *h, khkey_t key, int *ret) \
+	static inline khint_t kh_put_##name(struct PNMemory *M, kh_##name##_t *h, khkey_t key, int *ret) \
 	{																	\
 		khint_t x;														\
 		if (h->n_occupied >= h->upper_bound) {							\
-			if (h->n_buckets > (h->size<<1)) kh_resize_##name(h, h->n_buckets - 1); \
-			else kh_resize_##name(h, h->n_buckets + 1);					\
+			if (h->n_buckets > (h->size<<1)) kh_resize_##name(M, h, h->n_buckets - 1); \
+			else kh_resize_##name(M, h, h->n_buckets + 1);					\
 		}																\
 		{																\
 			khint_t inc, k, i, site, last;								\
@@ -285,11 +277,11 @@ static inline khint_t __luaS_hash_string(const char *s)
 
 #define khash_t(name) kh_##name##_t
 
-#define kh_init(name) kh_init_##name()
+#define kh_init(name, M) kh_init_##name(M)
 #define kh_destroy(name, h) kh_destroy_##name(h)
 #define kh_clear(name, h) kh_clear_##name(h)
-#define kh_resize(name, h, s) kh_resize_##name(h, s)
-#define kh_put(name, h, k, r) kh_put_##name(h, k, r)
+#define kh_resize(name, M, h, s) kh_resize_##name(M, h, s)
+#define kh_put(name, M, h, k, r) kh_put_##name(M, h, k, r)
 #define kh_get(name, h, k) kh_get_##name(h, k)
 #define kh_del(name, h, k) kh_del_##name(h, k)
 

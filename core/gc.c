@@ -323,7 +323,7 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
             int ret;
             unsigned kn;
             kh_del(_PN, kh, k);
-            kn = kh_put(_PN, kh, v1, &ret);
+            kn = kh_put(_PN, M, kh, v1, &ret);
             kh_value(kh, kn) = v2;
             if (kn < k)
               k = kn;
@@ -405,7 +405,7 @@ void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
             int ret;
             unsigned kn;
             kh_del(_PN, kh, k);
-            kn = kh_put(_PN, kh, v1, &ret);
+            kn = kh_put(_PN, M, kh, v1, &ret);
             kh_value(kh, kn) = v2;
             if (kn < k)
               k = kn;

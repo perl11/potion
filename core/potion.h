@@ -353,7 +353,7 @@ static inline void *potion_gc_calloc(struct PNMemory *M, int siz) {
 
 static inline void *potion_gc_realloc(struct PNMemory *M, volatile void *ptr, int siz) {
   void *res = potion_gc_alloc(M, siz);
-  memcpy(res, (void *)ptr, siz);
+  if (ptr != NULL) memcpy(res, (void *)ptr, siz);
   return res;
 }
 
@@ -362,6 +362,13 @@ static inline PN potion_data_alloc(struct PNMemory *M, int siz) {
   data->vt = PN_TUSER;
   data->len = siz;
   return (PN)data;
+}
+
+static inline char *potion_strdup(Potion *P, char *str) {
+  int len = strlen(str) + 1;
+  char *str2 = potion_gc_alloc(P->mem, len);
+  memcpy(str2, str, len);
+  return str2;
 }
 
 static inline void potion_gc_update(struct PNMemory *M, PN x) {
