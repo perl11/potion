@@ -98,7 +98,7 @@ struct PNJitAsm;
 #define PN_DEREF(x)     PN_GET_REF(x)->data
 
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
-#define PN_FLEX(N, T)    struct { T *ptr; PN_SIZE capa; PN_SIZE len; } N;
+#define PN_FLEX(N, T)    struct { T * volatile ptr; PN_SIZE capa; PN_SIZE len; } N;
 #define PN_FLEX_AT(N, I) N.ptr[I]
 #define PN_FLEX_SIZE(N)  N.len
 
@@ -177,7 +177,7 @@ struct PNString {
 struct PNBytes {
   PN_OBJECT_HEADER
   PN_SIZE len;
-  char *chars;
+  char * volatile chars;
 };
 
 #define PN_PREC 8
@@ -251,7 +251,7 @@ struct PNProto {
 struct PNTuple {
   PN_OBJECT_HEADER
   PN_SIZE len;
-  PN *set;
+  PN * volatile set;
 };
 
 //
@@ -282,17 +282,17 @@ static inline char *potion_str_ptr(struct PNString *s) {
 //
 #define OP_MAX 64
 
-typedef void (*OP_F)(struct PNJitAsm *, ...);
+typedef void (*OP_F)(Potion *P, struct PNJitAsm *, ...);
 
 typedef struct {
-  void (*setup)    (struct PNJitAsm *);
-  void (*stack)    (struct PNJitAsm *, long);
-  void (*registers)(struct PNJitAsm *, long);
-  void (*local)    (struct PNJitAsm *, long, long);
-  void (*upvals)   (struct PNJitAsm *, long, int);
-  void (*jmpedit)  (struct PNJitAsm *, unsigned char *, int);
+  void (*setup)    (Potion *P, struct PNJitAsm *);
+  void (*stack)    (Potion *P, struct PNJitAsm *, long);
+  void (*registers)(Potion *P, struct PNJitAsm *, long);
+  void (*local)    (Potion *P, struct PNJitAsm *, long, long);
+  void (*upvals)   (Potion *P, struct PNJitAsm *, long, int);
+  void (*jmpedit)  (Potion *P, struct PNJitAsm *, unsigned char *, int);
   OP_F op[OP_MAX];
-  void (*finish)   (struct PNJitAsm *);
+  void (*finish)   (Potion *P, struct PNJitAsm *);
 } PNTarget;
 
 //
@@ -348,6 +348,12 @@ static inline void *potion_gc_alloc(struct PNMemory *M, int siz) {
 static inline void *potion_gc_calloc(struct PNMemory *M, int siz) {
   void *res = potion_gc_alloc(M, siz);
   memset(res, 0, siz);
+  return res;
+}
+
+static inline void *potion_gc_realloc(struct PNMemory *M, volatile void *ptr, int siz) {
+  void *res = potion_gc_alloc(M, siz);
+  memcpy(res, (void *)ptr, siz);
   return res;
 }
 
@@ -466,6 +472,9 @@ void potion_compiler_init(Potion *);
 void potion_vm_init(Potion *);
 
 PN potion_any_is_nil(Potion *, PN, PN);
+PN potion_gc_reserved(Potion *, PN, PN);
+PN potion_gc_actual(Potion *, PN, PN);
+PN potion_gc_fixed(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
 PN potion_vm(Potion *, PN, PN, PN_SIZE, PN * volatile);

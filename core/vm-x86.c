@@ -60,8 +60,8 @@
         X86_MOVQ(op->a, PN_TRUE); /*  -A(%rbp) = TRUE */ \
         ASM(0xEB); ASM(0x7 + X86_PRE_T); /*  jmp +7 */ \
         X86_MOVQ(op->a, PN_FALSE) /*  -A(%rbp) = FALSE */
-#define X86_ARGO(regn, argn) potion_x86_c_arg(asmb, 1, regn, argn)
-#define X86_ARGI(regn, argn) potion_x86_c_arg(asmb, 0, regn, argn)
+#define X86_ARGO(regn, argn) potion_x86_c_arg(P, asmb, 1, regn, argn)
+#define X86_ARGI(regn, argn) potion_x86_c_arg(P, asmb, 0, regn, argn)
 #define TAG_JMP(jpos) \
         ASM(0xE9); \
         if (jpos >= op) { \
@@ -81,7 +81,7 @@ PN potion_x86_debug(Potion *P, PN cl, PN v) {
 }
 
 // mimick c calling convention
-static void potion_x86_c_arg(PNAsm *asmb, int out, int regn, int argn) {
+static void potion_x86_c_arg(Potion *P, PNAsm *asmb, int out, int regn, int argn) {
 #if __WORDSIZE != 64
   if (argn == 0) {
     // OPT: the first argument is always (Potion *)
@@ -130,12 +130,12 @@ static void potion_x86_c_arg(PNAsm *asmb, int out, int regn, int argn) {
 #endif
 }
 
-void potion_x86_setup(PNAsm *asmb) {
+void potion_x86_setup(Potion *P, PNAsm *asmb) {
   ASM(0x55); // push %rbp
   X86_PRE(); ASM(0x89); ASM(0xE5); // mov %rsp,%rbp
 }
 
-void potion_x86_stack(PNAsm *asmb, long rsp) {
+void potion_x86_stack(Potion *P, PNAsm *asmb, long rsp) {
   /* maintain 16-byte stack alignment.  OS X in particular requires it, because
    * it expects to be able to use movdqa on things on the stack.
    * we factor in the offset from our saved ebp and return address, so that
@@ -148,18 +148,18 @@ void potion_x86_stack(PNAsm *asmb, long rsp) {
   }
 }
 
-void potion_x86_registers(PNAsm *asmb, long start) {
+void potion_x86_registers(Potion *P, PNAsm *asmb, long start) {
   // (Potion *, self) in the first argument slot, self in the first register 
   X86_ARGI(start - 2, 0);
   X86_ARGI(start - 1, 2);
   X86_ARGI(0, 2);
 }
 
-void potion_x86_local(PNAsm *asmb, long reg, long arg) {
+void potion_x86_local(Potion *P, PNAsm *asmb, long reg, long arg) {
   X86_ARGI(reg, 3 + arg);
 }
 
-void potion_x86_upvals(PNAsm *asmb, long lregs, int upc) {
+void potion_x86_upvals(Potion *P, PNAsm *asmb, long lregs, int upc) {
   int upi;
   X86_ARGI(1, 1);
   for (upi = 0; upi < upc; upi++) {
@@ -170,32 +170,32 @@ void potion_x86_upvals(PNAsm *asmb, long lregs, int upc) {
   }
 }
 
-void potion_x86_jmpedit(PNAsm *asmb, unsigned char *asmj, int dist) {
+void potion_x86_jmpedit(Potion *P, PNAsm *asmb, unsigned char *asmj, int dist) {
   *((int *)asmj) = dist;
 }
 
-void potion_x86_move(PNAsm *asmb, PN_OP *op) {
+void potion_x86_move(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MOV_RBP(0x8B, op->b);
   X86_MOV_RBP(0x89, op->a);
 }
 
-void potion_x86_loadpn(PNAsm *asmb, PN_OP *op) {
+void potion_x86_loadpn(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MOVQ(op->a, op->b);
 }
 
-void potion_x86_loadk(PNAsm *asmb, PN_OP *op, PN values) {
+void potion_x86_loadk(Potion *P, PNAsm *asmb, PN_OP *op, PN values) {
   PN val = PN_TUPLE_AT(values, op->b);
   X86_MOVL(op->a, val);
 }
 
-void potion_x86_self(PNAsm *asmb, PN_OP *op, long start) {
+void potion_x86_self(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
   // TODO: optimize so that if this is followed by a BIND, it'll just
   // use the self register directly.
   X86_MOV_RBP(0x8B, start - 1);
   X86_MOV_RBP(0x89, op->a);
 }
 
-void potion_x86_getlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
+void potion_x86_getlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
   // TODO: optimize to do the ref check only if there are upvals
   X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
   if (jit_protos != NULL) {
@@ -212,7 +212,7 @@ void potion_x86_getlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
   X86_MOV_RBP(0x89, op->a);
 }
 
-void potion_x86_setlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
+void potion_x86_setlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->a)); /*  mov -A(%rbp) %edx */
   if (jit_protos != NULL) {
     // TODO: optimize to use %rdx rather than jmp
@@ -228,26 +228,26 @@ void potion_x86_setlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
   X86_PRE(); ASM(0x89); ASM(0x55); ASM(RBP(regs + op->b)); // mov %rdx %rsp(B)
 }
 
-void potion_x86_getupval(PNAsm *asmb, PN_OP *op, long lregs) {
+void potion_x86_getupval(Potion *P, PNAsm *asmb, PN_OP *op, long lregs) {
   X86_MOV_RBP(0x8B, lregs + op->b);
   X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject));
   X86_MOV_RBP(0x89, op->a);
 }
 
-void potion_x86_setupval(PNAsm *asmb, PN_OP *op, long lregs) {
+void potion_x86_setupval(Potion *P, PNAsm *asmb, PN_OP *op, long lregs) {
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->a)); /*  mov -A(%rbp) %edx */
   X86_MOV_RBP(0x8B, lregs + op->b); // mov %rsp(B) %rax
   X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
 }
 
-void potion_x86_newtuple(PNAsm *asmb, PN_OP *op, long start) {
+void potion_x86_newtuple(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
   X86_ARGO(start - 2, 0);
   X86_PRE(); ASM(0xB8); ASMN(potion_tuple_empty); // mov &potion_tuple_push %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
   X86_MOV_RBP(0x89, op->a); // mov %rax local
 }
 
-void potion_x86_settuple(PNAsm *asmb, PN_OP *op, long start) {
+void potion_x86_settuple(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
   X86_ARGO(start - 2, 0);
   X86_ARGO(op->a, 1);
   X86_ARGO(op->b, 2);
@@ -256,7 +256,7 @@ void potion_x86_settuple(PNAsm *asmb, PN_OP *op, long start) {
   X86_MOV_RBP(0x89, op->a); // mov %rax local
 }
 
-void potion_x86_settable(PNAsm *asmb, PN_OP *op, long start, PN values) {
+void potion_x86_settable(Potion *P, PNAsm *asmb, PN_OP *op, long start, PN values) {
   X86_ARGO(start - 2, 0);
   X86_ARGO(op->a, 1);
   X86_ARGO(op->b, 2);
@@ -266,7 +266,7 @@ void potion_x86_settable(PNAsm *asmb, PN_OP *op, long start, PN values) {
   X86_MOV_RBP(0x89, op->a); // mov %rax local
 }
 
-void potion_x86_add(PNAsm *asmb, PN_OP *op) {
+void potion_x86_add(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MATH({
     ASM(0x89); ASM(0xD1); // mov %rdx %rcx
     ASM(0x01); ASM(0xC1); // add %rax %rcx
@@ -274,7 +274,7 @@ void potion_x86_add(PNAsm *asmb, PN_OP *op) {
   });
 }
 
-void potion_x86_sub(PNAsm *asmb, PN_OP *op) {
+void potion_x86_sub(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MATH({
     ASM(0x89); ASM(0xD1); // mov %rdx %rcx
     ASM(0x29); ASM(0xC1); // sub %rax %rcx
@@ -282,13 +282,13 @@ void potion_x86_sub(PNAsm *asmb, PN_OP *op) {
   });
 }
 
-void potion_x86_mult(PNAsm *asmb, PN_OP *op) {
+void potion_x86_mult(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MATH({
     ASM(0x0F); ASM(0xAF); ASM(0xC2); // imul %rdx %rax
   });
 }
 
-void potion_x86_div(PNAsm *asmb, PN_OP *op) {
+void potion_x86_div(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MATH({
     ASM(0x89); ASM(0xC1); // mov %eax %ecx
     ASM(0x89); ASM(0xD0); // mov %edx %eax
@@ -297,7 +297,7 @@ void potion_x86_div(PNAsm *asmb, PN_OP *op) {
   });
 }
 
-void potion_x86_rem(PNAsm *asmb, PN_OP *op) {
+void potion_x86_rem(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MATH({
     ASM(0x89); ASM(0xC1); // mov %eax %ecx
     ASM(0x89); ASM(0xD0); // mov %edx %eax
@@ -307,7 +307,7 @@ void potion_x86_rem(PNAsm *asmb, PN_OP *op) {
   });
 }
 
-void potion_x86_pow(PNAsm *asmb, PN_OP *op, long start) {
+void potion_x86_pow(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
   X86_ARGO(start - 2, 0);
   X86_ARGO(op->a, 2);
   X86_ARGO(op->b, 3);
@@ -316,31 +316,31 @@ void potion_x86_pow(PNAsm *asmb, PN_OP *op, long start) {
   X86_MOV_RBP(0x89, op->a); // mov %rax local
 }
 
-void potion_x86_neq(PNAsm *asmb, PN_OP *op) {
+void potion_x86_neq(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_CMP(0x74); // je
 }
 
-void potion_x86_eq(PNAsm *asmb, PN_OP *op) {
+void potion_x86_eq(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_CMP(0x75); // jne
 }
 
-void potion_x86_lt(PNAsm *asmb, PN_OP *op) {
+void potion_x86_lt(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_CMP(0x7D); // jge
 }
 
-void potion_x86_lte(PNAsm *asmb, PN_OP *op) {
+void potion_x86_lte(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_CMP(0x7F); // jg
 }
 
-void potion_x86_gt(PNAsm *asmb, PN_OP *op) {
+void potion_x86_gt(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_CMP(0x7E); // jle
 }
 
-void potion_x86_gte(PNAsm *asmb, PN_OP *op) {
+void potion_x86_gte(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_CMP(0x7C); // jl
 }
 
-void potion_x86_bitl(PNAsm *asmb, PN_OP *op) {
+void potion_x86_bitl(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MATH({
     ASM(0x89); ASM(0xC1); // mov %eax %ecx
     ASM(0x89); ASM(0xD0); // mov %edx %eax
@@ -348,7 +348,7 @@ void potion_x86_bitl(PNAsm *asmb, PN_OP *op) {
   });
 }
 
-void potion_x86_bitr(PNAsm *asmb, PN_OP *op) {
+void potion_x86_bitr(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MATH({
     ASM(0x89); ASM(0xC1); // mov %eax %ecx
     ASM(0x89); ASM(0xD0); // mov %edx %eax
@@ -356,7 +356,7 @@ void potion_x86_bitr(PNAsm *asmb, PN_OP *op) {
   });
 }
 
-void potion_x86_bind(PNAsm *asmb, PN_OP *op, long start) {
+void potion_x86_bind(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
 #ifdef JIT_ICACHE
   u8 *ictype, *icname;
   // place the receiver's class in %eax
@@ -403,11 +403,11 @@ void potion_x86_bind(PNAsm *asmb, PN_OP *op, long start) {
   X86_MOV_RBP(0x89, op->a); // mov %rax local
 }
 
-void potion_x86_jmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
+void potion_x86_jmp(Potion *P, PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
   TAG_JMP(op + op->a);
 }
 
-void potion_x86_test_asm(PNAsm *asmb, PN_OP *op, int test) {
+void potion_x86_test_asm(Potion *P, PNAsm *asmb, PN_OP *op, int test) {
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->a)); /*  mov -A(%rbp) %edx */
   ASM(0xB8); ASMI(PN_FALSE); /* mov FALSE %eax */
   ASM(0x39); ASM(0xC2); /*  cmp %eax %edx */
@@ -417,19 +417,19 @@ void potion_x86_test_asm(PNAsm *asmb, PN_OP *op, int test) {
   X86_MOVQ(op->a, PN_FALSE); /*  -A(%rbp) = FALSE */
 }
 
-void potion_x86_test(PNAsm *asmb, PN_OP *op) {
-  potion_x86_test_asm(asmb, op, 0);
+void potion_x86_test(Potion *P, PNAsm *asmb, PN_OP *op) {
+  potion_x86_test_asm(P, asmb, op, 0);
 }
 
-void potion_x86_not(PNAsm *asmb, PN_OP *op) {
-  potion_x86_test_asm(asmb, op, 1);
+void potion_x86_not(Potion *P, PNAsm *asmb, PN_OP *op) {
+  potion_x86_test_asm(P, asmb, op, 1);
 }
 
-void potion_x86_cmp(PNAsm *asmb, PN_OP *op) {
-  potion_x86_test_asm(asmb, op, 0);
+void potion_x86_cmp(Potion *P, PNAsm *asmb, PN_OP *op) {
+  potion_x86_test_asm(P, asmb, op, 0);
 }
 
-void potion_x86_testjmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
+void potion_x86_testjmp(Potion *P, PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->a)); /*  mov -A(%rbp) %edx */
   ASM(0xB8); ASMI(PN_FALSE); /* mov FALSE %eax */
   ASM(0x39); ASM(0xC2); /*  cmp %eax %edx */
@@ -437,7 +437,7 @@ void potion_x86_testjmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, siz
   TAG_JMP(op + op->b);
 }
 
-void potion_x86_notjmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
+void potion_x86_notjmp(Potion *P, PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->a)); /*  mov -A(%rbp) %edx */
   ASM(0xB8); ASMI(PN_FALSE); /* mov FALSE %eax */
   ASM(0x39); ASM(0xC2); /* cmp %eax %edx */
@@ -446,7 +446,7 @@ void potion_x86_notjmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size
 }
 
 // TODO: check for bytecode nodes and jit them as well?
-void potion_x86_call(PNAsm *asmb, PN_OP *op, long start) {
+void potion_x86_call(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
   int argc = op->b - op->a;
   // (Potion *, CL) as the first argument
   X86_ARGO(start - 2, 0);
@@ -478,12 +478,12 @@ void potion_x86_call(PNAsm *asmb, PN_OP *op, long start) {
   X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op->a)); /* mov %rbp(A) %rax */
 }
 
-void potion_x86_return(PNAsm *asmb, PN_OP *op) {
+void potion_x86_return(Potion *P, PNAsm *asmb, PN_OP *op) {
   X86_MOV_RBP(0x8B, 0); /* mov -0(%rbp) %eax */ \
   ASM(0xC9); ASM(0xC3); /* leave; ret */
 }
 
-void potion_x86_method(PNAsm *asmb, Potion *P, PN_OP **pos, PN_F *jit_protos, PN protos, long lregs, long start, long regs) {
+void potion_x86_method(Potion *P, PNAsm *asmb, PN_OP **pos, PN_F *jit_protos, PN protos, long lregs, long start, long regs) {
   vPN(Closure) cl;
   PN_OP *op = *pos;
   PN func2 = (PN)jit_protos[op->b];
@@ -514,7 +514,7 @@ void potion_x86_method(PNAsm *asmb, Potion *P, PN_OP **pos, PN_F *jit_protos, PN
   });
 }
 
-void potion_x86_finish(PNAsm *asmb) {
+void potion_x86_finish(Potion *P, PNAsm *asmb) {
 #ifdef JIT_ICACHE
 #if __WORDSIZE != 64
   if (1) { // TODO: only scan if relative jumps are used

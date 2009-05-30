@@ -6,7 +6,7 @@
 //
 
 typedef struct PNJitAsm {
-  u8 *ptr;
+  u8 * volatile ptr;
   PN_SIZE len, capa;
 } PNAsm;
 
@@ -67,10 +67,10 @@ typedef struct {
     .finish = potion_##arch##_finish \
   }
 
-#define ASM(ins) potion_asm_put(asmb, (PN)ins, sizeof(u8))
-#define ASM2(pn) potion_asm_put(asmb, (PN)(pn), 2)
-#define ASMI(pn) potion_asm_put(asmb, (PN)(pn), sizeof(int))
-#define ASMN(pn) potion_asm_put(asmb, (PN)pn, sizeof(PN))
+#define ASM(ins) potion_asm_put(P, asmb, (PN)ins, sizeof(u8))
+#define ASM2(pn) potion_asm_put(P, asmb, (PN)(pn), 2)
+#define ASMI(pn) potion_asm_put(P, asmb, (PN)(pn), sizeof(int))
+#define ASMN(pn) potion_asm_put(P, asmb, (PN)pn, sizeof(PN))
 
 PNAsm *potion_asm_new(Potion *);
-void potion_asm_put(PNAsm *, PN, size_t);
+void potion_asm_put(Potion *, PNAsm *, PN, size_t);

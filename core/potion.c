@@ -35,11 +35,15 @@ static void potion_cmd_usage() {
   );
 }
 
-static void potion_cmd_stats() {
-  printf("sizeof(PN): %d\nsizeof(PNObject): %d\n",
-      (int)sizeof(PN), (int)sizeof(struct PNObject));
-  printf("sizeof(PNTuple): %d\nsizeof(PN + PNTuple): %d\n",
+static void potion_cmd_stats(void *sp) {
+  Potion *P = potion_create(sp);
+  printf("sizeof(PN=%d, PNObject=%d, PNTuple=%d, PNTuple_PN=%d)\n",
+      (int)sizeof(PN), (int)sizeof(struct PNObject),
       (int)sizeof(struct PNTuple), (int)(sizeof(PN) + sizeof(struct PNTuple)));
+  printf("GC (fixed=%ld, actual=%ld, reserved=%ld)\n",
+      PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+      PN_INT(potion_gc_reserved(P, 0, 0)));
+  potion_destroy(P);
 }
 
 static void potion_cmd_version() {
@@ -99,7 +103,9 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
       PN_F func = potion_jit_proto(P, code, POTION_JIT_TARGET);
       val = func(P, PN_NIL, P->lobby);
       if (verbose > 1)
-        printf("\n-- jit returned %p --\n", func);
+        printf("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", func,
+          PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+          PN_INT(potion_gc_reserved(P, 0, 0)));
       if (verbose) {
         potion_send(potion_send(val, PN_string), PN_print);
         printf("\n");
@@ -169,7 +175,7 @@ int main(int argc, char *argv[]) {
 
       if (strcmp(argv[i], "-s") == 0 ||
           strcmp(argv[i], "--stats") == 0) {
-        potion_cmd_stats();
+        potion_cmd_stats(sp);
         return 0;
       }
 

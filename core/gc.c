@@ -480,3 +480,31 @@ void potion_gc_release(struct PNMemory *M) {
   if (oldlo != NULL)
     pngc_page_delete(oldlo, oldhi - oldlo);
 }
+
+PN potion_gc_actual(Potion *P, PN cl, PN self)
+{
+  int total = (char *)P->mem->birth_cur - (char *)P->mem->birth_lo;
+  if (P->mem != P->mem->birth_lo)
+    total += (char *)P->mem->protect - (char *)P->mem;
+  if (P->mem->old_lo != NULL)
+    total += (char *)P->mem->old_cur - (char *)P->mem->old_lo;
+  return PN_NUM(total);
+}
+
+PN potion_gc_fixed(Potion *P, PN cl, PN self)
+{
+  int total = 0;
+  if (P->mem->protect != NULL)
+    total += (char *)P->mem->protect - (char *)P->mem;
+  return PN_NUM(total);
+}
+
+PN potion_gc_reserved(Potion *P, PN cl, PN self)
+{
+  int total = (char *)P->mem->birth_hi - (char *)P->mem->birth_lo;
+  if (P->mem != P->mem->birth_lo)
+    total += (char *)P->mem->protect - (char *)P->mem;
+  if (P->mem->old_lo != NULL)
+    total += (char *)P->mem->old_hi - (char *)P->mem->old_lo;
+  return PN_NUM(total);
+}

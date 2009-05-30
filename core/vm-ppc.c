@@ -91,26 +91,26 @@
     ASMI(ins); \
   }
 
-void potion_ppc_setup(PNAsm *asmb) {
+void potion_ppc_setup(Potion *P, PNAsm *asmb) {
   PPC3(47, 30, 1, 0xFFF8); // stmw r30,-8(r1)
 }
 
-void potion_ppc_stack(PNAsm *asmb, long rsp) {
+void potion_ppc_stack(Potion *P, PNAsm *asmb, long rsp) {
   rsp = -((rsp+31)&~(15));
   PPC3(37, 1, 1, rsp); // stwu r1,-X(r1)
   PPC_MOV(30, 1); // or r30,r1,r1
 }
 
-void potion_ppc_registers(PNAsm *asmb, long start) {
+void potion_ppc_registers(Potion *P, PNAsm *asmb, long start) {
 }
 
-void potion_ppc_local(PNAsm *asmb, long reg, long arg) {
+void potion_ppc_local(Potion *P, PNAsm *asmb, long reg, long arg) {
 }
 
-void potion_ppc_upvals(PNAsm *asmb, long lregs, int upc) {
+void potion_ppc_upvals(Potion *P, PNAsm *asmb, long lregs, int upc) {
 }
 
-void potion_ppc_jmpedit(PNAsm *asmb, unsigned char *asmj, int dist) {
+void potion_ppc_jmpedit(Potion *P, PNAsm *asmb, unsigned char *asmj, int dist) {
   if (asmj[0] == 0x48) {
     asmj[0] |= (dist >> 24) & 3;
     asmj[1] = dist >> 16;
@@ -119,74 +119,74 @@ void potion_ppc_jmpedit(PNAsm *asmb, unsigned char *asmj, int dist) {
   asmj[3] = dist + 4;
 }
 
-void potion_ppc_move(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_move(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_MOV(REG(op->a), REG(op->b)); // li rA,B
 }
 
-void potion_ppc_loadpn(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_loadpn(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC2(14, REG(op->a), op->b); // li rA,B
 }
 
-void potion_ppc_loadk(PNAsm *asmb, PN_OP *op, PN values) {
+void potion_ppc_loadk(Potion *P, PNAsm *asmb, PN_OP *op, PN values) {
   PN val = PN_TUPLE_AT(values, op->b);
   PPC2(15, REG(op->a), val >> 16); // lis rA,B
   PPC3(24, REG(op->a), REG(op->a), val); // ori rA,B
 }
 
-void potion_ppc_self(PNAsm *asmb, PN_OP *op, long start) {
+void potion_ppc_self(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
 }
 
-void potion_ppc_getlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
+void potion_ppc_getlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
   PPC3(32, REG(op->a), 30, RBP(op->b)); // lwz rA,-B(rsp)
 }
 
-void potion_ppc_setlocal(PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
+void potion_ppc_setlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
   PPC3(36, REG(op->a), 30, RBP(op->b)); // stw rA,-B(rsp)
 }
 
-void potion_ppc_getupval(PNAsm *asmb, PN_OP *op, long lregs) {
+void potion_ppc_getupval(Potion *P, PNAsm *asmb, PN_OP *op, long lregs) {
 }
 
-void potion_ppc_setupval(PNAsm *asmb, PN_OP *op, long lregs) {
+void potion_ppc_setupval(Potion *P, PNAsm *asmb, PN_OP *op, long lregs) {
 }
 
-void potion_ppc_newtuple(PNAsm *asmb, PN_OP *op, long start) {
+void potion_ppc_newtuple(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
 }
 
-void potion_ppc_settuple(PNAsm *asmb, PN_OP *op, long start) {
+void potion_ppc_settuple(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
 }
 
-void potion_ppc_search(PNAsm *asmb, PN_OP *op, long start) {
+void potion_ppc_search(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
 }
 
-void potion_ppc_settable(PNAsm *asmb, PN_OP *op, long start, PN values) {
+void potion_ppc_settable(Potion *P, PNAsm *asmb, PN_OP *op, long start, PN values) {
 }
 
-void potion_ppc_add(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_add(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_MATH({
     PPC(31, REG(op->a), REG(op->a), REG(op->b) << 3 | 0x2, 0x14); // add rA,rA,rB
   });
 }
 
-void potion_ppc_sub(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_sub(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_MATH({
     PPC(31, REG(op->a), REG(op->b), REG(op->a) << 3, 0x50); // subf rA,rA,rB
   });
 }
 
-void potion_ppc_mult(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_mult(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_MATH({
     PPC(31, REG(op->a), REG(op->a), REG(op->b) << 3 | 0x1, 0xD6); // mullw rA,rA,rB
   });
 }
 
-void potion_ppc_div(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_div(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_MATH({
     PPC(31, REG(op->a), REG(op->a), REG(op->b) << 3 | 0x3, 0xD6); // divw rA,rA,rB
   });
 }
 
-void potion_ppc_rem(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_rem(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_MATH({
     PPC(31, REG_TMP, REG(op->a), REG(op->b) << 3 | 0x3, 0xD6); // divw rD,rA,rB
     PPC(31, REG_TMP, REG_TMP, REG(op->b) << 3 | 0x1, 0xD6); // mullw rD,rD,rB
@@ -195,7 +195,7 @@ void potion_ppc_rem(PNAsm *asmb, PN_OP *op) {
 }
 
 // TODO: need to keep rB in the saved registers, it gets clobbered.
-void potion_ppc_pow(PNAsm *asmb, PN_OP *op, long start) {
+void potion_ppc_pow(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
   PPC_MATH({
     PPC_MOV(REG_TMP, REG(op->a)); // mov rD,rB
     PPC(14, REG(op->b), REG(op->b), 0xFF, 0xFF); // addi rD,rD,-1
@@ -206,87 +206,87 @@ void potion_ppc_pow(PNAsm *asmb, PN_OP *op, long start) {
   });
 }
 
-void potion_ppc_neq(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_neq(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_CMP(0x419E0000); // beq
 }
 
-void potion_ppc_eq(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_eq(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_CMP(0x409E0000); // bne
 }
 
-void potion_ppc_lt(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_lt(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_CMP(0x409C0000); // bge
 }
 
-void potion_ppc_lte(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_lte(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_CMP(0x419D0000); // bgt
 }
 
-void potion_ppc_gt(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_gt(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_CMP(0x409D0000); // ble
 }
 
-void potion_ppc_gte(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_gte(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_CMP(0x419C0000); // blt
 }
 
-void potion_ppc_bitl(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_bitl(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_MATH({
     PPC(31, REG(op->a), REG(op->a), REG(op->b) << 3, 0x30); // slw rA,rA,rB
   });
 }
 
-void potion_ppc_bitr(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_bitr(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_MATH({
     PPC(31, REG(op->a), REG(op->a), REG(op->b) << 3 | 0x6, 0x30); // sraw rA,rA,rB
   });
 }
 
-void potion_ppc_bind(PNAsm *asmb, PN_OP *op, long start) {
+void potion_ppc_bind(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
 }
 
-void potion_ppc_jmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
+void potion_ppc_jmp(Potion *P, PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
   TAG_JMP(0x48000000, op + op->a); // b
 }
 
-void potion_ppc_test_asm(PNAsm *asmb, PN_OP *op, int test) {
+void potion_ppc_test_asm(Potion *P, PNAsm *asmb, PN_OP *op, int test) {
 }
 
-void potion_ppc_test(PNAsm *asmb, PN_OP *op) {
-  potion_ppc_test_asm(asmb, op, 1);
+void potion_ppc_test(Potion *P, PNAsm *asmb, PN_OP *op) {
+  potion_ppc_test_asm(P, asmb, op, 1);
 }
 
-void potion_ppc_not(PNAsm *asmb, PN_OP *op) {
-  potion_ppc_test_asm(asmb, op, 0);
+void potion_ppc_not(Potion *P, PNAsm *asmb, PN_OP *op) {
+  potion_ppc_test_asm(P, asmb, op, 0);
 }
 
-void potion_ppc_cmp(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_cmp(Potion *P, PNAsm *asmb, PN_OP *op) {
 }
 
-void potion_ppc_testjmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
+void potion_ppc_testjmp(Potion *P, PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
   PPC(11, 7 << 2, REG(op->a), 0, PN_FALSE); // cmpwi cr7,rA,0x0
   TAG_JMP(0x409E0000, op + op->b); // bne
 }
 
-void potion_ppc_notjmp(PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
+void potion_ppc_notjmp(Potion *P, PNAsm *asmb, PN_OP *op, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
   PPC(11, 7 << 2, REG(op->a), 0, PN_FALSE); // cmpwi cr7,rA,0x0
   TAG_JMP(0x419E0000, op + op->b); // beq
 }
 
-void potion_ppc_call(PNAsm *asmb, PN_OP *op, long start) {
+void potion_ppc_call(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
 }
 
-void potion_ppc_return(PNAsm *asmb, PN_OP *op) {
+void potion_ppc_return(Potion *P, PNAsm *asmb, PN_OP *op) {
   PPC_MOV(3, REG(op->a)); // or r3,rA,rA
   PPC3(32, 1, 1, 0); // lwz r1,(r1)
   PPC3(46, 30, 1, 0xFFF8); // lmw r30,-8(r1)
   ASMI(0x4e800020); // blr
 }
 
-void potion_ppc_method(PNAsm *asmb, Potion *P, PN_OP **pos, PN_F *jit_protos, PN protos, long lregs, long start, long regs) {
+void potion_ppc_method(Potion *P, PNAsm *asmb, PN_OP **pos, PN_F *jit_protos, PN protos, long lregs, long start, long regs) {
 }
 
-void potion_ppc_finish(PNAsm *asmb) {
+void potion_ppc_finish(Potion *P, PNAsm *asmb) {
 }
 
 MAKE_TARGET(ppc);
