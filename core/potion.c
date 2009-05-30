@@ -5,9 +5,11 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/stat.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 #include "potion.h"
 #include "internal.h"
 #include "opcodes.h"
@@ -52,7 +54,7 @@ static void potion_cmd_version() {
 
 static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) {
   PN buf;
-  FILE *fp = NULL;
+  int fd = -1;
   struct stat stats;
   Potion *P = potion_create(sp);
   if (stat(filename, &stats) == -1) {
@@ -60,14 +62,14 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
     goto done;
   }
 
-  fp = fopen(filename, "rb");
-  if (!fp) {
+  fd = open(filename, O_RDONLY);
+  if (fd == -1) {
     fprintf(stderr, "** could not open %s. check permissions.", filename);
     goto done;
   }
 
   buf = potion_bytes(P, stats.st_size + 1);
-  if (fread(PN_STR_PTR(buf), 1, stats.st_size, fp) == stats.st_size) {
+  if (read(fd, PN_STR_PTR(buf), stats.st_size) == stats.st_size) {
     PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
     code = potion_source_load(P, PN_NIL, buf);
@@ -137,8 +139,8 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
   }
 
 done:
-  if (fp)
-    fclose(fp);
+  if (fd != -1)
+    close(fd);
   if (P)
     potion_destroy(P);
 }

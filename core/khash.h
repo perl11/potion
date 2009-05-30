@@ -82,7 +82,6 @@ int main() {
 
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
 typedef uint32_t khint_t;
 typedef khint_t khiter_t;
