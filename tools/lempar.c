@@ -228,7 +228,7 @@ static void yyGrowStack(yyParser *p){
   yyStackEntry *pNew;
 
   newSize = p->yystksz*2 + 100;
-  pNew = realloc(p->yystack, newSize*sizeof(pNew[0]));
+  pNew = potion_gc_realloc(p->P->mem, p->yystack, newSize*sizeof(pNew[0]));
   if( pNew ){
     p->yystack = pNew;
     p->yystksz = newSize;
@@ -254,10 +254,11 @@ static void yyGrowStack(yyParser *p){
 ** A pointer to a parser.  This pointer is used in subsequent calls
 ** to Parse and ParseFree.
 */
-void *ParseAlloc(void *(*mallocProc)(size_t)){
+void *ParseAlloc(Potion *P){
   yyParser *pParser;
-  pParser = (yyParser*)(*mallocProc)( (size_t)sizeof(yyParser) );
+  pParser = (yyParser*)potion_gc_alloc(P->mem, (size_t)sizeof(yyParser));
   if( pParser ){
+    pParser->P = P;
     pParser->yyidx = -1;
 #ifdef YYTRACKMAXSTACKDEPTH
     pParser->yyidxMax = 0;

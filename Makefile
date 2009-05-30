@@ -208,7 +208,7 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST}
+	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} tools/lemon
 	@rm -f core/config.h core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
 	@rm -f potion potion.exe test/api/potion-test test/api/gc-test
 
