@@ -173,7 +173,7 @@ PN potion_parse(Potion *P, PN code) {
   int cs, act;
   char *p, *pe, *ts, *te, *tm = 0, *eof = 0;
   int lineno = 0, nbuf = 0;
-  void *pParser = LemonPotionAlloc(P);
+  void * volatile pParser = LemonPotionAlloc(P);
   PN last = PN_NIL;
   PN sbuf = potion_bytes(P, 4096);
 

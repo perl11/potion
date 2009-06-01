@@ -43,7 +43,7 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
             GC_FORWARD(x);
         break;
         case 2:
-          GC_FOLLOW_FORWARD(v);
+          *x = v = potion_fwd(v);
           if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)))
             GC_FORWARD(x);
         break;
@@ -205,11 +205,12 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
   M->collecting = 0;
 }
 
-void *potion_gc_copy(struct PNMemory *M, const struct PNObject *ptr) {
-  void *dst = (void *)M->old_cur;
-  PN_SIZE sz = 0;
-
+PN_SIZE potion_type_size(const struct PNObject *ptr) {
+  int sz = sizeof(PN) * 2;
   switch (ptr->vt) {
+    case PN_TNIL:
+      sz = ((struct PNObject *)ptr)->data[1];
+    break;
     case PN_TSTRING:
       sz = sizeof(struct PNString) + PN_STR_LEN(ptr) + 1;
     break;
@@ -220,40 +221,44 @@ void *potion_gc_copy(struct PNMemory *M, const struct PNObject *ptr) {
       sz = sizeof(struct PNClosure) + (PN_CLOSURE(ptr)->extra * sizeof(PN));
     break;
     case PN_TTUPLE:
-      sz = sizeof(struct PNTuple);
+      sz = sizeof(struct PNTuple) + (sizeof(PN) * max(PN_TUPLE_LEN((PN)ptr), 1));
+    break;
+    case PN_TSTATE:
+      sz = sizeof(Potion);
     break;
     case PN_TFILE:
       sz = sizeof(struct PNFile);
     break;
     // TODO: look up class fields and copy full object length
-    case PN_TOBJECT:
-      sz = sizeof(struct PNObject);
-    break;
+    // case PN_TOBJECT:
+    // return sizeof(struct PNObject);
     case PN_TSOURCE:
     // TODO: look up ast size (see core/pn-ast.c)
       sz = sizeof(struct PNSource) + (3 * sizeof(PN));
     break;
     case PN_TBYTES:
-      sz = sizeof(struct PNBytes) + PN_STR_LEN(ptr) + 1;
+      sz = sizeof(struct PNBytes) + ((struct PNBytes *)potion_fwd((PN)ptr))->len + 1;
     break;
     case PN_TPROTO:
       sz = sizeof(struct PNProto);
     break;
     case PN_TTABLE:
-      sz = sizeof(struct PNObject) + sizeof(kh__PN_t *);
+      sz = sizeof(struct PNObject) + sizeof(kh__PN_t);
+    break;
+    case PN_TFLEX:
+      sz = sizeof(PNFlex) + ((PNFlex *)ptr)->siz;
     break;
     case PN_TUSER:
-      sz = sizeof(struct PNData) + ((struct PNData *)ptr)->len;
+      sz = sizeof(struct PNData) + ((struct PNData *)ptr)->siz;
     break;
   }
+  return PN_ALIGN(sz, 8); // force 64-bit alignment
+}
 
-  if (sz == 0) {
-    fprintf(stderr, "** warning: gc asked to copy zero-length object!\n");
-    return dst;
-  }
-
+void *potion_gc_copy(struct PNMemory *M, const struct PNObject *ptr) {
+  void *dst = (void *)M->old_cur;
+  PN_SIZE sz = potion_type_size(ptr);
   memcpy(dst, ptr, sz);
-  sz = PN_ALIGN(sz, 8); // force 64-bit alignment
   M->old_cur = (char *)dst + sz;
   return dst;
 }
@@ -263,6 +268,9 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
   PN_SIZE sz = 16;
 
   switch (ptr->vt) {
+    case PN_TNIL:
+      sz = ((struct PNObject *)ptr)->data[1];
+    break;
     case PN_TSTRING:
       sz = sizeof(struct PNString) + PN_STR_LEN(ptr) + 1;
     break;
@@ -277,9 +285,12 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
       sz = sizeof(struct PNClosure) + (PN_CLOSURE(ptr)->extra * sizeof(PN));
     break;
     case PN_TTUPLE:
-      for (i = 0; i < ((struct PNTuple *)ptr)->len; i++)
-        GC_MINOR_UPDATE(((struct PNTuple *)ptr)->set[i]);
-      sz = sizeof(struct PNTuple);
+    {
+      struct PNTuple * volatile t = (struct PNTuple *)potion_fwd((PN)ptr);
+      for (i = 0; i < t->len; i++)
+        GC_MINOR_UPDATE(t->set[i]);
+      sz = sizeof(struct PNTuple) + sizeof(PN) + max(t->len, 1);
+    }
     break;
     case PN_TFILE:
       GC_MINOR_UPDATE(((struct PNFile *)ptr)->path);
@@ -297,7 +308,7 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
       sz = sizeof(struct PNSource) + (3 * sizeof(PN));
     break;
     case PN_TBYTES:
-      sz = sizeof(struct PNBytes) + PN_STR_LEN(ptr) + 1;
+      sz = sizeof(struct PNBytes) + ((struct PNBytes *)potion_fwd((PN)ptr))->len + 1;
     break;
     case PN_TPROTO:
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->source);
@@ -312,28 +323,31 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
     break;
     case PN_TTABLE: {
       unsigned k;
-      kh__PN_t *kh = ((struct PNTable *)ptr)->kh;
-      for (k = kh_begin(kh); k != kh_end(kh); ++k)
-        if (kh_exist(kh, k)) {
-          PN v1 = kh_key(kh, k);
-          PN v2 = kh_value(kh, k);
+      struct PNTable * volatile t = (struct PNTable *)ptr;
+      for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
+        if (kh_exist(t->kh, k)) {
+          PN v1 = kh_key(t->kh, k);
+          PN v2 = kh_value(t->kh, k);
           GC_MINOR_UPDATE(v1);
           GC_MINOR_UPDATE(v2);
-          if (kh_key(kh, k) != v1) {
+          if (kh_key(t->kh, k) != v1) {
             int ret;
             unsigned kn;
-            kh_del(_PN, kh, k);
-            kn = kh_put(_PN, M, kh, v1, &ret);
-            kh_value(kh, kn) = v2;
+            kh_del(_PN, t->kh, k);
+            kn = kh_put(_PN, t->kh, v1, &ret);
+            kh_value(t->kh, kn) = v2;
             if (kn < k)
               k = kn;
           }
         }
-      sz = sizeof(struct PNObject) + sizeof(kh__PN_t *);
+      sz = sizeof(struct PNObject) + sizeof(kh__PN_t);
     }
     break;
+    case PN_TFLEX:
+      sz = sizeof(PNFlex) + ((PNFlex *)ptr)->siz;
+    break;
     case PN_TUSER:
-      sz = sizeof(struct PNData) + ((struct PNData *)ptr)->len;
+      sz = sizeof(struct PNData) + ((struct PNData *)ptr)->siz;
     break;
   }
 
@@ -345,6 +359,9 @@ void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
   PN_SIZE sz = 16;
 
   switch (ptr->vt) {
+    case PN_TNIL:
+      sz = ((struct PNObject *)ptr)->data[1];
+    break;
     case PN_TSTRING:
       sz = sizeof(struct PNString) + PN_STR_LEN(ptr) + 1;
     break;
@@ -359,9 +376,12 @@ void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
       sz = sizeof(struct PNClosure) + (PN_CLOSURE(ptr)->extra * sizeof(PN));
     break;
     case PN_TTUPLE:
-      for (i = 0; i < ((struct PNTuple *)ptr)->len; i++)
-        GC_MAJOR_UPDATE(((struct PNTuple *)ptr)->set[i]);
-      sz = sizeof(struct PNTuple);
+    {
+      struct PNTuple * volatile t = (struct PNTuple *)potion_fwd((PN)ptr);
+      for (i = 0; i < t->len; i++)
+        GC_MAJOR_UPDATE(t->set[i]);
+      sz = sizeof(struct PNTuple) + sizeof(PN) * max(t->len, 1);
+    }
     break;
     case PN_TFILE:
       GC_MAJOR_UPDATE(((struct PNFile *)ptr)->path);
@@ -379,7 +399,7 @@ void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
       sz = sizeof(struct PNSource) + (3 * sizeof(PN));
     break;
     case PN_TBYTES:
-      sz = sizeof(struct PNBytes) + PN_STR_LEN(ptr) + 1;
+      sz = sizeof(struct PNBytes) + ((struct PNBytes *)potion_fwd((PN)ptr))->len + 1;
     break;
     case PN_TPROTO:
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->source);
@@ -394,28 +414,31 @@ void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
     break;
     case PN_TTABLE: {
       unsigned k;
-      kh__PN_t *kh = ((struct PNTable *)ptr)->kh;
-      for (k = kh_begin(kh); k != kh_end(kh); ++k)
-        if (kh_exist(kh, k)) {
-          PN v1 = kh_key(kh, k);
-          PN v2 = kh_value(kh, k);
+      struct PNTable * volatile t = (struct PNTable *)ptr;
+      for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
+        if (kh_exist(t->kh, k)) {
+          PN v1 = kh_key(t->kh, k);
+          PN v2 = kh_value(t->kh, k);
           GC_MAJOR_UPDATE(v1);
           GC_MAJOR_UPDATE(v2);
-          if (kh_key(kh, k) != v1) {
+          if (kh_key(t->kh, k) != v1) {
             int ret;
             unsigned kn;
-            kh_del(_PN, kh, k);
-            kn = kh_put(_PN, M, kh, v1, &ret);
-            kh_value(kh, kn) = v2;
+            kh_del(_PN, t->kh, k);
+            kn = kh_put(_PN, t->kh, v1, &ret);
+            kh_value(t->kh, kn) = v2;
             if (kn < k)
               k = kn;
           }
         }
-      sz = sizeof(struct PNObject) + sizeof(kh__PN_t *);
+      sz = sizeof(struct PNObject) + sizeof(kh__PN_t);
     }
     break;
+    case PN_TFLEX:
+      sz = sizeof(PNFlex) + ((PNFlex *)ptr)->siz;
+    break;
     case PN_TUSER:
-      sz = sizeof(struct PNData) + ((struct PNData *)ptr)->len;
+      sz = sizeof(struct PNData) + ((struct PNData *)ptr)->siz;
     break;
   }
 

@@ -12,7 +12,7 @@
 #include "table.h"
 
 PN potion_table_string(Potion *P, PN cl, PN self) {
-  vPN(Table) t = (struct PNTable *)self;
+  vPN(Table) t = (struct PNTable *)potion_fwd(self);
   PN out = potion_byte_str(P, "(");
   unsigned k, i = 0;
   for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
@@ -29,79 +29,81 @@ PN potion_table_string(Potion *P, PN cl, PN self) {
 PN potion_table_cast(Potion *P, PN self) {
   if (PN_IS_TUPLE(self)) {
     int ret; unsigned k;
-    kh__PN_t *kh = kh_init(_PN, P->mem);
-    vPN(Tuple) t = PN_GET_TUPLE(self);
-    PN_TUPLE_EACH(t, i, v, {
-      k = kh_put(_PN, P->mem, kh, PN_NUM(i), &ret);
-      kh_value(kh, k) = v;
-    });
+    // TODO: if tuple is large enough, swap in-place
+    vPN(Table) t = PN_OBJ_ALLOC(struct PNTable, PN_TTABLE, sizeof(kh__PN_t));
+    PN_MEMZERO(t, struct PNTable);
     t->vt = PN_TTABLE;
-    ((struct PNTable *)self)->kh = kh;
+    PN_TUPLE_EACH(self, i, v, {
+      k = kh_put(_PN, t->kh, PN_NUM(i), &ret);
+      kh_value(t->kh, k) = v;
+    });
+    ((struct PNObject *)self)->vt = PN_TNIL;
+    ((struct PNObject *)self)->data[0] = (PN)t;
+    self = (PN)t;
   }
   return self;
 }
 
 PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
   int ret;
-  vPN(Table) t = (struct PNTable *)self;
-  unsigned k = kh_put(_PN, P->mem, t->kh, key, &ret);
+  vPN(Table) t = (struct PNTable *)potion_fwd(self);
+  unsigned k = kh_put(_PN, t->kh, key, &ret);
   if (ret) return PN_NIL;
   return kh_value(t->kh, k);
 }
 
 PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
   int ret;
-  vPN(Table) t = (struct PNTable *)self;
-  unsigned k = kh_put(_PN, P->mem, t->kh, key, &ret);
+  vPN(Table) t = (struct PNTable *)potion_fwd(self);
+  unsigned k = kh_put(_PN, t->kh, key, &ret);
   kh_value(t->kh, k) = value;
   return self;
 }
 
 PN potion_table_remove(Potion *P, PN cl, PN self, PN key) {
   int ret;
-  vPN(Table) t = (struct PNTable *)self;
-  unsigned k = kh_put(_PN, P->mem, t->kh, key, &ret);
+  vPN(Table) t = (struct PNTable *)potion_fwd(self);
+  unsigned k = kh_put(_PN, t->kh, key, &ret);
 	if (!ret) kh_del(_PN, t->kh, k);
   return self;
 }
 
 PN potion_table_set(Potion *P, PN self, PN key, PN value) {
+  self = potion_fwd(self);
   return potion_table_put(P, PN_NIL, potion_table_cast(P, self), key, value);
 }
 
 PN potion_table_length(Potion *P, PN cl, PN self) {
+  self = potion_fwd(self);
   vPN(Table) t = (struct PNTable *)self;
   return PN_NUM(kh_size(t->kh));
 }
 
-#define NEW_TUPLE(t, size, ptr) \
-  vPN(Tuple) t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, 0); \
-  t->len = size; \
-  t->set = ptr
+#define NEW_TUPLE(t, size) \
+  vPN(Tuple) t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, max(size, 1) * sizeof(PN)); \
+  t->len = size
 
 PN potion_tuple_empty(Potion *P) {
-  NEW_TUPLE(t, 0, NULL);
-  return PN_SET_TUPLE(t);
+  NEW_TUPLE(t, 0);
+  return (PN)t;
 }
 
 PN potion_tuple_with_size(Potion *P, PN_SIZE size) {
-  NEW_TUPLE(t, size, PN_CALLOC_N(PN, size));
-  return PN_SET_TUPLE(t);
+  NEW_TUPLE(t, size);
+  return (PN)t;
 }
 
 PN potion_tuple_new(Potion *P, PN value) {
-  NEW_TUPLE(t, 1, PN_ALLOC_N(PN, 1));
+  NEW_TUPLE(t, 1);
   t->set[0] = value;
-  return PN_SET_TUPLE(t);
+  return (PN)t;
 }
 
 PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   vPN(Tuple) t = PN_GET_TUPLE(tuple);
-  if (t->set == NULL)
-    t->set = PN_ALLOC_N(PN, ++t->len);
-  else
-    PN_REALLOC_N(t->set, PN, ++t->len);
-  t->set[t->len-1] = value;
+  PN_REALLOC(t, struct PNTuple, PN, t->len + 1);
+  t->set[t->len] = value;
+  t->len++;
   return tuple;
 }
 
@@ -129,9 +131,9 @@ PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
 
 PN potion_tuple_clone(Potion *P, PN cl, PN self) {
   vPN(Tuple) t1 = PN_GET_TUPLE(self);
-  NEW_TUPLE(t2, t1->len, PN_ALLOC_N(PN, t1->len));
+  NEW_TUPLE(t2, t1->len);
   PN_MEMCPY_N(t2->set, t1->set, PN, t1->len);
-  return PN_SET_TUPLE(t2);
+  return (PN)t2;
 }
 
 PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {

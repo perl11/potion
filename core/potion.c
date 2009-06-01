@@ -13,6 +13,8 @@
 #include "potion.h"
 #include "internal.h"
 #include "opcodes.h"
+#include "khash.h"
+#include "table.h"
 
 const char potion_banner[] = "potion " POTION_VERSION
                              " (date='" POTION_DATE "', commit='" POTION_COMMIT
@@ -39,9 +41,9 @@ static void potion_cmd_usage() {
 
 static void potion_cmd_stats(void *sp) {
   Potion *P = potion_create(sp);
-  printf("sizeof(PN=%d, PNObject=%d, PNTuple=%d, PNTuple_PN=%d)\n",
-      (int)sizeof(PN), (int)sizeof(struct PNObject),
-      (int)sizeof(struct PNTuple), (int)(sizeof(PN) + sizeof(struct PNTuple)));
+  printf("sizeof(PN=%d, PNObject=%d, PNTuple=%d, PNTuple+1=%d, PNTable=%d)\n",
+      (int)sizeof(PN), (int)sizeof(struct PNObject), (int)sizeof(struct PNTuple),
+      (int)(sizeof(PN) + sizeof(struct PNTuple)), (int)(sizeof(struct PNTable) + sizeof(kh__PN_t)));
   printf("GC (fixed=%ld, actual=%ld, reserved=%ld)\n",
       PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
       PN_INT(potion_gc_reserved(P, 0, 0)));

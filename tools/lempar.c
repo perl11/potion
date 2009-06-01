@@ -144,6 +144,8 @@ static const YYCODETYPE yyFallback[] = {
 **      It is sometimes called the "minor" token.
 */
 struct yyStackEntry {
+  PN_OBJECT_HEADER
+  PN_SIZE len;
   YYACTIONTYPE stateno;  /* The state-number */
   YYCODETYPE major;      /* The major token value.  This is the code
                          ** number for the token at this stack level */
@@ -155,6 +157,8 @@ typedef struct yyStackEntry yyStackEntry;
 /* The state of the parser is completely contained in an instance of
 ** the following structure */
 struct yyParser {
+  PN_OBJECT_HEADER
+  PN_SIZE len;
   int yyidx;                    /* Index of top element in stack */
 #ifdef YYTRACKMAXSTACKDEPTH
   int yyidxMax;                 /* Maximum value of yyidx */
@@ -163,7 +167,7 @@ struct yyParser {
   ParseARG_SDECL                /* A place to hold %extra_argument */
 #if YYSTACKDEPTH<=0
   int yystksz;                  /* Current side of the stack */
-  yyStackEntry *yystack;        /* The parser's stack */
+  yyStackEntry * volatile yystack;        /* The parser's stack */
 #else
   yyStackEntry yystack[YYSTACKDEPTH];  /* The parser's stack */
 #endif
@@ -223,13 +227,15 @@ static const char *const yyRuleName[] = {
 /*
 ** Try to increase the size of the parser stack.
 */
-static void yyGrowStack(yyParser *p){
+static void yyGrowStack(yyParser * volatile p){
   int newSize;
-  yyStackEntry *pNew;
+  yyStackEntry * volatile pNew;
 
   newSize = p->yystksz*2 + 100;
   pNew = potion_gc_realloc(p->P->mem, p->yystack, newSize*sizeof(pNew[0]));
   if( pNew ){
+    pNew->vt = PN_TUSER;
+    pNew->len = PN_ALIGN(sizeof(yyStackEntry), 8) - sizeof(struct PNData);
     p->yystack = pNew;
     p->yystksz = newSize;
 #ifndef NDEBUG
@@ -252,12 +258,14 @@ static void yyGrowStack(yyParser *p){
 **
 ** Outputs:
 ** A pointer to a parser.  This pointer is used in subsequent calls
-** to Parse and ParseFree.
+** to Parse.
 */
 void *ParseAlloc(Potion *P){
-  yyParser *pParser;
-  pParser = (yyParser*)potion_gc_alloc(P->mem, (size_t)sizeof(yyParser));
+  yyParser * volatile pParser;
+  pParser = (yyParser *)potion_gc_alloc(P->mem, (size_t)sizeof(yyParser));
   if( pParser ){
+    pParser->vt = PN_TUSER;
+    pParser->len = PN_ALIGN(sizeof(yyParser), 8) - sizeof(struct PNData);
     pParser->P = P;
     pParser->yyidx = -1;
 #ifdef YYTRACKMAXSTACKDEPTH
@@ -278,7 +286,7 @@ void *ParseAlloc(Potion *P){
 ** the value.
 */
 static void yy_destructor(
-  yyParser *yypParser,    /* The parser */
+  yyParser * volatile yypParser,    /* The parser */
   YYCODETYPE yymajor,     /* Type code for object to destroy */
   YYMINORTYPE *yypminor   /* The object to be destroyed */
 ){
@@ -307,9 +315,9 @@ static void yy_destructor(
 **
 ** Return the major token number for the symbol popped.
 */
-static int yy_pop_parser_stack(yyParser *pParser){
+static int yy_pop_parser_stack(yyParser * volatile pParser){
   YYCODETYPE yymajor;
-  yyStackEntry *yytos = &pParser->yystack[pParser->yyidx];
+  yyStackEntry * volatile yytos = &pParser->yystack[pParser->yyidx];
 
   if( pParser->yyidx<0 ) return 0;
 #ifndef NDEBUG
@@ -325,37 +333,12 @@ static int yy_pop_parser_stack(yyParser *pParser){
   return yymajor;
 }
 
-/* 
-** Deallocate and destroy a parser.  Destructors are all called for
-** all stack elements before shutting the parser down.
-**
-** Inputs:
-** <ul>
-** <li>  A pointer to the parser.  This should be a pointer
-**       obtained from ParseAlloc.
-** <li>  A pointer to a function used to reclaim memory obtained
-**       from malloc.
-** </ul>
-*/
-void ParseFree(
-  void *p,                    /* The parser to be deleted */
-  void (*freeProc)(void*)     /* Function used to reclaim memory */
-){
-  yyParser *pParser = (yyParser*)p;
-  if( pParser==0 ) return;
-  while( pParser->yyidx>=0 ) yy_pop_parser_stack(pParser);
-#if YYSTACKDEPTH<=0
-  free(pParser->yystack);
-#endif
-  (*freeProc)((void*)pParser);
-}
-
 /*
 ** Return the peak depth of the stack for a parser.
 */
 #ifdef YYTRACKMAXSTACKDEPTH
 int ParseStackPeak(void *p){
-  yyParser *pParser = (yyParser*)p;
+  yyParser * volatile pParser = (yyParser*)p;
   return pParser->yyidxMax;
 }
 #endif
@@ -369,7 +352,7 @@ int ParseStackPeak(void *p){
 ** return YY_NO_ACTION.
 */
 static int yy_find_shift_action(
-  yyParser *pParser,        /* The parser */
+  yyParser * volatile pParser,        /* The parser */
   YYCODETYPE iLookAhead     /* The look-ahead token */
 ){
   int i;
@@ -454,7 +437,7 @@ static int yy_find_reduce_action(
 /*
 ** The following routine is called if the stack overflows.
 */
-static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
+static void yyStackOverflow(yyParser * volatile yypParser, YYMINORTYPE *yypMinor){
    ParseARG_FETCH;
    yypParser->yyidx--;
 #ifndef NDEBUG
@@ -473,12 +456,12 @@ static void yyStackOverflow(yyParser *yypParser, YYMINORTYPE *yypMinor){
 ** Perform a shift action.
 */
 static void yy_shift(
-  yyParser *yypParser,          /* The parser to be shifted */
+  yyParser * volatile yypParser,          /* The parser to be shifted */
   int yyNewState,               /* The new state to shift in */
   int yyMajor,                  /* The major token to shift in */
   YYMINORTYPE *yypMinor         /* Pointer to the minor token to shift in */
 ){
-  yyStackEntry *yytos;
+  yyStackEntry * volatile yytos;
   yypParser->yyidx++;
 #ifdef YYTRACKMAXSTACKDEPTH
   if( yypParser->yyidx>yypParser->yyidxMax ){
@@ -525,20 +508,20 @@ static const struct {
 %%
 };
 
-static void yy_accept(yyParser*);  /* Forward Declaration */
+static void yy_accept(yyParser * volatile);  /* Forward Declaration */
 
 /*
 ** Perform a reduce action and the shift that must immediately
 ** follow the reduce.
 */
 static void yy_reduce(
-  yyParser *yypParser,         /* The parser */
+  yyParser * volatile yypParser,  /* The parser */
   int yyruleno                 /* Number of the rule by which to reduce */
 ){
   int yygoto;                     /* The next state */
   int yyact;                      /* The next action */
   YYMINORTYPE yygotominor;        /* The LHS of the rule reduced */
-  yyStackEntry *yymsp;            /* The top of the parser's stack */
+  yyStackEntry * volatile yymsp;  /* The top of the parser's stack */
   int yysize;                     /* Amount to pop the stack */
   ParseARG_FETCH;
   yymsp = &yypParser->yystack[yypParser->yyidx];
@@ -610,7 +593,7 @@ static void yy_reduce(
 ** The following code executes when the parse fails
 */
 static void yy_parse_failed(
-  yyParser *yypParser           /* The parser */
+  yyParser * volatile yypParser  /* The parser */
 ){
   ParseARG_FETCH;
 #ifndef NDEBUG
@@ -629,7 +612,7 @@ static void yy_parse_failed(
 ** The following code executes when a syntax error first occurs.
 */
 static void yy_syntax_error(
-  yyParser *yypParser,           /* The parser */
+  yyParser * volatile yypParser, /* The parser */
   int yymajor,                   /* The major type of the error token */
   YYMINORTYPE yyminor            /* The minor type of the error token */
 ){
@@ -643,7 +626,7 @@ static void yy_syntax_error(
 ** The following is executed when the parser accepts
 */
 static void yy_accept(
-  yyParser *yypParser           /* The parser */
+  yyParser * volatile yypParser  /* The parser */
 ){
   ParseARG_FETCH;
 #ifndef NDEBUG
@@ -678,7 +661,7 @@ static void yy_accept(
 ** None.
 */
 void Parse(
-  void *yyp,                   /* The parser */
+  void * volatile yyp,         /* The parser */
   int yymajor,                 /* The major token code number */
   ParseTOKENTYPE yyminor       /* The value for the token */
   ParseARG_PDECL               /* Optional %extra_argument parameter */
@@ -689,7 +672,7 @@ void Parse(
 #ifdef YYERRORSYMBOL
   int yyerrorhit = 0;   /* True if yymajor has invoked an error */
 #endif
-  yyParser *yypParser;  /* The parser */
+  yyParser * volatile yypParser;  /* The parser */
 
   /* (re)initialize the parser, if necessary */
   yypParser = (yyParser*)yyp;

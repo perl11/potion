@@ -15,8 +15,7 @@ typedef unsigned char u8;
 #define PN_ALLOC_N(T,N)      (T *)potion_gc_alloc(P->mem, sizeof(T)*(N))
 #define PN_CALLOC(T,C)       (T *)potion_gc_calloc(P->mem, sizeof(T)+C)
 #define PN_CALLOC_N(T,N)     (T *)potion_gc_calloc(P->mem, sizeof(T)*N)
-#define PN_REALLOC(X,T)      (X)=(T *)potion_gc_realloc(P->mem, (char *)(X), sizeof(T))
-#define PN_REALLOC_N(X,T,N)  (X)=(T *)potion_gc_realloc(P->mem, (char *)(X), sizeof(T)*(N))
+#define PN_REALLOC(X,T,B,N)  (X)=(T *)potion_gc_realloc(P->mem, (struct PNObject *)(X), sizeof(T) + (sizeof(B)*(N)))
 
 #define PN_MEMZERO(X,T)      memset((X), 0, sizeof(T))
 #define PN_MEMZERO_N(X,T,N)  memset((X), 0, sizeof(T)*(N))
@@ -32,16 +31,21 @@ typedef unsigned char u8;
 #endif
 
 #define PN_FLEX_NEW(N, T, S) \
-  (N).ptr = PN_ALLOC_N(T, S); \
-  (N).capa = S; \
-  (N).len = 0
-#define PN_FLEX_NEEDS(X, N, T, S) \
-  if ((N).capa < (N).len + X) { \
-    while ((N).capa < (N).len + X) \
-      (N).capa += S; \
-    PN_REALLOC_N((N).ptr, T, (N).capa); \
+  (N) = (T *)potion_gc_alloc(P->mem, sizeof(T) + (sizeof(*(N)->ptr) * S)); \
+  (N)->vt = PN_TUSER; \
+  (N)->siz = sizeof(*(N)->ptr) * S; \
+  (N)->len = 0
+
+#define PN_FLEX_NEEDS(X, N, T, S) ({ \
+  PN_SIZE capa = (N)->siz / sizeof(*(N)->ptr); \
+  if (capa < (N)->len + X) { \
+    while (capa < (N)->len + X) \
+      capa += S; \
+    (N)->siz = sizeof(*(N)->ptr) * capa; \
+    (N) = (T *)potion_gc_realloc(P->mem, (struct PNObject *)(N), sizeof(T) + (N)->siz); \
   } \
-  (N).len += X
+  (N)->len += X; \
+})
 
 #define PN_ATOI(X,N) ({ \
   char *Ap = X; \

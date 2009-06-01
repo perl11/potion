@@ -5,10 +5,12 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 
-typedef struct PNJitAsm {
-  u8 * volatile ptr;
-  PN_SIZE len, capa;
-} PNAsm;
+//
+// PNAsm(vt = PN_TUSER, siz, ptr, len)
+//   -> PNFlex(vt = PN_TUSER, siz, ...)
+// overhead of 6 words on x86, but don't have to
+// do constant forwarding tricks.
+//
 
 typedef struct {
   size_t from;

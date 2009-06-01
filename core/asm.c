@@ -15,14 +15,14 @@
 #define ASM_UNIT 4096
 
 PNAsm *potion_asm_new(Potion *P) {
-  PNAsm * volatile asmb = PN_ALLOC(PNAsm);
-  PN_FLEX_NEW(*asmb, u8, ASM_UNIT);
+  int siz = ASM_UNIT - sizeof(PNAsm);
+  PNAsm * volatile asmb = PN_FLEX_NEW(asmb, PNAsm, siz);
   return asmb;
 }
 
 void potion_asm_put(Potion *P, PNAsm * volatile asmb, PN val, size_t len) {
   u8 *ptr = asmb->ptr + asmb->len;
-  PN_FLEX_NEEDS(len, *asmb, u8, ASM_UNIT);
+  PN_FLEX_NEEDS(len, asmb, PNAsm, ASM_UNIT);
 
   if (len == sizeof(u8))
     *ptr = (u8)val;

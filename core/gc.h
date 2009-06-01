@@ -52,18 +52,18 @@
 
 #define GC_FORWARD(p) do { \
   struct PNObject *_pnobj = *((struct PNObject **)p); \
-  if (_pnobj->vt == PN_NIL) { \
+  if (_pnobj->vt == PN_TNIL) { \
     *(p) = _pnobj->data[0]; \
   } else { \
     void *_pnad = potion_gc_copy(M, (const struct PNObject *)_pnobj); \
-    _pnobj->vt = 0; \
+    _pnobj->vt = PN_TNIL; \
     *(p) = _pnobj->data[0] = (_PN)_pnad; \
   } \
 }  while(0)
 
 #define GC_MINOR_UPDATE(p) do { \
   if (PN_IS_PTR(p)) { \
-    GC_FOLLOW_FORWARD(p); \
+    (p) = potion_fwd(p); \
     if (IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p)) \
       { GC_FORWARD(&(p)); } \
   } \
@@ -71,16 +71,11 @@
 
 #define GC_MAJOR_UPDATE(p) do { \
   if (PN_IS_PTR(p)) { \
-    GC_FOLLOW_FORWARD(p); \
+    (p) = potion_fwd(p); \
     if (!IS_GC_PROTECTED(p) && \
         (IN_BIRTH_REGION(p) || IN_OLDER_REGION(p))) \
       {GC_FORWARD((_PN *)&(p));} \
   } \
-} while(0)
-
-#define GC_FOLLOW_FORWARD(p) do { \
-  while ((PN)(p) > (PN)POTION_PAGESIZE && ((struct PNObject *)(p))->vt == 0) \
-    (p) = ((struct PNObject *)(p))->data[0]; \
 } while(0)
 
 PN_SIZE potion_stack_len(struct PNMemory *, _PN **);

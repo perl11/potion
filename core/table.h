@@ -18,7 +18,7 @@ KHASH_MAP_INIT_INT(id, _PN);
 
 struct PNTable {
   PN_OBJECT_HEADER
-  kh__PN_t * volatile kh;
+  kh__PN_t kh[0];
 };
 
 #endif

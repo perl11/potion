@@ -20,7 +20,7 @@ struct PNStrTable {
 unsigned potion_add_str(Potion *P, PN self, const char *str, PN id) {
   int ret;
   vPN(StrTable) t = (struct PNStrTable *)self;
-  unsigned k = kh_put(str, P->mem, t->kh, str, &ret);
+  unsigned k = kh_put(str, t->kh, str, &ret);
   if (!ret) kh_del(str, t->kh, k);
   kh_value(t->kh, k) = id;
   return k;
@@ -93,10 +93,6 @@ static PN potion_str_print(Potion *P, PN closure, PN self) {
   return PN_NIL;
 }
 
-static PN potion_str__link(Potion *P, PN closure, PN self, PN link) {
-  return link;
-}
-
 static size_t potion_utf8char_offset(const char *s, size_t index) {
   int i;
   for (i = 0; s[i]; i++)
@@ -149,21 +145,20 @@ PN potion_byte_str(Potion *P, const char *str) {
 }
 
 PN potion_bytes(Potion *P, size_t len) {
-  vPN(Bytes) s = PN_OBJ_ALLOC(struct PNBytes, PN_TBYTES, 0);
+  vPN(Bytes) s = PN_OBJ_ALLOC(struct PNBytes, PN_TBYTES, len + 1);
   s->len = (PN_SIZE)len;
-  s->chars = PN_ALLOC_N(char, len);
   return (PN)s;
 }
 
 PN_SIZE pn_printf(Potion *P, PN bytes, const char *format, ...) {
   PN_SIZE len;
   va_list args;
-  vPN(Bytes) s = (struct PNBytes *)bytes;
+  vPN(Bytes) s = (struct PNBytes *)potion_fwd(bytes);
 
   va_start(args, format);
   len = (PN_SIZE)vsnprintf(NULL, 0, format, args);
   va_end(args);
-  PN_REALLOC_N(s->chars, char, s->len + len + 1);
+  PN_REALLOC(s, struct PNBytes, char, s->len + len + 1);
 
   va_start(args, format);
   vsnprintf(s->chars + s->len, len + 1, format, args);
@@ -178,21 +173,29 @@ void potion_bytes_obj_string(Potion *P, PN bytes, PN obj) {
 }
 
 PN potion_bytes_append(Potion *P, PN closure, PN self, PN str) {
-  vPN(Bytes) s = (struct PNBytes *)self;
-  PN_SIZE len = PN_STR_LEN(str);
-  PN_REALLOC_N(s->chars, char, s->len + len + 1);
-  PN_MEMCPY_N(s->chars + s->len, PN_STR_PTR(str), char, len);
+  vPN(Bytes) s = (struct PNBytes *)potion_fwd(self);
+  PN fstr = potion_fwd(str);
+  PN_SIZE len = PN_STR_LEN(fstr);
+  PN_REALLOC(s, struct PNBytes, char, s->len + len + 1);
+  PN_MEMCPY_N(s->chars + s->len, PN_STR_PTR(fstr), char, len);
   s->len += len;
   s->chars[s->len] = '\0';
   return self;
 }
 
 static PN potion_bytes_length(Potion *P, PN closure, PN self) {
-  return PN_NUM(PN_STR_LEN(self));
+  PN str = potion_fwd(self);
+  return PN_NUM(PN_STR_LEN(str));
 }
 
-static PN potion_bytes__link(Potion *P, PN closure, PN self, PN link) {
-  return link;
+static PN potion_bytes_string(Potion *P, PN closure, PN self) {
+  return self;
+}
+
+static PN potion_bytes_print(Potion *P, PN closure, PN self) {
+  PN str = potion_fwd(self);
+  printf("%s", PN_STR_PTR(str));
+  return PN_NIL;
 }
 
 void potion_str_hash_init(Potion *P) {
@@ -211,11 +214,9 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "number", potion_str_number, 0);
   potion_method(str_vt, "print", potion_str_print, 0);
   potion_method(str_vt, "string", potion_str_string, 0);
-  potion_method(str_vt, "~link", potion_str__link, 0);
   potion_method(str_vt, "slice", potion_str_slice, "start=N,end=N");
   potion_method(byt_vt, "append", potion_bytes_append, 0);
   potion_method(byt_vt, "length", potion_bytes_length, 0);
-  potion_method(byt_vt, "print", potion_str_print, 0);
-  potion_method(byt_vt, "string", potion_str_string, 0);
-  potion_method(byt_vt, "~link", potion_bytes__link, 0);
+  potion_method(byt_vt, "print", potion_bytes_print, 0);
+  potion_method(byt_vt, "string", potion_bytes_string, 0);
 }

@@ -38,7 +38,6 @@ struct PNProto;
 struct PNTuple;
 struct PNWeakRef;
 struct PNMemory;
-struct PNJitAsm;
 
 #define PN_TNIL         0
 #define PN_TNUMBER      1
@@ -56,7 +55,8 @@ struct PNJitAsm;
 #define PN_TPROTO       13
 #define PN_TLOBBY       14
 #define PN_TTABLE       15
-#define PN_TUSER        16
+#define PN_TFLEX        16
+#define PN_TUSER        17
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -87,7 +87,7 @@ struct PNJitAsm;
 
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_TNUMBER))
 #define PN_INT(x)       (((long)(x))>>1)
-#define PN_STR_PTR(x)   potion_str_ptr((struct PNString *)(x))
+#define PN_STR_PTR(x)   potion_str_ptr(x)
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
 #define PN_CLOSURE(x)   ((struct PNClosure *)(x))
 #define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method
@@ -98,9 +98,9 @@ struct PNJitAsm;
 #define PN_DEREF(x)     PN_GET_REF(x)->data
 
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
-#define PN_FLEX(N, T)    struct { T * volatile ptr; PN_SIZE capa; PN_SIZE len; } N;
-#define PN_FLEX_AT(N, I) N.ptr[I]
-#define PN_FLEX_SIZE(N)  N.len
+#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER PN_SIZE siz; PN_SIZE len; T ptr[0]; } N;
+#define PN_FLEX_AT(N, I) (N)->ptr[I]
+#define PN_FLEX_SIZE(N)  (N)->len
 
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
 #define PN_TUP0()       potion_tuple_empty(P)
@@ -108,8 +108,7 @@ struct PNJitAsm;
 #define PN_PUSH(T, X)   potion_tuple_push(P, T, X)
 #define PN_GET(T, X)    potion_tuple_find(P, T, X)
 #define PN_PUT(T, X)    potion_tuple_push_unless(P, T, X)
-#define PN_SET_TUPLE(t) ((PN)t)
-#define PN_GET_TUPLE(t) ((struct PNTuple *)t)
+#define PN_GET_TUPLE(t) ((struct PNTuple *)potion_fwd(t))
 #define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
 #define PN_TUPLE_COUNT(T, I, B) ({ \
@@ -154,7 +153,7 @@ struct PNObject {
 //
 struct PNData {
   PN_OBJECT_HEADER
-  PN_SIZE len;
+  PN_SIZE siz;
   char data[0]; 
 };
 
@@ -173,11 +172,15 @@ struct PNString {
 //
 // byte strings are raw character data,
 // volatile, may be appended/changed.
+// (although this struct is identical
+// to PNString, they have deviated
+// periodically, so it's handy to have
+// them separate.)
 //
 struct PNBytes {
   PN_OBJECT_HEADER
   PN_SIZE len;
-  char * volatile chars;
+  char chars[0];
 };
 
 #define PN_PREC 8
@@ -199,7 +202,7 @@ struct PNDecimal {
 //
 struct PNFile {
   PN_OBJECT_HEADER
-  FILE *stream;
+  int fd;
   PN path;
   PN mode;
 };
@@ -251,7 +254,7 @@ struct PNProto {
 struct PNTuple {
   PN_OBJECT_HEADER
   PN_SIZE len;
-  PN * volatile set;
+  PN set[0];
 };
 
 //
@@ -268,31 +271,48 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
-  return PN_VTYPE(obj & PN_REF_MASK);
+  while (1) {
+    struct PNObject *o = (struct PNObject *)(obj & PN_REF_MASK);
+    if (o->vt != PN_TNIL)
+      return o->vt;
+    obj = o->data[0];
+  }
+}
+
+// resolve forwarding pointers for mutable types (PNTuple, PNBytes, etc.)
+static inline PN potion_fwd(PN obj) {
+  while (PN_IS_PTR(obj) && ((struct PNObject *)obj)->vt == 0)
+    obj = ((struct PNObject *)obj)->data[0];
+  return obj;
 }
 
 // quick access to either PNString or PNByte pointer
-static inline char *potion_str_ptr(struct PNString *s) {
-  return s->vt == PN_TBYTES ? ((struct PNBytes *)s)->chars :
-    s->chars;
+static inline char *potion_str_ptr(PN s) {
+  if (((struct PNString *)s)->vt == PN_TSTRING)
+    return ((struct PNString *)s)->chars;
+  s = potion_fwd(s);
+  return ((struct PNBytes *)s)->chars;
 }
+
+PN_FLEX(PNFlex, PN);
+PN_FLEX(PNAsm, unsigned char);
 
 //
 // the jit
 //
 #define OP_MAX 64
 
-typedef void (*OP_F)(Potion *P, struct PNJitAsm *, ...);
+typedef void (*OP_F)(Potion *P, PNAsm *, ...);
 
 typedef struct {
-  void (*setup)    (Potion *P, struct PNJitAsm *);
-  void (*stack)    (Potion *P, struct PNJitAsm *, long);
-  void (*registers)(Potion *P, struct PNJitAsm *, long);
-  void (*local)    (Potion *P, struct PNJitAsm *, long, long);
-  void (*upvals)   (Potion *P, struct PNJitAsm *, long, int);
-  void (*jmpedit)  (Potion *P, struct PNJitAsm *, unsigned char *, int);
+  void (*setup)    (Potion *P, PNAsm *);
+  void (*stack)    (Potion *P, PNAsm *, long);
+  void (*registers)(Potion *P, PNAsm *, long);
+  void (*local)    (Potion *P, PNAsm *, long, long);
+  void (*upvals)   (Potion *P, PNAsm *, long, int);
+  void (*jmpedit)  (Potion *P, PNAsm *, unsigned char *, int);
   OP_F op[OP_MAX];
-  void (*finish)   (Potion *P, struct PNJitAsm *);
+  void (*finish)   (Potion *P, PNAsm *);
 } PNTarget;
 
 //
@@ -305,7 +325,7 @@ struct Potion_State {
   PN strings; /* table of all strings */
   unsigned int next_string_id;
   PN lobby; /* root namespace */
-  PN_FLEX(vts, PN); /* built in types */
+  PNFlex * volatile vts; /* built in types */
   PN source; /* temporary ast node */
   PN unclosed; /* used by parser for named block endings */
   int dast; /* parsing depth */
@@ -333,11 +353,13 @@ struct PNMemory {
   PN __##x = 0x571FF; void *x = (void *)&__##x
 
 void potion_garbagecollect(struct PNMemory *, int, int);
+PN_SIZE potion_type_size(const struct PNObject *);
 
 // quick inline allocation
 static inline void *potion_gc_alloc(struct PNMemory *M, int siz) {
   volatile void *res = 0;
   siz = PN_ALIGN(siz, 8); // force 64-bit alignment
+  if (siz < sizeof(PN) * 2) siz = sizeof(PN) * 2;
   if (M->dirty || (char *)M->birth_cur + siz >= (char *)M->birth_storeptr - 2)
     potion_garbagecollect(M, siz + 4 * sizeof(double), 0);
   res = M->birth_cur;
@@ -351,16 +373,31 @@ static inline void *potion_gc_calloc(struct PNMemory *M, int siz) {
   return res;
 }
 
-static inline void *potion_gc_realloc(struct PNMemory *M, volatile void *ptr, int siz) {
-  void *res = potion_gc_alloc(M, siz);
-  if (ptr != NULL) memcpy(res, (void *)ptr, siz);
-  return res;
+static inline void *potion_gc_realloc(struct PNMemory *M, struct PNObject * volatile obj, PN_SIZE sz) {
+  void *dst;
+  PN_SIZE oldsz = 0;
+
+  if (obj != NULL) {
+    oldsz = potion_type_size((const struct PNObject *)obj);
+    if (oldsz >= sz)
+      return (void *)obj;
+  }
+
+  dst = potion_gc_alloc(M, sz);
+  if (obj != NULL) {
+    memcpy(dst, (void *)obj, oldsz);
+    obj->vt = PN_TNIL;
+    obj->data[0] = (PN)dst;
+    obj->data[1] = oldsz;
+  }
+
+  return dst;
 }
 
 static inline PN potion_data_alloc(struct PNMemory *M, int siz) {
   struct PNData *data = potion_gc_alloc(M, sizeof(struct PNData) + siz);
   data->vt = PN_TUSER;
-  data->len = siz;
+  data->siz = siz;
   return (PN)data;
 }
 
