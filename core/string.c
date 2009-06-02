@@ -37,7 +37,7 @@ PN potion_str(Potion *P, const char *str) {
   PN val = potion_lookup_str(P->strings, str);
   if (!val) {
     size_t len = strlen(str);
-    vPN(String) s = PN_BOOT_OBJ_ALLOC(struct PNString, PN_TSTRING, len + 1);
+    vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
     s->len = (unsigned int)len;
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
@@ -145,7 +145,7 @@ PN potion_byte_str(Potion *P, const char *str) {
 }
 
 PN potion_bytes(Potion *P, size_t len) {
-  vPN(Bytes) s = PN_OBJ_ALLOC(struct PNBytes, PN_TBYTES, len + 1);
+  vPN(Bytes) s = PN_ALLOC_N(PN_TBYTES, struct PNBytes, len + 1);
   s->len = (PN_SIZE)len;
   return (PN)s;
 }
@@ -158,7 +158,7 @@ PN_SIZE pn_printf(Potion *P, PN bytes, const char *format, ...) {
   va_start(args, format);
   len = (PN_SIZE)vsnprintf(NULL, 0, format, args);
   va_end(args);
-  PN_REALLOC(s, struct PNBytes, char, s->len + len + 1);
+  PN_REALLOC(s, PN_TBYTES, struct PNBytes, s->len + len + 1);
 
   va_start(args, format);
   vsnprintf(s->chars + s->len, len + 1, format, args);
@@ -176,7 +176,7 @@ PN potion_bytes_append(Potion *P, PN closure, PN self, PN str) {
   vPN(Bytes) s = (struct PNBytes *)potion_fwd(self);
   PN fstr = potion_fwd(str);
   PN_SIZE len = PN_STR_LEN(fstr);
-  PN_REALLOC(s, struct PNBytes, char, s->len + len + 1);
+  PN_REALLOC(s, PN_TBYTES, struct PNBytes, s->len + len + 1);
   PN_MEMCPY_N(s->chars + s->len, PN_STR_PTR(fstr), char, len);
   s->len += len;
   s->chars[s->len] = '\0';
@@ -199,8 +199,7 @@ static PN potion_bytes_print(Potion *P, PN closure, PN self) {
 }
 
 void potion_str_hash_init(Potion *P) {
-  vPN(StrTable) t = PN_CALLOC(struct PNStrTable, sizeof(kh_str_t));
-  t->vt = PN_TTABLE;
+  vPN(StrTable) t = PN_CALLOC_N(PN_TTABLE, struct PNStrTable, sizeof(kh_str_t));
   P->strings = (PN)t;
   P->next_string_id = 0;
 }

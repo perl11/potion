@@ -136,11 +136,11 @@ void potion_ppc_loadk(Potion *P, PNAsm *asmb, PN_OP *op, PN values) {
 void potion_ppc_self(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
 }
 
-void potion_ppc_getlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
+void potion_ppc_getlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN protos) {
   PPC3(32, REG(op->a), 30, RBP(op->b)); // lwz rA,-B(rsp)
 }
 
-void potion_ppc_setlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
+void potion_ppc_setlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN protos) {
   PPC3(36, REG(op->a), 30, RBP(op->b)); // stw rA,-B(rsp)
 }
 
@@ -283,7 +283,7 @@ void potion_ppc_return(Potion *P, PNAsm *asmb, PN_OP *op) {
   ASMI(0x4e800020); // blr
 }
 
-void potion_ppc_method(Potion *P, PNAsm *asmb, PN_OP **pos, PN_F *jit_protos, PN protos, long lregs, long start, long regs) {
+void potion_ppc_method(Potion *P, PNAsm *asmb, PN_OP **pos, PN protos, long lregs, long start, long regs) {
 }
 
 void potion_ppc_finish(Potion *P, PNAsm *asmb) {

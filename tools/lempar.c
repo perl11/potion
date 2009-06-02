@@ -230,9 +230,10 @@ static const char *const yyRuleName[] = {
 static void yyGrowStack(yyParser * volatile p){
   int newSize;
   yyStackEntry * volatile pNew;
+  Potion *P = p->P;
 
   newSize = p->yystksz*2 + 100;
-  pNew = potion_gc_realloc(p->P->mem, p->yystack, newSize*sizeof(pNew[0]));
+  pNew = potion_gc_realloc(p->P->mem, PN_TUSER, p->yystack, newSize*sizeof(pNew[0]));
   if( pNew ){
     pNew->vt = PN_TUSER;
     pNew->len = PN_ALIGN(sizeof(yyStackEntry), 8) - sizeof(struct PNData);
@@ -262,9 +263,8 @@ static void yyGrowStack(yyParser * volatile p){
 */
 void *ParseAlloc(Potion *P){
   yyParser * volatile pParser;
-  pParser = (yyParser *)potion_gc_alloc(P->mem, (size_t)sizeof(yyParser));
+  pParser = PN_ALLOC(PN_TUSER, yyParser);
   if( pParser ){
-    pParser->vt = PN_TUSER;
     pParser->len = PN_ALIGN(sizeof(yyParser), 8) - sizeof(struct PNData);
     pParser->P = P;
     pParser->yyidx = -1;

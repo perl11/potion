@@ -26,17 +26,17 @@ void gc_test_start(CuTest *T) {
 // not be moved to the old generation. data in the `forward` test will be copied.
 //
 void gc_test_alloc1(CuTest *T) {
-  PN ptr = (PN)potion_gc_alloc(M, 16);
+  PN ptr = (PN)potion_gc_alloc(M, PN_TUSER, 16);
   PN_SIZE count = potion_mark_stack(M, 0);
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr));
   CuAssertIntEquals(T, "only one allocation should be found", count, 1);
 }
 
 void gc_test_alloc4(CuTest *T) {
-  PN ptr = (PN)potion_gc_alloc(M, 16);
-  PN ptr2 = (PN)potion_gc_alloc(M, 16);
-  PN ptr3 = (PN)potion_gc_alloc(M, 16);
-  PN ptr4 = (PN)potion_gc_alloc(M, 16);
+  PN ptr = (PN)potion_gc_alloc(M, PN_TUSER, 16);
+  PN ptr2 = (PN)potion_gc_alloc(M, PN_TUSER, 16);
+  PN ptr3 = (PN)potion_gc_alloc(M, PN_TUSER, 16);
+  PN ptr4 = (PN)potion_gc_alloc(M, PN_TUSER, 16);
   PN_SIZE count = potion_mark_stack(M, 0);
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr));
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr2));

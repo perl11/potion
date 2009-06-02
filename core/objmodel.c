@@ -17,20 +17,9 @@
 typedef PN (*PN_MCACHE_FUNC)(unsigned int hash);
 #endif
 
-struct PNVtable {
-  PN_OBJECT_HEADER
-  PNType type;
-  PN parent;
-  PN_F func;
-#ifdef JIT_MCACHE
-  PN_MCACHE_FUNC mcache;
-#endif
-  kh_id_t kh[0];
-};
-
 PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   PN_SIZE i;
-  vPN(Closure) c = PN_BOOT_OBJ_ALLOC(struct PNClosure, PN_TCLOSURE, extra * sizeof(PN));
+  vPN(Closure) c = PN_ALLOC_N(PN_TCLOSURE, struct PNClosure, extra * sizeof(PN));
   c->method = meth;
   c->sig = sig;
   c->extra = extra;
@@ -43,16 +32,8 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   return potion_byte_str(P, "#<closure>");
 }
 
-PN potion_allocate(Potion *P, PN closure, PN self, PN len) {
-  vPN(Object) o = PN_ALLOC2(struct PNObject, PN_INT(len));
-  vPN(Vtable) vt = (struct PNVtable *)self;
-  o->vt = vt->type;
-  return (PN)o;
-}
-
 PN potion_type_new(Potion *P, PNType t, PN self) {
-  vPN(Vtable) vt = PN_CALLOC(struct PNVtable, sizeof(kh_id_t));
-  vt->vt = PN_TVTABLE;
+  vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, sizeof(kh_id_t));
   vt->type = t;
   vt->parent = self;
   vt->func = NULL;
@@ -169,7 +150,7 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
 
 PN potion_ref(Potion *P, PN data) {
   if (PN_IS_REF(data)) return data;
-  vPN(WeakRef) ref = PN_BOOT_OBJ_ALLOC(struct PNWeakRef, PN_TWEAK, 0);
+  vPN(WeakRef) ref = PN_ALLOC(PN_TWEAK, struct PNWeakRef);
   ref->data = data;
   return PN_SET_REF(ref);
 }

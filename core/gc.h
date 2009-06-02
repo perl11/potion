@@ -24,7 +24,7 @@
 
 #define SET_GEN(t, p, s) \
   M->t##_lo = p; \
-  M->t##_cur = p + 2 * sizeof(void *); \
+  M->t##_cur = p; \
   M->t##_hi = p + (s);
 
 #define SET_STOREPTR(n) \

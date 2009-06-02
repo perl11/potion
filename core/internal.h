@@ -10,12 +10,11 @@ struct Potion_State;
 
 typedef unsigned char u8;
 
-#define PN_ALLOC(T)          (T *)potion_gc_alloc(P->mem, sizeof(T))
-#define PN_ALLOC2(T,C)       (T *)potion_gc_alloc(P->mem, sizeof(T)+C)
-#define PN_ALLOC_N(T,N)      (T *)potion_gc_alloc(P->mem, sizeof(T)*(N))
-#define PN_CALLOC(T,C)       (T *)potion_gc_calloc(P->mem, sizeof(T)+C)
-#define PN_CALLOC_N(T,N)     (T *)potion_gc_calloc(P->mem, sizeof(T)*N)
-#define PN_REALLOC(X,T,B,N)  (X)=(T *)potion_gc_realloc(P->mem, (struct PNObject *)(X), sizeof(T) + (sizeof(B)*(N)))
+#define PN_ALLOC(V,T)        (T *)potion_gc_alloc(P->mem, V, sizeof(T))
+#define PN_ALLOC_N(V,T,C)    (T *)potion_gc_alloc(P->mem, V, sizeof(T)+C)
+#define PN_CALLOC_N(V,T,C)   (T *)potion_gc_calloc(P->mem, V, sizeof(T)+C)
+#define PN_REALLOC(X,V,T,N)  (X)=(T *)potion_gc_realloc(P->mem, V, (struct PNObject *)(X), sizeof(T) + N)
+#define PN_DALLOC_N(T,N)     (T *)potion_data_alloc(P->mem, sizeof(T)*N)
 
 #define PN_MEMZERO(X,T)      memset((X), 0, sizeof(T))
 #define PN_MEMZERO_N(X,T,N)  memset((X), 0, sizeof(T)*(N))
@@ -31,8 +30,7 @@ typedef unsigned char u8;
 #endif
 
 #define PN_FLEX_NEW(N, T, S) \
-  (N) = (T *)potion_gc_alloc(P->mem, sizeof(T) + (sizeof(*(N)->ptr) * S)); \
-  (N)->vt = PN_TUSER; \
+  (N) = PN_ALLOC_N(PN_TFLEX, T, (sizeof(*(N)->ptr) * S)); \
   (N)->siz = sizeof(*(N)->ptr) * S; \
   (N)->len = 0
 
@@ -42,7 +40,7 @@ typedef unsigned char u8;
     while (capa < (N)->len + X) \
       capa += S; \
     (N)->siz = sizeof(*(N)->ptr) * capa; \
-    (N) = (T *)potion_gc_realloc(P->mem, (struct PNObject *)(N), sizeof(T) + (N)->siz); \
+    PN_REALLOC(N, PN_TFLEX, T, (N)->siz); \
   } \
   (N)->len += X; \
 })

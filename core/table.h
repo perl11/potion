@@ -16,6 +16,17 @@ KHASH_MAP_INIT_INT64(_PN, _PN);
 KHASH_MAP_INIT_STR(str, _PN);
 KHASH_MAP_INIT_INT(id, _PN);
 
+struct PNVtable {
+  PN_OBJECT_HEADER
+  PNType type;
+  PN parent;
+  PN_F func;
+#ifdef JIT_MCACHE
+  PN_MCACHE_FUNC mcache;
+#endif
+  kh_id_t kh[0];
+};
+
 struct PNTable {
   PN_OBJECT_HEADER
   kh__PN_t kh[0];

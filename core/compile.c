@@ -529,7 +529,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
     default: return PN_NIL; // TODO: error
   }
 
-  f = PN_OBJ_ALLOC(struct PNProto, PN_TPROTO, 0);
+  f = PN_ALLOC(PN_TPROTO, struct PNProto);
   f->source = source;
   f->stack = PN_NUM(1);
   f->protos = PN_TUP0();
@@ -557,7 +557,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
     if (PN_IS_PTR(val)) { \
       if (val & 2) { \
         size_t len = ((val ^ 2) >> 4) - 1; \
-        vPN(Decimal) n = PN_OBJ_ALLOC(struct PNDecimal, PN_TNUMBER, sizeof(PN) * len); \
+        vPN(Decimal) n = PN_ALLOC_N(PN_TNUMBER, struct PNDecimal, sizeof(PN) * len); \
         n->len = len; n->sign = READ_U8(ptr); \
         PN_MEMCPY_N(n->digits, ptr, PN, len); \
         val = (PN)n; \
@@ -586,7 +586,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
 
 PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   PN len = 0;
-  vPN(Proto) f = PN_OBJ_ALLOC(struct PNProto, PN_TPROTO, 0);
+  vPN(Proto) f = PN_ALLOC(PN_TPROTO, struct PNProto);
   f->source = READ_CONST(pn, *ptr);
   if (f->source == PN_NIL) f->source = up; 
   f->sig = READ_VALUES(pn, *ptr);

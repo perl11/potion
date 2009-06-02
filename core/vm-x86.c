@@ -195,10 +195,10 @@ void potion_x86_self(Potion *P, PNAsm *asmb, PN_OP *op, long start) {
   X86_MOV_RBP(0x89, op->a);
 }
 
-void potion_x86_getlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
+void potion_x86_getlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN protos) {
   // TODO: optimize to do the ref check only if there are upvals
   X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
-  if (jit_protos != NULL) {
+  if (PN_TUPLE_LEN(protos) > 0) {
     // TODO: optimize to use %rdx rather than jmp
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
     ASM(0x83); ASM(0xF8); ASM(PN_TWEAK); // cmp WEAK %eax
@@ -212,9 +212,9 @@ void potion_x86_getlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN_F *jit
   X86_MOV_RBP(0x89, op->a);
 }
 
-void potion_x86_setlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN_F *jit_protos) {
+void potion_x86_setlocal(Potion *P, PNAsm *asmb, PN_OP *op, long regs, PN protos) {
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op->a)); /*  mov -A(%rbp) %edx */
-  if (jit_protos != NULL) {
+  if (PN_TUPLE_LEN(protos) > 0) {
     // TODO: optimize to use %rdx rather than jmp
     X86_MOV_RBP(0x8B, regs + op->b); // mov %rsp(B) %rax
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
@@ -483,15 +483,14 @@ void potion_x86_return(Potion *P, PNAsm *asmb, PN_OP *op) {
   ASM(0xC9); ASM(0xC3); /* leave; ret */
 }
 
-void potion_x86_method(Potion *P, PNAsm *asmb, PN_OP **pos, PN_F *jit_protos, PN protos, long lregs, long start, long regs) {
+void potion_x86_method(Potion *P, PNAsm *asmb, PN_OP **pos, PN protos, long lregs, long start, long regs) {
   vPN(Closure) cl;
   PN_OP *op = *pos;
-  PN func2 = (PN)jit_protos[op->b];
   PN proto = PN_TUPLE_AT(protos, op->b);
   cl = (struct PNClosure *)potion_closure_new(P, NULL, PN_NIL,
     PN_TUPLE_LEN(PN_PROTO(proto)->upvals));
   // func2 = &potion_x86_debug;
-  cl->method = (PN_F)func2;
+  cl->method = PN_PROTO(proto)->jit;
   X86_MOVL(op->a, cl);
   PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
     op = *pos = *pos + 1;

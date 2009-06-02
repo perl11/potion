@@ -30,7 +30,7 @@ PN potion_table_cast(Potion *P, PN self) {
   if (PN_IS_TUPLE(self)) {
     int ret; unsigned k;
     // TODO: if tuple is large enough, swap in-place
-    vPN(Table) t = PN_OBJ_ALLOC(struct PNTable, PN_TTABLE, sizeof(kh__PN_t));
+    vPN(Table) t = PN_ALLOC_N(PN_TTABLE, struct PNTable, sizeof(kh__PN_t));
     PN_MEMZERO(t, struct PNTable);
     t->vt = PN_TTABLE;
     PN_TUPLE_EACH(self, i, v, {
@@ -80,7 +80,7 @@ PN potion_table_length(Potion *P, PN cl, PN self) {
 }
 
 #define NEW_TUPLE(t, size) \
-  vPN(Tuple) t = PN_OBJ_ALLOC(struct PNTuple, PN_TTUPLE, max(size, 1) * sizeof(PN)); \
+  vPN(Tuple) t = PN_ALLOC_N(PN_TTUPLE, struct PNTuple, max(size, 1) * sizeof(PN)); \
   t->len = size
 
 PN potion_tuple_empty(Potion *P) {
@@ -101,7 +101,7 @@ PN potion_tuple_new(Potion *P, PN value) {
 
 PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   vPN(Tuple) t = PN_GET_TUPLE(tuple);
-  PN_REALLOC(t, struct PNTuple, PN, t->len + 1);
+  PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len + 1));
   t->set[t->len] = value;
   t->len++;
   return tuple;

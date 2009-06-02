@@ -232,12 +232,15 @@ PN_SIZE potion_type_size(const struct PNObject *ptr) {
     // TODO: look up class fields and copy full object length
     // case PN_TOBJECT:
     // return sizeof(struct PNObject);
+    case PN_TVTABLE:
+      sz = sizeof(struct PNVtable) + sizeof(kh_id_t);
+    break;
     case PN_TSOURCE:
     // TODO: look up ast size (see core/pn-ast.c)
       sz = sizeof(struct PNSource) + (3 * sizeof(PN));
     break;
     case PN_TBYTES:
-      sz = sizeof(struct PNBytes) + ((struct PNBytes *)potion_fwd((PN)ptr))->len + 1;
+      sz = sizeof(struct PNBytes) + ((struct PNBytes *)ptr)->len + 1;
     break;
     case PN_TPROTO:
       sz = sizeof(struct PNProto);
@@ -299,6 +302,11 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
     // TODO: look up class fields and copy full object length
     case PN_TOBJECT:
       sz = sizeof(struct PNObject);
+    break;
+    // TODO: rehash vtable
+    case PN_TVTABLE: {
+      sz = sizeof(struct PNVtable) + sizeof(kh_id_t);
+    }
     break;
     case PN_TSOURCE:
     // TODO: look up ast size (see core/pn-ast.c)
@@ -390,6 +398,11 @@ void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
     // TODO: look up class fields and copy full object length
     case PN_TOBJECT:
       sz = sizeof(struct PNObject);
+    break;
+    // TODO: rehash vtable
+    case PN_TVTABLE: {
+      sz = sizeof(struct PNVtable) + sizeof(kh_id_t);
+    }
     break;
     case PN_TSOURCE:
     // TODO: look up ast size (see core/pn-ast.c)

@@ -43,7 +43,7 @@ static PN potion_num_string(Potion *P, PN closure, PN self) {
     str = potion_byte_str(P, ints);
   } else {
     vPN(Decimal) n = (struct PNDecimal *)self;
-    char *ints = PN_ALLOC_N(char, n->len + 2);
+    char ints[n->len + 2];
     int i, prec;
     for (prec = 1; prec < PN_PREC; prec++)
       if (n->digits[n->len - prec] != 0)
@@ -63,7 +63,7 @@ static PN potion_num_string(Potion *P, PN closure, PN self) {
 
 PN potion_decimal(Potion *P, int len, int intg, char *str) {
   int i, rlen = intg + PN_PREC;
-  vPN(Decimal) n = PN_OBJ_ALLOC(struct PNDecimal, PN_TNUMBER, sizeof(PN) * rlen);
+  vPN(Decimal) n = PN_ALLOC_N(PN_TNUMBER, struct PNDecimal, sizeof(PN) * rlen);
 
   n->sign = (str[0] == '-');
   n->len = rlen;

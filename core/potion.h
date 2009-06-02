@@ -132,11 +132,6 @@ struct PNMemory;
 #define PN_OBJECT_HEADER \
   PNType vt;
 
-#define PN_BOOT_OBJ_ALLOC(S, T, L) \
-  ((S *)potion_allocate(P, 0, PN_VTABLE(T), PN_NUM((sizeof(S)-sizeof(struct PNObject))+(L))))
-#define PN_OBJ_ALLOC(S, T, L) \
-  ((S *)potion_send(PN_VTABLE(T), PN_allocate, PN_NUM((sizeof(S)-sizeof(struct PNObject))+(L))))
-
 //
 // standard objects act like C structs
 // the fields are defined by the type
@@ -245,6 +240,7 @@ struct PNProto {
   PN protos; // nested closures
   PN_SIZE localsize, upvalsize;
   PN asmb;   // assembled instructions
+  PN_F jit;  // jit function pointer
 };
 
 //
@@ -356,24 +352,24 @@ void potion_garbagecollect(struct PNMemory *, int, int);
 PN_SIZE potion_type_size(const struct PNObject *);
 
 // quick inline allocation
-static inline void *potion_gc_alloc(struct PNMemory *M, int siz) {
-  volatile void *res = 0;
+static inline void *potion_gc_alloc(struct PNMemory *M, PNType vt, int siz) {
+  struct PNObject *res = 0;
   siz = PN_ALIGN(siz, 8); // force 64-bit alignment
   if (siz < sizeof(PN) * 2) siz = sizeof(PN) * 2;
   if (M->dirty || (char *)M->birth_cur + siz >= (char *)M->birth_storeptr - 2)
     potion_garbagecollect(M, siz + 4 * sizeof(double), 0);
-  res = M->birth_cur;
+  res = (struct PNObject *)M->birth_cur;
+  res->vt = vt;
   M->birth_cur = (char *)res + siz;
   return (void *)res;
 }
 
-static inline void *potion_gc_calloc(struct PNMemory *M, int siz) {
-  void *res = potion_gc_alloc(M, siz);
-  memset(res, 0, siz);
-  return res;
+// TODO: mmap already inits to zero?
+static inline void *potion_gc_calloc(struct PNMemory *M, PNType vt, int siz) {
+  return potion_gc_alloc(M, vt, siz);
 }
 
-static inline void *potion_gc_realloc(struct PNMemory *M, struct PNObject * volatile obj, PN_SIZE sz) {
+static inline void *potion_gc_realloc(struct PNMemory *M, PNType vt, struct PNObject * volatile obj, PN_SIZE sz) {
   void *dst;
   PN_SIZE oldsz = 0;
 
@@ -383,7 +379,7 @@ static inline void *potion_gc_realloc(struct PNMemory *M, struct PNObject * vola
       return (void *)obj;
   }
 
-  dst = potion_gc_alloc(M, sz);
+  dst = potion_gc_alloc(M, vt, sz);
   if (obj != NULL) {
     memcpy(dst, (void *)obj, oldsz);
     obj->vt = PN_TNIL;
@@ -395,17 +391,9 @@ static inline void *potion_gc_realloc(struct PNMemory *M, struct PNObject * vola
 }
 
 static inline PN potion_data_alloc(struct PNMemory *M, int siz) {
-  struct PNData *data = potion_gc_alloc(M, sizeof(struct PNData) + siz);
-  data->vt = PN_TUSER;
+  struct PNData *data = potion_gc_alloc(M, PN_TUSER, sizeof(struct PNData) + siz);
   data->siz = siz;
   return (PN)data;
-}
-
-static inline char *potion_strdup(Potion *P, char *str) {
-  int len = strlen(str) + 1;
-  char *str2 = potion_gc_alloc(P->mem, len);
-  memcpy(str2, str, len);
-  return str2;
 }
 
 static inline void potion_gc_update(struct PNMemory *M, PN x) {
@@ -472,7 +460,6 @@ PN potion_bytes(Potion *, size_t);
 PN_SIZE pn_printf(Potion *, PN, const char *, ...);
 void potion_bytes_obj_string(Potion *, PN, PN);
 PN potion_bytes_append(Potion *, PN, PN, PN);
-PN potion_allocate(Potion *, PN, PN, PN);
 void potion_release(Potion *, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);

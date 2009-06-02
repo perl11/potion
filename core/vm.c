@@ -38,7 +38,6 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   int upc = PN_TUPLE_LEN(f->upvals);
   PNAsm * volatile asmb = potion_asm_new(P);
   u8 *fn;
-  PN_F * volatile jit_protos = NULL;
   PNTarget *target = &P->targets[target_id];
   target->setup(P, asmb);
 
@@ -46,7 +45,6 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
 
   if (PN_TUPLE_LEN(f->protos) > 0) {
-    jit_protos = PN_ALLOC_N(PN_F, PN_TUPLE_LEN(f->protos));
     PN_TUPLE_EACH(f->protos, i, proto2, {
       int p2args = 3;
       vPN(Proto) f2 = (struct PNProto *)proto2;
@@ -56,7 +54,8 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
           if (PN_IS_STR(v)) p2args++;
         });
       }
-      jit_protos[i] = potion_jit_proto(P, proto2, target_id);
+      if (f2->jit == NULL)
+        potion_jit_proto(P, proto2, target_id);
       if (p2args > protoargs)
         protoargs = p2args;
     });
@@ -100,8 +99,8 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(LOADPN, (P, asmb, pos)) 
       CASE_OP(LOADK, (P, asmb, pos, f->values))
       CASE_OP(SELF, (P, asmb, pos, need))
-      CASE_OP(GETLOCAL, (P, asmb, pos, regs, jit_protos))
-      CASE_OP(SETLOCAL, (P, asmb, pos, regs, jit_protos))
+      CASE_OP(GETLOCAL, (P, asmb, pos, regs, f->protos))
+      CASE_OP(SETLOCAL, (P, asmb, pos, regs, f->protos))
       CASE_OP(GETUPVAL, (P, asmb, pos, lregs))
       CASE_OP(SETUPVAL, (P, asmb, pos, lregs))
       CASE_OP(NEWTUPLE, (P, asmb, pos, need))
@@ -130,7 +129,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(NOTJMP, (P, asmb, pos, start, jmps, offs, &jmpc))
       CASE_OP(CALL, (P, asmb, pos, need))
       CASE_OP(RETURN, (P, asmb, pos))
-      CASE_OP(PROTO, (P, asmb, &pos, jit_protos, f->protos, lregs, need, regs))
+      CASE_OP(PROTO, (P, asmb, &pos, f->protos, lregs, need, regs))
     }
     pos++;
   }
@@ -149,14 +148,14 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
 #endif
   PN_MEMCPY_N(fn, asmb->ptr, u8, asmb->len);
 
-  return (PN_F)fn;
+  return f->jit = (PN_F)fn;
 }
 
 PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN * volatile upargs) {
   vPN(Proto) f = (struct PNProto *)proto;
 
   // these variables persist as we jump around
-  PN volatile * volatile stack = PN_ALLOC_N(PN, STACK_MAX);
+  PN stack[STACK_MAX];
   PN val = PN_NIL;
   PN self = P->lobby;
 
