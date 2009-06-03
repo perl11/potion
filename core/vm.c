@@ -161,12 +161,11 @@ PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN * volatile upargs) {
 
   // these variables change from proto to proto
   // current = upvals | locals | self | reg
-  PN_OP *pos, *end;
+  PN_SIZE pos = 0;
   long argx = 0;
   PN * volatile args = NULL, * volatile upvals, * volatile locals, * volatile reg;
   PN * volatile current = stack;
 
-  pos = ((PN_OP *)PN_STR_PTR(f->asmb));
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
 reentry:
   // TODO: place the stack in P, allow it to allocate as needed
@@ -179,7 +178,7 @@ reentry:
   locals = upvals + f->upvalsize;
   reg = locals + f->localsize + 1;
 
-  if (pos == (PN_OP *)PN_STR_PTR(f->asmb)) {
+  if (pos == 0) {
     reg[-1] = reg[0] = self;
     if (upc > 0 && upargs != NULL) {
       PN_SIZE i;
@@ -199,166 +198,170 @@ reentry:
     }
   }
 
-  end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
-  while (pos < end) {
-    switch (pos->code) {
+  while (pos < PN_OP_LEN(f->asmb)) {
+    PN_OP op = PN_OP_AT(f->asmb, pos);
+    switch (op.code) {
       case OP_MOVE:
-        reg[pos->a] = reg[pos->b];
+        reg[op.a] = reg[op.b];
       break;
       case OP_LOADK:
-        reg[pos->a] = PN_TUPLE_AT(f->values, pos->b);
+        reg[op.a] = PN_TUPLE_AT(f->values, op.b);
       break;
       case OP_LOADPN:
-        reg[pos->a] = (PN)pos->b;
+        reg[op.a] = (PN)op.b;
       break;
       case OP_SELF:
-        reg[pos->a] = reg[-1];
+        reg[op.a] = reg[-1];
       break;
       case OP_GETLOCAL:
-        if (PN_IS_REF(locals[pos->b]))
-          reg[pos->a] = PN_DEREF(locals[pos->b]);
+        if (PN_IS_REF(locals[op.b]))
+          reg[op.a] = PN_DEREF(locals[op.b]);
         else
-          reg[pos->a] = locals[pos->b];
+          reg[op.a] = locals[op.b];
       break;
       case OP_SETLOCAL:
-        if (PN_IS_REF(locals[pos->b]))
-          PN_DEREF(locals[pos->b]) = reg[pos->a];
+        if (PN_IS_REF(locals[op.b]))
+          PN_DEREF(locals[op.b]) = reg[op.a];
         else
-          locals[pos->b] = reg[pos->a];
+          locals[op.b] = reg[op.a];
       break;
       case OP_GETUPVAL:
-        reg[pos->a] = PN_DEREF(upvals[pos->b]);
+        reg[op.a] = PN_DEREF(upvals[op.b]);
       break;
       case OP_SETUPVAL:
-        PN_DEREF(upvals[pos->b]) = reg[pos->a];
+        PN_DEREF(upvals[op.b]) = reg[op.a];
       break;
       case OP_NEWTUPLE:
-        reg[pos->a] = PN_TUP0();
+        reg[op.a] = PN_TUP0();
       break;
       case OP_SETTUPLE:
-        reg[pos->a] = PN_PUSH(reg[pos->a], reg[pos->b]);
+        reg[op.a] = PN_PUSH(reg[op.a], reg[op.b]);
       break;
       case OP_SETTABLE:
-        potion_table_set(P, reg[pos->a], reg[pos->b], reg[pos->a+1]);
+        potion_table_set(P, reg[op.a], reg[op.b], reg[op.a+1]);
       break;
       case OP_ADD:
-        reg[pos->a] = reg[pos->a] + (reg[pos->b]-1);
+        reg[op.a] = reg[op.a] + (reg[op.b]-1);
       break;
       case OP_SUB:
-        reg[pos->a] = reg[pos->a] - (reg[pos->b]-1);
+        reg[op.a] = reg[op.a] - (reg[op.b]-1);
       break;
       case OP_MULT:
-        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) * PN_INT(reg[pos->b]));
+        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) * PN_INT(reg[op.b]));
       break;
       case OP_DIV:
-        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) / PN_INT(reg[pos->b]));
+        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) / PN_INT(reg[op.b]));
       break;
       case OP_REM:
-        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) % PN_INT(reg[pos->b]));
+        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) % PN_INT(reg[op.b]));
       break;
       case OP_POW:
-        reg[pos->a] = PN_NUM((int)pow((double)PN_INT(reg[pos->a]),
-          (double)PN_INT(reg[pos->b])));
+        reg[op.a] = PN_NUM((int)pow((double)PN_INT(reg[op.a]),
+          (double)PN_INT(reg[op.b])));
       break;
       case OP_NOT:
-        reg[pos->a] = PN_BOOL(!PN_TEST(reg[pos->a]));
+        reg[op.a] = PN_BOOL(!PN_TEST(reg[op.a]));
       break;
       case OP_CMP:
-        reg[pos->a] = PN_NUM(PN_INT(reg[pos->b]) - PN_INT(reg[pos->a]));
+        reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a]));
       break;
       case OP_NEQ:
-        reg[pos->a] = PN_BOOL(reg[pos->a] != reg[pos->b]);
+        reg[op.a] = PN_BOOL(reg[op.a] != reg[op.b]);
       break;
       case OP_EQ:
-        reg[pos->a] = PN_BOOL(reg[pos->a] == reg[pos->b]);
+        reg[op.a] = PN_BOOL(reg[op.a] == reg[op.b]);
       break;
       case OP_LT:
-        reg[pos->a] = PN_BOOL((long)(reg[pos->a]) < (long)(reg[pos->b]));
+        reg[op.a] = PN_BOOL((long)(reg[op.a]) < (long)(reg[op.b]));
       break;
       case OP_LTE:
-        reg[pos->a] = PN_BOOL((long)(reg[pos->a]) <= (long)(reg[pos->b]));
+        reg[op.a] = PN_BOOL((long)(reg[op.a]) <= (long)(reg[op.b]));
       break;
       case OP_GT:
-        reg[pos->a] = PN_BOOL((long)(reg[pos->a]) > (long)(reg[pos->b]));
+        reg[op.a] = PN_BOOL((long)(reg[op.a]) > (long)(reg[op.b]));
       break;
       case OP_GTE:
-        reg[pos->a] = PN_BOOL((long)(reg[pos->a]) >= (long)(reg[pos->b]));
+        reg[op.a] = PN_BOOL((long)(reg[op.a]) >= (long)(reg[op.b]));
       break;
       case OP_BITL:
-        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) << PN_INT(reg[pos->b]));
+        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) << PN_INT(reg[op.b]));
       break;
       case OP_BITR:
-        reg[pos->a] = PN_NUM(PN_INT(reg[pos->a]) >> PN_INT(reg[pos->b]));
+        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) >> PN_INT(reg[op.b]));
       break;
       case OP_BIND:
-        reg[pos->a] = potion_bind(P, reg[pos->b], reg[pos->a]);
+        reg[op.a] = potion_bind(P, reg[op.b], reg[op.a]);
       break;
       case OP_JMP:
-        pos += pos->a;
+        pos += op.a;
       break;
       case OP_TEST:
-        reg[pos->a] = PN_BOOL(PN_TEST(reg[pos->a]));
+        reg[op.a] = PN_BOOL(PN_TEST(reg[op.a]));
       break;
       case OP_TESTJMP:
-        if (PN_TEST(reg[pos->a])) pos += pos->b;
+        if (PN_TEST(reg[op.a])) pos += op.b;
       break;
       case OP_NOTJMP:
-        if (!PN_TEST(reg[pos->a])) pos += pos->b;
+        if (!PN_TEST(reg[op.a])) pos += op.b;
       break;
       case OP_CALL:
-        switch (PN_TYPE(reg[pos->b])) {
+        switch (PN_TYPE(reg[op.b])) {
           case PN_TCLOSURE:
-            if (PN_CLOSURE(reg[pos->b])->method != (PN_F)potion_vm_proto) {
-              reg[pos->a] = potion_call(P, reg[pos->b], pos->b - pos->a, reg + pos->a);
+            if (PN_CLOSURE(reg[op.b])->method != (PN_F)potion_vm_proto) {
+              reg[op.a] = potion_call(P, reg[op.b], op.b - op.a, reg + op.a);
             } else {
-              self = reg[pos->a];
-              args = &reg[pos->a+1];
-              upc = PN_CLOSURE(reg[pos->b])->extra - 1;
-              upargs = &PN_CLOSURE(reg[pos->b])->data[1];
+              self = reg[op.a];
+              args = &reg[op.a+1];
+              upc = PN_CLOSURE(reg[op.b])->extra - 1;
+              upargs = &PN_CLOSURE(reg[op.b])->data[1];
               current = reg + PN_INT(f->stack) + 2;
               current[-2] = (PN)f;
               current[-1] = (PN)pos;
 
-              f = PN_PROTO(PN_CLOSURE(reg[pos->b])->data[0]);
-              pos = ((PN_OP *)PN_STR_PTR(f->asmb));
+              f = PN_PROTO(PN_CLOSURE(reg[op.b])->data[0]);
+              pos = 0;
               goto reentry;
             }
           break;
           
           default:
-            reg[pos->a] = potion_obj_call(P, reg[pos->b], 1, reg[pos->a+1]);
+            reg[op.a] = potion_obj_call(P, reg[op.b], 1, reg[op.a+1]);
           break;
         }
       break;
       case OP_RETURN:
         if (current != stack) {
-          val = reg[pos->a];
+          val = reg[op.a];
 
           f = PN_PROTO(current[-2]);
-          pos = (PN_OP *)current[-1];
+          pos = (PN_SIZE)current[-1];
+          op = PN_OP_AT(f->asmb, pos);
+
           reg = current - (PN_INT(f->stack) + 2);
           current = reg - (f->localsize + f->upvalsize + 1);
-          reg[pos->a] = val;
+          reg[op.a] = val;
           pos++;
           goto reentry;
         } else {
-          reg[0] = reg[pos->a];
+          reg[0] = reg[op.a];
           goto done;
         }
       break;
       case OP_PROTO: {
         vPN(Closure) cl;
-        unsigned areg = pos->a;
-        proto = PN_TUPLE_AT(f->protos, pos->b);
+        unsigned areg = op.a;
+        proto = PN_TUPLE_AT(f->protos, op.b);
         cl = (struct PNClosure *)potion_closure_new(P, (PN_F)potion_vm_proto, PN_NIL,
           PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
         cl->data[0] = proto;
         PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
           pos++;
-          if (pos->code == OP_GETUPVAL) {
-            cl->data[i+1] = upvals[pos->b];
-          } else if (pos->code == OP_GETLOCAL) {
-            cl->data[i+1] = locals[pos->b] = (PN)potion_ref(P, locals[pos->b]);
+          op = PN_OP_AT(f->asmb, pos);
+
+          if (op.code == OP_GETUPVAL) {
+            cl->data[i+1] = upvals[op.b];
+          } else if (op.code == OP_GETLOCAL) {
+            cl->data[i+1] = locals[op.b] = (PN)potion_ref(P, locals[op.b]);
           } else {
             fprintf(stderr, "** missing an upval to proto %p\n", (void *)proto);
           }
