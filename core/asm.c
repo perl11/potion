@@ -12,17 +12,16 @@
 #include "opcodes.h"
 #include "asm.h"
 
-#define ASM_UNIT 4096
-
 PNAsm *potion_asm_new(Potion *P) {
   int siz = ASM_UNIT - sizeof(PNAsm);
   PNAsm * volatile asmb = PN_FLEX_NEW(asmb, PNAsm, siz);
   return asmb;
 }
 
-void potion_asm_put(Potion *P, PNAsm * volatile asmb, PN val, size_t len) {
-  u8 *ptr = asmb->ptr + asmb->len;
+PNAsm *potion_asm_put(Potion *P, PNAsm * volatile asmb, PN val, size_t len) {
+  u8 *ptr;
   PN_FLEX_NEEDS(len, asmb, PNAsm, ASM_UNIT);
+  ptr = asmb->ptr + asmb->len;
 
   if (len == sizeof(u8))
     *ptr = (u8)val;
@@ -30,4 +29,20 @@ void potion_asm_put(Potion *P, PNAsm * volatile asmb, PN val, size_t len) {
     *((int *)ptr) = (int)val;
   else if (len == sizeof(PN))
     *((PN *)ptr) = val;
+
+  asmb->len += len;
+  return asmb;
+}
+
+PNAsm *potion_asm_op(Potion *P, PNAsm * volatile asmb, u8 ins, int _a, int _b) {
+  PN_OP *pos;
+  PN_FLEX_NEEDS(sizeof(PN_OP), asmb, PNAsm, ASM_UNIT);
+  pos = (PN_OP *)(asmb->ptr + asmb->len);
+
+  pos->code = ins;
+  pos->a    = _a;
+  pos->b    = _b;
+
+  asmb->len += sizeof(PN_OP);
+  return asmb;
 }

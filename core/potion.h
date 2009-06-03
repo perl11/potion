@@ -99,8 +99,8 @@ struct PNMemory;
 
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
 #define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER PN_SIZE siz; PN_SIZE len; T ptr[0]; } N;
-#define PN_FLEX_AT(N, I) (N)->ptr[I]
-#define PN_FLEX_SIZE(N)  (N)->len
+#define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
+#define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
 
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
 #define PN_TUP0()       potion_tuple_empty(P)

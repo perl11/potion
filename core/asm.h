@@ -11,6 +11,10 @@
 // overhead of 6 words on x86, but don't have to
 // do constant forwarding tricks.
 //
+#ifndef POTION_ASM_H
+#define POTION_ASM_H
+
+#define ASM_UNIT 512
 
 typedef struct {
   size_t from;
@@ -69,10 +73,13 @@ typedef struct {
     .finish = potion_##arch##_finish \
   }
 
-#define ASM(ins) potion_asm_put(P, asmb, (PN)ins, sizeof(u8))
-#define ASM2(pn) potion_asm_put(P, asmb, (PN)(pn), 2)
-#define ASMI(pn) potion_asm_put(P, asmb, (PN)(pn), sizeof(int))
-#define ASMN(pn) potion_asm_put(P, asmb, (PN)pn, sizeof(PN))
+#define ASM(ins) asmb = potion_asm_put(P, asmb, (PN)ins, sizeof(u8))
+#define ASM2(pn) asmb = potion_asm_put(P, asmb, (PN)(pn), 2)
+#define ASMI(pn) asmb = potion_asm_put(P, asmb, (PN)(pn), sizeof(int))
+#define ASMN(pn) asmb = potion_asm_put(P, asmb, (PN)pn, sizeof(PN))
 
 PNAsm *potion_asm_new(Potion *);
-void potion_asm_put(Potion *, PNAsm *, PN, size_t);
+PNAsm *potion_asm_put(Potion *, PNAsm *, PN, size_t);
+PNAsm *potion_asm_op(Potion *, PNAsm *, u8, int, int);
+
+#endif

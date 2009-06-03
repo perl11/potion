@@ -42,7 +42,6 @@ typedef unsigned char u8;
     (N)->siz = sizeof(*(N)->ptr) * capa; \
     PN_REALLOC(N, PN_TFLEX, T, (N)->siz); \
   } \
-  (N)->len += X; \
 })
 
 #define PN_ATOI(X,N) ({ \

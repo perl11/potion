@@ -106,12 +106,7 @@ void potion_test_eval(CuTest *T) {
 void potion_test_allocated(CuTest *T) {
   void *scanptr = (void *)((char *)P->mem->birth_lo + sizeof(struct PNMemory));
   while ((PN)scanptr < (PN)P->mem->birth_cur) {
-    // printf("TYPE: %lu\n", ((struct PNObject *)scanptr)->vt);
     CuAssert(T, "wrong type for allocated object", ((struct PNObject *)scanptr)->vt <= PN_TUSER);
-    // if (((struct PNObject *)scanptr)->vt == PN_TSTRING) {
-    //   printf("STRING: %s\n", ((struct PNString *)scanptr)->chars);
-    // }
-    // printf("SIZE: %u (%p < %p)\n", potion_type_size(scanptr), scanptr, P->mem->birth_cur);
     scanptr = (void *)((char *)scanptr + potion_type_size(scanptr));
     CuAssert(T, "allocated object goes beyond GC pointer", (PN)scanptr <= (PN)P->mem->birth_cur);
   }

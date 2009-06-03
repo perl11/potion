@@ -17,6 +17,9 @@ typedef struct {
 
 #pragma pack(pop)
 
+#define PN_OP_AT(asmb, n) ((PN_OP *)((PNFlex *)asmb)->ptr)[n]
+#define PN_OP_LEN(asmb)   (PN_FLEX_SIZE(asmb) / sizeof(PN_OP))
+
 enum PN_OPCODE {
   OP_NONE,
   OP_MOVE,

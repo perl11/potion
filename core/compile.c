@@ -11,19 +11,10 @@
 #include "internal.h"
 #include "pn-ast.h"
 #include "opcodes.h"
+#include "asm.h"
 
-#define PN_ASM1(ins, _a) ({ \
-    (*pos)->code = (u8)ins; \
-    (*pos)->a    = (int)_a; \
-    (*pos)++; \
-  })
-
-#define PN_ASM2(ins, _a, _b) ({ \
-    (*pos)->code = (u8)ins; \
-    (*pos)->a    = (int)_a; \
-    (*pos)->b    = (int)_b; \
-    (*pos)++; \
-  })
+#define PN_ASM1(ins, _a)     f->asmb = (PN)potion_asm_op(P, (PNAsm *)f->asmb, (u8)ins, (int)_a, 0)
+#define PN_ASM2(ins, _a, _b) f->asmb = (PN)potion_asm_op(P, (PNAsm *)f->asmb, (u8)ins, (int)_a, (int)_b)
 
 const struct {
   const char *name;
@@ -49,9 +40,8 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   int x = 0;
   PN_SIZE num = 1;
   PN_SIZE numcols;
-  PN_OP *pos, *end;
   PN out = potion_byte_str(P, "; function definition");
-  pn_printf(P, out, ": %p ; %u bytes\n", t, PN_STR_LEN(t->asmb));
+  pn_printf(P, out, ": %p ; %u bytes\n", t, PN_FLEX_SIZE(t->asmb));
   pn_printf(P, out, "; (");
   PN_TUPLE_EACH(t->sig, i, v, {
     if (PN_IS_NUM(v)) {
@@ -83,15 +73,14 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   PN_TUPLE_EACH(t->protos, i, v, {
     potion_bytes_obj_string(P, out, v);
   });
-  pos = (PN_OP *)PN_STR_PTR(t->asmb);
-  end = (PN_OP *)(PN_STR_PTR(t->asmb) + PN_STR_LEN(t->asmb));
-  numcols = (int)ceil(log10(end - pos));
-  while (pos < end) {
+  numcols = (int)ceil(log10(PN_FLEX_SIZE(t->asmb) / sizeof(PN_OP)));
+  for (x = 0; x < PN_FLEX_SIZE(t->asmb) / sizeof(PN_OP); x++) {
     const int commentoffset = 20;
-    int width = pn_printf(P, out, "[%*u] %-8s %d", numcols, num, potion_ops[pos->code].name, pos->a);
+    int width = pn_printf(P, out, "[%*u] %-8s %d",
+      numcols, num, potion_ops[PN_OP_AT(t->asmb, x).code].name, PN_OP_AT(t->asmb, x).a);
 
-    if (potion_ops[pos->code].args > 1)
-      width += pn_printf(P, out, " %d", pos->b);
+    if (potion_ops[PN_OP_AT(t->asmb, x).code].args > 1)
+      width += pn_printf(P, out, " %d", PN_OP_AT(t->asmb, x).b);
 
     if (width < commentoffset)
       pn_printf(P, out, "%*s", commentoffset - width, "");
@@ -99,30 +88,30 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
       pn_printf(P, out, " ");
 
     // TODO: Byte code listing: instead of using tabs, pad with spaces to make everything line up
-    switch (pos->code) {
+    switch (PN_OP_AT(t->asmb, x).code) {
       case OP_JMP:
-        pn_printf(P, out, "; to %d", num + pos->a + 1);
+        pn_printf(P, out, "; to %d", num + PN_OP_AT(t->asmb, x).a + 1);
         break;
       case OP_NOTJMP:
       case OP_TESTJMP:
-        pn_printf(P, out, "; to %d", num + pos->b + 1);
+        pn_printf(P, out, "; to %d", num + PN_OP_AT(t->asmb, x).b + 1);
         break;
       case OP_LOADPN:
         pn_printf(P, out, "; ");
-        potion_bytes_obj_string(P, out, pos->b);
+        potion_bytes_obj_string(P, out, PN_OP_AT(t->asmb, x).b);
         break;
       case OP_LOADK:
         pn_printf(P, out, "; ");
-        potion_bytes_obj_string(P, out, PN_TUPLE_AT(t->values, pos->b));
+        potion_bytes_obj_string(P, out, PN_TUPLE_AT(t->values, PN_OP_AT(t->asmb, x).b));
         break;
       case OP_SETLOCAL:
       case OP_GETLOCAL:
         pn_printf(P, out, "; ");
-        potion_bytes_obj_string(P, out, PN_TUPLE_AT(t->locals, pos->b));
+        potion_bytes_obj_string(P, out, PN_TUPLE_AT(t->locals, PN_OP_AT(t->asmb, x).b));
         break;
     }
     pn_printf(P, out, "\n");
-    pos++; num++;
+    num++;
   }
   pn_printf(P, out, "; function end\n");
   return out;
@@ -136,10 +125,10 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
     PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n], 0), 0), 0); \
     if (!PN_IS_NIL(test)) { \
       PN_TUPLE_EACH(test, i, v, { \
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg, pos); }); \
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg); }); \
     } \
   } else { \
-    potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[n], reg, pos); \
+    potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[n], reg); \
   }
 #define PN_BLOCK(reg, blk, sig) ({ \
   PN block = potion_send(blk, PN_compile, (PN)f, sig); \
@@ -179,15 +168,15 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
 
 #define MAX_JUMPS 1024
 struct PNLoop {
-  PN_OP *bjmps[MAX_JUMPS];
-  PN_OP *cjmps[MAX_JUMPS];
+  int bjmps[MAX_JUMPS];
+  int cjmps[MAX_JUMPS];
 
   int bjmpc;
   int cjmpc;
 };
 
 void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE count,
-                        vPN(Source) t, u8 reg, PN_OP **pos) {
+                        vPN(Source) t, u8 reg) {
   PN_REG(f, reg);
 
   switch (t->part) {
@@ -195,7 +184,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
     case AST_BLOCK:
     case AST_EXPR:
       PN_TUPLE_EACH(t->a[0], i, v, {
-        potion_source_asmb(P, f, loop, i, (struct PNSource *)v, reg, pos);
+        potion_source_asmb(P, f, loop, i, (struct PNSource *)v, reg);
       });
     break;
 
@@ -203,14 +192,15 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
       PN_BLOCK(reg, t->a[1], t->a[0]);
     break;
 
-    case AST_VALUE:
-      (*pos)->a = (int)t->a[0];
-      if (!PN_IS_PTR(t->a[0]) && t->a[0] == (*pos)->a) {
+    case AST_VALUE: {
+      PN_OP op; op.a = t->a[0];
+      if (!PN_IS_PTR(t->a[0]) && t->a[0] == (PN)op.a) {
         PN_ASM2(OP_LOADPN, reg, t->a[0]);
       } else {
         PN_SIZE num = PN_PUT(f->values, t->a[0]);
         PN_ASM2(OP_LOADK, reg, num);
       }
+    }
     break;
 
     case AST_ASSIGN: {
@@ -233,7 +223,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
         opcode = OP_SETPATH;
       }
 
-      potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], reg, pos);
+      potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], reg);
 
       if (opcode == OP_SETUPVAL) {
         if (lhs->part == AST_QUERY) {
@@ -312,15 +302,15 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
     break;
 
     case AST_AND: case AST_OR: {
-      PN_OP *jmp;
+      int jmp;
       PN_ARG(0, reg);
-      jmp = *pos;
+      jmp = PN_OP_LEN(f->asmb);
       if (t->part == AST_AND)
         PN_ASM2(OP_NOTJMP, reg, 0);
       else
         PN_ASM2(OP_TESTJMP, reg, 0);
       PN_ARG(1, reg);
-      jmp->b = (*pos - jmp) - 1;
+      PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
     }
     break;
 
@@ -331,10 +321,10 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
       test = PN_S(args, 0); \
       if (!PN_IS_NIL(test)) { \
         PN_TUPLE_EACH(test, i, v, { \
-          potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg1, pos); }); \
+          potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg1); }); \
       } \
     } else { \
-      potion_source_asmb(P, f, loop, 0, (struct PNSource *)test, reg2, pos); \
+      potion_source_asmb(P, f, loop, 0, (struct PNSource *)test, reg2); \
     } \
   } else \
     PN_ASM2(OP_LOADPN, reg1, args)
@@ -346,60 +336,60 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
       int arg = (t->a[1] != PN_NIL);
       int call = (t->a[2] != PN_NIL || arg);
       if (t->a[0] == PN_if) {
-        PN_OP *jmp; breg++;
+        int jmp; breg++;
         PN_ARG_TABLE(t->a[1], breg, breg);
-        jmp = *pos;
+        jmp = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg, pos);
-        jmp->b = (*pos - jmp) - 1;
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg);
+        PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
       } else if (t->a[0] == PN_elsif) {
-        PN_OP *jmp1 = *pos, *jmp2; breg++;
+        int jmp1 = PN_OP_LEN(f->asmb), jmp2; breg++;
         PN_ASM2(OP_TESTJMP, breg, 0);
         PN_ARG_TABLE(t->a[1], breg, breg);
-        jmp2 = *pos;
+        jmp2 = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg, pos);
-        jmp1->b = (*pos - jmp1) - 1;
-        jmp2->b = (*pos - jmp2) - 1;
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg);
+        PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
+        PN_OP_AT(f->asmb, jmp2).b = (PN_OP_LEN(f->asmb) - jmp2) - 1;
       } else if (t->a[0] == PN_else) {
-        PN_OP *jmp = *pos; breg++;
+        int jmp = PN_OP_LEN(f->asmb); breg++;
         PN_ASM2(OP_TESTJMP, breg, 0);
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg, pos);
-        jmp->b = (*pos - jmp) - 1;
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg);
+        PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
       } else if (t->a[0] == PN_loop) {
-        PN_OP *jmp = *pos; breg++;
+        int jmp = PN_OP_LEN(f->asmb); breg++;
         PN_ARG_TABLE(t->a[1], breg, breg);
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg, pos);
-        PN_ASM1(OP_JMP, (jmp - *pos) - 1);
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg);
+        PN_ASM1(OP_JMP, (jmp - PN_OP_LEN(f->asmb)) - 1);
       } else if (t->a[0] == PN_while) {
-        PN_OP *jmp1, *jmp2 = *pos; breg++;
+        int jmp1, jmp2 = PN_OP_LEN(f->asmb); breg++;
         struct PNLoop l; l.bjmpc = 0; l.cjmpc = 0;
         int i;
         PN_ARG_TABLE(t->a[1], breg, breg);
-        jmp1 = *pos;
+        jmp1 = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
-        potion_source_asmb(P, f, &l, 0, (struct PNSource *)t->a[2], reg, pos);
-        PN_ASM1(OP_JMP, (jmp2 - *pos) - 1);
-        jmp1->b = (*pos - jmp1) - 1;
+        potion_source_asmb(P, f, &l, 0, (struct PNSource *)t->a[2], reg);
+        PN_ASM1(OP_JMP, (jmp2 - PN_OP_LEN(f->asmb)) - 1);
+        PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
         for (i = 0; i < l.bjmpc; i++) {
-          l.bjmps[i]->a = (*pos - l.bjmps[i]) - 1;
+          PN_OP_AT(f->asmb, l.bjmps[i]).a = (PN_OP_LEN(f->asmb) - l.bjmps[i]) - 1;
         }
         for (i = 0; i < l.cjmpc; i++) {
-          l.cjmps[i]->a = (jmp2 - l.cjmps[i]) - 1;
+          PN_OP_AT(f->asmb, l.cjmps[i]).a = (jmp2 - l.cjmps[i]) - 1;
         }
       } else if (t->a[0] == PN_return) {
         PN_ARG_TABLE(t->a[1], reg, reg);
         PN_ASM1(OP_RETURN, reg);
       } else if (t->a[0] == PN_break) {
         if (loop != NULL) {
-          loop->bjmps[loop->bjmpc++] = *pos;
+          loop->bjmps[loop->bjmpc++] = PN_OP_LEN(f->asmb);
           PN_ASM1(OP_JMP, 0);
         } else {
           // TODO: Report error: 'break' outside of loop.
         }
       } else if (t->a[0] == PN_continue) {
         if (loop != NULL) {
-          loop->cjmps[loop->cjmpc++] = *pos;
+          loop->cjmps[loop->cjmpc++] = PN_OP_LEN(f->asmb);
           PN_ASM1(OP_JMP, 0);
         } else {
           // TODO: Report error: 'continue' outside of loop.
@@ -463,7 +453,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
       PN_TUPLE_EACH(t->a[0], i, v, {
         if (PN_PART(v) == AST_ASSIGN) {
           vPN(Source) lhs = (struct PNSource *)PN_S(v, 0);
-          potion_source_asmb(P, f, loop, i, (struct PNSource *)PN_S(v, 1), reg + 1, pos);
+          potion_source_asmb(P, f, loop, i, (struct PNSource *)PN_S(v, 1), reg + 1);
           if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
           {
             lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
@@ -475,12 +465,12 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           }
 
           if (lhs != NULL)
-            potion_source_asmb(P, f, loop, 0, (struct PNSource *)lhs, reg + 2, pos);
+            potion_source_asmb(P, f, loop, 0, (struct PNSource *)lhs, reg + 2);
 
           PN_ASM2(OP_SETTABLE, reg, reg + 2);
           PN_REG(f, reg + 2);
         } else {
-          potion_source_asmb(P, f, loop, i, (struct PNSource *)v, reg + 1, pos);
+          potion_source_asmb(P, f, loop, i, (struct PNSource *)v, reg + 1);
           PN_ASM2(OP_SETTUPLE, reg, reg + 1);
           PN_REG(f, reg + 1);
         }
@@ -521,8 +511,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   vPN(Proto) f;
   vPN(Source) t = (struct PNSource *)self;
-  char *start;
-  PN_OP **pos, *ptr;
+
   switch (t->part) {
     case AST_CODE:
     case AST_BLOCK: break;
@@ -537,14 +526,11 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   f->upvals = PN_TUP0();
   f->values = PN_TUP0();
   f->sig = (sig == PN_NIL ? PN_TUP0() : potion_sig_compile(P, f, sig));
-  f->asmb = potion_bytes(P, 8192);
+  f->asmb = (PN)potion_asm_new(P);
 
-  ptr = (PN_OP *)(start = PN_STR_PTR(f->asmb));
-  pos = &ptr;
-  potion_source_asmb(P, f, NULL, 0, t, 0, pos);
+  potion_source_asmb(P, f, NULL, 0, t, 0);
   PN_ASM1(OP_RETURN, 0);
-  // TODO: byte strings should be more flexible than this
-  PN_STR_LEN(f->asmb) = (char *)ptr - start;
+
   f->localsize = PN_TUPLE_LEN(f->locals);
   f->upvalsize = PN_TUPLE_LEN(f->upvals);
   return (PN)f;
@@ -586,6 +572,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
 
 PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   PN len = 0;
+  PNAsm * volatile asmb = NULL;
   vPN(Proto) f = PN_ALLOC(PN_TPROTO, struct PNProto);
   f->source = READ_CONST(pn, *ptr);
   if (f->source == PN_NIL) f->source = up; 
@@ -596,8 +583,9 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   f->upvals = READ_VALUES(pn, *ptr);
   f->protos = READ_PROTOS(pn, *ptr);
   len = READ_PN(pn, *ptr);
-  f->asmb = potion_bytes(P, len);
-  PN_MEMCPY_N(PN_STR_PTR(f->asmb), *ptr, u8, len);
+  PN_FLEX_NEW(asmb, PNAsm, len);
+  PN_MEMCPY_N(asmb->ptr, *ptr, u8, len);
+  f->asmb = (PN)asmb;
   f->localsize = PN_TUPLE_LEN(f->locals);
   f->upvalsize = PN_TUPLE_LEN(f->upvals);
   *ptr += len;
@@ -659,9 +647,9 @@ long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
   WRITE_VALUES(f->locals, ptr);
   WRITE_VALUES(f->upvals, ptr);
   WRITE_PROTOS(f->protos, ptr);
-  WRITE_PN(PN_STR_LEN(f->asmb), ptr);
-  PN_MEMCPY_N(ptr, PN_STR_PTR(f->asmb), u8, PN_STR_LEN(f->asmb));
-  ptr += PN_STR_LEN(f->asmb);
+  WRITE_PN(PN_FLEX_SIZE(f->asmb), ptr);
+  PN_MEMCPY_N(ptr, ((PNFlex *)f->asmb)->ptr, u8, PN_FLEX_SIZE(f->asmb));
+  ptr += PN_FLEX_SIZE(f->asmb);
   return (char *)ptr - start;
 }
 
