@@ -73,6 +73,16 @@ typedef struct {
     .finish = potion_##arch##_finish \
   }
 
+#define PN_HAS_UPVALS(v) \
+  int v = 0; \
+  if (PN_TUPLE_LEN(f->protos) > 0) { \
+    PN_TUPLE_EACH(f->protos, i, proto2, { \
+      if (PN_TUPLE_LEN(PN_PROTO(proto2)->upvals) > 0) { \
+        v = 1; \
+      } \
+    }); \
+  }
+  
 #define ASM(ins) *asmp = potion_asm_put(P, *asmp, (PN)ins, sizeof(u8))
 #define ASM2(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), 2)
 #define ASMI(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), sizeof(int))

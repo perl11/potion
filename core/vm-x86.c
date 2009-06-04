@@ -201,9 +201,10 @@ void potion_x86_self(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 
 void potion_x86_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
+  PN_HAS_UPVALS(up);
   // TODO: optimize to do the ref check only if there are upvals
   X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
-  if (PN_TUPLE_LEN(f->protos) > 0) {
+  if (up) {
     // TODO: optimize to use %rdx rather than jmp
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
     ASM(0x83); ASM(0xF8); ASM(PN_TWEAK); // cmp WEAK %eax
@@ -219,8 +220,9 @@ void potion_x86_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 
 void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
+  PN_HAS_UPVALS(up);
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /*  mov -A(%rbp) %edx */
-  if (PN_TUPLE_LEN(f->protos) > 0) {
+  if (up) {
     // TODO: optimize to use %rdx rather than jmp
     X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
