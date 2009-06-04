@@ -18,7 +18,7 @@
 
 typedef struct {
   size_t from;
-  PN_OP *to;
+  PN_SIZE to;
 } PNJumps;
 
 #define MAKE_TARGET(arch) PNTarget potion_target_##arch = { \
@@ -73,10 +73,10 @@ typedef struct {
     .finish = potion_##arch##_finish \
   }
 
-#define ASM(ins) asmb = potion_asm_put(P, asmb, (PN)ins, sizeof(u8))
-#define ASM2(pn) asmb = potion_asm_put(P, asmb, (PN)(pn), 2)
-#define ASMI(pn) asmb = potion_asm_put(P, asmb, (PN)(pn), sizeof(int))
-#define ASMN(pn) asmb = potion_asm_put(P, asmb, (PN)pn, sizeof(PN))
+#define ASM(ins) *asmp = potion_asm_put(P, *asmp, (PN)ins, sizeof(u8))
+#define ASM2(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), 2)
+#define ASMI(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), sizeof(int))
+#define ASMN(pn) *asmp = potion_asm_put(P, *asmp, (PN)pn, sizeof(PN))
 
 PNAsm *potion_asm_new(Potion *);
 PNAsm *potion_asm_put(Potion *, PNAsm *, PN, size_t);

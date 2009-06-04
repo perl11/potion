@@ -32,17 +32,14 @@ void potion_vm_init(Potion *P) {
 
 PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
-  PN_OP *start, *pos, *end;
+  PN_SIZE pos;
   PNJumps jmps[JUMPS_MAX]; size_t offs[JUMPS_MAX]; int jmpc = 0, jmpi = 0;
   vPN(Proto) f = (struct PNProto *)proto;
   int upc = PN_TUPLE_LEN(f->upvals);
   PNAsm * volatile asmb = potion_asm_new(P);
   u8 *fn;
   PNTarget *target = &P->targets[target_id];
-  target->setup(P, asmb);
-
-  start = pos = ((PN_OP *)PN_STR_PTR(f->asmb));
-  end = (PN_OP *)(PN_STR_PTR(f->asmb) + PN_STR_LEN(f->asmb));
+  target->setup(P, &asmb);
 
   if (PN_TUPLE_LEN(f->protos) > 0) {
     PN_TUPLE_EACH(f->protos, i, proto2, {
@@ -66,8 +63,8 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   need = lregs + upc + 2;
   rsp = (need + protoargs) * sizeof(PN);
 
-  target->stack(P, asmb, rsp);
-  target->registers(P, asmb, need);
+  target->stack(P, &asmb, rsp);
+  target->registers(P, &asmb, need);
 
   // Read locals
   if (PN_IS_TUPLE(f->sig)) {
@@ -75,7 +72,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     PN_TUPLE_EACH(f->sig, i, v, {
       if (PN_IS_STR(v)) {
         PN_SIZE num = PN_GET(f->locals, v);
-        target->local(P, asmb, regs + num, argx);
+        target->local(P, &asmb, regs + num, argx);
         argx++;
       }
     });
@@ -83,61 +80,59 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
 
   // if CL passed in with upvals, load them
   if (upc > 0)
-    target->upvals(P, asmb, lregs, upc);
+    target->upvals(P, &asmb, lregs, upc);
 
-  while (pos < end) {
-    offs[pos - start] = asmb->len;
+  for (pos = 0; pos < PN_FLEX_SIZE(f->asmb); pos++) {
+    offs[pos] = asmb->len;
     for (jmpi = 0; jmpi < jmpc; jmpi++) {
       if (jmps[jmpi].to == pos) {
         unsigned char *asmj = asmb->ptr + jmps[jmpi].from;
-        target->jmpedit(P, asmb, asmj, asmb->len - (jmps[jmpi].from + 4));
+        target->jmpedit(P, &asmb, asmj, asmb->len - (jmps[jmpi].from + 4));
       }
     }
 
-    switch (pos->code) {
-      CASE_OP(MOVE, (P, asmb, pos))
-      CASE_OP(LOADPN, (P, asmb, pos)) 
-      CASE_OP(LOADK, (P, asmb, pos, f->values))
-      CASE_OP(SELF, (P, asmb, pos, need))
-      CASE_OP(GETLOCAL, (P, asmb, pos, regs, f->protos))
-      CASE_OP(SETLOCAL, (P, asmb, pos, regs, f->protos))
-      CASE_OP(GETUPVAL, (P, asmb, pos, lregs))
-      CASE_OP(SETUPVAL, (P, asmb, pos, lregs))
-      CASE_OP(NEWTUPLE, (P, asmb, pos, need))
-      CASE_OP(SETTUPLE, (P, asmb, pos, need))
-      CASE_OP(SETTABLE, (P, asmb, pos, need, f->values))
-      CASE_OP(ADD, (P, asmb, pos))
-      CASE_OP(SUB, (P, asmb, pos))
-      CASE_OP(MULT, (P, asmb, pos))
-      CASE_OP(DIV, (P, asmb, pos))
-      CASE_OP(REM, (P, asmb, pos))
-      CASE_OP(POW, (P, asmb, pos, need))
-      CASE_OP(NEQ, (P, asmb, pos))
-      CASE_OP(EQ, (P, asmb, pos))
-      CASE_OP(LT, (P, asmb, pos))
-      CASE_OP(LTE, (P, asmb, pos))
-      CASE_OP(GT, (P, asmb, pos))
-      CASE_OP(GTE, (P, asmb, pos))
-      CASE_OP(BITL, (P, asmb, pos))
-      CASE_OP(BITR, (P, asmb, pos))
-      CASE_OP(BIND, (P, asmb, pos, need))
-      CASE_OP(JMP, (P, asmb, pos, start, jmps, offs, &jmpc))
-      CASE_OP(TEST, (P, asmb, pos))
-      CASE_OP(NOT, (P, asmb, pos))
-      CASE_OP(CMP, (P, asmb, pos))
-      CASE_OP(TESTJMP, (P, asmb, pos, start, jmps, offs, &jmpc))
-      CASE_OP(NOTJMP, (P, asmb, pos, start, jmps, offs, &jmpc))
-      CASE_OP(CALL, (P, asmb, pos, need))
-      CASE_OP(RETURN, (P, asmb, pos))
-      CASE_OP(PROTO, (P, asmb, &pos, f->protos, lregs, need, regs))
+    switch (PN_OP_AT(f->asmb, pos).code) {
+      CASE_OP(MOVE, (P, f, &asmb, pos))
+      CASE_OP(LOADPN, (P, f, &asmb, pos)) 
+      CASE_OP(LOADK, (P, f, &asmb, pos, f->values))
+      CASE_OP(SELF, (P, f, &asmb, pos, need))
+      CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs, f->protos))
+      CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs, f->protos))
+      CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))
+      CASE_OP(SETUPVAL, (P, f, &asmb, pos, lregs))
+      CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))
+      CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))
+      CASE_OP(SETTABLE, (P, f, &asmb, pos, need, f->values))
+      CASE_OP(ADD, (P, f, &asmb, pos))
+      CASE_OP(SUB, (P, f, &asmb, pos))
+      CASE_OP(MULT, (P, f, &asmb, pos))
+      CASE_OP(DIV, (P, f, &asmb, pos))
+      CASE_OP(REM, (P, f, &asmb, pos))
+      CASE_OP(POW, (P, f, &asmb, pos, need))
+      CASE_OP(NEQ, (P, f, &asmb, pos))
+      CASE_OP(EQ, (P, f, &asmb, pos))
+      CASE_OP(LT, (P, f, &asmb, pos))
+      CASE_OP(LTE, (P, f, &asmb, pos))
+      CASE_OP(GT, (P, f, &asmb, pos))
+      CASE_OP(GTE, (P, f, &asmb, pos))
+      CASE_OP(BITL, (P, f, &asmb, pos))
+      CASE_OP(BITR, (P, f, &asmb, pos))
+      CASE_OP(BIND, (P, f, &asmb, pos, need))
+      CASE_OP(JMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
+      CASE_OP(TEST, (P, f, &asmb, pos))
+      CASE_OP(NOT, (P, f, &asmb, pos))
+      CASE_OP(CMP, (P, f, &asmb, pos))
+      CASE_OP(TESTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
+      CASE_OP(NOTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
+      CASE_OP(CALL, (P, f, &asmb, pos, need))
+      CASE_OP(RETURN, (P, f, &asmb, pos))
+      CASE_OP(PROTO, (P, f, &asmb, &pos, f->protos, lregs, need, regs))
     }
-    pos++;
   }
 
+  target->finish(P, &asmb);
+
   fn = PN_ALLOC_FUNC(asmb->len);
-
-  target->finish(P, asmb);
-
 #ifdef JIT_DEBUG
   printf("JIT(%p): ", fn);
   long ai = 0;

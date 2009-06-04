@@ -298,17 +298,17 @@ PN_FLEX(PNAsm, unsigned char);
 //
 #define OP_MAX 64
 
-typedef void (*OP_F)(Potion *P, PNAsm *, ...);
+typedef void (*OP_F)(Potion *P, struct PNProto *, PNAsm * volatile *, ...);
 
 typedef struct {
-  void (*setup)    (Potion *P, PNAsm *);
-  void (*stack)    (Potion *P, PNAsm *, long);
-  void (*registers)(Potion *P, PNAsm *, long);
-  void (*local)    (Potion *P, PNAsm *, long, long);
-  void (*upvals)   (Potion *P, PNAsm *, long, int);
-  void (*jmpedit)  (Potion *P, PNAsm *, unsigned char *, int);
+  void (*setup)    (Potion *P, PNAsm * volatile *);
+  void (*stack)    (Potion *P, PNAsm * volatile *, long);
+  void (*registers)(Potion *P, PNAsm * volatile *, long);
+  void (*local)    (Potion *P, PNAsm * volatile *, long, long);
+  void (*upvals)   (Potion *P, PNAsm * volatile *, long, int);
+  void (*jmpedit)  (Potion *P, PNAsm * volatile *, unsigned char *, int);
   OP_F op[OP_MAX];
-  void (*finish)   (Potion *P, PNAsm *);
+  void (*finish)   (Potion *P, PNAsm * volatile *);
 } PNTarget;
 
 //

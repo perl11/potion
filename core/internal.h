@@ -39,8 +39,9 @@ typedef unsigned char u8;
   if (capa < (N)->len + X) { \
     while (capa < (N)->len + X) \
       capa += S; \
-    (N)->siz = sizeof(*(N)->ptr) * capa; \
-    PN_REALLOC(N, PN_TFLEX, T, (N)->siz); \
+    capa = sizeof(*(N)->ptr) * capa; \
+    PN_REALLOC(N, PN_TFLEX, T, capa); \
+    (N)->siz = capa; \
   } \
 })
 
