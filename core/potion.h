@@ -29,6 +29,7 @@ typedef struct Potion_State Potion;
 typedef volatile _PN PN;
 
 struct PNObject;
+struct PNFwd;
 struct PNData;
 struct PNString;
 struct PNBytes;
@@ -56,7 +57,8 @@ struct PNMemory;
 #define PN_TLOBBY       14
 #define PN_TTABLE       15
 #define PN_TFLEX        16
-#define PN_TUSER        17
+#define PN_TFWD         17
+#define PN_TUSER        18
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -140,6 +142,16 @@ struct PNMemory;
 struct PNObject {
   PN_OBJECT_HEADER
   PN data[0];
+};
+
+//
+// forwarding pointer (in case of
+// reallocation)
+//
+struct PNFwd {
+  PN_OBJECT_HEADER
+  PN_SIZE siz;
+  PN ptr;
 };
 
 //
@@ -268,17 +280,17 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
   while (1) {
-    struct PNObject *o = (struct PNObject *)(obj & PN_REF_MASK);
-    if (o->vt != PN_TNIL)
+    struct PNFwd *o = (struct PNFwd *)(obj & PN_REF_MASK);
+    if (o->vt != PN_TFWD)
       return o->vt;
-    obj = o->data[0];
+    obj = o->ptr;
   }
 }
 
 // resolve forwarding pointers for mutable types (PNTuple, PNBytes, etc.)
 static inline PN potion_fwd(PN obj) {
-  while (PN_IS_PTR(obj) && ((struct PNObject *)obj)->vt == 0)
-    obj = ((struct PNObject *)obj)->data[0];
+  while (PN_IS_PTR(obj) && ((struct PNFwd *)obj)->vt == PN_TFWD)
+    obj = ((struct PNFwd *)obj)->ptr;
   return obj;
 }
 
@@ -355,7 +367,7 @@ PN_SIZE potion_type_size(const struct PNObject *);
 static inline void *potion_gc_alloc(struct PNMemory *M, PNType vt, int siz) {
   struct PNObject *res = 0;
   siz = PN_ALIGN(siz, 8); // force 64-bit alignment
-  if (siz < sizeof(PN) * 2) siz = sizeof(PN) * 2;
+  if (siz < sizeof(struct PNFwd)) siz = sizeof(struct PNFwd);
   if (M->dirty || (char *)M->birth_cur + siz >= (char *)M->birth_storeptr - 2)
     potion_garbagecollect(M, siz + 4 * sizeof(double), 0);
   res = (struct PNObject *)M->birth_cur;
@@ -382,9 +394,9 @@ static inline void *potion_gc_realloc(struct PNMemory *M, PNType vt, struct PNOb
   dst = potion_gc_alloc(M, vt, sz);
   if (obj != NULL) {
     memcpy(dst, (void *)obj, oldsz);
-    obj->vt = PN_TNIL;
-    obj->data[0] = (PN)dst;
-    obj->data[1] = oldsz;
+    ((struct PNFwd *)obj)->vt = PN_TFWD;
+    ((struct PNFwd *)obj)->siz = oldsz;
+    ((struct PNFwd *)obj)->ptr = (PN)dst;
   }
 
   return dst;

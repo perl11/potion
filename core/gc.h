@@ -51,13 +51,11 @@
   (PN_IS_PTR(p) && IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p))
 
 #define GC_FORWARD(p) do { \
-  struct PNObject *_pnobj = *((struct PNObject **)p); \
-  if (_pnobj->vt == PN_TNIL) { \
-    *(p) = _pnobj->data[0]; \
+  struct PNFwd *_pnobj = *((struct PNFwd **)p); \
+  if (_pnobj->vt == PN_TNIL || _pnobj->vt == PN_TFWD) { \
+    *(p) = _pnobj->ptr; \
   } else { \
-    void *_pnad = potion_gc_copy(M, (const struct PNObject *)_pnobj); \
-    _pnobj->vt = PN_TNIL; \
-    *(p) = _pnobj->data[0] = (_PN)_pnad; \
+    *(p) = (_PN)potion_gc_copy(M, (struct PNObject *)_pnobj); \
   } \
 }  while(0)
 
@@ -80,7 +78,7 @@
 
 PN_SIZE potion_stack_len(struct PNMemory *, _PN **);
 PN_SIZE potion_mark_stack(struct PNMemory *, int);
-void *potion_gc_copy(struct PNMemory *, const struct PNObject *);
+void *potion_gc_copy(struct PNMemory *, struct PNObject *);
 void *pngc_page_new(int *, const char);
 void *potion_mark_minor(struct PNMemory *, const struct PNObject *);
 void *potion_mark_major(struct PNMemory *, const struct PNObject *);

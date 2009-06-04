@@ -29,7 +29,6 @@ PN potion_table_string(Potion *P, PN cl, PN self) {
 PN potion_table_cast(Potion *P, PN self) {
   if (PN_IS_TUPLE(self)) {
     int ret; unsigned k;
-    // TODO: if tuple is large enough, swap in-place
     vPN(Table) t = PN_ALLOC_N(PN_TTABLE, struct PNTable, sizeof(kh__PN_t));
     PN_MEMZERO(t, struct PNTable);
     t->vt = PN_TTABLE;
@@ -37,8 +36,9 @@ PN potion_table_cast(Potion *P, PN self) {
       k = kh_put(_PN, t->kh, PN_NUM(i), &ret);
       kh_value(t->kh, k) = v;
     });
-    ((struct PNObject *)self)->vt = PN_TNIL;
-    ((struct PNObject *)self)->data[0] = (PN)t;
+    ((struct PNFwd *)self)->siz = potion_type_size((const struct PNObject *)self);
+    ((struct PNFwd *)self)->vt = PN_TFWD;
+    ((struct PNFwd *)self)->ptr = (PN)t;
     self = (PN)t;
   }
   return self;
