@@ -94,15 +94,15 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     switch (PN_OP_AT(f->asmb, pos).code) {
       CASE_OP(MOVE, (P, f, &asmb, pos))
       CASE_OP(LOADPN, (P, f, &asmb, pos)) 
-      CASE_OP(LOADK, (P, f, &asmb, pos, f->values))
+      CASE_OP(LOADK, (P, f, &asmb, pos))
       CASE_OP(SELF, (P, f, &asmb, pos, need))
-      CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs, f->protos))
-      CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs, f->protos))
+      CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs))
+      CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))
       CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))
       CASE_OP(SETUPVAL, (P, f, &asmb, pos, lregs))
       CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))
       CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))
-      CASE_OP(SETTABLE, (P, f, &asmb, pos, need, f->values))
+      CASE_OP(SETTABLE, (P, f, &asmb, pos, need))
       CASE_OP(ADD, (P, f, &asmb, pos))
       CASE_OP(SUB, (P, f, &asmb, pos))
       CASE_OP(MULT, (P, f, &asmb, pos))
@@ -126,7 +126,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(NOTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(CALL, (P, f, &asmb, pos, need))
       CASE_OP(RETURN, (P, f, &asmb, pos))
-      CASE_OP(PROTO, (P, f, &asmb, &pos, f->protos, lregs, need, regs))
+      CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))
     }
   }
 

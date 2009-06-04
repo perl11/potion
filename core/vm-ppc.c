@@ -129,9 +129,9 @@ void potion_ppc_loadpn(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   PPC2(14, REG(op.a), op.b); // li rA,B
 }
 
-void potion_ppc_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, PN values) {
+void potion_ppc_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  PN val = PN_TUPLE_AT(values, op.b);
+  PN val = PN_TUPLE_AT(f->values, op.b);
   PPC2(15, REG(op.a), val >> 16); // lis rA,B
   PPC3(24, REG(op.a), REG(op.a), val); // ori rA,B
 }
@@ -139,12 +139,12 @@ void potion_ppc_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 void potion_ppc_self(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
-void potion_ppc_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs, PN protos) {
+void potion_ppc_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC3(32, REG(op.a), 30, RBP(op.b)); // lwz rA,-B(rsp)
 }
 
-void potion_ppc_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs, PN protos) {
+void potion_ppc_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC3(36, REG(op.a), 30, RBP(op.b)); // stw rA,-B(rsp)
 }
@@ -164,7 +164,7 @@ void potion_ppc_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 void potion_ppc_search(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
-void potion_ppc_settable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start, PN values) {
+void potion_ppc_settable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
 void potion_ppc_add(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
@@ -306,7 +306,7 @@ void potion_ppc_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   ASMI(0x4e800020); // blr
 }
 
-void potion_ppc_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_OP **pos, PN protos, long lregs, long start, long regs) {
+void potion_ppc_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_OP **pos, long lregs, long start, long regs) {
 }
 
 void potion_ppc_finish(Potion *P, PNAsm * volatile *asmp) {

@@ -185,9 +185,9 @@ void potion_x86_loadpn(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   X86_MOVQ(op.a, op.b);
 }
 
-void potion_x86_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, PN values) {
+void potion_x86_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  PN val = PN_TUPLE_AT(values, op.b);
+  PN val = PN_TUPLE_AT(f->values, op.b);
   X86_MOVL(op.a, val);
 }
 
@@ -199,11 +199,11 @@ void potion_x86_self(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   X86_MOV_RBP(0x89, op.a);
 }
 
-void potion_x86_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs, PN protos) {
+void potion_x86_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   // TODO: optimize to do the ref check only if there are upvals
   X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
-  if (PN_TUPLE_LEN(protos) > 0) {
+  if (PN_TUPLE_LEN(f->protos) > 0) {
     // TODO: optimize to use %rdx rather than jmp
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
     ASM(0x83); ASM(0xF8); ASM(PN_TWEAK); // cmp WEAK %eax
@@ -217,10 +217,10 @@ void potion_x86_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_MOV_RBP(0x89, op.a);
 }
 
-void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs, PN protos) {
+void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /*  mov -A(%rbp) %edx */
-  if (PN_TUPLE_LEN(protos) > 0) {
+  if (PN_TUPLE_LEN(f->protos) > 0) {
     // TODO: optimize to use %rdx rather than jmp
     X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
@@ -266,7 +266,7 @@ void potion_x86_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_MOV_RBP(0x89, op.a); // mov %rax local
 }
 
-void potion_x86_settable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start, PN values) {
+void potion_x86_settable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_ARGO(start - 2, 0);
   X86_ARGO(op.a, 1);
@@ -514,14 +514,14 @@ void potion_x86_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   ASM(0xC9); ASM(0xC3); /* leave; ret */
 }
 
-void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE *pos, PN protos, long lregs, long start, long regs) {
+void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE *pos, long lregs, long start, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, *pos);
   vPN(Closure) cl;
-  PN proto = PN_TUPLE_AT(protos, op.b);
+  PN proto = PN_TUPLE_AT(f->protos, op.b);
   cl = (struct PNClosure *)potion_closure_new(P, NULL, PN_NIL,
     PN_TUPLE_LEN(PN_PROTO(proto)->upvals));
-  // func2 = &potion_x86_debug;
   cl->method = PN_PROTO(proto)->jit;
+  // cl->method = &potion_x86_debug;
   X86_MOVL(op.a, cl);
   PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
     (*pos)++;
