@@ -366,8 +366,9 @@ PN_SIZE potion_type_size(const struct PNObject *);
 // quick inline allocation
 static inline void *potion_gc_alloc(struct PNMemory *M, PNType vt, int siz) {
   struct PNObject *res = 0;
+  if (siz < sizeof(struct PNFwd))
+    siz = sizeof(struct PNFwd);
   siz = PN_ALIGN(siz, 8); // force 64-bit alignment
-  if (siz < sizeof(struct PNFwd)) siz = sizeof(struct PNFwd);
   if (M->dirty || (char *)M->birth_cur + siz >= (char *)M->birth_storeptr - 2)
     potion_garbagecollect(M, siz + 4 * sizeof(double), 0);
   res = (struct PNObject *)M->birth_cur;

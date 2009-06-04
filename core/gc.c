@@ -206,7 +206,7 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
 }
 
 PN_SIZE potion_type_size(const struct PNObject *ptr) {
-  int sz = sizeof(struct PNFwd);
+  int sz = 0;
   switch (ptr->vt) {
     case PN_TNIL:
     case PN_TFWD:
@@ -219,7 +219,7 @@ PN_SIZE potion_type_size(const struct PNObject *ptr) {
       sz = sizeof(struct PNClosure) + (PN_CLOSURE(ptr)->extra * sizeof(PN));
     break;
     case PN_TTUPLE:
-      sz = sizeof(struct PNTuple) + (sizeof(PN) * max(PN_TUPLE_LEN((PN)ptr), 1));
+      sz = sizeof(struct PNTuple) + (sizeof(PN) * ((struct PNTuple *)ptr)->len);
     break;
     case PN_TSTATE:
       sz = sizeof(Potion);
@@ -253,6 +253,9 @@ PN_SIZE potion_type_size(const struct PNObject *ptr) {
       sz = sizeof(struct PNData) + ((struct PNData *)ptr)->siz;
     break;
   }
+
+  if (sz < sizeof(struct PNFwd))
+    sz = sizeof(struct PNFwd);
   return PN_ALIGN(sz, 8); // force 64-bit alignment
 }
 

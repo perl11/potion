@@ -80,7 +80,7 @@ PN potion_table_length(Potion *P, PN cl, PN self) {
 }
 
 #define NEW_TUPLE(t, size) \
-  vPN(Tuple) t = PN_ALLOC_N(PN_TTUPLE, struct PNTuple, max(size, 1) * sizeof(PN)); \
+  vPN(Tuple) t = PN_ALLOC_N(PN_TTUPLE, struct PNTuple, size * sizeof(PN)); \
   t->len = size
 
 PN potion_tuple_empty(Potion *P) {
