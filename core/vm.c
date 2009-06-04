@@ -82,7 +82,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   if (upc > 0)
     target->upvals(P, &asmb, lregs, upc);
 
-  for (pos = 0; pos < PN_FLEX_SIZE(f->asmb); pos++) {
+  for (pos = 0; pos < PN_FLEX_SIZE(f->asmb) / sizeof(PN_OP); pos++) {
     offs[pos] = asmb->len;
     for (jmpi = 0; jmpi < jmpc; jmpi++) {
       if (jmps[jmpi].to == pos) {
