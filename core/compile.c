@@ -570,6 +570,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
     tup; \
   })
 
+// TODO: this byte string is volatile, need to avoid using ptr
 PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   PN len = 0;
   PNAsm * volatile asmb = NULL;
@@ -582,9 +583,12 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   f->locals = READ_VALUES(pn, *ptr);
   f->upvals = READ_VALUES(pn, *ptr);
   f->protos = READ_PROTOS(pn, *ptr);
+
   len = READ_PN(pn, *ptr);
   PN_FLEX_NEW(asmb, PNAsm, len);
   PN_MEMCPY_N(asmb->ptr, *ptr, u8, len);
+  asmb->len = len;
+
   f->asmb = (PN)asmb;
   f->localsize = PN_TUPLE_LEN(f->locals);
   f->upvalsize = PN_TUPLE_LEN(f->upvals);
