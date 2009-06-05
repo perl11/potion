@@ -82,29 +82,34 @@
 // TODO: finish jit backtraces using this
 void potion_x86_debug() {
   Potion *P;
-  struct PNClosure *f;
   int n = 0;
   _PN rax, *rbp, *sp;
 
+#if __WORDSIZE != 64
   __asm__ ("mov %%eax, %0;"
+#else
+  __asm__ ("mov %%rax, %0;"
+#endif
            :"=r"(rax)
           );
 
-  printf("RAX = %lx (%d)\n", rax, potion_type(rax));
+  printf("RAX = %lx (%lu)\n", rax, potion_type(rax));
+#if __WORDSIZE != 64
   __asm__ ("mov %%ebp, %0;"
+#else
+  __asm__ ("mov %%rbp, %0;"
+#endif
            :"=r"(sp)
           );
 
-  P = sp[2];
+  P = (Potion *)sp[2];
   printf("Potion: %p (%p)\n", P, &P);
-  f = (struct PNClosure *)*((unsigned long *)*sp - 1);
-  printf("CL: %p (%p)\n", f, PN_TUPLE_LEN(f->method));
 
 again:
   n = 0;
   rbp = (unsigned long *)*sp;
-  if (rbp > sp - 2 && sp[2] == P) {
-    printf("RBP = %lx (%lx), SP = %lx\n", rbp, *rbp, sp);
+  if (rbp > sp - 2 && sp[2] == (PN)P) {
+    printf("RBP = %lx (%lx), SP = %lx\n", (PN)rbp, *rbp, (PN)sp);
     while (sp < rbp) {
       printf("STACK[%d] = %lx\n", n++, *sp);
       sp++;
