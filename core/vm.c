@@ -66,6 +66,13 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   target->stack(P, &asmb, rsp);
   target->registers(P, &asmb, need);
 
+  // empty locals, since use of setlocal requires something there
+  if (PN_TUPLE_LEN(f->protos) > 0) {
+    for (argx = 0; argx < PN_TUPLE_LEN(f->locals); argx++) {
+      target->local(P, &asmb, regs + argx, 2);
+    }
+  }
+
   // Read locals
   if (PN_IS_TUPLE(f->sig)) {
     argx = 0;

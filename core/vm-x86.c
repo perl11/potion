@@ -75,10 +75,45 @@
           ASMI(0); \
         }
 
-PN potion_x86_debug(Potion *P, PN cl, PN v) {
-  printf("\nDEBUG: %lu\n", v);
-  return (PN)v;
+#define X86_DEBUG() \
+  X86_PRE(); ASM(0xB8); ASMN(potion_x86_debug); \
+  ASM(0xFF); ASM(0xD0)
+
+#if 0
+// TODO: finish jit backtraces using this
+void potion_x86_debug() {
+  Potion *P;
+  struct PNClosure *f;
+  int n = 0;
+  _PN rax, *rbp, *sp;
+
+  __asm__ ("mov %%eax, %0;"
+           :"=r"(rax)
+          );
+
+  printf("RAX = %lx (%d)\n", rax, potion_type(rax));
+  __asm__ ("mov %%ebp, %0;"
+           :"=r"(sp)
+          );
+
+  P = sp[2];
+  printf("Potion: %p (%p)\n", P, &P);
+  f = (struct PNClosure *)*((unsigned long *)*sp - 1);
+  printf("CL: %p (%p)\n", f, PN_TUPLE_LEN(f->method));
+
+again:
+  n = 0;
+  rbp = (unsigned long *)*sp;
+  if (rbp > sp - 2 && sp[2] == P) {
+    printf("RBP = %lx (%lx), SP = %lx\n", rbp, *rbp, sp);
+    while (sp < rbp) {
+      printf("STACK[%d] = %lx\n", n++, *sp);
+      sp++;
+    }
+    goto again;
+  }
 }
+#endif
 
 // mimick c calling convention
 static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int regn, int argn) {
@@ -135,12 +170,12 @@ void potion_x86_setup(Potion *P, PNAsm * volatile *asmp) {
   X86_PRE(); ASM(0x89); ASM(0xE5); // mov %rsp,%rbp
 }
 
-void potion_x86_stack(Potion *P, PNAsm * volatile *asmp, long rsp) {
+void potion_x86_stack(Potion *P, PNAsm * volatile *asmp, long need) {
   /* maintain 16-byte stack alignment.  OS X in particular requires it, because
    * it expects to be able to use movdqa on things on the stack.
    * we factor in the offset from our saved ebp and return address, so that
    * adds 8 for x86 and 0 (mod 16) for x86_64.  */
-  rsp = X86C(8,0)+((rsp-X86C(8,0)+15)&~(15));
+  int rsp = X86C(8,0)+((need-X86C(8,0)+15)&~(15));
   if (rsp >= 0x80) {
     X86_PRE(); ASM(0x81); ASM(0xEC); ASMI(rsp); /* sub rsp, %esp */
   } else {
