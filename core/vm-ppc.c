@@ -91,26 +91,26 @@
     ASMI(ins); \
   }
 
-void potion_ppc_setup(Potion *P, PNAsm * volatile *asmp) {
+void potion_ppc_setup(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp) {
   PPC3(47, 30, 1, 0xFFF8); // stmw r30,-8(r1)
 }
 
-void potion_ppc_stack(Potion *P, PNAsm * volatile *asmp, long rsp) {
+void potion_ppc_stack(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long rsp) {
   rsp = -((rsp+31)&~(15));
   PPC3(37, 1, 1, rsp); // stwu r1,-X(r1)
   PPC_MOV(30, 1); // or r30,r1,r1
 }
 
-void potion_ppc_registers(Potion *P, PNAsm * volatile *asmp, long start) {
+void potion_ppc_registers(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long start) {
 }
 
-void potion_ppc_local(Potion *P, PNAsm * volatile *asmp, long reg, long arg) {
+void potion_ppc_local(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long reg, long arg) {
 }
 
-void potion_ppc_upvals(Potion *P, PNAsm * volatile *asmp, long lregs, int upc) {
+void potion_ppc_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long lregs, int upc) {
 }
 
-void potion_ppc_jmpedit(Potion *P, PNAsm * volatile *asmp, unsigned char *asmj, int dist) {
+void potion_ppc_jmpedit(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, unsigned char *asmj, int dist) {
   if (asmj[0] == 0x48) {
     asmj[0] |= (dist >> 24) & 3;
     asmj[1] = dist >> 16;
@@ -309,7 +309,7 @@ void potion_ppc_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 void potion_ppc_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_OP **pos, long lregs, long start, long regs) {
 }
 
-void potion_ppc_finish(Potion *P, PNAsm * volatile *asmp) {
+void potion_ppc_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp) {
 }
 
 MAKE_TARGET(ppc);

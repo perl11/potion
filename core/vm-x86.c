@@ -79,7 +79,6 @@
   X86_PRE(); ASM(0xB8); ASMN(potion_x86_debug); \
   ASM(0xFF); ASM(0xD0)
 
-#if 0
 // TODO: finish jit backtraces using this
 void potion_x86_debug() {
   Potion *P;
@@ -113,7 +112,6 @@ again:
     goto again;
   }
 }
-#endif
 
 // mimick c calling convention
 static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int regn, int argn) {
@@ -165,12 +163,12 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
 #endif
 }
 
-void potion_x86_setup(Potion *P, PNAsm * volatile *asmp) {
+void potion_x86_setup(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp) {
   ASM(0x55); // push %rbp
   X86_PRE(); ASM(0x89); ASM(0xE5); // mov %rsp,%rbp
 }
 
-void potion_x86_stack(Potion *P, PNAsm * volatile *asmp, long need) {
+void potion_x86_stack(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long need) {
   /* maintain 16-byte stack alignment.  OS X in particular requires it, because
    * it expects to be able to use movdqa on things on the stack.
    * we factor in the offset from our saved ebp and return address, so that
@@ -183,18 +181,26 @@ void potion_x86_stack(Potion *P, PNAsm * volatile *asmp, long need) {
   }
 }
 
-void potion_x86_registers(Potion *P, PNAsm * volatile *asmp, long start) {
+void potion_x86_registers(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long start) {
+  PN_HAS_UPVALS(up);
   // (Potion *, self) in the first argument slot, self in the first register 
   X86_ARGI(start - 2, 0);
   X86_ARGI(start - 1, 2);
   X86_ARGI(0, 2);
+  // empty locals, since use of setlocal requires something there
+  if (up) {
+    int argx = 0, regs = PN_INT(f->stack);
+    for (argx = 0; argx < PN_TUPLE_LEN(f->locals); argx++) {
+      X86_MOVQ(regs + argx, PN_NIL);
+    }
+  }
 }
 
-void potion_x86_local(Potion *P, PNAsm * volatile *asmp, long reg, long arg) {
+void potion_x86_local(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long reg, long arg) {
   X86_ARGI(reg, 3 + arg);
 }
 
-void potion_x86_upvals(Potion *P, PNAsm * volatile *asmp, long lregs, int upc) {
+void potion_x86_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long lregs, int upc) {
   int upi;
   X86_ARGI(1, 1);
   for (upi = 0; upi < upc; upi++) {
@@ -205,7 +211,7 @@ void potion_x86_upvals(Potion *P, PNAsm * volatile *asmp, long lregs, int upc) {
   }
 }
 
-void potion_x86_jmpedit(Potion *P, PNAsm * volatile *asmp, unsigned char *asmj, int dist) {
+void potion_x86_jmpedit(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, unsigned char *asmj, int dist) {
   *((int *)asmj) = dist;
 }
 
@@ -582,7 +588,7 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   });
 }
 
-void potion_x86_finish(Potion *P, PNAsm * volatile *asmp) {
+void potion_x86_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp) {
 #ifdef JIT_ICACHE
 #if __WORDSIZE != 64
   if (1) { // TODO: only scan if relative jumps are used

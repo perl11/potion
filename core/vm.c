@@ -39,7 +39,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   PNAsm * volatile asmb = potion_asm_new(P);
   u8 *fn;
   PNTarget *target = &P->targets[target_id];
-  target->setup(P, &asmb);
+  target->setup(P, f, &asmb);
 
   if (PN_TUPLE_LEN(f->protos) > 0) {
     PN_TUPLE_EACH(f->protos, i, proto2, {
@@ -63,15 +63,8 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   need = lregs + upc + 2;
   rsp = (need + protoargs) * sizeof(PN);
 
-  target->stack(P, &asmb, rsp);
-  target->registers(P, &asmb, need);
-
-  // empty locals, since use of setlocal requires something there
-  if (PN_TUPLE_LEN(f->protos) > 0) {
-    for (argx = 0; argx < PN_TUPLE_LEN(f->locals); argx++) {
-      target->local(P, &asmb, regs + argx, 2);
-    }
-  }
+  target->stack(P, f, &asmb, rsp);
+  target->registers(P, f, &asmb, need);
 
   // Read locals
   if (PN_IS_TUPLE(f->sig)) {
@@ -79,7 +72,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     PN_TUPLE_EACH(f->sig, i, v, {
       if (PN_IS_STR(v)) {
         PN_SIZE num = PN_GET(f->locals, v);
-        target->local(P, &asmb, regs + num, argx);
+        target->local(P, f, &asmb, regs + num, argx);
         argx++;
       }
     });
@@ -87,14 +80,14 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
 
   // if CL passed in with upvals, load them
   if (upc > 0)
-    target->upvals(P, &asmb, lregs, upc);
+    target->upvals(P, f, &asmb, lregs, upc);
 
   for (pos = 0; pos < PN_FLEX_SIZE(f->asmb) / sizeof(PN_OP); pos++) {
     offs[pos] = asmb->len;
     for (jmpi = 0; jmpi < jmpc; jmpi++) {
       if (jmps[jmpi].to == pos) {
         unsigned char *asmj = asmb->ptr + jmps[jmpi].from;
-        target->jmpedit(P, &asmb, asmj, asmb->len - (jmps[jmpi].from + 4));
+        target->jmpedit(P, f, &asmb, asmj, asmb->len - (jmps[jmpi].from + 4));
       }
     }
 
@@ -137,7 +130,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     }
   }
 
-  target->finish(P, &asmb);
+  target->finish(P, f, &asmb);
 
   fn = PN_ALLOC_FUNC(asmb->len);
 #ifdef JIT_DEBUG
