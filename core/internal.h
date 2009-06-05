@@ -90,6 +90,10 @@ __attribute__ ((noinline)) void potion_esp(void **);
 #endif
 #endif
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 #if POTION_STACK_DIR > 0
 #define STACK_UPPER(a, b) a
 #elif POTION_STACK_DIR < 0
