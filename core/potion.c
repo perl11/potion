@@ -64,7 +64,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
     goto done;
   }
 
-  fd = open(filename, O_RDONLY);
+  fd = open(filename, O_RDONLY | O_BINARY);
   if (fd == -1) {
     fprintf(stderr, "** could not open %s. check permissions.", filename);
     goto done;

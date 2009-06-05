@@ -36,6 +36,8 @@ else
   LLONG="8"
   LILEND="1"
   PAGESIZE="4096"
+  STACKDIR="-1"
+  ARGDIR="1"
 fi
 
 if [ "$2" = "mingw" ]; then
