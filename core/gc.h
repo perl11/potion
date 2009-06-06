@@ -24,7 +24,7 @@
 
 #define SET_GEN(t, p, s) \
   M->t##_lo = p; \
-  M->t##_cur = p + sizeof(struct PNFwd); \
+  M->t##_cur = p + (sizeof(PN) * 2); \
   M->t##_hi = p + (s);
 
 #define SET_STOREPTR(n) \
@@ -52,11 +52,10 @@
 
 #define GC_FORWARD(p) do { \
   struct PNFwd *_pnobj = *((struct PNFwd **)p); \
-  if (_pnobj->vt == PN_TNIL || _pnobj->vt == PN_TFWD) { \
+  if (_pnobj->vt == PN_TNIL) \
     *(p) = _pnobj->ptr; \
-  } else { \
+  else \
     *(p) = (_PN)potion_gc_copy(M, (struct PNObject *)_pnobj); \
-  } \
 }  while(0)
 
 #define GC_MINOR_UPDATE(p) do { \

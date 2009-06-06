@@ -30,17 +30,18 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
   PN_SIZE i = 0;
   while (n--) {
     v = *x;
-    switch (forward) {
-      case 1:
-        if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v))
-          GC_FORWARD(x);
-      break;
-      case 2:
-        if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v))) {
-          *x = v = potion_fwd(v);
-          GC_FORWARD(x);
-        }
-      break;
+    if (IS_GC_PROTECTED(v) || IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) {
+      *x = v = potion_fwd(v);
+      switch (forward) {
+        case 1:
+          if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v))
+            GC_FORWARD(x);
+        break;
+        case 2:
+          if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)))
+            GC_FORWARD(x);
+        break;
+      }
     }
     i++;
     x++;
@@ -64,7 +65,6 @@ PN_SIZE potion_mark_stack(struct PNMemory *M, int forward) {
 }
 
 void *pngc_page_new(int *sz, const char exec) {
-  // TODO: why does qish allocate pages before and after?
   *sz = PN_ALIGN(*sz, POTION_PAGESIZE);
   return potion_mmap(*sz, exec);
 }
@@ -106,11 +106,8 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
       potion_mark_minor(M, (const struct PNObject *)v);
   }
 
-  while ((PN)scanptr < (PN)M->old_cur) {
+  while ((PN)scanptr < (PN)M->old_cur)
     scanptr = potion_mark_minor(M, scanptr);
-    while ((PN)scanptr < (PN)M->old_cur && (*(void **)scanptr) == 0)
-      scanptr = ((void **)scanptr) + 1;
-  }
 
   sz += 2 * POTION_PAGESIZE;
   sz = max(sz, POTION_BIRTH_SIZE);
@@ -148,15 +145,13 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
   newoldsiz = (((char *)prevoldcur - (char *)prevoldlo) + siz + POTION_BIRTH_SIZE +
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
   newold = pngc_page_new(&newoldsiz, 0);
-  M->old_cur = scanptr = newold + sizeof(struct PNFwd);
+  M->old_cur = scanptr = newold + (sizeof(PN) * 2);
+  info("(new old: %p -> %p = %ld)\n", newold, (char *)newold + newoldsiz, newoldsiz);
 
   potion_mark_stack(M, 2);
 
-  while ((PN)scanptr < (PN)M->old_cur) {
+  while ((PN)scanptr < (PN)M->old_cur)
     scanptr = potion_mark_major(M, scanptr);
-    while ((PN)scanptr < (PN)M->old_cur && (*(void **)scanptr) == 0)
-      scanptr = ((void **)scanptr) + 1;
-  }
 
   pngc_page_delete((void *)prevoldlo, (char *)prevoldhi - (char *)prevoldlo);
 
@@ -179,7 +174,6 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
   M->old_hi = (char *)newold + newoldsiz;
   M->majors++;
 
-  info("(new old gen = %p -> %p = %ld)\n", M->old_lo, M->old_hi, M->old_hi - M->old_lo);
   return POTION_OK;
 }
 
@@ -268,8 +262,11 @@ PN_SIZE potion_type_size(const struct PNObject *ptr) {
 
 void *potion_gc_copy(struct PNMemory *M, struct PNObject *ptr) {
   void *dst = (void *)M->old_cur;
-  PN_SIZE sz = potion_type_size((const struct PNObject *)ptr);
+  PN_SIZE sz = 0;
+  ptr = potion_fwd(ptr); // never copy forwarding pointers
+  sz = potion_type_size((const struct PNObject *)ptr);
   memcpy(dst, ptr, sz);
+  info("  -> %p -> %p = [0] = %p; [1] = %p; %ld ", dst, ptr, ((struct PNTuple *)ptr)->set[0], ((struct PNTuple *)ptr)->set[1], sz);
   M->old_cur = (char *)dst + sz;
 
   ((struct PNFwd *)ptr)->vt = PN_TNIL;
