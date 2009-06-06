@@ -33,17 +33,24 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
     if (IS_GC_PROTECTED(v) || IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) {
       *x = v = potion_fwd(v);
       switch (forward) {
-        case 1:
+        case 0: // count only
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v))
-            GC_FORWARD(x);
+            i++;
         break;
-        case 2:
-          if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)))
+        case 1: // minor
+          if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v)) {
             GC_FORWARD(x);
+            i++;
+          }
+        break;
+        case 2: // major
+          if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v))) {
+            GC_FORWARD(x);
+            i++;
+          }
         break;
       }
     }
-    i++;
     x++;
   }
   return i;
@@ -263,7 +270,7 @@ PN_SIZE potion_type_size(const struct PNObject *ptr) {
 void *potion_gc_copy(struct PNMemory *M, struct PNObject *ptr) {
   void *dst = (void *)M->old_cur;
   PN_SIZE sz = 0;
-  ptr = potion_fwd(ptr); // never copy forwarding pointers
+  ptr = (struct PNObject *)potion_fwd((PN)ptr); // never copy forwarding pointers
   sz = potion_type_size((const struct PNObject *)ptr);
   memcpy(dst, ptr, sz);
   info("  -> %p -> %p = [0] = %p; [1] = %p; %ld ", dst, ptr, ((struct PNTuple *)ptr)->set[0], ((struct PNTuple *)ptr)->set[1], sz);
