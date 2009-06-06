@@ -24,7 +24,7 @@
 
 #define SET_GEN(t, p, s) \
   M->t##_lo = p; \
-  M->t##_cur = p; \
+  M->t##_cur = p + sizeof(struct PNFwd); \
   M->t##_hi = p + (s);
 
 #define SET_STOREPTR(n) \
@@ -42,10 +42,10 @@
   ((_PN)(p) >= (_PN)M && (_PN)(p) < (_PN)M->protect)
 
 #define IN_BIRTH_REGION(p) \
-  ((_PN)(p) >= (_PN)M->birth_lo && (_PN)(p) < (_PN)M->birth_hi)
+  ((_PN)(p) > (_PN)M->birth_lo && (_PN)(p) < (_PN)M->birth_hi)
 
 #define IN_OLDER_REGION(p) \
-  ((_PN)(p) >= (_PN)M->old_lo && (_PN)(p) < (_PN)M->old_hi)
+  ((_PN)(p) > (_PN)M->old_lo && (_PN)(p) < (_PN)M->old_hi)
 
 #define IS_NEW_PTR(p) \
   (PN_IS_PTR(p) && IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p))

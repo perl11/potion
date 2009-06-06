@@ -16,6 +16,8 @@
 #include "khash.h"
 #include "table.h"
 
+#define info(x, ...)
+
 PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
   _PN *esp, *c = M->cstack;
   POTION_ESP(&esp);
@@ -28,28 +30,19 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
   PN_SIZE i = 0;
   while (n--) {
     v = *x;
-#if 0
-    if ((_PN)M == v)
-      printf("pnmemory @ %ld\n", n);
-    else if (IS_NEW_PTR(v))
-      printf("pointer  @ %ld: %p\n", n, v);
-    else
-      printf("non-pointer  @ %ld: %p\n", n, v);
-#endif
-    if ((_PN)M != v && IS_NEW_PTR(v)) {
-      switch (forward) {
-        case 1:
-          if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v))
-            GC_FORWARD(x);
-        break;
-        case 2:
+    switch (forward) {
+      case 1:
+        if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v))
+          GC_FORWARD(x);
+      break;
+      case 2:
+        if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v))) {
           *x = v = potion_fwd(v);
-          if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)))
-            GC_FORWARD(x);
-        break;
-      }
-      i++;
+          GC_FORWARD(x);
+        }
+      break;
     }
+    i++;
     x++;
   }
   return i;
@@ -97,6 +90,13 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
   else if (sz >= POTION_MAX_BIRTH_SIZE)
     return POTION_NO_MEM;
 
+  info("running gc_minor\n"
+    "(young: %p -> %p = %ld)\n"
+    "(old: %p -> %p = %ld)\n"
+    "(storeptr len = %ld)\n",
+    M->birth_lo, M->birth_hi, M->birth_hi - M->birth_lo,
+    M->old_lo, M->old_hi, M->old_hi - M->old_lo,
+    (void *)M->birth_hi - (void *)M->birth_storeptr);
   potion_mark_stack(M, 1);
 
   for (storead = ((void **)M->birth_storeptr) - 1;
@@ -140,9 +140,15 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
   else if (siz >= POTION_BIRTH_SIZE)
     return POTION_NO_MEM;
 
+  info("running gc_major\n"
+    "(young: %p -> %p = %ld)\n"
+    "(old: %p -> %p = %ld)\n",
+    M->birth_lo, M->birth_hi, M->birth_hi - M->birth_lo,
+    M->old_lo, M->old_hi, M->old_hi - M->old_lo);
   newoldsiz = (((char *)prevoldcur - (char *)prevoldlo) + siz + POTION_BIRTH_SIZE +
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
-  M->old_cur = scanptr = newold = pngc_page_new(&newoldsiz, 0);
+  newold = pngc_page_new(&newoldsiz, 0);
+  M->old_cur = scanptr = newold + sizeof(struct PNFwd);
 
   potion_mark_stack(M, 2);
 
@@ -173,6 +179,7 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
   M->old_hi = (char *)newold + newoldsiz;
   M->majors++;
 
+  info("(new old gen = %p -> %p = %ld)\n", M->old_lo, M->old_hi, M->old_hi - M->old_lo);
   return POTION_OK;
 }
 
@@ -182,7 +189,7 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
   M->collecting = 1;
 
   if (M->old_lo == NULL) {
-    int gensz = POTION_BIRTH_SIZE * 2;
+    int gensz = POTION_BIRTH_SIZE * 3;
     void *page = pngc_page_new(&gensz, 0);
     SET_GEN(old, page, gensz);
   }
@@ -192,7 +199,7 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
       > (char *) M->old_hi)
     full = 1;
 #if POTION_GC_PERIOD>0
-  else if (M->pass % POTION_GC_PERIOD == 0)
+  else if (M->pass % POTION_GC_PERIOD == POTION_GC_PERIOD - 1)
     full = 1;
 #endif
 
