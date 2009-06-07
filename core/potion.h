@@ -57,8 +57,7 @@ struct PNMemory;
 #define PN_TLOBBY       14
 #define PN_TTABLE       15
 #define PN_TFLEX        16
-#define PN_TFWD         17
-#define PN_TUSER        18
+#define PN_TUSER        17
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -72,6 +71,8 @@ struct PNMemory;
 #define PN_PRIMITIVE    7
 #define PN_REF_MASK     ~7
 #define PN_NONE         ((PN_SIZE)-1)
+#define POTION_FWD      0xFFFFFFFE
+#define POTION_COPIED   0xFFFFFFFF
 
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE)
 #define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
@@ -149,7 +150,7 @@ struct PNObject {
 // reallocation)
 //
 struct PNFwd {
-  PN_OBJECT_HEADER
+  unsigned int fwd;
   PN_SIZE siz;
   PN ptr;
 };
@@ -281,15 +282,15 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_NIL(obj))  return PN_TNIL;
   while (1) {
     struct PNFwd *o = (struct PNFwd *)(obj & PN_REF_MASK);
-    if (o->vt != PN_TFWD)
-      return o->vt;
+    if (o->fwd != POTION_FWD)
+      return ((struct PNObject *)o)->vt;
     obj = o->ptr;
   }
 }
 
 // resolve forwarding pointers for mutable types (PNTuple, PNBytes, etc.)
 static inline PN potion_fwd(PN obj) {
-  while (PN_IS_PTR(obj) && ((struct PNFwd *)obj)->vt == PN_TFWD)
+  while (PN_IS_PTR(obj) && ((struct PNFwd *)obj)->fwd == POTION_FWD)
     obj = ((struct PNFwd *)obj)->ptr;
   return obj;
 }
@@ -395,7 +396,7 @@ static inline void *potion_gc_realloc(struct PNMemory *M, PNType vt, struct PNOb
   dst = potion_gc_alloc(M, vt, sz);
   if (obj != NULL) {
     memcpy(dst, (void *)obj, oldsz);
-    ((struct PNFwd *)obj)->vt = PN_TFWD;
+    ((struct PNFwd *)obj)->fwd = POTION_FWD;
     ((struct PNFwd *)obj)->siz = oldsz;
     ((struct PNFwd *)obj)->ptr = (PN)dst;
   }

@@ -228,11 +228,14 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
 
 PN_SIZE potion_type_size(const struct PNObject *ptr) {
   int sz = 0;
+
+  switch (((struct PNFwd *)ptr)->fwd) {
+    case POTION_COPIED:
+    case POTION_FWD:
+      return ((struct PNFwd *)ptr)->siz;
+  }
+
   switch (ptr->vt) {
-    case PN_TNIL:
-    case PN_TFWD:
-      sz = ((struct PNFwd *)ptr)->siz;
-    break;
     case PN_TSTRING:
       sz = sizeof(struct PNString) + PN_STR_LEN(ptr) + 1;
     break;
@@ -286,7 +289,7 @@ void *potion_gc_copy(struct PNMemory *M, struct PNObject *ptr) {
   memcpy(dst, ptr, sz);
   M->old_cur = (char *)dst + sz;
 
-  ((struct PNFwd *)ptr)->vt = PN_TNIL;
+  ((struct PNFwd *)ptr)->fwd = POTION_COPIED;
   ((struct PNFwd *)ptr)->siz = sz;
   ((struct PNFwd *)ptr)->ptr = (PN)dst;
 

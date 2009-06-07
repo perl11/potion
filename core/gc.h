@@ -53,7 +53,7 @@
 
 #define GC_FORWARD(p) do { \
   struct PNFwd *_pnobj = *((struct PNFwd **)p); \
-  if (_pnobj->vt == PN_TNIL) \
+  if (_pnobj->fwd == POTION_COPIED) \
     *(p) = _pnobj->ptr; \
   else \
     *(p) = (_PN)potion_gc_copy(M, (struct PNObject *)_pnobj); \
