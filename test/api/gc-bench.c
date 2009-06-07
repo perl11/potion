@@ -27,8 +27,12 @@ static const int max_tree = 20;
 //
 PN gc_make_tree(int depth) {
   PN l, r, x;
-  if (depth <= 0)
-    return potion_tuple_with_size(P, 2);
+  if (depth <= 0) {
+    x = potion_tuple_with_size(P, 2);
+    PN_TUPLE_AT(x, 0) = PN_NIL;
+    PN_TUPLE_AT(x, 1) = PN_NIL;
+    return x;
+  }
 
   l = gc_make_tree(depth - 1);
   r = gc_make_tree(depth - 1);

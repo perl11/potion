@@ -25,7 +25,8 @@
 #define SET_GEN(t, p, s) \
   M->t##_lo = p; \
   M->t##_cur = p + (sizeof(PN) * 2); \
-  M->t##_hi = p + (s);
+  M->t##_hi = p + (s); \
+  p = 0
 
 #define SET_STOREPTR(n) \
   M->birth_storeptr = (void *)(((void **)M->birth_hi) - n)

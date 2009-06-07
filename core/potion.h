@@ -383,7 +383,7 @@ static inline void *potion_gc_calloc(struct PNMemory *M, PNType vt, int siz) {
 }
 
 static inline void *potion_gc_realloc(struct PNMemory *M, PNType vt, struct PNObject * volatile obj, PN_SIZE sz) {
-  void *dst;
+  void *dst = 0;
   PN_SIZE oldsz = 0;
 
   if (obj != NULL) {

@@ -57,7 +57,7 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
 }
 
 PN_SIZE potion_mark_stack(struct PNMemory *M, int forward) {
-  long n;
+  PN_SIZE n;
   _PN *end, *start = M->cstack;
   POTION_ESP(&end);
 #if POTION_STACK_DIR > 0
@@ -67,7 +67,7 @@ PN_SIZE potion_mark_stack(struct PNMemory *M, int forward) {
   start = end;
   end = M->cstack;
 #endif
-  if (n <= 0) return;
+  if (n <= 0) return 0;
   return pngc_mark_array(M, start, n, forward);
 }
 
@@ -88,7 +88,7 @@ void pngc_page_delete(void *mem, int sz) {
 // his tutelage in this matter.)
 //
 static int potion_gc_minor(struct PNMemory *M, int sz) {
-  void *scanptr = (void *) M->old_cur;
+  void *scanptr = 0;
   void *newad = 0;
   void **storead = 0;
 
@@ -97,13 +97,14 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
   else if (sz >= POTION_MAX_BIRTH_SIZE)
     return POTION_NO_MEM;
 
+  scanptr = (void *) M->old_cur;
   info("running gc_minor\n"
     "(young: %p -> %p = %ld)\n"
     "(old: %p -> %p = %ld)\n"
     "(storeptr len = %ld)\n",
-    M->birth_lo, M->birth_hi, M->birth_hi - M->birth_lo,
-    M->old_lo, M->old_hi, M->old_hi - M->old_lo,
-    (void *)M->birth_hi - (void *)M->birth_storeptr);
+    M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
+    M->old_lo, M->old_hi, (long)(M->old_hi - M->old_lo),
+    (long)((void *)M->birth_hi - (void *)M->birth_storeptr));
   potion_mark_stack(M, 1);
 
   for (storead = ((void **)M->birth_storeptr) - 1;
@@ -112,9 +113,11 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
     if (PN_IS_PTR(v))
       potion_mark_minor(M, (const struct PNObject *)v);
   }
+  storead = 0;
 
   while ((PN)scanptr < (PN)M->old_cur)
     scanptr = potion_mark_minor(M, scanptr);
+  scanptr = 0;
 
   sz += 2 * POTION_PAGESIZE;
   sz = max(sz, POTION_BIRTH_SIZE);
@@ -129,9 +132,9 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
 }
 
 static int potion_gc_major(struct PNMemory *M, int siz) {
-  void *prevoldlo = (void *)M->old_lo;
-  void *prevoldhi = (void *)M->old_hi;
-  void *prevoldcur = (void *)M->old_cur;
+  void *prevoldlo = 0;
+  void *prevoldhi = 0;
+  void *prevoldcur = 0;
   void *newold = 0;
   void *scanptr = 0;
   void *newbirth = 0;
@@ -144,23 +147,31 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
   else if (siz >= POTION_BIRTH_SIZE)
     return POTION_NO_MEM;
 
+  prevoldlo = (void *)M->old_lo;
+  prevoldhi = (void *)M->old_hi;
+  prevoldcur = (void *)M->old_cur;
+
   info("running gc_major\n"
     "(young: %p -> %p = %ld)\n"
     "(old: %p -> %p = %ld)\n",
-    M->birth_lo, M->birth_hi, M->birth_hi - M->birth_lo,
-    M->old_lo, M->old_hi, M->old_hi - M->old_lo);
+    M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
+    M->old_lo, M->old_hi, (long)(M->old_hi - M->old_lo));
   newoldsiz = (((char *)prevoldcur - (char *)prevoldlo) + siz + POTION_BIRTH_SIZE +
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
   newold = pngc_page_new(&newoldsiz, 0);
   M->old_cur = scanptr = newold + (sizeof(PN) * 2);
-  info("(new old: %p -> %p = %ld)\n", newold, (char *)newold + newoldsiz, newoldsiz);
+  info("(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
 
   potion_mark_stack(M, 2);
 
   while ((PN)scanptr < (PN)M->old_cur)
     scanptr = potion_mark_major(M, scanptr);
+  scanptr = 0;
 
   pngc_page_delete((void *)prevoldlo, (char *)prevoldhi - (char *)prevoldlo);
+  prevoldlo = 0;
+  prevoldhi = 0;
+  prevoldcur = 0;
 
   birthsiz = siz + POTION_BIRTH_SIZE;
   newbirth = pngc_page_new(&birthsiz, 0);
@@ -180,6 +191,8 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
   M->old_lo = newold;
   M->old_hi = (char *)newold + newoldsiz;
   M->majors++;
+
+  newold = 0;
 
   return POTION_OK;
 }
@@ -269,11 +282,8 @@ PN_SIZE potion_type_size(const struct PNObject *ptr) {
 
 void *potion_gc_copy(struct PNMemory *M, struct PNObject *ptr) {
   void *dst = (void *)M->old_cur;
-  PN_SIZE sz = 0;
-  ptr = (struct PNObject *)potion_fwd((PN)ptr); // never copy forwarding pointers
-  sz = potion_type_size((const struct PNObject *)ptr);
+  PN_SIZE sz = potion_type_size((const struct PNObject *)ptr);
   memcpy(dst, ptr, sz);
-  info("  -> %p -> %p = [0] = %p; [1] = %p; %ld ", dst, ptr, ((struct PNTuple *)ptr)->set[0], ((struct PNTuple *)ptr)->set[1], sz);
   M->old_cur = (char *)dst + sz;
 
   ((struct PNFwd *)ptr)->vt = PN_TNIL;
@@ -470,6 +480,11 @@ void potion_gc_release(struct PNMemory *M) {
   pngc_page_delete(birthlo, birthhi - birthlo);
   if (oldlo != NULL)
     pngc_page_delete(oldlo, oldhi - oldlo);
+
+  birthlo = 0;
+  birthhi = 0;
+  oldlo = 0;
+  oldhi = 0;
 }
 
 PN potion_gc_actual(Potion *P, PN cl, PN self)
