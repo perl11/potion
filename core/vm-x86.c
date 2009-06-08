@@ -289,6 +289,7 @@ void potion_x86_getupval(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_MOV_RBP(0x89, op.a);
 }
 
+// TODO: place the upval in the write barrier (or have stack scanning handle weak refs)
 void potion_x86_setupval(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long lregs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /*  mov -A(%rbp) %edx */

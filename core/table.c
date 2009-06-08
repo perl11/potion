@@ -39,6 +39,7 @@ PN potion_table_cast(Potion *P, PN self) {
     ((struct PNFwd *)self)->fwd = POTION_FWD;
     ((struct PNFwd *)self)->siz = potion_type_size((const struct PNObject *)self);
     ((struct PNFwd *)self)->ptr = (PN)t;
+    PN_TOUCH(self);
     self = (PN)t;
   }
   return self;
@@ -57,6 +58,7 @@ PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   unsigned k = kh_put(_PN, t->kh, key, &ret);
   kh_value(t->kh, k) = value;
+  PN_TOUCH(self);
   return self;
 }
 
@@ -104,6 +106,7 @@ PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len + 1));
   t->set[t->len] = value;
   t->len++;
+  PN_TOUCH(tuple);
   return tuple;
 }
 
@@ -160,6 +163,7 @@ PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
     long i = PN_INT(key), len = PN_TUPLE_LEN(self);
     if (i <= len) {
       PN_TUPLE_AT(self, i) = value;
+      PN_TOUCH(self);
       return self;
     }
   }

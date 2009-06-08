@@ -104,6 +104,7 @@ struct PNMemory;
 #define PN_SET_REF(t)   (((PN)t)+PN_FWEAK)
 #define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_FWEAK))
 #define PN_DEREF(x)     PN_GET_REF(x)->data
+#define PN_TOUCH(x)     potion_gc_update(P->mem, (PN)(x))
 
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
 #define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER PN_SIZE siz; PN_SIZE len; T ptr[0]; } N;
@@ -388,6 +389,17 @@ static inline void *potion_gc_calloc(struct PNMemory *M, PNType vt, int siz) {
   return potion_gc_alloc(M, vt, siz);
 }
 
+static inline void potion_gc_update(struct PNMemory *M, PN x) {
+  if (x < (PN)M->old_lo || x > (PN)M->old_hi ||
+      x == (PN)M->birth_storeptr[1] ||
+      x == (PN)M->birth_storeptr[2] ||
+      x == (PN)M->birth_storeptr[3])
+       return;
+  *(M->birth_storeptr--) = (void *)x;
+  if ((void **)M->birth_storeptr - 4 <= (void **)M->birth_cur)
+    potion_garbagecollect(M, POTION_PAGESIZE, 0);
+}
+
 static inline void *potion_gc_realloc(struct PNMemory *M, PNType vt, struct PNObject * volatile obj, PN_SIZE sz) {
   void *dst = 0;
   PN_SIZE oldsz = 0;
@@ -404,6 +416,7 @@ static inline void *potion_gc_realloc(struct PNMemory *M, PNType vt, struct PNOb
     ((struct PNFwd *)obj)->fwd = POTION_FWD;
     ((struct PNFwd *)obj)->siz = oldsz;
     ((struct PNFwd *)obj)->ptr = (PN)dst;
+    potion_gc_update(M, (PN)obj);
   }
 
   return dst;
@@ -413,17 +426,6 @@ static inline PN potion_data_alloc(struct PNMemory *M, int siz) {
   struct PNData *data = potion_gc_alloc(M, PN_TUSER, sizeof(struct PNData) + siz);
   data->siz = siz;
   return (PN)data;
-}
-
-static inline void potion_gc_update(struct PNMemory *M, PN x) {
-  if (x < (PN)M->old_lo || x > (PN)M->old_hi ||
-      x == (PN)M->birth_storeptr[1] ||
-      x == (PN)M->birth_storeptr[2] ||
-      x == (PN)M->birth_storeptr[3])
-       return;
-  *(M->birth_storeptr--) = (void *)x;
-  if ((void **)M->birth_storeptr - 4 <= (void **)M->birth_cur)
-    potion_garbagecollect(M, POTION_PAGESIZE, 0);
 }
 
 //
