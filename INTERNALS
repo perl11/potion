@@ -335,6 +335,7 @@
   What happens when the old generation runs
   out of room? A new old generation is
   allocated and we do a major collection:
+  the call stack is scanned and everything from
   the birth region AND the full-to-the-brim
   older region are both scanned and moved on
   to the new generation.
@@ -359,6 +360,19 @@
   As for moving pointers around, that's
   why the volatile keyword is a part of the
   PN typedef.
+
+  Does Potion perform exact GC? Not strictly.
+  During the stack scanning phase, Potion has
+  no idea what pointers are legit. For now,
+  this is resolved by investigating the header
+  of each pointer's object for a valid type
+  object. The type can then be compared with
+  the contents of the object to be sure the
+  object is real. To me, this feels exact
+  enough. (If, in practice, it proves to
+  be too messy, I may resort to using a
+  macro to identify exact pointers, just as
+  Qish does.)
 
 
   ~ the volatile keyword ~
@@ -433,4 +447,98 @@
   and lives its life independantly of the other
   regions, not to be moved or released until
   the Potion interpreter is destroyed.
+
+
+  ~ object overhead ~
+
+  Primitives (such as numbers, booleans and nil) are
+  immediate values in Potion, kept in registers.
+
+  Everything else is given a spot in memory. Every
+  allocated object has a single word header specifying
+  its type. Here's a breakdown of what each object looks
+  like on 32-bit:
+
+    PNObject = 4 + (N * 4) bytes
+      4 bytes (type = 0x250009)
+      N * 4 bytes (each object field)
+
+    PNWeakRef = 8 bytes
+      4 bytes (type = 0x250004)
+      4 bytes (pointer to object)
+
+    PNString = 13 + N bytes
+      4 bytes (type = 0x250003)
+      4 bytes (length of string)
+      4 bytes (an incremental id used as hash)
+      N + 1 bytes (UTF-8 + '\0')
+
+    PNBytes = 9 + N bytes
+      4 bytes (type = 0x25000c)
+      4 bytes (length of string)
+      N + 1 bytes (string + '\0')
+
+    PNTuple = 8 + (N * 4) bytes
+      4 bytes (type = 0x250006)
+      4 bytes (length of tuple)
+      N * 4 bytes (each tuple item)
+
+    PNClosure = 16 + (N * 4) bytes
+      4 bytes (type = 0x25005)
+      4 bytes (function pointer)
+      4 bytes (signature pointer)
+      4 bytes (length of attached data)
+      N * 4 bytes (attached data)
+
+    PNData = 8 + N bytes
+      4 bytes (type = 0x250011)
+      4 bytes (length of contained data)
+      N bytes (data)
+
+  The smallest allocation unit in Potion is
+  16 bytes. Everything larger than 16 bytes
+  is aligned to 8 bytes. This is true for both
+  32-bit and 64-bit platforms.
+
+  The reason for this figure is to allow room for
+  the PNFwd struct:
+
+    unsigned int  // POTION_FWD or POTION_COPIED
+    unsigned int  // allocated space in this slot
+    unsigned long // pointer to moved object
+
+  Any time an object is moved by GC or reallocated,
+  a temporary PNFwd is placed in the memory slot to
+  redirect callers temporarily. In practice, you
+  shouldn't ever need to deal with these values,
+  since the stack scanning phase will rewrite them
+  automatically.
+
+  The first type of PNFwd is POTION_FWD. This type
+  is used for reallocation. Potion only has four
+  built-in types that are subject to reallocation:
+  tuples, tables, byte strings, and internal buffers.
+  (Internal buffers are used by the JIT to store
+  machine code output and by the object model to
+  keep an array of type classes in circulation.)
+
+  The POTION_FWD pointers will happen between GC
+  cycles, so they stay in place for awhile. The
+  API around those four built-ins is designed to
+  check for forwarded pointers whenever they're
+  passed in as an object. One the next GC cycle
+  hits all the pointers will be updated to use
+  the new objects (even if POTION_FWD occurs in
+  the old generation, due to the write barrier.)
+
+  The other PNFwd type is a POTION_COPIED pointer.
+  This is used by the GC to denote an object which
+  has moved to the old generation. These should
+  not appear outside the GC cycle. The PNFwd is
+  placed immediately when the object is moved and
+  is then used to rewrite pointers found on the
+  stack or inside other objects. After the GC
+  cycle, these pointers will disappear when the
+  its outdated generation is discarded.
+
 
