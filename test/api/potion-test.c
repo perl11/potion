@@ -104,9 +104,11 @@ void potion_test_eval(CuTest *T) {
 }
 
 void potion_test_allocated(CuTest *T) {
-  void *scanptr = (void *)((char *)P->mem->birth_lo + sizeof(struct PNMemory));
+  void *scanptr = (void *)((char *)P->mem->birth_lo + PN_ALIGN(sizeof(struct PNMemory), 8));
   while ((PN)scanptr < (PN)P->mem->birth_cur) {
-    CuAssert(T, "wrong type for allocated object", ((struct PNObject *)scanptr)->vt <= PN_TUSER);
+    if (((struct PNFwd *)scanptr)->fwd != POTION_FWD && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
+      CuAssert(T, "wrong type for allocated object", ((struct PNObject *)scanptr)->vt <= PN_TUSER);
+    }
     scanptr = (void *)((char *)scanptr + potion_type_size(scanptr));
     CuAssert(T, "allocated object goes beyond GC pointer", (PN)scanptr <= (PN)P->mem->birth_cur);
   }
