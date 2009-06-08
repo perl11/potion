@@ -29,7 +29,6 @@ PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
 
 static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register long n, int forward) {
   _PN v;
-  PNType t;
   PN_SIZE i = 0;
   Potion *P = (Potion *)((char *)(M) + PN_ALIGN(sizeof(struct PNMemory), 8));
 
