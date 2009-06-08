@@ -253,10 +253,10 @@ void potion_x86_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   if (up) {
     // TODO: optimize to use %rdx rather than jmp
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
-    ASM(0x83); ASM(0xF8); ASM(PN_TWEAK); // cmp WEAK %eax
+    ASM(0x83); ASM(0xF8); ASM(PN_FWEAK); // cmp WEAK %eax
     ASM(0x75); ASM(X86C(11, 14)); // jne 13
     X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
-    X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_TWEAK); // xor REF %eax
+    X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_FWEAK); // xor REF %eax
     X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); // mov %rax.data %rax
     ASM(0xEB); ASM(X86C(3, 4)); //  jmp 4
     X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
@@ -272,10 +272,10 @@ void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatil
     // TODO: optimize to use %rdx rather than jmp
     X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
     ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
-    ASM(0x83); ASM(0xF8); ASM(PN_TWEAK); // cmp WEAK %eax
+    ASM(0x83); ASM(0xF8); ASM(PN_FWEAK); // cmp WEAK %eax
     ASM(0x75); ASM(X86C(11, 14)); // jne 13
     X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
-    X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_TWEAK); // xor REF %eax
+    X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_FWEAK); // xor REF %eax
     X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
     ASM(0xEB); ASM(X86C(3, 4)); //  jmp 4
   }
@@ -535,12 +535,11 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   // check type of the closure
   X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.b)); // mov %rbp(B) %rax
   ASM(0xF6); ASM(0xC0); ASM(0x01); // test 0x1 %al
-  ASM(0x75); ASM(X86C(27, 30)); // jne [a]
+  ASM(0x75); ASM(X86C(27, 31)); // jne [a]
   ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); // test REFMASK %eax
-  ASM(0x74); ASM(X86C(19, 22)); // je [a]
+  ASM(0x74); ASM(X86C(19, 23)); // je [a]
   X86_PRE(); ASM(0x83); ASM(0xE0); ASM(0xF8); // and ~PRIMITIVE %rax
-  ASM(0x8B); ASM(0x40); ASM(0); // mov N(%rax) %rax
-  ASM(0x83); ASM(0xF8); ASM(PN_TCLOSURE); // cmp CLOSURE %rax
+  X86_PRE(); ASM(0x81); ASM(0x38); ASMI(PN_TCLOSURE); // cmpq CLOSURE (%rax)
   ASM(0x75); ASM(X86C(8, 10)); // jne [a]
 
   // if a closure, load the function pointer

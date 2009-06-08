@@ -40,29 +40,31 @@ struct PNTuple;
 struct PNWeakRef;
 struct PNMemory;
 
-#define PN_TNIL         0
-#define PN_TNUMBER      1
-#define PN_TBOOLEAN     2
-#define PN_TSTRING      3
-#define PN_TWEAK        4
-#define PN_TCLOSURE     5
-#define PN_TTUPLE       6
-#define PN_TSTATE       7
-#define PN_TFILE        8
-#define PN_TOBJECT      9
-#define PN_TVTABLE      10
-#define PN_TSOURCE      11
-#define PN_TBYTES       12
-#define PN_TPROTO       13
-#define PN_TLOBBY       14
-#define PN_TTABLE       15
-#define PN_TFLEX        16
-#define PN_TUSER        17
+#define PN_TNIL         0x250000
+#define PN_TNUMBER      (1+PN_TNIL)
+#define PN_TBOOLEAN     (2+PN_TNIL)
+#define PN_TSTRING      (3+PN_TNIL)
+#define PN_TWEAK        (4+PN_TNIL)
+#define PN_TCLOSURE     (5+PN_TNIL)
+#define PN_TTUPLE       (6+PN_TNIL)
+#define PN_TSTATE       (7+PN_TNIL)
+#define PN_TFILE        (8+PN_TNIL)
+#define PN_TOBJECT      (9+PN_TNIL)
+#define PN_TVTABLE      (10+PN_TNIL)
+#define PN_TSOURCE      (11+PN_TNIL)
+#define PN_TBYTES       (12+PN_TNIL)
+#define PN_TPROTO       (13+PN_TNIL)
+#define PN_TLOBBY       (14+PN_TNIL)
+#define PN_TTABLE       (15+PN_TNIL)
+#define PN_TFLEX        (16+PN_TNIL)
+#define PN_TUSER        (17+PN_TNIL)
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
-#define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, t))
+#define PN_TYPE_ID(t)   ((t)-PN_TNIL)
+#define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, PN_TYPE_ID(t)))
+#define PN_TYPECHECK(t) (PN_TYPE_ID(t) >= 0 && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
 
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)
@@ -74,21 +76,24 @@ struct PNMemory;
 #define POTION_FWD      0xFFFFFFFE
 #define POTION_COPIED   0xFFFFFFFF
 
+#define PN_FNUMBER      1
+#define PN_FBOOLEAN     2
+#define PN_FWEAK        4
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE)
 #define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_PTR(v)    (!PN_IS_NUM(v) && ((PN)(v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
-#define PN_IS_BOOL(v)   ((PN)(v) & PN_TBOOLEAN)
-#define PN_IS_NUM(v)    ((PN)(v) & PN_TNUMBER)
+#define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)
+#define PN_IS_NUM(v)    ((PN)(v) & PN_FNUMBER)
 #define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
 #define PN_IS_DECIMAL(v) (PN_IS_PTR(v) && PN_TYPE(v) == PN_TNUMBER)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
-#define PN_IS_REF(v)     (((PN)(v) & PN_PRIMITIVE) == PN_TWEAK)
+#define PN_IS_REF(v)     (((PN)(v) & PN_PRIMITIVE) == PN_FWEAK)
 
-#define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_TNUMBER))
+#define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       (((long)(x))>>1)
 #define PN_STR_PTR(x)   potion_str_ptr(x)
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
@@ -96,8 +101,8 @@ struct PNMemory;
 #define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method
 #define PN_PROTO(x)     ((struct PNProto *)(x))
 #define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0)
-#define PN_SET_REF(t)   (((PN)t)+PN_TWEAK)
-#define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_TWEAK))
+#define PN_SET_REF(t)   (((PN)t)+PN_FWEAK)
+#define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_FWEAK))
 #define PN_DEREF(x)     PN_GET_REF(x)->data
 
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
