@@ -364,6 +364,7 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
 void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
   PN_SIZE i;
   PN_SIZE sz = 16;
+  Potion *P = (Potion *)((char *)(M) + PN_ALIGN(sizeof(struct PNMemory), 8));
 
   switch (ptr->vt) {
     case PN_TWEAK:
@@ -458,12 +459,11 @@ Potion *potion_gc_boot(void *sp) {
   SET_STOREPTR(4);
 
   M->cstack = sp;
-  M->birth_cur += PN_ALIGN(sizeof(struct PNMemory), 8);
-  P = (Potion *)M->birth_cur;
+  P = (Potion *)((char *)M + PN_ALIGN(sizeof(struct PNMemory), 8));
   PN_MEMZERO(P, Potion);
   P->mem = M;
 
-  M->birth_cur += PN_ALIGN(sizeof(Potion), 8);
+  M->birth_cur = (void *)((char *)P + PN_ALIGN(sizeof(Potion), 8));
   GC_PROTECT(M);
   return P;
 }
