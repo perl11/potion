@@ -304,6 +304,13 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
   PN_SIZE i;
   PN_SIZE sz = 16;
 
+  switch (((struct PNFwd *)ptr)->fwd) {
+    case POTION_COPIED:
+    case POTION_FWD:
+      GC_MINOR_UPDATE(((struct PNFwd *)ptr)->ptr);
+    goto done;
+  }
+
   switch (ptr->vt) {
     case PN_TWEAK:
       GC_MINOR_UPDATE(((struct PNWeakRef *)ptr)->data);
@@ -361,6 +368,7 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
     break;
   }
 
+done:
   sz = potion_type_size(ptr);
   return (void *)((char *)ptr + sz);
 }
@@ -368,6 +376,13 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
 void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
   PN_SIZE i;
   PN_SIZE sz = 16;
+
+  switch (((struct PNFwd *)ptr)->fwd) {
+    case POTION_COPIED:
+    case POTION_FWD:
+      GC_MAJOR_UPDATE(((struct PNFwd *)ptr)->ptr);
+    goto done;
+  }
 
   switch (ptr->vt) {
     case PN_TWEAK:
@@ -426,6 +441,7 @@ void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
     break;
   }
 
+done:
   sz = potion_type_size(ptr);
   return (void *)((char *)ptr + sz);
 }
