@@ -255,6 +255,34 @@
       (1, 2, 3) map (item=x, index=i): i display, x + 1.
 
 
+  ~ feverish and fond thankyous ~
+
+  I am gravely indebted to Basile Starynkevitch, who fielded my
+  questions about his garbage collector. I favor French hackers
+  to an extreme (Xavier Leroy, Nicolas Cannasse, Guy Decoux,
+  Mathieu Bochard to name only a portion of those I admire) and
+  am very glad to represent their influence in Potion's garbage
+  collector.
+
+  Matz, for answering my questions about conservative GC and
+  for encouraging me so much. Potion's stack scanning code and
+  some of the object model come from Ruby.
+
+  Of course, Mauricio Fernandez for his inspiring programming
+  journal housed at http://eigenclass.org/R2/ and for works
+  derived throughout the course of it -- extprot most of all.
+  Many of my thoughts about language internals (object repr,
+  GC, etc.) are informed by him.
+
+  Adrian Thurston for Ragel. D. Richard Hipp for Lemon. And
+  Zed Shaw for introducing me to both fine softwares. At
+  this point, I've overused them.
+
+  Final appreciations to Jonathan Wright and William Morgan
+  who pitched in, back in the wee hours of Potion's history.
+  Tanks.
+
+
   ~ license ~
 
   See COPYING for legal information. It's an MIT license,

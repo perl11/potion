@@ -158,8 +158,8 @@ PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN * volatile upargs) {
   // current = upvals | locals | self | reg
   PN_SIZE pos = 0;
   long argx = 0;
-  PN * volatile args = NULL, * volatile upvals, * volatile locals, * volatile reg;
-  PN * volatile current = stack;
+  PN *args = NULL, *upvals, *locals, *reg;
+  PN *current = stack;
 
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
 reentry:
