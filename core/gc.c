@@ -25,7 +25,7 @@ PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
   return esp < c ? c - esp : esp - c + 1;
 }
 
-#define HAS_REAL_TYPE(v) (P->vts == NULL || (((struct PNFwd *)v)->fwd == POTION_COPIED || PN_TYPECHECK(PN_VTYPE(v))))
+#define HAS_REAL_TYPE(v) (P->vts == NULL || (((struct PNFwd *)(v & PN_REF_MASK))->fwd == POTION_COPIED || PN_TYPECHECK(PN_VTYPE(v & PN_REF_MASK))))
 
 static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register long n, int forward) {
   _PN v;
@@ -115,7 +115,7 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
        storead < (void **)M->birth_hi; storead++) {
     PN v = (PN)*storead;
     if (PN_IS_PTR(v))
-      potion_mark_minor(M, (const struct PNObject *)v);
+      potion_mark_minor(M, (const struct PNObject *)(v & PN_REF_MASK));
   }
   storead = 0;
 
@@ -292,6 +292,9 @@ void *potion_gc_copy(struct PNMemory *M, struct PNObject *ptr) {
   PN_SIZE sz = potion_type_size((const struct PNObject *)ptr);
   memcpy(dst, ptr, sz);
   M->old_cur = (char *)dst + sz;
+
+  if (ptr->vt == PN_TWEAK)
+    dst = (void *)PN_SET_REF(dst);
 
   ((struct PNFwd *)ptr)->fwd = POTION_COPIED;
   ((struct PNFwd *)ptr)->siz = sz;

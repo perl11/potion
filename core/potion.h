@@ -529,7 +529,7 @@ PN potion_gc_actual(Potion *, PN, PN);
 PN potion_gc_fixed(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
-PN potion_vm(Potion *, PN, PN, PN_SIZE, PN * volatile);
+PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
 PN potion_eval(Potion *, const char *);
 PN potion_run(Potion *, PN);
 PN_F potion_jit_proto(Potion *, PN, PN);

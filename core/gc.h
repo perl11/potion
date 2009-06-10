@@ -52,7 +52,7 @@
   (PN_IS_PTR(p) && IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p))
 
 #define GC_FORWARD(p) do { \
-  struct PNFwd *_pnobj = *((struct PNFwd **)p); \
+  struct PNFwd *_pnobj = (struct PNFwd *)(*(p) & PN_REF_MASK); \
   if (_pnobj->fwd == POTION_COPIED) \
     *(p) = _pnobj->ptr; \
   else \

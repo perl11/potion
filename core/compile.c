@@ -32,7 +32,7 @@ const struct {
 };
 
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
-  return potion_vm(P, self, args, 0, NULL);
+  return potion_vm(P, self, P->lobby, args, 0, NULL);
 }
 
 PN potion_proto_string(Potion *P, PN cl, PN self) {

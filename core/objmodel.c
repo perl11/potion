@@ -60,7 +60,7 @@ PN potion_obj_call(Potion *P, PN cl, PN count, ...) {
 }
 
 PN potion_proto_method(Potion *P, PN cl, PN self, PN args) {
-  return potion_vm(P, PN_CLOSURE(cl)->data[0], args, 0, NULL);
+  return potion_vm(P, PN_CLOSURE(cl)->data[0], P->lobby, args, 0, NULL);
 }
 
 PN potion_getter_method(Potion *P, PN cl, PN self) {

@@ -14,9 +14,8 @@
 
 extern PNTarget potion_target_x86, potion_target_ppc;
 
-// TODO: this is being circumvented right now, but it's broken without varargs.
 PN potion_vm_proto(Potion *P, PN cl, PN args) {
-  return potion_vm(P, PN_CLOSURE(cl)->data[0], args,
+  return potion_vm(P, PN_CLOSURE(cl)->data[0], P->lobby, args,
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
 
@@ -146,13 +145,12 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   return f->jit = (PN_F)fn;
 }
 
-PN potion_vm(Potion *P, PN proto, PN vargs, PN_SIZE upc, PN * volatile upargs) {
+PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   vPN(Proto) f = (struct PNProto *)proto;
 
   // these variables persist as we jump around
   PN stack[STACK_MAX];
   PN val = PN_NIL;
-  PN self = P->lobby;
 
   // these variables change from proto to proto
   // current = upvals | locals | self | reg
@@ -304,6 +302,13 @@ reentry:
           case PN_TCLOSURE:
             if (PN_CLOSURE(reg[op.b])->method != (PN_F)potion_vm_proto) {
               reg[op.a] = potion_call(P, reg[op.b], op.b - op.a, reg + op.a);
+            } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
+              int i;
+              PN argt = potion_tuple_with_size(P, (op.b - op.a) - 1);
+              for (i = 1; i < op.b - op.a; i++)
+                PN_TUPLE_AT(argt, i - 1) = reg[op.a + i];
+              reg[op.a] = potion_vm(P, PN_CLOSURE(reg[op.b])->data[0], reg[op.a], argt,
+                PN_CLOSURE(reg[op.b])->extra - 1, &PN_CLOSURE(reg[op.b])->data[1]);
             } else {
               self = reg[op.a];
               args = &reg[op.a+1];
