@@ -499,7 +499,7 @@ void potion_gc_release(struct PNMemory *M) {
 
   if (M->birth_lo != M) {
     void *protend = (void *)PN_ALIGN((_PN)M->protect, POTION_PAGESIZE);
-    pngc_page_delete((void *)M, (char *)protend - (char *)M->birth_lo);
+    pngc_page_delete((void *)M, (char *)protend - (char *)M);
   }
 
   pngc_page_delete(birthlo, birthhi - birthlo);
