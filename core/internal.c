@@ -155,3 +155,21 @@ void potion_esp(void **esp) {
   PN x;
   *esp = (void *)&x;
 }
+
+void potion_dump_stack(Potion *P) {
+  PN_SIZE n;
+  PN *end, *start = P->mem->cstack;
+  POTION_ESP(&end);
+#if POTION_STACK_DIR > 0
+  n = end - start;
+#else
+  n = start - end + 1;
+  start = end;
+  end = P->mem->cstack;
+#endif
+
+  while (n--) {
+    printf("stack(%u) = %lx\n", n, *start);
+    start++;
+  }
+}

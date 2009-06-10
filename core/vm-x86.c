@@ -285,6 +285,7 @@ void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 void potion_x86_getupval(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long lregs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MOV_RBP(0x8B, lregs + op.b);
+  X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_FWEAK); // xor REF %rax
   X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject));
   X86_MOV_RBP(0x89, op.a);
 }
@@ -294,6 +295,7 @@ void potion_x86_setupval(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /*  mov -A(%rbp) %edx */
   X86_MOV_RBP(0x8B, lregs + op.b); // mov %rsp(B) %rax
+  X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_FWEAK); // xor REF %rax
   X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
 }
 
@@ -582,7 +584,6 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
       X86_PRE(); ASM(0xB8); ASMN(potion_ref); // mov &potion_ref %rax
       ASM(0xFF); ASM(0xD0); // callq %rax
       X86_MOV_RBP(0x89, regs + op.b); // mov %rax local
-      X86_PRE(); ASM(0x83); ASM(0xF0); ASM(0x04); // xor REF %rax
       X86_PRE(); ASM(0x89); ASM(0xC2); // mov %rax %rdx
     } else {
       fprintf(stderr, "** missing an upval to proto %p\n", (void *)proto);

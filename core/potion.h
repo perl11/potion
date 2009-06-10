@@ -522,6 +522,7 @@ void potion_table_init(Potion *);
 void potion_source_init(Potion *);
 void potion_compiler_init(Potion *);
 void potion_vm_init(Potion *);
+void potion_dump_stack(Potion *);
 
 PN potion_any_is_nil(Potion *, PN, PN);
 PN potion_gc_reserved(Potion *, PN, PN);

@@ -56,7 +56,7 @@
   if (_pnobj->fwd == POTION_COPIED) \
     *(p) = _pnobj->ptr; \
   else \
-    *(p) = (_PN)potion_gc_copy(M, (struct PNObject *)_pnobj); \
+    *(p) = (_PN)potion_gc_copy(M, (struct PNObject *)*(p)); \
 }  while(0)
 
 #define GC_MINOR_UPDATE(p) do { \

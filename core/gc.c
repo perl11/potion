@@ -16,7 +16,8 @@
 #include "khash.h"
 #include "table.h"
 
-#define info(x, ...)
+// #define info(x, ...)
+#define info printf
 
 PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
   _PN *esp, *c = M->cstack;
@@ -25,7 +26,7 @@ PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
   return esp < c ? c - esp : esp - c + 1;
 }
 
-#define HAS_REAL_TYPE(v) (P->vts == NULL || (((struct PNFwd *)(v & PN_REF_MASK))->fwd == POTION_COPIED || PN_TYPECHECK(PN_VTYPE(v & PN_REF_MASK))))
+#define HAS_REAL_TYPE(v) (P->vts == NULL || (((struct PNFwd *)v)->fwd == POTION_COPIED || PN_TYPECHECK(PN_VTYPE(v))))
 
 static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register long n, int forward) {
   _PN v;
@@ -33,9 +34,10 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
   Potion *P = (Potion *)((char *)(M) + PN_ALIGN(sizeof(struct PNMemory), 8));
 
   while (n--) {
-    v = *x;
+    v = *x & PN_REF_MASK;
     if (IS_GC_PROTECTED(v) || IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) {
-      *x = v = potion_fwd(v);
+      *x = potion_fwd(v);
+      v = *x & PN_REF_MASK;
       switch (forward) {
         case 0: // count only
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v))
