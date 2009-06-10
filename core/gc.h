@@ -51,28 +51,28 @@
 #define IS_NEW_PTR(p) \
   (PN_IS_PTR(p) && IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p))
 
-#define GC_FORWARD(p) do { \
-  struct PNFwd *_pnobj = (struct PNFwd *)(*(p) & PN_REF_MASK); \
+#define GC_FORWARD(p, v) do { \
+  struct PNFwd *_pnobj = (struct PNFwd *)v; \
   if (_pnobj->fwd == POTION_COPIED) \
     *(p) = _pnobj->ptr; \
   else \
-    *(p) = (_PN)potion_gc_copy(M, (struct PNObject *)*(p)); \
+    *(p) = (_PN)potion_gc_copy(M, (struct PNObject *)v); \
 }  while(0)
 
 #define GC_MINOR_UPDATE(p) do { \
   if (PN_IS_PTR(p)) { \
-    (p) = potion_fwd(p); \
-    if (IN_BIRTH_REGION(p) && !IS_GC_PROTECTED(p)) \
-      { GC_FORWARD(&(p)); } \
+    PN _pnv = potion_fwd(p); \
+    if (IN_BIRTH_REGION(_pnv) && !IS_GC_PROTECTED(_pnv)) \
+      { GC_FORWARD(&(p), _pnv); } \
   } \
 } while(0)
 
 #define GC_MAJOR_UPDATE(p) do { \
   if (PN_IS_PTR(p)) { \
-    (p) = potion_fwd(p); \
-    if (!IS_GC_PROTECTED(p) && \
-        (IN_BIRTH_REGION(p) || IN_OLDER_REGION(p))) \
-      {GC_FORWARD((_PN *)&(p));} \
+    PN _pnv = potion_fwd(p); \
+    if (!IS_GC_PROTECTED(_pnv) && \
+        (IN_BIRTH_REGION(_pnv) || IN_OLDER_REGION(_pnv))) \
+      {GC_FORWARD((_PN *)&(p), _pnv);} \
   } \
 } while(0)
 

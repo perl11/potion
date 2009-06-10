@@ -213,9 +213,10 @@ reentry:
           reg[op.a] = locals[op.b];
       break;
       case OP_SETLOCAL:
-        if (PN_IS_REF(locals[op.b]))
+        if (PN_IS_REF(locals[op.b])) {
           PN_DEREF(locals[op.b]) = reg[op.a];
-        else
+          PN_TOUCH(locals[op.b]);
+        } else
           locals[op.b] = reg[op.a];
       break;
       case OP_GETUPVAL:
@@ -223,6 +224,7 @@ reentry:
       break;
       case OP_SETUPVAL:
         PN_DEREF(upvals[op.b]) = reg[op.a];
+        PN_TOUCH(upvals[op.b]);
       break;
       case OP_NEWTUPLE:
         reg[op.a] = PN_TUP0();

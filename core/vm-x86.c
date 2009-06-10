@@ -248,36 +248,32 @@ void potion_x86_self(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 void potion_x86_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PN_HAS_UPVALS(up);
-  // TODO: optimize to do the ref check only if there are upvals
   X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
   if (up) {
-    // TODO: optimize to use %rdx rather than jmp
-    ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
-    ASM(0x83); ASM(0xF8); ASM(PN_FWEAK); // cmp WEAK %eax
-    ASM(0x75); ASM(X86C(11, 14)); // jne 13
-    X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
-    X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_FWEAK); // xor REF %eax
-    X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); // mov %rax.data %rax
-    ASM(0xEB); ASM(X86C(3, 4)); //  jmp 4
-    X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
+    ASM(0xF6); ASM(0xC0); ASM(0x01); // test 0x1 %al
+    ASM(0x75); ASM(X86C(19, 21)); // jne [a]
+    ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); // test REFMASK %eax
+    ASM(0x74); ASM(X86C(11, 13)); // je [a]
+    X86_PRE(); ASM(0x81); ASM(0x38); ASMI(PN_TWEAK); // cmpq WEAK (%rax)
+    ASM(0x75); ASM(X86C(3, 4)); // jne [a]
+    X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); // mov N(%rax) %rax
   }
-  X86_MOV_RBP(0x89, op.a);
+  X86_MOV_RBP(0x89, op.a); // [b] mov %rax %rsp(A)
 }
 
 void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PN_HAS_UPVALS(up);
-  X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /*  mov -A(%rbp) %edx */
+  X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); // mov %rsp(A) %rdx
   if (up) {
-    // TODO: optimize to use %rdx rather than jmp
     X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
-    ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and PRIM %eax
-    ASM(0x83); ASM(0xF8); ASM(PN_FWEAK); // cmp WEAK %eax
-    ASM(0x75); ASM(X86C(11, 14)); // jne 13
-    X86_MOV_RBP(0x8B, regs + op.b); // mov %rsp(B) %rax
-    X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_FWEAK); // xor REF %eax
-    X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
-    ASM(0xEB); ASM(X86C(3, 4)); //  jmp 4
+    ASM(0xF6); ASM(0xC0); ASM(0x01); // test 0x1 %al
+    ASM(0x75); ASM(X86C(19, 21)); // jne [a]
+    ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); // test REFMASK %eax
+    ASM(0x74); ASM(X86C(11, 13)); // je [a]
+    X86_PRE(); ASM(0x81); ASM(0x38); ASMI(PN_TWEAK); // cmpq WEAK (%rax)
+    ASM(0x75); ASM(X86C(3, 4)); // jne [a]
+    X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov N(%rax) %rax
   }
   X86_PRE(); ASM(0x89); ASM(0x55); ASM(RBP(regs + op.b)); // mov %rdx %rsp(B)
 }
@@ -285,7 +281,6 @@ void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 void potion_x86_getupval(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long lregs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MOV_RBP(0x8B, lregs + op.b);
-  X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_FWEAK); // xor REF %rax
   X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject));
   X86_MOV_RBP(0x89, op.a);
 }
@@ -295,7 +290,6 @@ void potion_x86_setupval(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /*  mov -A(%rbp) %edx */
   X86_MOV_RBP(0x8B, lregs + op.b); // mov %rsp(B) %rax
-  X86_PRE(); ASM(0x83); ASM(0xF0); ASM(PN_FWEAK); // xor REF %rax
   X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
 }
 
@@ -583,8 +577,8 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
       X86_ARGO(regs + op.b, 1);
       X86_PRE(); ASM(0xB8); ASMN(potion_ref); // mov &potion_ref %rax
       ASM(0xFF); ASM(0xD0); // callq %rax
-      X86_MOV_RBP(0x89, regs + op.b); // mov %rax local
       X86_PRE(); ASM(0x89); ASM(0xC2); // mov %rax %rdx
+      X86_MOV_RBP(0x89, regs + op.b); // mov %rax local
     } else {
       fprintf(stderr, "** missing an upval to proto %p\n", (void *)proto);
     }

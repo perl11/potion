@@ -152,7 +152,7 @@ PN potion_ref(Potion *P, PN data) {
   if (PN_IS_REF(data)) return data;
   vPN(WeakRef) ref = PN_ALLOC(PN_TWEAK, struct PNWeakRef);
   ref->data = data;
-  return PN_SET_REF(ref);
+  return (PN)ref;
 }
 
 PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {

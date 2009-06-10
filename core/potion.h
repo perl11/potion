@@ -78,7 +78,6 @@ struct PNMemory;
 
 #define PN_FNUMBER      1
 #define PN_FBOOLEAN     2
-#define PN_FWEAK        4
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE)
 #define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_PTR(v)    (!PN_IS_NUM(v) && ((PN)(v) & PN_REF_MASK))
@@ -91,7 +90,7 @@ struct PNMemory;
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
 #define PN_IS_DECIMAL(v) (PN_IS_PTR(v) && PN_TYPE(v) == PN_TNUMBER)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
-#define PN_IS_REF(v)     (((PN)(v) & PN_PRIMITIVE) == PN_FWEAK)
+#define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
 
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       (((long)(x))>>1)
@@ -101,9 +100,7 @@ struct PNMemory;
 #define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method
 #define PN_PROTO(x)     ((struct PNProto *)(x))
 #define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0)
-#define PN_SET_REF(t)   (((PN)t)+PN_FWEAK)
-#define PN_GET_REF(t)   ((struct PNWeakRef *)(((PN)t)^PN_FWEAK))
-#define PN_DEREF(x)     PN_GET_REF(x)->data
+#define PN_DEREF(x)     ((struct PNWeakRef *)(x))->data
 #define PN_TOUCH(x)     potion_gc_update(P->mem, (PN)(x))
 
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
@@ -287,7 +284,7 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
   while (1) {
-    struct PNFwd *o = (struct PNFwd *)(obj & PN_REF_MASK);
+    struct PNFwd *o = (struct PNFwd *)obj;
     if (o->fwd != POTION_FWD)
       return ((struct PNObject *)o)->vt;
     obj = o->ptr;

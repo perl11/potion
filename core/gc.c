@@ -16,8 +16,7 @@
 #include "khash.h"
 #include "table.h"
 
-// #define info(x, ...)
-#define info printf
+#define info(x, ...)
 
 PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
   _PN *esp, *c = M->cstack;
@@ -34,10 +33,9 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
   Potion *P = (Potion *)((char *)(M) + PN_ALIGN(sizeof(struct PNMemory), 8));
 
   while (n--) {
-    v = *x & PN_REF_MASK;
+    v = *x;
     if (IS_GC_PROTECTED(v) || IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) {
-      *x = potion_fwd(v);
-      v = *x & PN_REF_MASK;
+      v = potion_fwd(v);
       switch (forward) {
         case 0: // count only
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v))
@@ -45,13 +43,13 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
         break;
         case 1: // minor
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
-            GC_FORWARD(x);
+            GC_FORWARD(x, v);
             i++;
           }
         break;
         case 2: // major
           if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) && HAS_REAL_TYPE(v)) {
-            GC_FORWARD(x);
+            GC_FORWARD(x, v);
             i++;
           }
         break;
@@ -117,7 +115,7 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
        storead < (void **)M->birth_hi; storead++) {
     PN v = (PN)*storead;
     if (PN_IS_PTR(v))
-      potion_mark_minor(M, (const struct PNObject *)(v & PN_REF_MASK));
+      potion_mark_minor(M, (const struct PNObject *)v);
   }
   storead = 0;
 
@@ -294,9 +292,6 @@ void *potion_gc_copy(struct PNMemory *M, struct PNObject *ptr) {
   PN_SIZE sz = potion_type_size((const struct PNObject *)ptr);
   memcpy(dst, ptr, sz);
   M->old_cur = (char *)dst + sz;
-
-  if (ptr->vt == PN_TWEAK)
-    dst = (void *)PN_SET_REF(dst);
 
   ((struct PNFwd *)ptr)->fwd = POTION_COPIED;
   ((struct PNFwd *)ptr)->siz = sz;

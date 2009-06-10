@@ -96,7 +96,9 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
     if (exec == 1) {
       code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
       if (verbose > 1)
-        printf("\n-- returned %lu --\n", code);
+        printf("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
+          PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+          PN_INT(potion_gc_reserved(P, 0, 0)));
       if (verbose) {
         potion_send(potion_send(code, PN_string), PN_print);
         printf("\n");
@@ -136,6 +138,28 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
         fprintf(stderr, "** could not write all bytecode.");
       }
     }
+
+#if 0
+    void *scanptr = (void *)((char *)P->mem->old_lo + (sizeof(PN) * 2));
+    while ((PN)scanptr < (PN)P->mem->old_cur) {
+          printf("%p.vt = %lx (%u)\n",
+            scanptr, ((struct PNObject *)scanptr)->vt,
+            potion_type_size(scanptr));
+      if (((struct PNFwd *)scanptr)->fwd != POTION_FWD && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
+        if (((struct PNObject *)scanptr)->vt < 0 || ((struct PNObject *)scanptr)->vt > PN_TUSER) {
+          printf("wrong type for allocated object: %p.vt = %lx\n",
+            scanptr, ((struct PNObject *)scanptr)->vt);
+          break;
+        }
+      }
+      scanptr = (void *)((char *)scanptr + potion_type_size(scanptr));
+      if ((PN)scanptr > (PN)P->mem->old_cur) {
+        printf("allocated object goes beyond GC pointer\n");
+        break;
+      }
+    }
+#endif
+
   } else {
     fprintf(stderr, "** could not read entire file.");
   }
