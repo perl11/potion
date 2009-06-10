@@ -68,7 +68,7 @@
 
   ~ lua's influence ~
 
-  Potion used a register-based bytecode VM that
+  Potion uses a register-based bytecode VM that
   is nearly a word-for-word copy of Lua's. The
   code is all different, but the bytecode is
   nearly identical.
@@ -86,7 +86,8 @@
 
   However, my object representation is more
   like Neko or Ruby, where objects are all
-  represented by 32-bit values.
+  represented by a word (32-bit on x86 and
+  64-bit on x86-64).
 
 
   ~ the parts of potion ~
@@ -123,6 +124,18 @@
        pointer
      - uses the same argument passing strategy
        as c functions
+
+  5. the garbage collector
+     - generational, copying, near exact
+     - marks the stack, then uses a cheney
+       loop to catch everything else
+     - stack scanning is automatic (both
+       the jit and the bytecode vm keep
+       their registers on the call stack)
+     - liberal use of volatile for object
+       pointers, to allow them to move
+       after any allocation
+     - based on a collector called qish
 
 
   ~ the jit ~
