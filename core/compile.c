@@ -45,12 +45,12 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   pn_printf(P, out, "; (");
   PN_TUPLE_EACH(t->sig, i, v, {
     if (PN_IS_NUM(v)) {
-      if (i == x)
-        x += PN_INT(v);
-      else if (v != PN_ZERO)
-        pn_printf(P, out, "=%c, ", (int)PN_INT(v));
+      if (v == '.')
+        pn_printf(P, out, ". ");
+      else if (v == '|')
+        pn_printf(P, out, "| ");
       else
-        pn_printf(P, out, ", ");
+        pn_printf(P, out, "=%c, ", (int)PN_INT(v));
     } else
       potion_bytes_obj_string(P, out, v);
   });
@@ -483,7 +483,6 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   PN sig = PN_TUP0();
   vPN(Source) t = (struct PNSource *)src;
   if (t->part == AST_TABLE && t->a[0] != PN_NIL) {
-    sig = PN_PUSH(sig, PN_NUM(0));
     PN_TUPLE_EACH(t->a[0], i, v, {
       vPN(Source) expr = (struct PNSource *)v;
       if (expr->part == AST_EXPR) {
@@ -491,19 +490,20 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
         if (name->part == AST_MESSAGE)
         {
           PN_PUT(f->locals, name->a[0]);
-          sig = PN_PUSH(sig, name->a[0]);
+          sig = PN_PUSH(PN_PUSH(sig, name->a[0]), PN_NUM('o'));
         }
       } else if (expr->part == AST_ASSIGN) {
-        vPN(Source) name = (struct PNSource *)expr->a[0];
-        if (name->part == AST_MESSAGE)
+        vPN(Source) lhs = (struct PNSource *)expr->a[0];
+        if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
         {
-          PN_PUT(f->locals, name->a[0]);
-          sig = PN_PUSH(sig, name->a[0]);
+          lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
+          if (lhs->part == AST_MESSAGE) {
+            PN_PUT(f->locals, lhs->a[0]);
+            sig = PN_PUSH(PN_PUSH(sig, lhs->a[0]), PN_NUM('o'));
+          }
         }
       }
-      sig = PN_PUSH(sig, PN_NUM(0));
     });
-    PN_TUPLE_AT(sig, 0) = PN_NUM(PN_TUPLE_LEN(sig) - 1);
   }
   return sig;
 }

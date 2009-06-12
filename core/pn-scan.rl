@@ -191,10 +191,25 @@ PN potion_parse(Potion *P, PN code) {
   return P->source;
 }
 
+//
+// The format of Potion method signatures (used when
+// defining methods from C.)
+//
+// s - coerce the object to a string
+// S - only string types
+// n - coerce the object to a number
+// N - only number types
+// b - coerce to a boolean
+// B - only boolean types
+// m - a mixin
+// t - a tuple or table
+// o - anything
+// O - any object but nil
+// - - an IO or File type responding to `read'
+// & - a closure
+//
+
 #define ARG_NEXT() cast = 0; eql = NULL
-#define ARG_END() \
-  int l = PN_TUPLE_LEN(sig), a = l - (x + 1); \
-  if (a) PN_TUPLE_AT(sig, x) = PN_NUM(a)
 
 %%{
   machine signature;
@@ -205,8 +220,8 @@ PN potion_parse(Potion *P, PN code) {
 
   optional = "|" >cast;
 
-  type = ("s" | "S" | "n" | "N" | "l" | "L" | "m" |
-    "t" | "o" | "-" | "&") >cast;
+  type = ("s" | "S" | "n" | "N" | "b" | "B" | "k" |
+    "t" | "o" | "O" | "-" | "&") >cast;
   sep = ".";
   key = message "=" >name;
   arg = key type | type;
@@ -214,14 +229,18 @@ PN potion_parse(Potion *P, PN code) {
   main := |*
     whitespace;
     arg => {
-      if (eql) sig = PN_PUSH(sig, potion_str2(P, ts, eql - ts));
-      sig = PN_PUSH(sig, PN_NUM(cast));
+      if (eql)
+        sig = PN_PUSH(PN_PUSH(PN_PUSH(sig,
+          potion_str2(P, ts, eql - ts)),
+          PN_NUM(cast)),
+          PN_NIL);
+      else
+        sig = PN_PUSH(sig, PN_NUM(cast));
     };
-    optional => { sig = PN_PUSH(sig, PN_NIL); };
+    optional => { sig = PN_PUSH(sig, PN_NUM('|')); };
     comma => { ARG_NEXT(); };
     sep => { 
-      ARG_END();
-      x = l, sig = PN_PUSH(sig, PN_NUM(0)); \
+      sig = PN_PUSH(sig, PN_NUM('.'));
       ARG_NEXT();
     };
   *|;
@@ -229,9 +248,11 @@ PN potion_parse(Potion *P, PN code) {
   write data nofinal;
 }%%
 
+//
+// returns ((
 PN potion_sig(Potion *P, char *fmt) {
   PN sig;
-  int cs, act, x = 0;
+  int cs, act;
   char *p, *pe, *ts, *te, *eof = 0;
   char cast = 0, *eql = NULL;
 
@@ -240,12 +261,10 @@ PN potion_sig(Potion *P, char *fmt) {
 
   fmt = strdup(fmt);
   p = fmt, pe = fmt + strlen(fmt);
-  sig = PN_TUP(PN_NUM(0));
+  sig = PN_TUP0();
 
   %% write init;
   %% write exec;
-
-  ARG_END();
 
   free(fmt);
   return sig;
