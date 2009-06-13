@@ -148,7 +148,7 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
 
   if (siz < 0)
     siz = 0;
-  else if (siz >= POTION_BIRTH_SIZE)
+  else if (siz >= POTION_MAX_BIRTH_SIZE)
     return POTION_NO_MEM;
 
   prevoldlo = (void *)M->old_lo;
@@ -207,7 +207,7 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
   M->collecting = 1;
 
   if (M->old_lo == NULL) {
-    int gensz = POTION_BIRTH_SIZE * 3;
+    int gensz = POTION_BIRTH_SIZE * 4;
     void *page = pngc_page_new(&gensz, 0);
     SET_GEN(old, page, gensz);
   }
@@ -469,7 +469,7 @@ done:
 //
 Potion *potion_gc_boot(void *sp) {
   Potion *P;
-  int bootsz = POTION_BIRTH_SIZE;
+  int bootsz = POTION_BIRTH_SIZE * 2;
   void *page1 = pngc_page_new(&bootsz, 0);
   struct PNMemory *M = (struct PNMemory *)page1;
   PN_MEMZERO(M, struct PNMemory);

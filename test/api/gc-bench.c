@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+#include <sys/times.h>
 #include "potion.h"
 #include "internal.h"
 #include "gc.h"
@@ -22,8 +24,16 @@ static const int array_size = 2000000;
 static const int min_tree = 4;
 static const int max_tree = 20;
 
-static int bench1_actual = 0;
-static int bench2_actual = 0;
+unsigned
+current_time(void)
+{
+  struct timeval t;
+  struct timezone tz;
+
+  if (gettimeofday (&t, &tz) == -1)
+    return 0;
+  return (t.tv_sec * 1000 + t.tv_usec / 1000);
+}
 
 //
 // TODO: use a b-tree class rather than tuples
@@ -66,50 +76,64 @@ int gc_tree_depth(PN node, int side, int depth) {
   return gc_tree_depth(n, side, depth + 1);
 }
 
-void gc_temp_bench(CuTest *T) {
-  PN temp = gc_make_tree(tree_stretch);
-  CuAssert(T, "no temp tree created", temp != PN_NIL);
-  CuAssertIntEquals(T, "temp tree has incorrect leftmost depth", 20, gc_tree_depth(temp, 0, 0));
-  CuAssertIntEquals(T, "temp tree has incorrect rightmost depth", 20, gc_tree_depth(temp, 1, 0));
-  temp = 0;
-  bench1_actual = potion_gc_actual(P, PN_NIL, PN_NIL);
-}
-
-void gc_long_bench(CuTest *T) {
-  PN long_lived = potion_tuple_with_size(P, 2);
-  gc_populate_tree(long_lived, tree_long_lived);
-  CuAssert(T, "no long-lived tree created", long_lived != PN_NIL);
-  CuAssertIntEquals(T, "long-lived tree has incorrect leftmost depth",
-    18, gc_tree_depth(long_lived, 0, 0));
-  CuAssertIntEquals(T, "long-lived tree has incorrect rightmost depth",
-    18, gc_tree_depth(long_lived, 1, 0));
-  bench2_actual = potion_gc_actual(P, PN_NIL, PN_NIL);
-}
-
-void gc_check_free(CuTest *T) {
-  CuAssert(T, "memory from temp tree was not released", bench1_actual > bench2_actual);
-}
-
-CuSuite *gc_suite() {
-  CuSuite *S = CuSuiteNew();
-  SUITE_ADD_TEST(S, gc_temp_bench);
-  SUITE_ADD_TEST(S, gc_long_bench);
-  SUITE_ADD_TEST(S, gc_check_free);
-  return S;
+int tree_size(int i) {
+  return ((1 << (i + 1)) - 1);
 }
 
 int main(void) {
   POTION_INIT_STACK(sp);
-  int count;
+  PN temp, long_lived, ary;
+  int i, j, count;
+
   P = potion_create(sp);
-  CuString *out = CuStringNew();
-  CuSuite *suite = gc_suite();
-  CuSuiteRun(suite);
-  CuSuiteSummary(suite, out);
-  CuSuiteDetails(suite, out);
-  printf("%s\n", out->buffer);
-  count = suite->failCount;
-  CuSuiteFree(suite);
-  CuStringFree(out);
-  return count;
+
+  printf("Stretching memory with a binary tree of depth %d\n",
+    tree_stretch);
+  temp = gc_make_tree(tree_stretch);
+  temp = 0;
+
+  printf("Creating a long-lived binary tree of depth %d\n",
+    tree_long_lived);
+  long_lived = potion_tuple_with_size(P, 2);
+  gc_populate_tree(long_lived, tree_long_lived);
+
+  printf("Creating a long-lived array of %d doubles\n",
+    array_size);
+  ary = potion_tuple_with_size(P, array_size);
+  for (i = 0; i < array_size / 2; ++i)
+    PN_TUPLE_AT(ary, i) = PN_NUM(1.0 / i);
+
+  for (i = min_tree; i <= max_tree; i += 2) {
+    long start, finish;
+    int iter = 2 * tree_size(tree_stretch) / tree_size(i);
+    printf ("Creating %d trees of depth %d\n", iter, i);
+
+    start = current_time();
+    for (j = 0; j < iter; ++j) {
+      temp = potion_tuple_with_size(P, 2);
+      gc_populate_tree(temp, i);
+    }
+    finish = current_time();
+    printf("\tTop down construction took %d msec\n",
+      finish - start);
+
+    start = current_time();
+    for (j = 0; j < iter; ++j) {
+      temp = gc_make_tree(i);
+      temp = 0;
+    }
+    finish = current_time();
+    printf("\tBottom up construction took %d msec\n",
+      finish - start);
+  }
+  
+  if (long_lived == 0 || PN_TUPLE_AT(ary, 1000) != PN_NUM(1.0 / 1000))
+    printf("Wait, problem.\n");
+
+  printf ("Total %d minor and %d full garbage collections\n"
+	  "   (min.birth.size=%dK, max.size=%dK, gc.thresh=%dK)\n",
+	  P->mem->minors, P->mem->majors,
+	  POTION_BIRTH_SIZE >> 10, POTION_MAX_BIRTH_SIZE >> 10,
+	  POTION_GC_THRESHOLD >> 10);
+  return 0;
 }

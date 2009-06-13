@@ -3,7 +3,7 @@ OBJ = ${SRC:.c=.o}
 OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
-OBJ_GC_BENCH = test/api/gc-bench.o test/api/CuTest.o
+OBJ_GC_BENCH = test/api/gc-bench.o
 
 PREFIX = /usr/local
 CC = gcc
@@ -129,13 +129,17 @@ potion: ${OBJ_POTION} ${OBJ}
 	  ${STRIP} potion; \
 	fi
 
-test: potion test/api/potion-test test/api/gc-test test/api/gc-bench
+bench: potion test/api/gc-bench
+	@${ECHO}; \
+	${ECHO} running GC benchmark; \
+	time test/api/gc-bench
+
+test: potion test/api/potion-test test/api/gc-test
 	@${ECHO}; \
 	${ECHO} running API tests; \
 	test/api/potion-test; \
 	${ECHO} running GC tests; \
 	test/api/gc-test; \
-	test/api/gc-bench; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
