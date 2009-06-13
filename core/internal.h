@@ -10,11 +10,11 @@ struct Potion_State;
 
 typedef unsigned char u8;
 
-#define PN_ALLOC(V,T)        (T *)potion_gc_alloc(P->mem, V, sizeof(T))
-#define PN_ALLOC_N(V,T,C)    (T *)potion_gc_alloc(P->mem, V, sizeof(T)+C)
-#define PN_CALLOC_N(V,T,C)   (T *)potion_gc_calloc(P->mem, V, sizeof(T)+C)
-#define PN_REALLOC(X,V,T,N)  (X)=(T *)potion_gc_realloc(P->mem, V, (struct PNObject *)(X), sizeof(T) + N)
-#define PN_DALLOC_N(T,N)     (T *)potion_data_alloc(P->mem, sizeof(T)*N)
+#define PN_ALLOC(V,T)        (T *)potion_gc_alloc(P, V, sizeof(T))
+#define PN_ALLOC_N(V,T,C)    (T *)potion_gc_alloc(P, V, sizeof(T)+C)
+#define PN_CALLOC_N(V,T,C)   (T *)potion_gc_calloc(P, V, sizeof(T)+C)
+#define PN_REALLOC(X,V,T,N)  (X)=(T *)potion_gc_realloc(P, V, (struct PNObject *)(X), sizeof(T) + N)
+#define PN_DALLOC_N(T,N)     (T *)potion_data_alloc(P, sizeof(T)*N)
 
 #define PN_MEMZERO(X,T)      memset((X), 0, sizeof(T))
 #define PN_MEMZERO_N(X,T,N)  memset((X), 0, sizeof(T)*(N))
@@ -100,6 +100,6 @@ __attribute__ ((noinline)) void potion_esp(void **);
 #define STACK_UPPER(a, b) b
 #endif
 
-#define GC_PROTECT(M) M->protect = (void *)M->birth_cur
+#define GC_PROTECT(P) P->mem->protect = (void *)P->mem->birth_cur
 
 #endif

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "potion.h"
 #include "internal.h"
+#include "gc.h"
 
 #define TYPE_BATCH_SIZE 4096
 
@@ -73,7 +74,7 @@ static void potion_init(Potion *P) {
   potion_source_init(P);
   potion_compiler_init(P);
 
-  GC_PROTECT(P->mem);
+  GC_PROTECT(P);
 }
 
 Potion *potion_create(void *sp) {
@@ -86,7 +87,7 @@ Potion *potion_create(void *sp) {
 }
 
 void potion_destroy(Potion *P) {
-  potion_gc_release(P->mem);
+  potion_gc_release(P);
 }
 
 PN potion_delegated(Potion *P, PN closure, PN self) {

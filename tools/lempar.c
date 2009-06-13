@@ -233,7 +233,7 @@ static void yyGrowStack(yyParser * volatile p){
   Potion *P = p->P;
 
   newSize = p->yystksz*2 + 100;
-  pNew = potion_gc_realloc(p->P->mem, PN_TUSER, p->yystack, newSize*sizeof(pNew[0]));
+  pNew = potion_gc_realloc(p->P, PN_TUSER, p->yystack, newSize*sizeof(pNew[0]));
   if( pNew ){
     pNew->vt = PN_TUSER;
     pNew->len = PN_ALIGN(sizeof(yyStackEntry), 8) - sizeof(struct PNData);

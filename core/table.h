@@ -24,6 +24,7 @@ struct PNVtable {
 #ifdef JIT_MCACHE
   PN_MCACHE_FUNC mcache;
 #endif
+  int ivars;
   kh_id_t kh[0];
 };
 

@@ -18,8 +18,8 @@
 
 #define info(x, ...)
 
-PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
-  _PN *esp, *c = M->cstack;
+PN_SIZE potion_stack_len(Potion *P, _PN **p) {
+  _PN *esp, *c = P->mem->cstack;
   POTION_ESP(&esp);
   if (p) *p = STACK_UPPER(c, esp);
   return esp < c ? c - esp : esp - c + 1;
@@ -27,10 +27,10 @@ PN_SIZE potion_stack_len(struct PNMemory *M, _PN **p) {
 
 #define HAS_REAL_TYPE(v) (P->vts == NULL || (((struct PNFwd *)v)->fwd == POTION_COPIED || PN_TYPECHECK(PN_VTYPE(v))))
 
-static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register long n, int forward) {
+static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int forward) {
   _PN v;
   PN_SIZE i = 0;
-  Potion *P = (Potion *)((char *)(M) + PN_ALIGN(sizeof(struct PNMemory), 8));
+  struct PNMemory *M = P->mem;
 
   while (n--) {
     v = *x;
@@ -60,8 +60,9 @@ static PN_SIZE pngc_mark_array(struct PNMemory *M, register _PN *x, register lon
   return i;
 }
 
-PN_SIZE potion_mark_stack(struct PNMemory *M, int forward) {
+PN_SIZE potion_mark_stack(Potion *P, int forward) {
   PN_SIZE n;
+  struct PNMemory *M = P->mem;
   _PN *end, *start = M->cstack;
   POTION_ESP(&end);
 #if POTION_STACK_DIR > 0
@@ -72,7 +73,7 @@ PN_SIZE potion_mark_stack(struct PNMemory *M, int forward) {
   end = M->cstack;
 #endif
   if (n <= 0) return 0;
-  return pngc_mark_array(M, start, n, forward);
+  return pngc_mark_array(P, start, n, forward);
 }
 
 void *pngc_page_new(int *sz, const char exec) {
@@ -91,7 +92,8 @@ void pngc_page_delete(void *mem, int sz) {
 // (Again, many thanks to Basile Starynkevitch for
 // his tutelage in this matter.)
 //
-static int potion_gc_minor(struct PNMemory *M, int sz) {
+static int potion_gc_minor(Potion *P, int sz) {
+  struct PNMemory *M = P->mem;
   void *scanptr = 0;
   void *newad = 0;
   void **storead = 0;
@@ -109,18 +111,18 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
     M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
     M->old_lo, M->old_hi, (long)(M->old_hi - M->old_lo),
     (long)((void *)M->birth_hi - (void *)M->birth_storeptr));
-  potion_mark_stack(M, 1);
+  potion_mark_stack(P, 1);
 
   for (storead = ((void **)M->birth_storeptr) - 1;
        storead < (void **)M->birth_hi; storead++) {
     PN v = (PN)*storead;
     if (PN_IS_PTR(v))
-      potion_mark_minor(M, (const struct PNObject *)v);
+      potion_mark_minor(P, (const struct PNObject *)v);
   }
   storead = 0;
 
   while ((PN)scanptr < (PN)M->old_cur)
-    scanptr = potion_mark_minor(M, scanptr);
+    scanptr = potion_mark_minor(P, scanptr);
   scanptr = 0;
 
   sz += 2 * POTION_PAGESIZE;
@@ -135,7 +137,8 @@ static int potion_gc_minor(struct PNMemory *M, int sz) {
   return POTION_OK;
 }
 
-static int potion_gc_major(struct PNMemory *M, int siz) {
+static int potion_gc_major(Potion *P, int siz) {
+  struct PNMemory *M = P->mem;
   void *prevoldlo = 0;
   void *prevoldhi = 0;
   void *prevoldcur = 0;
@@ -166,10 +169,10 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
   M->old_cur = scanptr = newold + (sizeof(PN) * 2);
   info("(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
 
-  potion_mark_stack(M, 2);
+  potion_mark_stack(P, 2);
 
   while ((PN)scanptr < (PN)M->old_cur)
-    scanptr = potion_mark_major(M, scanptr);
+    scanptr = potion_mark_major(P, scanptr);
   scanptr = 0;
 
   pngc_page_delete((void *)prevoldlo, (char *)prevoldhi - (char *)prevoldlo);
@@ -201,7 +204,8 @@ static int potion_gc_major(struct PNMemory *M, int siz) {
   return POTION_OK;
 }
 
-void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
+void potion_garbagecollect(Potion *P, int sz, int full) {
+  struct PNMemory *M = P->mem;
   if (M->collecting) return;
   M->pass++;
   M->collecting = 1;
@@ -222,15 +226,15 @@ void potion_garbagecollect(struct PNMemory *M, int sz, int full) {
 #endif
 
   if (full)
-    potion_gc_major(M, sz);
+    potion_gc_major(P, sz);
   else
-    potion_gc_minor(M, sz);
+    potion_gc_minor(P, sz);
 
   M->dirty = 0;
   M->collecting = 0;
 }
 
-PN_SIZE potion_type_size(const struct PNObject *ptr) {
+PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
   int sz = 0;
 
   switch (((struct PNFwd *)ptr)->fwd) {
@@ -255,9 +259,6 @@ PN_SIZE potion_type_size(const struct PNObject *ptr) {
     case PN_TFILE:
       sz = sizeof(struct PNFile);
     break;
-    // TODO: look up class fields and copy full object length
-    // case PN_TOBJECT:
-    // return sizeof(struct PNObject);
     case PN_TVTABLE:
       sz = sizeof(struct PNVtable) + sizeof(kh_id_t);
     break;
@@ -280,6 +281,10 @@ PN_SIZE potion_type_size(const struct PNObject *ptr) {
     case PN_TUSER:
       sz = sizeof(struct PNData) + ((struct PNData *)ptr)->siz;
     break;
+    default:
+      sz = sizeof(struct PNObject) +
+        (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivars * sizeof(PN));
+    break;
   }
 
   if (sz < sizeof(struct PNFwd))
@@ -287,11 +292,11 @@ PN_SIZE potion_type_size(const struct PNObject *ptr) {
   return PN_ALIGN(sz, 8); // force 64-bit alignment
 }
 
-void *potion_gc_copy(struct PNMemory *M, struct PNObject *ptr) {
-  void *dst = (void *)M->old_cur;
-  PN_SIZE sz = potion_type_size((const struct PNObject *)ptr);
+void *potion_gc_copy(Potion *P, struct PNObject *ptr) {
+  void *dst = (void *)P->mem->old_cur;
+  PN_SIZE sz = potion_type_size(P, (const struct PNObject *)ptr);
   memcpy(dst, ptr, sz);
-  M->old_cur = (char *)dst + sz;
+  P->mem->old_cur = (char *)dst + sz;
 
   ((struct PNFwd *)ptr)->fwd = POTION_COPIED;
   ((struct PNFwd *)ptr)->siz = sz;
@@ -300,7 +305,8 @@ void *potion_gc_copy(struct PNMemory *M, struct PNObject *ptr) {
   return dst;
 }
 
-void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
+void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
+  struct PNMemory *M = P->mem;
   PN_SIZE i;
   PN_SIZE sz = 16;
 
@@ -308,6 +314,13 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
     case POTION_COPIED:
     case POTION_FWD:
       GC_MINOR_UPDATE(((struct PNFwd *)ptr)->ptr);
+    goto done;
+  }
+
+  if (ptr->vt > PN_TUSER) {
+    int ivars = ((struct PNVtable *)PN_VTABLE(ptr->vt))->ivars;
+    for (i = 0; i < ivars; i++)
+      GC_MINOR_UPDATE(((struct PNObject *)ptr)->ivars[i]);
     goto done;
   }
 
@@ -369,11 +382,12 @@ void *potion_mark_minor(struct PNMemory *M, const struct PNObject *ptr) {
   }
 
 done:
-  sz = potion_type_size(ptr);
+  sz = potion_type_size(P, ptr);
   return (void *)((char *)ptr + sz);
 }
 
-void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
+void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
+  struct PNMemory *M = P->mem;
   PN_SIZE i;
   PN_SIZE sz = 16;
 
@@ -381,6 +395,13 @@ void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
     case POTION_COPIED:
     case POTION_FWD:
       GC_MAJOR_UPDATE(((struct PNFwd *)ptr)->ptr);
+    goto done;
+  }
+
+  if (ptr->vt > PN_TUSER) {
+    int ivars = ((struct PNVtable *)PN_VTABLE(ptr->vt))->ivars;
+    for (i = 0; i < ivars; i++)
+      GC_MAJOR_UPDATE(((struct PNObject *)ptr)->ivars[i]);
     goto done;
   }
 
@@ -442,7 +463,7 @@ void *potion_mark_major(struct PNMemory *M, const struct PNObject *ptr) {
   }
 
 done:
-  sz = potion_type_size(ptr);
+  sz = potion_type_size(P, ptr);
   return (void *)((char *)ptr + sz);
 }
 
@@ -483,12 +504,13 @@ Potion *potion_gc_boot(void *sp) {
   P->mem = M;
 
   M->birth_cur = (void *)((char *)P + PN_ALIGN(sizeof(Potion), 8));
-  GC_PROTECT(M);
+  GC_PROTECT(P);
   return P;
 }
 
 // TODO: release memory allocated by the user
-void potion_gc_release(struct PNMemory *M) {
+void potion_gc_release(Potion *P) {
+  struct PNMemory *M = P->mem;
   void *birthlo = (void *)M->birth_lo;
   void *birthhi = (void *)M->birth_hi;
   void *oldlo = (void *)M->old_lo;

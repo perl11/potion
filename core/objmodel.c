@@ -37,6 +37,7 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
   vt->type = t;
   vt->parent = self;
   vt->func = NULL;
+  vt->ivars = 0;
 #ifdef JIT_MCACHE
   vt->mcache = (PN_MCACHE_FUNC)PN_ALLOC_FUNC(8192);
 #endif

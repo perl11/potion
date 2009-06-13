@@ -56,7 +56,7 @@
   if (_pnobj->fwd == POTION_COPIED) \
     *(p) = _pnobj->ptr; \
   else \
-    *(p) = (_PN)potion_gc_copy(M, (struct PNObject *)v); \
+    *(p) = (_PN)potion_gc_copy(P, (struct PNObject *)v); \
 }  while(0)
 
 #define GC_MINOR_UPDATE(p) do { \
@@ -76,11 +76,12 @@
   } \
 } while(0)
 
-PN_SIZE potion_stack_len(struct PNMemory *, _PN **);
-PN_SIZE potion_mark_stack(struct PNMemory *, int);
-void *potion_gc_copy(struct PNMemory *, struct PNObject *);
+PN_SIZE potion_stack_len(Potion *, _PN **);
+PN_SIZE potion_mark_stack(Potion *, int);
+void *potion_gc_copy(Potion *, struct PNObject *);
 void *pngc_page_new(int *, const char);
-void *potion_mark_minor(struct PNMemory *, const struct PNObject *);
-void *potion_mark_major(struct PNMemory *, const struct PNObject *);
+void *potion_mark_minor(Potion *, const struct PNObject *);
+void *potion_mark_major(Potion *, const struct PNObject *);
+void potion_gc_release(Potion *);
 
 #endif

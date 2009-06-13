@@ -144,7 +144,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
     while ((PN)scanptr < (PN)P->mem->old_cur) {
           printf("%p.vt = %lx (%u)\n",
             scanptr, ((struct PNObject *)scanptr)->vt,
-            potion_type_size(scanptr));
+            potion_type_size(P, scanptr));
       if (((struct PNFwd *)scanptr)->fwd != POTION_FWD && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
         if (((struct PNObject *)scanptr)->vt < 0 || ((struct PNObject *)scanptr)->vt > PN_TUSER) {
           printf("wrong type for allocated object: %p.vt = %lx\n",
@@ -152,7 +152,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
           break;
         }
       }
-      scanptr = (void *)((char *)scanptr + potion_type_size(scanptr));
+      scanptr = (void *)((char *)scanptr + potion_type_size(P, scanptr));
       if ((PN)scanptr > (PN)P->mem->old_cur) {
         printf("allocated object goes beyond GC pointer\n");
         break;

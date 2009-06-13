@@ -37,7 +37,7 @@ PN potion_table_cast(Potion *P, PN self) {
       kh_value(t->kh, k) = v;
     });
     ((struct PNFwd *)self)->fwd = POTION_FWD;
-    ((struct PNFwd *)self)->siz = potion_type_size((const struct PNObject *)self);
+    ((struct PNFwd *)self)->siz = potion_type_size(P, (const struct PNObject *)self);
     ((struct PNFwd *)self)->ptr = (PN)t;
     PN_TOUCH(self);
     self = (PN)t;
