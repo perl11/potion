@@ -139,6 +139,13 @@ PN potion_tuple_clone(Potion *P, PN cl, PN self) {
   return (PN)t2;
 }
 
+PN potion_tuple_each(Potion *P, PN cl, PN self, PN nil, PN block) {
+  PN_TUPLE_EACH(self, i, v, {
+    PN_CLOSURE(block)->method(P, block, v);
+  });
+  return self;
+}
+
 PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
   PN out = potion_byte_str(P, "");
   PN_TUPLE_EACH(self, i, v, {
@@ -196,6 +203,7 @@ void potion_table_init(Potion *P) {
   potion_method(tbl_vt, "string", potion_table_string, 0);
   potion_type_func(tpl_vt, (PN_F)potion_tuple_at);
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
+  potion_method(tpl_vt, "each", potion_tuple_each, "index=N");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
   potion_method(tpl_vt, "join", potion_tuple_join, 0);
   potion_method(tpl_vt, "length", potion_tuple_length, 0);
