@@ -531,7 +531,11 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   ASM(0x78); ASM(X86C(9, 12)); // js +12
   X86_PRE(); ASM(0xF7); ASM(0xD8); // neg %rax
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.b)); // mov -B(%rbp) %rdx
+#if __WORDSIZE != 64
+  ASM(0x89); ASM(0x54); ASM(0x85); ASM(RBP(op.a + 1)); // mov %edx -A(%ebp,%eax,4)
+#else
   X86_PRE(); ASM(0x89); ASM(0x54); ASM(0xC5); ASM(RBP(op.a + 1)); // mov %rdx -A(%rbp,%rax,8)
+#endif
 }
 
 // TODO: check for bytecode nodes and jit them as well?
