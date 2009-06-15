@@ -109,7 +109,7 @@ void potion_test_allocated(CuTest *T) {
     if (((struct PNFwd *)scanptr)->fwd != POTION_FWD && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
       CuAssert(T, "wrong type for allocated object", ((struct PNObject *)scanptr)->vt <= PN_TUSER);
     }
-    scanptr = (void *)((char *)scanptr + potion_type_size(scanptr));
+    scanptr = (void *)((char *)scanptr + potion_type_size(P, scanptr));
     CuAssert(T, "allocated object goes beyond GC pointer", (PN)scanptr <= (PN)P->mem->birth_cur);
   }
 }
