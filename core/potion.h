@@ -493,6 +493,7 @@ PN potion_closure_new(Potion *, PN_F, PN, PN_SIZE);
 PN potion_callcc(Potion *, PN, PN);
 PN potion_ref(Potion *, PN);
 PN potion_sig(Potion *, char *);
+int potion_sig_find(Potion *, PN, PN);
 PN potion_decimal(Potion *, int, int, char *);
 PN potion_pow(Potion *, PN, PN, PN);
 
@@ -528,6 +529,7 @@ PN potion_gc_actual(Potion *, PN, PN);
 PN potion_gc_fixed(Potion *, PN, PN);
 
 PN potion_parse(Potion *, PN);
+PN potion_vm_proto(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
 PN potion_eval(Potion *, const char *);
 PN potion_run(Potion *, PN);

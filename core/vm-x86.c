@@ -211,7 +211,7 @@ void potion_x86_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   for (upi = 0; upi < upc; upi++) {
     X86_MOV_RBP(0x8B, 1);
     X86_PRE(); ASM(0x8B); ASM(0x40);
-      ASM(sizeof(struct PNClosure) + (upi * sizeof(PN))); // 0x30(%rax)
+      ASM(sizeof(struct PNClosure) + (upi * sizeof(PN)) + 1); // 0x30(%rax)
     X86_MOV_RBP(0x89, lregs + upi);
   }
 }
@@ -520,6 +520,20 @@ void potion_x86_notjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   TAG_JMP(pos + op.b);
 }
 
+void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(start - 2, 0);
+  X86_ARGO(op.a, 1);
+  X86_ARGO(op.b - 1, 2);
+  X86_PRE(); ASM(0xB8); ASMN(potion_sig_find); // mov &potion_tuple_push %rax
+  ASM(0xFF); ASM(0xD0); // callq %eax
+  ASM(0x85); ASM(0xC0); // test %eax %eax
+  ASM(0x78); ASM(X86C(9, 12)); // js +12
+  X86_PRE(); ASM(0xF7); ASM(0xD8); // neg %rax
+  X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.b)); // mov -B(%rbp) %rdx
+  X86_PRE(); ASM(0x89); ASM(0x54); ASM(0xC5); ASM(RBP(op.a + 1)); // mov %rdx -A(%rbp,%rax,8)
+}
+
 // TODO: check for bytecode nodes and jit them as well?
 void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
@@ -563,8 +577,9 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   vPN(Closure) cl;
   PN proto = PN_TUPLE_AT(f->protos, op.b);
   cl = (struct PNClosure *)potion_closure_new(P, NULL, PN_NIL,
-    PN_TUPLE_LEN(PN_PROTO(proto)->upvals));
+    PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
   cl->method = PN_PROTO(proto)->jit;
+  cl->data[0] = proto;
   // cl->method = &potion_x86_debug;
   X86_MOVL(op.a, cl);
   PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
@@ -584,7 +599,7 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
     }
     X86_MOV_RBP(0x8B, op.a); // mov cl %rax
     X86_PRE(); ASM(0x89); ASM(0x50); // mov %rdx N(%rax)
-      ASM(sizeof(struct PNClosure) + (sizeof(PN) * i));
+      ASM(sizeof(struct PNClosure) + (sizeof(PN) * i) + 1);
   });
 }
 

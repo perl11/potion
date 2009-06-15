@@ -248,8 +248,6 @@ PN potion_parse(Potion *P, PN code) {
   write data nofinal;
 }%%
 
-//
-// returns ((
 PN potion_sig(Potion *P, char *fmt) {
   PN sig;
   int cs, act;
@@ -268,4 +266,29 @@ PN potion_sig(Potion *P, char *fmt) {
 
   free(fmt);
   return sig;
+}
+
+int potion_sig_find(Potion *P, PN cl, PN name)
+{
+  PN_SIZE idx = 0;
+  PN sig;
+  if (!PN_IS_CLOSURE(cl))
+    return -1;
+
+  if (PN_CLOSURE(cl)->extra > 0 && PN_IS_PROTO(PN_CLOSURE(cl)->data[0]))
+    sig = PN_PROTO(PN_CLOSURE(cl)->data[0])->sig;
+  else
+    sig = PN_CLOSURE(cl)->sig;
+
+  if (!PN_IS_TUPLE(sig))
+    return -1;
+
+  PN_TUPLE_EACH(sig, i, v, {
+    if (v == PN_NUM(idx) || v == name)
+      return idx;
+    if (PN_IS_NUM(v))
+      idx++;
+  });
+
+  return -1;
 }

@@ -295,6 +295,9 @@ void potion_ppc_notjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   TAG_JMP(0x419E0000, pos + op.b); // beq
 }
 
+void potion_ppc_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_ppc_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 

@@ -27,8 +27,8 @@ const struct {
   {"div", 2}, {"mod", 2}, {"pow", 2}, {"not", 1}, {"cmp", 2},
   {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2}, {"gt", 2}, {"gte", 2},
   {"bitl", 2}, {"bitr", 2}, {"bind", 2}, {"jump", 1}, {"test", 2},
-  {"testjmp", 2}, {"notjmp", 2}, {"call", 2}, {"tailcall", 2},
-  {"return", 1}, {"proto", 2},
+  {"testjmp", 2}, {"notjmp", 2}, {"named", 2}, {"call", 2},
+  {"tailcall", 2}, {"return", 1}, {"proto", 2},
 };
 
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
@@ -184,9 +184,32 @@ void potion_arg_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN args, u8 *
     if (PN_PART(args) == AST_TABLE) {
       args = PN_S(args, 0);
       if (!PN_IS_NIL(args)) {
+        u8 freg = *reg, sreg = *reg + PN_TUPLE_LEN(args) + 1;
         PN_TUPLE_EACH(args, i, v, {
-          if (inc) (*reg)++;
-          potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, *reg);
+          if (inc) {
+            (*reg)++;
+            if (PN_PART(v) == AST_ASSIGN) {
+              vPN(Source) lhs = (struct PNSource *)PN_S(v, 0);
+              potion_source_asmb(P, f, loop, i, (struct PNSource *)PN_S(v, 1), sreg + 1);
+              if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
+              {
+                lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
+                if (lhs->part == AST_MESSAGE) {
+                  PN_SIZE num = PN_PUT(f->values, lhs->a[0]);
+                  PN_ASM2(OP_LOADK, sreg, num);
+                  lhs = NULL;
+                }
+              }
+
+              if (lhs != NULL)
+                potion_source_asmb(P, f, loop, 0, (struct PNSource *)lhs, sreg);
+
+              PN_ASM2(OP_NAMED, freg, sreg + 1);
+              PN_REG(f, sreg + 1);
+            } else
+              potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, *reg);
+          } else
+            potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, *reg);
         });
       }
     } else {

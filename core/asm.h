@@ -65,6 +65,7 @@ typedef struct {
       (OP_F)potion_##arch##_test, \
       (OP_F)potion_##arch##_testjmp, \
       (OP_F)potion_##arch##_notjmp, \
+      (OP_F)potion_##arch##_named, \
       (OP_F)potion_##arch##_call, \
       (OP_F)NULL, \
       (OP_F)potion_##arch##_return, \
