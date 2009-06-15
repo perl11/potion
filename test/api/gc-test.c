@@ -14,11 +14,11 @@
 #include "gc.h"
 #include "CuTest.h"
 
-struct PNMemory *M;
+Potion *P;
 
 void gc_test_start(CuTest *T) {
-  CuAssert(T, "GC struct isn't at start of first page", M == M->birth_lo);
-  CuAssert(T, "stack length is not a positive number", potion_stack_len(M, NULL) > 0);
+  CuAssert(T, "GC struct isn't at start of first page", P->mem == P->mem->birth_lo);
+  CuAssert(T, "stack length is not a positive number", potion_stack_len(P, NULL) > 0);
 }
 
 //
@@ -26,18 +26,18 @@ void gc_test_start(CuTest *T) {
 // not be moved to the old generation. data in the `forward` test will be copied.
 //
 void gc_test_alloc1(CuTest *T) {
-  PN ptr = (PN)potion_gc_alloc(M, PN_TUSER, 16);
-  PN_SIZE count = potion_mark_stack(M, 0);
+  PN ptr = (PN)potion_gc_alloc(P, PN_TUSER, 16);
+  PN_SIZE count = potion_mark_stack(P, 0);
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr));
   CuAssertIntEquals(T, "only one allocation should be found", 1, count);
 }
 
 void gc_test_alloc4(CuTest *T) {
-  PN ptr = (PN)potion_gc_alloc(M, PN_TUSER, 16);
-  PN ptr2 = (PN)potion_gc_alloc(M, PN_TUSER, 16);
-  PN ptr3 = (PN)potion_gc_alloc(M, PN_TUSER, 16);
-  PN ptr4 = (PN)potion_gc_alloc(M, PN_TUSER, 16);
-  PN_SIZE count = potion_mark_stack(M, 0);
+  PN ptr = (PN)potion_gc_alloc(P, PN_TUSER, 16);
+  PN ptr2 = (PN)potion_gc_alloc(P, PN_TUSER, 16);
+  PN ptr3 = (PN)potion_gc_alloc(P, PN_TUSER, 16);
+  PN ptr4 = (PN)potion_gc_alloc(P, PN_TUSER, 16);
+  PN_SIZE count = potion_mark_stack(P, 0);
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr));
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr2));
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr3));
@@ -48,11 +48,11 @@ void gc_test_alloc4(CuTest *T) {
 void gc_test_forward(CuTest *T) {
   PN_SIZE count;
   char *fj = "frances johnson.";
-  PN ptr = potion_data_alloc(M, 16);
+  PN ptr = potion_data_alloc(P, 16);
   register unsigned long old = ptr & 0xFFFF;
   memcpy(((struct PNData *)ptr)->data, fj, 16);
 
-  count = potion_mark_stack(M, 1);
+  count = potion_mark_stack(P, 1);
   CuAssert(T, "copied location identical to original", (old & 0xFFFF) != ptr);
   CuAssertIntEquals(T, "copied object not still PN_TUSER", ((struct PNData *)ptr)->vt, PN_TUSER);
   CuAssert(T, "copied data not identical to original",
@@ -73,8 +73,9 @@ int main(void) {
   int count;
 
   // manually initialize the older generation
-  M = potion_gc_boot(sp)->mem;
-  if (M->old_lo == NULL) {
+  P = potion_gc_boot(sp);
+  if (P->mem->old_lo == NULL) {
+    struct PNMemory *M = P->mem;
     int gensz = POTION_BIRTH_SIZE * 2;
     void *page = pngc_page_new(&gensz, 0);
     SET_GEN(old, page, gensz);
