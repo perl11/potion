@@ -190,7 +190,7 @@ void potion_arg_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN args, u8 *
             (*reg)++;
             if (PN_PART(v) == AST_ASSIGN) {
               vPN(Source) lhs = (struct PNSource *)PN_S(v, 0);
-              potion_source_asmb(P, f, loop, i, (struct PNSource *)PN_S(v, 1), sreg + 1);
+              potion_source_asmb(P, f, loop, 0, (struct PNSource *)PN_S(v, 1), sreg + 1);
               if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
               {
                 lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
@@ -234,6 +234,11 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
   switch (t->part) {
     case AST_CODE:
     case AST_BLOCK:
+      PN_TUPLE_EACH(t->a[0], i, v, {
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg);
+      });
+    break;
+
     case AST_EXPR:
       PN_TUPLE_EACH(t->a[0], i, v, {
         potion_source_asmb(P, f, loop, i, (struct PNSource *)v, reg);
@@ -433,10 +438,13 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
         }
       } else {
         u8 opcode = OP_GETUPVAL;
-        PN_SIZE num = PN_UPVAL(t->a[0]);
-        if (num == PN_NONE) {
-          num = PN_GET(f->locals, t->a[0]);
-          opcode = OP_GETLOCAL;
+        PN_SIZE num = PN_NONE;
+        if (count == 0) {
+          num = PN_UPVAL(t->a[0]);
+          if (num == PN_NONE) {
+            num = PN_GET(f->locals, t->a[0]);
+            opcode = OP_GETLOCAL;
+          }
         }
 
         if (num == PN_NONE) {
@@ -492,7 +500,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
       PN_TUPLE_EACH(t->a[0], i, v, {
         if (PN_PART(v) == AST_ASSIGN) {
           vPN(Source) lhs = (struct PNSource *)PN_S(v, 0);
-          potion_source_asmb(P, f, loop, i, (struct PNSource *)PN_S(v, 1), reg + 1);
+          potion_source_asmb(P, f, loop, 0, (struct PNSource *)PN_S(v, 1), reg + 1);
           if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
           {
             lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
@@ -509,7 +517,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           PN_ASM2(OP_SETTABLE, reg, reg + 2);
           PN_REG(f, reg + 2);
         } else {
-          potion_source_asmb(P, f, loop, i, (struct PNSource *)v, reg + 1);
+          potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg + 1);
           PN_ASM2(OP_SETTUPLE, reg, reg + 1);
           PN_REG(f, reg + 1);
         }
