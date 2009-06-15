@@ -532,9 +532,9 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   X86_PRE(); ASM(0xF7); ASM(0xD8); // neg %rax
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.b)); // mov -B(%rbp) %rdx
 #if __WORDSIZE != 64
-  ASM(0x89); ASM(0x54); ASM(0x85); ASM(RBP(op.a + 1)); // mov %edx -A(%ebp,%eax,4)
+  ASM(0x89); ASM(0x54); ASM(0x85); ASM(RBP(op.a + 2)); // mov %edx -A(%ebp,%eax,4)
 #else
-  X86_PRE(); ASM(0x89); ASM(0x54); ASM(0xC5); ASM(RBP(op.a + 1)); // mov %rdx -A(%rbp,%rax,8)
+  X86_PRE(); ASM(0x89); ASM(0x54); ASM(0xC5); ASM(RBP(op.a + 2)); // mov %rdx -A(%rbp,%rax,8)
 #endif
 }
 
@@ -544,11 +544,11 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   int argc = op.b - op.a;
   // (Potion *, CL) as the first argument
   X86_ARGO(start - 2, 0);
-  X86_ARGO(op.b, 1);
-  while (--argc >= 0) X86_ARGO(op.a + argc, argc + 2);
+  X86_ARGO(op.a, 1);
+  while (--argc >= 0) X86_ARGO(op.a + argc + 1, argc + 2);
 
   // check type of the closure
-  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.b)); // mov %rbp(B) %rax
+  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(B) %rax
   ASM(0xF6); ASM(0xC0); ASM(0x01); // test 0x1 %al
   ASM(0x75); ASM(X86C(27, 31)); // jne [a]
   ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); // test REFMASK %eax
@@ -558,13 +558,13 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   ASM(0x75); ASM(X86C(8, 10)); // jne [a]
 
   // if a closure, load the function pointer
-  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.b)); // mov %rbp(B) %rax
+  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(B) %rax
   X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); // mov N(%rax) %rax
   ASM(0xEB); ASM(X86C(19, 22)); // jmp [b]
 
   // if not a closure, send to potion_jit_callout
-  X86_MOVQ(op.a, op.b - op.a - 1); // mov -A(%rbp) NUM
-  X86_ARGO(op.a, 2);
+  X86_MOVQ(op.a + 1, op.b - op.a - 2); // mov -A(%rbp) NUM
+  X86_ARGO(op.a + 1, 2);
   X86_PRE(); ASM(0xB8); ASMN(potion_obj_call); // mov &potion_obj_call %rax
 
   ASM(0xFF); ASM(0xD0); // [b] callq *%rax

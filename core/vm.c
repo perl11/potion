@@ -301,39 +301,40 @@ reentry:
         if (!PN_TEST(reg[op.a])) pos += op.b;
       break;
       case OP_NAMED: {
-        int x = potion_sig_find(P, reg[op.a], reg[op.b-1]);
-        if (x >= 0) reg[op.a + x + 1] = reg[op.b];
+        int x = potion_sig_find(P, reg[op.a], reg[op.b - 1]);
+        if (x >= 0) reg[op.a + x + 2] = reg[op.b];
       }
       break;
       case OP_CALL:
-        switch (PN_TYPE(reg[op.b])) {
+        switch (PN_TYPE(reg[op.a])) {
           case PN_TCLOSURE:
-            if (PN_CLOSURE(reg[op.b])->method != (PN_F)potion_vm_proto) {
-              reg[op.a] = potion_call(P, reg[op.b], op.b - op.a, reg + op.a);
+            if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) {
+              reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);
             } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
               int i;
               PN argt = potion_tuple_with_size(P, (op.b - op.a) - 1);
-              for (i = 1; i < op.b - op.a; i++)
-                PN_TUPLE_AT(argt, i - 1) = reg[op.a + i];
-              reg[op.a] = potion_vm(P, PN_CLOSURE(reg[op.b])->data[0], reg[op.a], argt,
-                PN_CLOSURE(reg[op.b])->extra - 1, &PN_CLOSURE(reg[op.b])->data[1]);
+              for (i = 2; i < op.b - op.a; i++)
+                PN_TUPLE_AT(argt, i - 2) = reg[op.a + i];
+              reg[op.a] = potion_vm(P, PN_CLOSURE(reg[op.a])->data[0], reg[op.a + 1], argt,
+                PN_CLOSURE(reg[op.a])->extra - 1, &PN_CLOSURE(reg[op.a])->data[1]);
             } else {
-              self = reg[op.a];
-              args = &reg[op.a+1];
-              upc = PN_CLOSURE(reg[op.b])->extra - 1;
-              upargs = &PN_CLOSURE(reg[op.b])->data[1];
+              self = reg[op.a + 1];
+              args = &reg[op.a + 2];
+              upc = PN_CLOSURE(reg[op.a])->extra - 1;
+              upargs = &PN_CLOSURE(reg[op.a])->data[1];
               current = reg + PN_INT(f->stack) + 2;
               current[-2] = (PN)f;
               current[-1] = (PN)pos;
 
-              f = PN_PROTO(PN_CLOSURE(reg[op.b])->data[0]);
+              f = PN_PROTO(PN_CLOSURE(reg[op.a])->data[0]);
               pos = 0;
               goto reentry;
             }
           break;
           
           default:
-            reg[op.a] = potion_obj_call(P, reg[op.b], 1, reg[op.a+1]);
+            // TODO: support multiple args
+            reg[op.a] = potion_obj_call(P, reg[op.a], 1, reg[op.a + 2]);
           break;
         }
       break;
