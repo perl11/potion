@@ -240,7 +240,14 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
   switch (((struct PNFwd *)ptr)->fwd) {
     case POTION_COPIED:
     case POTION_FWD:
-      return ((struct PNFwd *)ptr)->siz;
+      sz = ((struct PNFwd *)ptr)->siz;
+      goto done;
+  }
+
+  if (ptr->vt > PN_TUSER) {
+    sz = sizeof(struct PNObject) +
+      (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivars * sizeof(PN));
+    goto done;
   }
 
   switch (ptr->vt) {
@@ -281,12 +288,9 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
     case PN_TUSER:
       sz = sizeof(struct PNData) + ((struct PNData *)ptr)->siz;
     break;
-    default:
-      sz = sizeof(struct PNObject) +
-        (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivars * sizeof(PN));
-    break;
   }
 
+done:
   if (sz < sizeof(struct PNFwd))
     sz = sizeof(struct PNFwd);
   return PN_ALIGN(sz, 8); // force 64-bit alignment
