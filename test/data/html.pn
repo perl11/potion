@@ -1,0 +1,13 @@
+build = (node):
+  "<" print, node name print, ">" print
+  if (node licks != nil):
+    i = 0, l = node licks
+    while (i < l length):
+      build(l(i))
+      i++.
+  . elsif (node text != nil):
+    node text print.
+  "</" print, node name print, ">" print.
+
+build [html [body [p "SUPERIOR!"]]]
+# <html><body><p>SUPERIOR!</p></body></html>
