@@ -323,10 +323,23 @@ void potion_x86_settable(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 }
 
 void potion_x86_newlick(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  int nnil = 0;
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_ARGO(start - 2, 0);
   X86_ARGO(op.a, 1);
-  X86_ARGO(op.b, 2);
+  if (op.b > op.a) {
+    X86_ARGO(op.a + 1, 2);
+  } else {
+    nnil = 1;
+    X86_MOVQ(op.a, PN_NIL);
+    X86_ARGO(op.a, 2);
+  }
+  if (op.b > op.a + 1) {
+    X86_ARGO(op.b, 3);
+  } else {
+    if (!nnil) { X86_MOVQ(op.a, PN_NIL); }
+    X86_ARGO(op.a, 3);
+  }
   X86_PRE(); ASM(0xB8); ASMN(potion_lick); // mov &potion_tuple_push %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
   X86_MOV_RBP(0x89, op.a); // mov %rax local

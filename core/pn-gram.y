@@ -111,4 +111,6 @@ items(A) ::= item(B). { A = PN_TUP(B); }
 
 item(A) ::= MESSAGE(B). { A = PN_AST(LICK, B); }
 item(A) ::= MESSAGE(B) value(C). { A = PN_AST2(LICK, B, C); }
-item(A) ::= MESSAGE(B) table(C). { A = PN_AST2(LICK, B, C); }
+item(A) ::= MESSAGE(B) table(C). { A = PN_AST3(LICK, B, PN_NIL, C); }
+item(A) ::= MESSAGE(B) value(C) table(D). { A = PN_AST3(LICK, B, C, D); }
+item(A) ::= MESSAGE(B) table(D) value(C). { A = PN_AST3(LICK, B, C, D); }

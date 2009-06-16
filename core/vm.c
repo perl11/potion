@@ -237,8 +237,11 @@ reentry:
       case OP_SETTABLE:
         potion_table_set(P, reg[op.a], reg[op.b], reg[op.a+1]);
       break;
-      case OP_NEWLICK:
-        reg[op.a] = potion_lick(P, reg[op.a], reg[op.b]);
+      case OP_NEWLICK: {
+        PN attr = op.b > op.a ? reg[op.a + 1] : PN_NIL;
+        PN inner = op.b > op.a + 1 ? reg[op.b] : PN_NIL;
+        reg[op.a] = potion_lick(P, reg[op.a], attr, inner);
+      }
       break;
       case OP_ADD:
         reg[op.a] = reg[op.a] + (reg[op.b]-1);

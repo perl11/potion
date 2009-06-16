@@ -285,6 +285,7 @@ struct PNWeakRef {
 struct PNLick {
   PN_OBJECT_HEADER
   PN name;
+  PN attr;
   PN inner;
 };
 
@@ -516,7 +517,7 @@ PN_SIZE potion_tuple_find(Potion *, PN, PN);
 PN potion_tuple_at(Potion *, PN, PN, PN);
 PN potion_table_set(Potion *, PN, PN, PN);
 PN potion_table_at(Potion *, PN, PN, PN);
-PN potion_lick(Potion *, PN, PN);
+PN potion_lick(Potion *, PN, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);

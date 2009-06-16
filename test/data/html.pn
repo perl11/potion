@@ -1,5 +1,8 @@
 build = (node):
-  "<" print, node name print, ">" print
+  "<" print, node name print
+  if (node attr != nil):
+    node attr string print.
+  ">" print
   if (node licks != nil):
     i = 0, l = node licks
     while (i < l length):
@@ -9,5 +12,5 @@ build = (node):
     node text print.
   "</" print, node name print, ">" print.
 
-build [html [body [p "SUPERIOR!"]]]
-# <html><body><p>SUPERIOR!</p></body></html>nil
+build [html [body (margin=0) [p "SUPERIOR!", em, strong (padding=2)]]]
+# <html><body(margin=0)><p>SUPERIOR!</p><em></em><strong(padding=2)></strong></body></html>nil

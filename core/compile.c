@@ -496,11 +496,17 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
     break;
 
     case AST_LICK: {
+      u8 breg = reg;
       PN_SIZE num = PN_PUT(f->values, t->a[0]);
       PN_ASM2(OP_LOADK, reg, num);
-      PN_ARG(1, reg + 1);
-      PN_ASM2(OP_NEWLICK, reg, reg + 1);
-      PN_REG(f, reg + 1);
+      if (t->a[1] != PN_NIL)
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], ++breg);
+      else if (t->a[2] != PN_NIL)
+        PN_ASM2(OP_LOADPN, ++breg, PN_NIL);
+      if (t->a[2] != PN_NIL)
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], ++breg);
+      PN_ASM2(OP_NEWLICK, reg, breg);
+      PN_REG(f, breg);
     }
     break;
 
