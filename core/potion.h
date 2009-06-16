@@ -79,8 +79,8 @@ struct PNMemory;
 
 #define PN_FNUMBER      1
 #define PN_FBOOLEAN     2
-#define PN_TEST(v)      ((PN)(v) != PN_FALSE)
-#define PN_BOOL(v)      ((v) ? PN_TRUE : PN_FALSE)
+#define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
+#define PN_BOOL(v)      (PN_TEST(v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_PTR(v)    (!PN_IS_NUM(v) && ((PN)(v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)

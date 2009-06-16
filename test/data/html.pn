@@ -1,14 +1,14 @@
 build = (node):
   "<" print, node name print
-  if (node attr != nil):
+  if (node attr):
     node attr string print.
   ">" print
-  if (node licks != nil):
+  if (node licks):
     i = 0, l = node licks
     while (i < l length):
       build(l(i))
       i++.
-  . elsif (node text != nil):
+  . elsif (node text):
     node text print.
   "</" print, node name print, ">" print.
 

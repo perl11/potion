@@ -504,13 +504,14 @@ void potion_x86_jmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 
 void potion_x86_test_asm(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, int test) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /*  mov -A(%rbp) %edx */
-  ASM(0xB8); ASMI(PN_FALSE); /* mov FALSE %eax */
-  ASM(0x39); ASM(0xC2); /*  cmp %eax %edx */
-  ASM(test ? 0x75 : 0x74); ASM(0x9 + X86_PRE_T); /*  jne +10 */ \
-  X86_MOVQ(op.a, PN_TRUE); /*  -A(%rbp) = TRUE */ \
-  ASM(0xEB); ASM(0x7 + X86_PRE_T); /*  jmp +7 */ \
-  X86_MOVQ(op.a, PN_FALSE); /*  -A(%rbp) = FALSE */
+  X86_MOV_RBP(0x8B, op.a); // mov -A(%rbp) %rax
+  X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); // cmp FALSE %rax
+  ASM(0x74); ASM(X86C(13, 15)); // je +10
+  X86_PRE(); ASM(0x85); ASM(0xC0); // test %rax %rax
+  ASM(0x74); ASM(X86C(9, 10)); // je +5
+  X86_MOVQ(op.a, test ? PN_FALSE : PN_TRUE); // -A(%rbp) = TRUE
+  ASM(0xEB); ASM(X86C(7, 8)); // jmp +7
+  X86_MOVQ(op.a, test ? PN_TRUE : PN_FALSE); // -A(%rbp) = FALSE
 }
 
 void potion_x86_test(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
@@ -527,19 +528,21 @@ void potion_x86_cmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 
 void potion_x86_testjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, PNJumps *jmps, size_t *offs, int *jmpc) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /*  mov -A(%rbp) %edx */
-  ASM(0xB8); ASMI(PN_FALSE); /* mov FALSE %eax */
-  ASM(0x39); ASM(0xC2); /*  cmp %eax %edx */
-  ASM(0x74); ASM(0x5); /*  je +10 */
+  X86_MOV_RBP(0x8B, op.a); // mov -A(%rbp) %rax
+  X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); // cmp FALSE %rax
+  ASM(0x74); ASM(X86C(9, 10)); // je +10
+  X86_PRE(); ASM(0x85); ASM(0xC0); // test %rax %rax
+  ASM(0x74); ASM(5);
   TAG_JMP(pos + op.b);
 }
 
 void potion_x86_notjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, PNJumps *jmps, size_t *offs, int *jmpc) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /*  mov -A(%rbp) %edx */
-  ASM(0xB8); ASMI(PN_FALSE); /* mov FALSE %eax */
-  ASM(0x39); ASM(0xC2); /* cmp %eax %edx */
-  ASM(0x75); ASM(0x5); /* jne +10 */
+  X86_MOV_RBP(0x8B, op.a); // mov -A(%rbp) %rax
+  X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); // cmp FALSE %rax
+  ASM(0x74); ASM(X86C(4, 5)); // je +5
+  X86_PRE(); ASM(0x85); ASM(0xC0); // test %rax %rax
+  ASM(0x75); ASM(5);
   TAG_JMP(pos + op.b);
 }
 

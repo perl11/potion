@@ -3,7 +3,7 @@ a = if (false): 12
 . else: 16.
 
 b = if (false): 12
-. elsif (false): 14
+. elsif (nil): 14
 . else: 16.
 
 c = if (true): 12

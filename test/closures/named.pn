@@ -3,5 +3,5 @@ sub = (x, y): y - x.
 b = (99, 98, 97)
 b put(index=1, value="XXX")
 
-(1, sub(y=12, x=89), b at(index=2), b at(index=1))
-# (1, -77, 97, XXX)
+(1, sub(y=12, x=89), b at(index=2), b at(index=1), "Kirikuro" slice(start=0, end=-2))
+# (1, -77, 97, XXX, Kiriku)
