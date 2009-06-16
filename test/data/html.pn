@@ -10,4 +10,4 @@ build = (node):
   "</" print, node name print, ">" print.
 
 build [html [body [p "SUPERIOR!"]]]
-# <html><body><p>SUPERIOR!</p></body></html>
+# <html><body><p>SUPERIOR!</p></body></html>nil
