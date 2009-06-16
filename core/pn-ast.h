@@ -45,7 +45,7 @@ enum PN_AST {
   AST_EXPR,
   AST_TABLE,
   AST_BLOCK,
-  AST_DATA,
+  AST_LICK,
   AST_PROTO
 };
 

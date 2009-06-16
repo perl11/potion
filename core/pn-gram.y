@@ -95,9 +95,20 @@ value(A) ::= INT(B). { A = PN_AST(VALUE, B); }
 value(A) ::= DECIMAL(B). { A = PN_AST(VALUE, B); }
 value(A) ::= STRING(B). { A = PN_AST(VALUE, B); }
 value(A) ::= STRING2(B). { A = PN_AST(VALUE, B); }
+value(A) ::= lick(B). { A = B; }
 
 block(A) ::= BEGIN_BLOCK all(B) END_BLOCK. { A = PN_AST(BLOCK, B); }
 block(A) ::= BEGIN_BLOCK END_BLOCK. { A = PN_AST(BLOCK, PN_NIL); }
 
 table(A) ::= BEGIN_TABLE all(B) END_TABLE. { A = PN_AST(TABLE, B); }
 table(A) ::= BEGIN_TABLE END_TABLE. { A = PN_AST(TABLE, PN_NIL); }
+
+lick(A) ::= BEGIN_LICK items(B) END_LICK. { A = PN_AST(TABLE, B); }
+lick(A) ::= BEGIN_LICK END_LICK. { A = PN_AST(TABLE, PN_NIL); }
+
+items(A) ::= items(B) SEP item(C). { A = PN_PUSH(B, C); }
+items(A) ::= item(B). { A = PN_TUP(B); }
+
+item(A) ::= MESSAGE(B). { A = PN_AST(LICK, B); }
+item(A) ::= MESSAGE(B) value(C). { A = PN_AST2(LICK, B, C); }
+item(A) ::= MESSAGE(B) table(C). { A = PN_AST2(LICK, B, C); }

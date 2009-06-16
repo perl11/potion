@@ -15,14 +15,14 @@ const char *potion_ast_names[] = {
   "gt", "gte", "lt", "lte", "pipe", "caret", "amp", "bitl",
   "bitr", "plus", "minus", "inc", "times", "div", "rem", "pow",
   "message", "path", "query", "pathq", "expr", "table",
-  "block", "data", "proto"
+  "block", "lick", "proto"
 };
 
 const int potion_ast_sizes[] = {
   1, 1, 2, 1, 2, 2, 2, 2, 2,
   2, 2, 2, 2, 2, 2, 2, 2,
   2, 2, 2, 2, 2, 2, 2, 2,
-  3, 1, 1, 1, 1, 1, 1, 1,
+  3, 1, 1, 1, 1, 1, 1, 2,
   2
 };
 

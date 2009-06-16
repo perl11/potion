@@ -102,6 +102,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))
       CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))
       CASE_OP(SETTABLE, (P, f, &asmb, pos, need))
+      CASE_OP(NEWLICK, (P, f, &asmb, pos, need))
       CASE_OP(ADD, (P, f, &asmb, pos))
       CASE_OP(SUB, (P, f, &asmb, pos))
       CASE_OP(MULT, (P, f, &asmb, pos))
@@ -235,6 +236,9 @@ reentry:
       break;
       case OP_SETTABLE:
         potion_table_set(P, reg[op.a], reg[op.b], reg[op.a+1]);
+      break;
+      case OP_NEWLICK:
+        reg[op.a] = potion_lick(P, reg[op.a], reg[op.b]);
       break;
       case OP_ADD:
         reg[op.a] = reg[op.a] + (reg[op.b]-1);

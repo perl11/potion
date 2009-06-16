@@ -210,6 +210,7 @@ void potion_lobby_init(Potion *P) {
   potion_send(P->lobby, PN_def, potion_str(P, "Bytes"),    PN_VTABLE(PN_TBYTES));
   potion_send(P->lobby, PN_def, potion_str(P, "Compiled"), PN_VTABLE(PN_TPROTO));
   potion_send(P->lobby, PN_def, potion_str(P, "Ref"),      PN_VTABLE(PN_TWEAK));
+  potion_send(P->lobby, PN_def, potion_str(P, "Lick"),     PN_VTABLE(PN_TLICK));
 
   potion_method(P->lobby, "callcc", potion_callcc, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);

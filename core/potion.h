@@ -56,8 +56,9 @@ struct PNMemory;
 #define PN_TPROTO       (13+PN_TNIL)
 #define PN_TLOBBY       (14+PN_TNIL)
 #define PN_TTABLE       (15+PN_TNIL)
-#define PN_TFLEX        (16+PN_TNIL)
-#define PN_TUSER        (17+PN_TNIL)
+#define PN_TLICK        (16+PN_TNIL)
+#define PN_TFLEX        (17+PN_TNIL)
+#define PN_TUSER        (18+PN_TNIL)
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -276,6 +277,15 @@ struct PNTuple {
 struct PNWeakRef {
   PN_OBJECT_HEADER
   PN data;
+};
+
+//
+// a lick is a unit of generic tree data.
+//
+struct PNLick {
+  PN_OBJECT_HEADER
+  PN name;
+  PN inner;
 };
 
 // the potion type is the 't' in the vtable tuple (m,t)
@@ -506,6 +516,7 @@ PN_SIZE potion_tuple_find(Potion *, PN, PN);
 PN potion_tuple_at(Potion *, PN, PN, PN);
 PN potion_table_set(Potion *, PN, PN, PN);
 PN potion_table_at(Potion *, PN, PN, PN);
+PN potion_lick(Potion *, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dump(Potion *, PN, PN);
@@ -519,6 +530,7 @@ void potion_str_hash_init(Potion *);
 void potion_str_init(Potion *);
 void potion_table_init(Potion *);
 void potion_source_init(Potion *);
+void potion_lick_init(Potion *);
 void potion_compiler_init(Potion *);
 void potion_vm_init(Potion *);
 void potion_dump_stack(Potion *);

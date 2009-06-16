@@ -39,6 +39,7 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TBYTES, obj_vt);
   potion_type_new(P, PN_TPROTO, obj_vt);
   potion_type_new(P, PN_TWEAK, obj_vt);
+  potion_type_new(P, PN_TLICK, obj_vt);
   potion_str_hash_init(P);
 
   PN_allocate = potion_str(P, "allocate");
@@ -72,6 +73,7 @@ static void potion_init(Potion *P) {
   potion_str_init(P);
   potion_table_init(P);
   potion_source_init(P);
+  potion_lick_init(P);
   potion_compiler_init(P);
 
   GC_PROTECT(P);
