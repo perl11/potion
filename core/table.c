@@ -156,12 +156,17 @@ PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
 }
 
 PN potion_tuple_string(Potion *P, PN cl, PN self) {
+  int licks = 0;
   PN out = potion_byte_str(P, "(");
   PN_TUPLE_EACH(self, i, v, {
     if (i > 0) pn_printf(P, out, ", ");
+    if (PN_TYPE(v) == PN_TLICK) licks++;
     potion_bytes_obj_string(P, out, v);
   });
-  pn_printf(P, out, ")");
+
+  licks = (licks > 0 && licks == PN_TUPLE_LEN(self));
+  if (licks) PN_STR_PTR(out)[0] = '[';
+  pn_printf(P, out, licks ? "]" : ")");
   return out;
 }
 

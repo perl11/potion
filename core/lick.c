@@ -37,10 +37,25 @@ PN potion_lick_text(Potion *P, PN cl, PN self) {
   return PN_NIL;
 }
 
+PN potion_lick_string(Potion *P, PN cl, PN self) {
+  PN out = potion_byte_str(P, "");
+  potion_bytes_obj_string(P, out, ((struct PNLick *)self)->name);
+  if (((struct PNLick *)self)->inner != PN_NIL) {
+    pn_printf(P, out, " ");
+    potion_bytes_obj_string(P, out, ((struct PNLick *)self)->inner);
+  }
+  if (((struct PNLick *)self)->attr != PN_NIL) {
+    pn_printf(P, out, " ");
+    potion_bytes_obj_string(P, out, ((struct PNLick *)self)->attr);
+  }
+  return out;
+}
+
 void potion_lick_init(Potion *P) {
   PN lk_vt = PN_VTABLE(PN_TLICK);
   potion_method(lk_vt, "attr", potion_lick_attr, 0);
   potion_method(lk_vt, "licks", potion_lick_licks, 0);
   potion_method(lk_vt, "name", potion_lick_name, 0);
+  potion_method(lk_vt, "string", potion_lick_string, 0);
   potion_method(lk_vt, "text", potion_lick_text, 0);
 }
