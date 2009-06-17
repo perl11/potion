@@ -507,6 +507,10 @@ PN potion_sig(Potion *, char *);
 int potion_sig_find(Potion *, PN, PN);
 PN potion_decimal(Potion *, int, int, char *);
 PN potion_pow(Potion *, PN, PN, PN);
+unsigned long potion_rand_int();
+double potion_rand_double();
+PN potion_srand(Potion *, PN, PN, PN);
+PN potion_rand(Potion *, PN, PN);
 
 PN potion_tuple_empty(Potion *);
 PN potion_tuple_with_size(Potion *, PN_SIZE);

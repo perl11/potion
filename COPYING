@@ -16,6 +16,9 @@
     (c) 1994-2006 Lua.org, PUC-Rio
     <http://lua.org/license.html> (MIT licensed)
     <http://luaforge.net/docman/view.php/83/98/ANoFrillsIntroToLua51VMInstructions.pdf>
+  The Mersenne Twister (MT19937)
+    (c) 1997-2002, Makoto Matsumoto and Takuji Nishimura (MIT licensed)
+    <http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html>
   Lastly, khash.h
     (c) 2008, by Attractive Chaos
     <http://attractivechaos.awardspace.com/khash.h.html> (MIT licensed)

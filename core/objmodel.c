@@ -214,6 +214,8 @@ void potion_lobby_init(Potion *P) {
 
   potion_method(P->lobby, "callcc", potion_callcc, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);
+  potion_method(P->lobby, "srand", potion_srand, "seed=N");
+  potion_method(P->lobby, "rand", potion_rand, 0);
   potion_method(P->lobby, "self", potion_lobby_self, 0);
   potion_send(P->lobby, PN_def, PN_string, potion_str(P, "Lobby"));
 }
