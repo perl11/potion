@@ -44,11 +44,10 @@ PN potion_table_cast(Potion *P, PN self) {
 }
 
 PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
-  int ret;
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
-  unsigned k = kh_put(PN, t->kh, key, &ret);
-  if (ret) return PN_NIL;
-  return kh_value(t->kh, k);
+  unsigned k = kh_get(PN, t->kh, key);
+  if (k != kh_end(t->kh)) return kh_value(t->kh, k);
+  return PN_NIL;
 }
 
 PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {

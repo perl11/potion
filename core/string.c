@@ -16,7 +16,7 @@ unsigned potion_add_str(Potion *P, PN self, PN s) {
   int ret;
   vPN(StrTable) t = (struct PNStrTable *)self;
   unsigned k = kh_put(str, t->kh, s, &ret);
-  if (!ret) kh_del(str, t->kh, k);
+  PN_TOUCH(self);
   return k;
 }
 

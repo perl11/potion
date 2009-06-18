@@ -82,6 +82,7 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
     method = cl;
   }
   kh_value(vt->kh, k) = method;
+  PN_TOUCH(self);
 #ifdef JIT_MCACHE
 #define X86(ins) *asmb = (u8)(ins); asmb++
 #define X86I(pn) *((unsigned int *)asmb) = (unsigned int)(pn); asmb += sizeof(unsigned int)
