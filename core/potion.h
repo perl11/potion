@@ -63,7 +63,6 @@ struct PNMemory;
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
-#define PN_UNIQ(x)      (PN_IS_PTR(x) ? ((struct PNObject *)(x))->uniq : (PNUniq)((x)>>33^(x)^(x)<<11))
 #define PN_TYPE_ID(t)   ((t)-PN_TNIL)
 #define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, PN_TYPE_ID(t)))
 #define PN_TYPECHECK(t) (PN_TYPE_ID(t) >= 0 && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
@@ -109,6 +108,13 @@ struct PNMemory;
 #define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER PN_SIZE siz; PN_SIZE len; T ptr[0]; } N;
 #define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
 #define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
+
+#if PN_SIZE_T == 4
+#define PN_NUMHASH(x)   x
+#else
+#define PN_NUMHASH(x)   (PNUniq)((x)>>33^(x)^(x)<<11)
+#endif
+#define PN_UNIQ(x)      (PN_IS_PTR(x) ? ((struct PNObject *)(x))->uniq : PN_NUMHASH(x))
 
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
 #define PN_TUP0()       potion_tuple_empty(P)
