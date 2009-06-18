@@ -211,7 +211,7 @@ void potion_x86_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   for (upi = 0; upi < upc; upi++) {
     X86_MOV_RBP(0x8B, 1);
     X86_PRE(); ASM(0x8B); ASM(0x40);
-      ASM(sizeof(struct PNClosure) + (upi * sizeof(PN)) + 1); // 0x30(%rax)
+      ASM(sizeof(struct PNClosure) + ((upi + 1) * sizeof(PN))); // 0x30(%rax)
     X86_MOV_RBP(0x89, lregs + upi);
   }
 }
@@ -629,7 +629,7 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
     }
     X86_MOV_RBP(0x8B, op.a); // mov cl %rax
     X86_PRE(); ASM(0x89); ASM(0x50); // mov %rdx N(%rax)
-      ASM(sizeof(struct PNClosure) + (sizeof(PN) * i) + 1);
+      ASM(sizeof(struct PNClosure) + (sizeof(PN) * (i + 1)));
   });
 }
 
