@@ -188,7 +188,9 @@ PN potion_parse(Potion *P, PN code) {
 
   LemonPotion(pParser, 0, 0, P);
 
-  return P->source;
+  last = P->source;
+  P->source = PN_NIL;
+  return last;
 }
 
 //

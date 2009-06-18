@@ -76,6 +76,36 @@
   } \
 } while(0)
 
+#define GC_MINOR_UPDATE_TABLE(kh, is_map) do { \
+  unsigned k; \
+  for (k = kh_begin(kh); k != kh_end(kh); ++k) \
+    if (kh_exist(kh, k)) { \
+      PN v1 = kh_key(kh, k); \
+      GC_MINOR_UPDATE(v1); \
+      kh_key(kh, k) = v1; \
+      if (is_map) { \
+        PN v2 = kh_value(kh, k); \
+        GC_MINOR_UPDATE(v2); \
+        kh_value(kh, k) = v2; \
+      } \
+    } \
+} while (0)
+
+#define GC_MAJOR_UPDATE_TABLE(kh, is_map) do { \
+  unsigned k; \
+  for (k = kh_begin(kh); k != kh_end(kh); ++k) \
+    if (kh_exist(kh, k)) { \
+      PN v1 = kh_key(kh, k); \
+      GC_MAJOR_UPDATE(v1); \
+      kh_key(kh, k) = v1; \
+      if (is_map) { \
+        PN v2 = kh_value(kh, k); \
+        GC_MAJOR_UPDATE(v2); \
+        kh_value(kh, k) = v2; \
+      } \
+    } \
+} while (0)
+
 PN_SIZE potion_stack_len(Potion *, _PN **);
 PN_SIZE potion_mark_stack(Potion *, int);
 void *potion_gc_copy(Potion *, struct PNObject *);

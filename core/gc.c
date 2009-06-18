@@ -134,6 +134,7 @@ static int potion_gc_minor(Potion *P, int sz) {
   SET_STOREPTR(5);
   M->minors++;
 
+  info("(new young: %p -> %p = %d)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
   return POTION_OK;
 }
 
@@ -363,6 +364,10 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     case PN_TFILE:
       GC_MINOR_UPDATE(((struct PNFile *)ptr)->path);
     break;
+    case PN_TVTABLE:
+      GC_MINOR_UPDATE(((struct PNVtable *)ptr)->parent);
+      GC_MINOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
+    break;
     case PN_TSOURCE:
       GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[0]);
       GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[1]);
@@ -378,30 +383,11 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->protos);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
-    case PN_TTABLE: {
-      unsigned k;
-      struct PNTable * volatile t = (struct PNTable *)ptr;
-      for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
-        if (kh_exist(t->kh, k)) {
-          PN v1 = kh_key(t->kh, k);
-          PN v2 = kh_value(t->kh, k);
-          GC_MINOR_UPDATE(v1);
-          GC_MINOR_UPDATE(v2);
-          kh_key(t->kh, k) = v1;
-          kh_value(t->kh, k) = v2;
-        }
-    }
+    case PN_TTABLE:
+      GC_MINOR_UPDATE_TABLE(((struct PNTable *)ptr)->kh, 1);
     break;
-    case PN_TSTRINGS: {
-      unsigned k;
-      struct PNStrTable * volatile t = (struct PNStrTable *)ptr;
-      for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
-        if (kh_exist(t->kh, k)) {
-          PN s = kh_key(t->kh, k);
-          GC_MINOR_UPDATE(s);
-          kh_key(t->kh, k) = s;
-        }
-    }
+    case PN_TSTRINGS:
+      GC_MINOR_UPDATE_TABLE(((struct PNStrTable *)ptr)->kh, 0);
     break;
   }
 
@@ -455,6 +441,10 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     case PN_TFILE:
       GC_MAJOR_UPDATE(((struct PNFile *)ptr)->path);
     break;
+    case PN_TVTABLE:
+      GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->parent);
+      GC_MAJOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
+    break;
     case PN_TSOURCE:
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[0]);
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[1]);
@@ -470,30 +460,11 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->protos);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
-    case PN_TTABLE: {
-      unsigned k;
-      struct PNTable * volatile t = (struct PNTable *)ptr;
-      for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
-        if (kh_exist(t->kh, k)) {
-          PN v1 = kh_key(t->kh, k);
-          PN v2 = kh_value(t->kh, k);
-          GC_MAJOR_UPDATE(v1);
-          GC_MAJOR_UPDATE(v2);
-          kh_key(t->kh, k) = v1;
-          kh_value(t->kh, k) = v2;
-        }
-    }
+    case PN_TTABLE:
+      GC_MAJOR_UPDATE_TABLE(((struct PNTable *)ptr)->kh, 1);
     break;
-    case PN_TSTRINGS: {
-      unsigned k;
-      struct PNStrTable * volatile t = (struct PNStrTable *)ptr;
-      for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
-        if (kh_exist(t->kh, k)) {
-          PN s = kh_key(t->kh, k);
-          GC_MAJOR_UPDATE(s);
-          kh_key(t->kh, k) = s;
-        }
-    }
+    case PN_TSTRINGS:
+      GC_MAJOR_UPDATE_TABLE(((struct PNStrTable *)ptr)->kh, 0);
     break;
   }
 

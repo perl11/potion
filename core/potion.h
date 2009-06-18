@@ -410,7 +410,7 @@ static inline void *potion_gc_calloc(Potion *P, PNType vt, int siz) {
 
 static inline void potion_gc_update(Potion *P, PN x) {
   struct PNMemory *M = P->mem;
-  if (x < (PN)M->old_lo || x > (PN)M->old_hi ||
+  if ((x > (PN)M->birth_lo && x < (PN)M->birth_hi && (x < (PN)M || x >= (PN)M->protect)) ||
       x == (PN)M->birth_storeptr[1] ||
       x == (PN)M->birth_storeptr[2] ||
       x == (PN)M->birth_storeptr[3])
