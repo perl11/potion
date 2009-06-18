@@ -12,11 +12,6 @@
 #include "khash.h"
 #include "table.h"
 
-struct PNStrTable {
-  PN_OBJECT_HEADER
-  kh_str_t kh[0];
-};
-
 unsigned potion_add_str(Potion *P, PN self, PN s) {
   int ret;
   vPN(StrTable) t = (struct PNStrTable *)self;
@@ -197,7 +192,7 @@ static PN potion_bytes_print(Potion *P, PN closure, PN self) {
 }
 
 void potion_str_hash_init(Potion *P) {
-  vPN(StrTable) t = PN_CALLOC_N(PN_TTABLE, struct PNStrTable, sizeof(kh_str_t));
+  vPN(StrTable) t = PN_CALLOC_N(PN_TSTRINGS, struct PNStrTable, sizeof(kh_str_t));
   P->strings = (PN)t;
 }
 

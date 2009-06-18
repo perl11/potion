@@ -22,6 +22,11 @@ struct PNVtable {
   kh_PN_t kh[0];
 };
 
+struct PNStrTable {
+  PN_OBJECT_HEADER
+  kh_str_t kh[0];
+};
+
 struct PNTable {
   PN_OBJECT_HEADER
   kh_PN_t kh[0];
