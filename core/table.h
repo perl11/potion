@@ -7,14 +7,8 @@
 #ifndef POTION_TABLE_H
 #define POTION_TABLE_H
 
-#if __WORDSIZE != 64
-KHASH_MAP_INIT_INT(_PN, _PN);
-#else
-KHASH_MAP_INIT_INT64(_PN, _PN);
-#endif
-
 KHASH_MAP_INIT_STR(str, _PN);
-KHASH_MAP_INIT_INT(id, _PN);
+KHASH_MAP_INIT_PN(PN);
 
 struct PNVtable {
   PN_OBJECT_HEADER
@@ -25,12 +19,12 @@ struct PNVtable {
   PN_MCACHE_FUNC mcache;
 #endif
   int ivars;
-  kh_id_t kh[0];
+  kh_PN_t kh[0];
 };
 
 struct PNTable {
   PN_OBJECT_HEADER
-  kh__PN_t kh[0];
+  kh_PN_t kh[0];
 };
 
 #endif

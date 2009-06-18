@@ -82,6 +82,7 @@ static void potion_init(Potion *P) {
 Potion *potion_create(void *sp) {
   Potion *P = potion_gc_boot(sp);
   P->vt = PN_TSTATE;
+  P->uniq = (PNUniq)potion_rand_int();
   PN_FLEX_NEW(P->vts, PNFlex, TYPE_BATCH_SIZE);
   PN_FLEX_SIZE(P->vts) = PN_TYPE_ID(PN_TUSER) + 1;
   potion_init(P);

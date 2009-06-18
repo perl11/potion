@@ -23,8 +23,8 @@
 //
 // types
 //
-typedef unsigned long PNType, _PN;
-typedef unsigned int PN_SIZE;
+typedef unsigned long _PN;
+typedef unsigned int PN_SIZE, PNType, PNUniq;
 typedef struct Potion_State Potion;
 typedef volatile _PN PN;
 
@@ -63,6 +63,7 @@ struct PNMemory;
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
+#define PN_UNIQ(x)      (PN_IS_PTR(x) ? ((struct PNObject *)(x))->uniq : (PNUniq)((x)>>33^(x)^(x)<<11))
 #define PN_TYPE_ID(t)   ((t)-PN_TNIL)
 #define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, PN_TYPE_ID(t)))
 #define PN_TYPECHECK(t) (PN_TYPE_ID(t) >= 0 && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
@@ -137,7 +138,8 @@ struct PNMemory;
   })
 
 #define PN_OBJECT_HEADER \
-  PNType vt;
+  PNType vt; \
+  PNUniq uniq;
 
 //
 // standard objects act like C structs
@@ -177,7 +179,6 @@ struct PNData {
 struct PNString {
   PN_OBJECT_HEADER
   PN_SIZE len;
-  unsigned int id;
   char chars[0];
 };
 
@@ -346,7 +347,6 @@ struct Potion_State {
   PN_OBJECT_HEADER
   PNTarget targets[POTION_TARGETS];
   PN strings; /* table of all strings */
-  unsigned int next_string_id;
   PN lobby; /* root namespace */
   PNFlex * volatile vts; /* built in types */
   PN source; /* temporary ast node */
@@ -377,6 +377,8 @@ struct PNMemory {
 
 void potion_garbagecollect(Potion *, int, int);
 PN_SIZE potion_type_size(Potion *, const struct PNObject *);
+unsigned long potion_rand_int();
+double potion_rand_double();
 
 // quick inline allocation
 static inline void *potion_gc_alloc(Potion *P, PNType vt, int siz) {
@@ -389,6 +391,7 @@ static inline void *potion_gc_alloc(Potion *P, PNType vt, int siz) {
     potion_garbagecollect(P, siz + 4 * sizeof(double), 0);
   res = (struct PNObject *)M->birth_cur;
   res->vt = vt;
+  res->uniq = (PNUniq)potion_rand_int();
   M->birth_cur = (char *)res + siz;
   return (void *)res;
 }
@@ -507,8 +510,6 @@ PN potion_sig(Potion *, char *);
 int potion_sig_find(Potion *, PN, PN);
 PN potion_decimal(Potion *, int, int, char *);
 PN potion_pow(Potion *, PN, PN, PN);
-unsigned long potion_rand_int();
-double potion_rand_double();
 PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);
 

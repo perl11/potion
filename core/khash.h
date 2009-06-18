@@ -278,6 +278,8 @@ static inline khint_t __luaS_hash_string(const char *s)
 }
 #define kh_str_hash_func(key) __luaS_hash_string(key)
 #define kh_str_hash_equal(a, b) (strcmp(a, b) == 0)
+#define kh_pn_hash_func(key) (uint32_t)PN_UNIQ(key)
+#define kh_pn_hash_equal(a, b) (a == b)
 
 /* --- END OF HASH FUNCTIONS --- */
 
@@ -322,5 +324,8 @@ typedef const char *kh_cstr_t;
 
 #define KHASH_MAP_INIT_STR(name, khval_t)								\
 	KHASH_INIT(name, kh_cstr_t, khval_t, 1, kh_str_hash_func, kh_str_hash_equal)
+
+#define KHASH_MAP_INIT_PN(name)								\
+	KHASH_INIT(name, _PN, _PN, 1, kh_pn_hash_func, kh_pn_hash_equal)
 
 #endif /* __AC_KHASH_H */

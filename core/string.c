@@ -42,7 +42,6 @@ PN potion_str(Potion *P, const char *str) {
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
     potion_add_str(P, P->strings, s->chars, (PN)s);
-    s->id = P->next_string_id++;
     val = (PN)s;
   }
   return val;
@@ -201,7 +200,6 @@ static PN potion_bytes_print(Potion *P, PN closure, PN self) {
 void potion_str_hash_init(Potion *P) {
   vPN(StrTable) t = PN_CALLOC_N(PN_TTABLE, struct PNStrTable, sizeof(kh_str_t));
   P->strings = (PN)t;
-  P->next_string_id = 0;
 }
 
 void potion_str_init(Potion *P) {

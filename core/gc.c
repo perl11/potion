@@ -267,7 +267,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNFile);
     break;
     case PN_TVTABLE:
-      sz = sizeof(struct PNVtable) + sizeof(kh_id_t);
+      sz = sizeof(struct PNVtable) + sizeof(kh_PN_t);
     break;
     case PN_TSOURCE:
     // TODO: look up ast size (see core/pn-ast.c)
@@ -280,7 +280,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNProto);
     break;
     case PN_TTABLE:
-      sz = sizeof(struct PNObject) + sizeof(kh__PN_t);
+      sz = sizeof(struct PNObject) + sizeof(kh_PN_t);
     break;
     case PN_TFLEX:
       sz = sizeof(PNFlex) + ((PNFlex *)ptr)->siz;
@@ -371,15 +371,8 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
           PN v2 = kh_value(t->kh, k);
           GC_MINOR_UPDATE(v1);
           GC_MINOR_UPDATE(v2);
-          if (kh_key(t->kh, k) != v1) {
-            int ret;
-            unsigned kn;
-            kh_del(_PN, t->kh, k);
-            kn = kh_put(_PN, t->kh, v1, &ret);
-            kh_value(t->kh, kn) = v2;
-            if (kn < k)
-              k = kn;
-          }
+          kh_key(t->kh, k) = v1;
+          kh_value(t->kh, k) = v2;
         }
     }
     break;
@@ -452,15 +445,8 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
           PN v2 = kh_value(t->kh, k);
           GC_MAJOR_UPDATE(v1);
           GC_MAJOR_UPDATE(v2);
-          if (kh_key(t->kh, k) != v1) {
-            int ret;
-            unsigned kn;
-            kh_del(_PN, t->kh, k);
-            kn = kh_put(_PN, t->kh, v1, &ret);
-            kh_value(t->kh, kn) = v2;
-            if (kn < k)
-              k = kn;
-          }
+          kh_key(t->kh, k) = v1;
+          kh_value(t->kh, k) = v2;
         }
     }
     break;
