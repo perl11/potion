@@ -109,7 +109,7 @@ static const uint32_t __ac_prime_list[__ac_HASH_PRIME_SIZE] =
 
 static const double __ac_HASH_UPPER = 0.77;
 
-#define KHASH_INIT(name, khkey_t, khval_t, kh_is_map, __hash_func, __hash_equal) \
+#define KHASH_INIT(name, khkey_t, khval_t, khkey_t2, kh_is_map, __hash_func, __hash_equal, __hash_func2, __hash_equal2) \
 	typedef struct {													\
 		khint_t n_buckets, size, n_occupied, upper_bound;				\
 		uint32_t *flags;												\
@@ -134,13 +134,13 @@ static const double __ac_HASH_UPPER = 0.77;
 			h->size = h->n_occupied = 0;								\
 		}																\
 	}																	\
-	static inline khint_t kh_get_##name(kh_##name##_t *h, khkey_t key)	\
+	static inline khint_t kh_get_##name(kh_##name##_t *h, khkey_t2 key)	\
 	{																	\
 		if (h->n_buckets) {												\
 			khint_t inc, k, i, last;									\
-			k = __hash_func(key); i = k % h->n_buckets;					\
+			k = __hash_func2(key); i = k % h->n_buckets;					\
 			inc = 1 + k % (h->n_buckets - 1); last = i;					\
-			while (!__ac_isempty(h->flags, i) && (__ac_isdel(h->flags, i) || !__hash_equal(h->keys[i], key))) { \
+			while (!__ac_isempty(h->flags, i) && (__ac_isdel(h->flags, i) || !__hash_equal2(h->keys[i], key))) { \
 				if (i + inc >= h->n_buckets) i = i + inc - h->n_buckets; \
 				else i += inc;											\
 				if (i == last) return h->n_buckets;						\
@@ -276,8 +276,10 @@ static inline khint_t __luaS_hash_string(const char *s)
     h = h ^ ((h << 5) + (h >> 2) + (unsigned char)s[l1 - 1]);
   return h;
 }
-#define kh_str_hash_func(key) __luaS_hash_string(key)
-#define kh_str_hash_equal(a, b) (strcmp(a, b) == 0)
+#define kh_str_hash_func(key) __luaS_hash_string(PN_STR_PTR(key))
+#define kh_str_hash_equal(a, b) (strcmp(PN_STR_PTR(a), PN_STR_PTR(b)) == 0)
+#define kh_pnstr_hash_func(key) __luaS_hash_string(key)
+#define kh_pnstr_hash_equal(a, b) (strcmp(PN_STR_PTR(a), b) == 0)
 #define kh_pn_hash_func(key) (uint32_t)PN_UNIQ(key)
 #define kh_pn_hash_equal(a, b) (a == b)
 
@@ -304,28 +306,12 @@ static inline khint_t __luaS_hash_string(const char *s)
 #define kh_size(h) ((h)->size)
 #define kh_n_buckets(h) ((h)->n_buckets)
 
-/* More conenient interfaces */
-
-#define KHASH_SET_INIT_INT(name)										\
-	KHASH_INIT(name, uint32_t, char, 0, kh_int_hash_func, kh_int_hash_equal)
-
-#define KHASH_MAP_INIT_INT(name, khval_t)								\
-	KHASH_INIT(name, uint32_t, khval_t, 1, kh_int_hash_func, kh_int_hash_equal)
-
-#define KHASH_SET_INIT_INT64(name)										\
-	KHASH_INIT(name, uint64_t, char, 0, kh_int64_hash_func, kh_int64_hash_equal)
-
-#define KHASH_MAP_INIT_INT64(name, khval_t)								\
-	KHASH_INIT(name, uint64_t, khval_t, 1, kh_int64_hash_func, kh_int64_hash_equal)
-
-typedef const char *kh_cstr_t;
-#define KHASH_SET_INIT_STR(name)										\
-	KHASH_INIT(name, kh_cstr_t, char, 0, kh_str_hash_func, kh_str_hash_equal)
-
-#define KHASH_MAP_INIT_STR(name, khval_t)								\
-	KHASH_INIT(name, kh_cstr_t, khval_t, 1, kh_str_hash_func, kh_str_hash_equal)
+#define KHASH_MAP_INIT_STR(name)								\
+	KHASH_INIT(name, _PN, PNUniq, const char *, 1, kh_str_hash_func, \
+    kh_str_hash_equal, kh_pnstr_hash_func, kh_pnstr_hash_equal)
 
 #define KHASH_MAP_INIT_PN(name)								\
-	KHASH_INIT(name, _PN, _PN, 1, kh_pn_hash_func, kh_pn_hash_equal)
+	KHASH_INIT(name, _PN, _PN, _PN, 1, kh_pn_hash_func, \
+    kh_pn_hash_equal, kh_pn_hash_func, kh_pn_hash_equal)
 
 #endif /* __AC_KHASH_H */

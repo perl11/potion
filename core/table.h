@@ -7,7 +7,7 @@
 #ifndef POTION_TABLE_H
 #define POTION_TABLE_H
 
-KHASH_MAP_INIT_STR(str, _PN);
+KHASH_MAP_INIT_STR(str);
 KHASH_MAP_INIT_PN(PN);
 
 struct PNVtable {
