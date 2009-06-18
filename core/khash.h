@@ -307,7 +307,7 @@ static inline khint_t __luaS_hash_string(const char *s)
 #define kh_n_buckets(h) ((h)->n_buckets)
 
 #define KHASH_MAP_INIT_STR(name)								\
-	KHASH_INIT(name, _PN, PNUniq, const char *, 1, kh_str_hash_func, \
+	KHASH_INIT(name, _PN, PNUniq, const char *, 0, kh_str_hash_func, \
     kh_str_hash_equal, kh_pnstr_hash_func, kh_pnstr_hash_equal)
 
 #define KHASH_MAP_INIT_PN(name)								\
