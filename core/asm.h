@@ -85,10 +85,10 @@ typedef struct {
     }); \
   }
   
-#define ASM(ins) *asmp = potion_asm_put(P, *asmp, (PN)ins, sizeof(u8))
+#define ASM(ins) *asmp = potion_asm_put(P, *asmp, (PN)(ins), sizeof(u8))
 #define ASM2(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), 2)
 #define ASMI(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), sizeof(int))
-#define ASMN(pn) *asmp = potion_asm_put(P, *asmp, (PN)pn, sizeof(PN))
+#define ASMN(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), sizeof(PN))
 
 PNAsm *potion_asm_new(Potion *);
 PNAsm *potion_asm_put(Potion *, PNAsm *, PN, size_t);

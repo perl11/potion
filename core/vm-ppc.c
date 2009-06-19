@@ -129,7 +129,7 @@ void potion_ppc_loadpn(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   PPC2(14, REG(op.a), op.b); // li rA,B
 }
 
-void potion_ppc_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_ppc_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PN val = PN_TUPLE_AT(f->values, op.b);
   PPC2(15, REG(op.a), val >> 16); // lis rA,B

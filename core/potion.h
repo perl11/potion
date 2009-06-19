@@ -274,7 +274,7 @@ struct PNProto {
 //
 struct PNTuple {
   PN_OBJECT_HEADER
-  PN_SIZE len;
+  unsigned long len;
   PN set[0];
 };
 

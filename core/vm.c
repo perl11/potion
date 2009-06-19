@@ -59,7 +59,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
 
   regs = PN_INT(f->stack);
   lregs = regs + PN_TUPLE_LEN(f->locals);
-  need = lregs + upc + 2;
+  need = lregs + upc + 3;
   rsp = (need + protoargs) * sizeof(PN);
 
   target->stack(P, f, &asmb, rsp);
@@ -93,7 +93,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     switch (PN_OP_AT(f->asmb, pos).code) {
       CASE_OP(MOVE, (P, f, &asmb, pos))
       CASE_OP(LOADPN, (P, f, &asmb, pos)) 
-      CASE_OP(LOADK, (P, f, &asmb, pos))
+      CASE_OP(LOADK, (P, f, &asmb, pos, need))
       CASE_OP(SELF, (P, f, &asmb, pos, need))
       CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs))
       CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))

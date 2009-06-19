@@ -189,7 +189,8 @@ void potion_x86_stack(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 void potion_x86_registers(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long start) {
   PN_HAS_UPVALS(up);
   // (Potion *, self) in the first argument slot, self in the first register 
-  X86_ARGI(start - 2, 0);
+  X86_ARGI(start - 3, 0);
+  X86_ARGI(start - 2, 1);
   X86_ARGI(start - 1, 2);
   X86_ARGI(0, 2);
   // empty locals, since use of setlocal requires something there
@@ -231,10 +232,18 @@ void potion_x86_loadpn(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   X86_MOVQ(op.a, op.b);
 }
 
-void potion_x86_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+PN potion_f_values(PN cl, PN i)
+{
+  return potion_fwd(PN_PROTO(PN_CLOSURE(cl)->data[0])->values);
+}
+
+void potion_x86_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  PN val = PN_TUPLE_AT(f->values, op.b);
-  X86_MOVL(op.a, val);
+  X86_ARGO(start - 2, 0);
+  X86_PRE(); ASM(0xB8); ASMN(potion_f_values); // mov &potion_f_values %rax
+  ASM(0xFF); ASM(0xD0); // callq %rax
+  X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNTuple) + (op.b * sizeof(PN))); // mov N(%rax) %rax
+  X86_MOV_RBP(0x89, op.a);
 }
 
 void potion_x86_self(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
@@ -295,7 +304,7 @@ void potion_x86_setupval(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 
 void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_ARGO(start - 2, 0);
+  X86_ARGO(start - 3, 0);
   X86_PRE(); ASM(0xB8); ASMN(potion_tuple_empty); // mov &potion_tuple_push %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
   X86_MOV_RBP(0x89, op.a); // mov %rax local
@@ -303,7 +312,7 @@ void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 
 void potion_x86_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_ARGO(start - 2, 0);
+  X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
   X86_ARGO(op.b, 2);
   X86_PRE(); ASM(0xB8); ASMN(potion_tuple_push); // mov &potion_tuple_push %rax
@@ -313,7 +322,7 @@ void potion_x86_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 
 void potion_x86_settable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_ARGO(start - 2, 0);
+  X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
   X86_ARGO(op.b, 2);
   X86_ARGO(op.a + 1, 3);
@@ -325,7 +334,7 @@ void potion_x86_settable(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 void potion_x86_newlick(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   int nnil = 0;
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_ARGO(start - 2, 0);
+  X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
   if (op.b > op.a) {
     X86_ARGO(op.a + 1, 2);
@@ -393,7 +402,7 @@ void potion_x86_rem(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 
 void potion_x86_pow(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_ARGO(start - 2, 0);
+  X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 2);
   X86_ARGO(op.b, 3);
   X86_PRE(); ASM(0xB8); ASMN(potion_pow); // mov &potion_tuple_push %rax
@@ -483,7 +492,7 @@ void potion_x86_bind(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   X86_MOV_RBP(0x8B, op.a); // mov %rbp(A) %rax
   X86_PRE(); ASM(0x89); ASM(0x05); ASMI(icname - (asmp[0]->ptr + 4)); // mov %rax NAME 
 #endif
-  X86_ARGO(start - 2, 0); // (0, 3)
+  X86_ARGO(start - 3, 0); // (0, 3)
   X86_ARGO(op.b, 1); // (7, 3)
   X86_ARGO(op.a, 2); // (7, 3)
   X86_PRE(); ASM(0xB8); ASMN(potion_bind); // mov &potion_bind %rax
@@ -548,7 +557,7 @@ void potion_x86_notjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 
 void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_ARGO(start - 2, 0);
+  X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
   X86_ARGO(op.b - 1, 2);
   X86_PRE(); ASM(0xB8); ASMN(potion_sig_find); // mov &potion_tuple_push %rax
@@ -569,7 +578,7 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   PN_OP op = PN_OP_AT(f->asmb, pos);
   int argc = op.b - op.a;
   // (Potion *, CL) as the first argument
-  X86_ARGO(start - 2, 0);
+  X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
   while (--argc >= 0) X86_ARGO(op.a + argc + 1, argc + 2);
 
@@ -611,6 +620,7 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   cl->method = PN_PROTO(proto)->jit;
   cl->data[0] = proto;
   // cl->method = &potion_x86_debug;
+  // TODO: create the closure afresh, get rid of MOVL it messes up gc
   X86_MOVL(op.a, cl);
   PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
     (*pos)++;
@@ -618,7 +628,7 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
     if (op.code == OP_GETUPVAL) {
       X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(lregs + op.b)); // mov upval %rdx
     } else if (op.code == OP_GETLOCAL) {
-      X86_ARGO(start - 2, 0);
+      X86_ARGO(start - 3, 0);
       X86_ARGO(regs + op.b, 1);
       X86_PRE(); ASM(0xB8); ASMN(potion_ref); // mov &potion_ref %rax
       ASM(0xFF); ASM(0xD0); // callq %rax

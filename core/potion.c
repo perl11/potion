@@ -106,10 +106,11 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
     } else if (exec == 2) {
 #if POTION_JIT == 1
       PN val;
-      PN_F func = potion_jit_proto(P, code, POTION_JIT_TARGET);
-      val = func(P, PN_NIL, P->lobby);
+      PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, POTION_JIT_TARGET), PN_NIL, 1);
+      PN_CLOSURE(cl)->data[0] = code;
+      val = PN_PROTO(code)->jit(P, cl, P->lobby);
       if (verbose > 1)
-        printf("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", func,
+        printf("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
           PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
           PN_INT(potion_gc_reserved(P, 0, 0)));
       if (verbose) {
