@@ -232,8 +232,7 @@ void potion_x86_loadpn(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   X86_MOVQ(op.a, op.b);
 }
 
-PN potion_f_values(PN cl, PN i)
-{
+PN potion_f_values(PN cl, PN i) {
   return potion_fwd(PN_PROTO(PN_CLOSURE(cl)->data[0])->values);
 }
 
@@ -611,17 +610,26 @@ void potion_x86_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   ASM(0xC9); ASM(0xC3); /* leave; ret */
 }
 
+PN potion_f_protos(Potion *P, PN cl, PN i) {
+  PN p = PN_PROTO(PN_CLOSURE(cl)->data[0])->protos;
+  PN proto = PN_TUPLE_AT(p, i);
+  vPN(Closure) c = (struct PNClosure *)potion_closure_new(P, NULL, PN_NIL,
+    PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
+  c->method = PN_PROTO(proto)->jit;
+  c->data[0] = proto;
+  return (PN)c;
+}
+
 void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE *pos, long lregs, long start, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, *pos);
-  vPN(Closure) cl;
   PN proto = PN_TUPLE_AT(f->protos, op.b);
-  cl = (struct PNClosure *)potion_closure_new(P, NULL, PN_NIL,
-    PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
-  cl->method = PN_PROTO(proto)->jit;
-  cl->data[0] = proto;
-  // cl->method = &potion_x86_debug;
-  // TODO: create the closure afresh, get rid of MOVL it messes up gc
-  X86_MOVL(op.a, cl);
+  X86_ARGO(start - 3, 0);
+  X86_ARGO(start - 2, 1);
+  X86_MOVQ(op.a, op.b);
+  X86_ARGO(op.a, 2);
+  X86_PRE(); ASM(0xB8); ASMN(potion_f_protos); // mov &potion_f_values %rax
+  ASM(0xFF); ASM(0xD0); // callq %rax
+  X86_MOV_RBP(0x89, op.a);
   PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
     (*pos)++;
     op = PN_OP_AT(f->asmb, *pos);
