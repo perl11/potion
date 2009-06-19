@@ -223,13 +223,14 @@ void potion_x86_loadpn(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   X86_MOVQ(op.a, op.b);
 }
 
-PN potion_f_values(PN cl, PN i) {
+PN potion_f_values(Potion *P, PN cl) {
   return potion_fwd(PN_PROTO(PN_CLOSURE(cl)->data[0])->values);
 }
 
 void potion_x86_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_ARGO(start - 2, 0);
+  X86_ARGO(start - 3, 0);
+  X86_ARGO(start - 2, 1);
   X86_PRE(); ASM(0xB8); ASMN(potion_f_values); // mov &potion_f_values %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
   X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNTuple) + (op.b * sizeof(PN))); // mov N(%rax) %rax
