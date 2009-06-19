@@ -29,15 +29,6 @@
 
 #define X86_MOV_RBP(reg, x) \
         X86_PRE(); ASM(reg); ASM(0x45); ASM(RBP(x))
-#define X86_MOVL(reg, x) ({ \
-        int i, mreg, movl = sizeof(PN) / sizeof(int); \
-        for (i = 0, mreg = (reg + 1) * movl; i < movl; i++) { \
-          int *xp = (int *)&x; \
-          ASM(0xC7); /* movl */ \
-          ASM(0x45); ASM(RBPI(--mreg)); /* -A(%rbp) */ \
-          ASMI(*(xp+i)); \
-        } \
-})
 #define X86_MOVQ(reg, x) \
         X86_PRE(); ASM(0xC7); /* movl */ \
         ASM(0x45); ASM(RBP(reg)); /* -A(%rbp) */ \
