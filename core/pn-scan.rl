@@ -63,7 +63,7 @@
   escn        = "\\n";
   escb        = "\\b";
   escf        = "\\f";
-  escr        = "\\t";
+  escr        = "\\r";
   esct        = "\\t";
   escu        = "\\u" [0-9a-fA-F]{4};
   schar2      = utf8 -- (escn | escape1 | escb | escf | escn | escr | esct);
