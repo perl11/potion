@@ -30,7 +30,7 @@ ary = list(2000000)
 i = 4
 while (i <= 20):
   iter = 2 * tree_size(20) / tree_size(i)
-  (i, iter) string print, "\n" print
+  ("Creating ", iter, " trees of depth ", i, "\n") join print
 
   j = 0
   while (j < iter):
