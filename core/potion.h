@@ -345,6 +345,7 @@ typedef struct {
   void (*jmpedit)  (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, unsigned char *, int);
   OP_F op[OP_MAX];
   void (*finish)   (Potion *P, struct PNProto * volatile f, PNAsm * volatile *);
+  void (*ivars)    (Potion *P, PN, PNAsm * volatile *);
 } PNTarget;
 
 //

@@ -318,4 +318,7 @@ void potion_ppc_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 void potion_ppc_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp) {
 }
 
+void potion_ppc_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
+}
+
 MAKE_TARGET(ppc);

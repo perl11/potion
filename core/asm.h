@@ -72,7 +72,8 @@ typedef struct {
       (OP_F)potion_##arch##_return, \
       (OP_F)potion_##arch##_method, \
     }, \
-    .finish = potion_##arch##_finish \
+    .finish = potion_##arch##_finish, \
+    .ivars = potion_##arch##_ivars \
   }
 
 #define PN_HAS_UPVALS(v) \

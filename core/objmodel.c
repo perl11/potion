@@ -12,6 +12,7 @@
 #include "internal.h"
 #include "khash.h"
 #include "table.h"
+#include "asm.h"
 
 PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   PN_SIZE i;
@@ -48,37 +49,12 @@ void potion_type_func(PN vt, PN_F func) {
 
 PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
   struct PNVtable *vt = (struct PNVtable *)self;
-  // TODO: use PNFlex when generating this, move to target
-  vt->ivfunc = (PN_IVAR_FUNC)PN_ALLOC_FUNC(512);
-#define X86(ins) *asmb = (u8)(ins); asmb++
-#define X86I(pn) *((unsigned int *)asmb) = (unsigned int)(pn); asmb += sizeof(unsigned int)
-#define X86N(pn) *((PN *)asmb) = (PN)(pn); asmb += sizeof(PN)
-  {
-    u8 *asmb = (u8 *)vt->ivfunc;
-#if __WORDSIZE != 64
-    X86(0x55); // push %ebp
-    X86(0x89); X86(0xE5); // mov %esp %ebp
-    X86(0x8B); X86(0x55); X86(0x08); // mov 0x8(%ebp) %edx
-#define X86C(op32, op64) op32
-#else
-#define X86C(op32, op64) op64
+#if POTION_JIT == 1
+  PNAsm * volatile asmb = potion_asm_new(P);
+  P->targets[POTION_JIT_TARGET].ivars(P, ivars, &asmb);
+  vt->ivfunc = PN_ALLOC_FUNC(asmb->len);
+  PN_MEMCPY_N(vt->ivfunc, asmb->ptr, u8, asmb->len);
 #endif
-    PN_TUPLE_EACH(ivars, i, v, {
-      X86(0x81); X86(X86C(0xFA, 0xFF));
-        X86I(PN_UNIQ(v)); // cmp UNIQ %edi
-      X86(0x75); X86(X86C(7, 6)); // jne +7
-      X86(0xB8); X86I(i); // mov i %rax
-#if __WORDSIZE != 64
-      X86(0x5D);
-#endif
-      X86(0xC3); // retq
-    });
-    X86(0xB8); X86I(-1); // mov -1 %rax
-#if __WORDSIZE != 64
-    X86(0x5D);
-#endif
-    X86(0xC3); // retq
-  }
   vt->ivlen = PN_TUPLE_LEN(ivars);
   vt->ivars = ivars;
 }
