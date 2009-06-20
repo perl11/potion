@@ -10,6 +10,12 @@
 KHASH_MAP_INIT_STR(str);
 KHASH_MAP_INIT_PN(PN);
 
+#ifdef JIT_MCACHE
+typedef PN (*PN_MCACHE_FUNC)(unsigned int hash);
+#endif
+// TODO: ensure the random PNUniq is truly unique for strings
+typedef PN (*PN_IVAR_FUNC)(PNUniq hash);
+
 struct PNVtable {
   PN_OBJECT_HEADER
   PNType type;
@@ -18,6 +24,7 @@ struct PNVtable {
 #ifdef JIT_MCACHE
   PN_MCACHE_FUNC mcache;
 #endif
+  PN_IVAR_FUNC ivfunc;
   int ivlen;
   PN ivars;
   kh_PN_t kh[0];

@@ -93,11 +93,10 @@ int main(void) {
 
   P = potion_create(sp);
   klass = potion_type_new(P, tree_type, PN_VTABLE(PN_TOBJECT));
-  ((struct PNVtable *)klass)->ivlen = 2;
-  ((struct PNVtable *)klass)->ivars = potion_tuple_with_size(P, 2);
-  PN_TUPLE_AT(((struct PNVtable *)klass)->ivars, 0) = PN_left = potion_str(P, "left");
-  PN_TUPLE_AT(((struct PNVtable *)klass)->ivars, 1) = PN_right = potion_str(P, "right");
-  potion_tuple_ins_sort(((struct PNVtable *)klass)->ivars);
+  ary = potion_tuple_with_size(P, 2);
+  PN_TUPLE_AT(ary, 0) = PN_left = potion_str(P, "left");
+  PN_TUPLE_AT(ary, 1) = PN_right = potion_str(P, "right");
+  potion_ivars(P, PN_NIL, klass, ary);
   PN_FLEX_SIZE(P->vts) = PN_TUSER + 2;
 
   printf("Stretching memory with a binary tree of depth %d\n",

@@ -13,10 +13,6 @@
 #include "khash.h"
 #include "table.h"
 
-#ifdef JIT_MCACHE
-typedef PN (*PN_MCACHE_FUNC)(unsigned int hash);
-#endif
-
 PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   PN_SIZE i;
   vPN(Closure) c = PN_ALLOC_N(PN_TCLOSURE, struct PNClosure, extra * sizeof(PN));
@@ -50,8 +46,51 @@ void potion_type_func(PN vt, PN_F func) {
   ((struct PNVtable *)vt)->func = func;
 }
 
+PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
+  struct PNVtable *vt = (struct PNVtable *)self;
+  // TODO: use PNFlex when generating this, move to target
+  vt->ivfunc = (PN_IVAR_FUNC)PN_ALLOC_FUNC(512);
+#define X86(ins) *asmb = (u8)(ins); asmb++
+#define X86I(pn) *((unsigned int *)asmb) = (unsigned int)(pn); asmb += sizeof(unsigned int)
+#define X86N(pn) *((PN *)asmb) = (PN)(pn); asmb += sizeof(PN)
+  {
+    u8 *asmb = (u8 *)vt->ivfunc;
+#if __WORDSIZE != 64
+    X86(0x55); // push %ebp
+    X86(0x89); X86(0xE5); // mov %esp %ebp
+    X86(0x8B); X86(0x55); X86(0x08); // mov 0x8(%ebp) %edx
+#define X86C(op32, op64) op32
+#define X86_PRE()
+#else
+#define X86C(op32, op64) op64
+#define X86_PRE() X86(0x48)
+#endif
+    PN_TUPLE_EACH(ivars, i, v, {
+      X86(0x81); X86(X86C(0xFA, 0xFF));
+        X86I(PN_UNIQ(v)); // cmp UNIQ %edi
+      X86(0x75); X86(X86C(8, 6)); // jne +11
+      X86(0xB8); X86I(i); // mov i %rax
+#if __WORDSIZE != 64
+      X86(0x5D);
+#endif
+      X86(0xC3); // retq
+    });
+    X86(0xB8); X86I(-1); // mov -1 %rax
+#if __WORDSIZE != 64
+    X86(0x5D);
+#endif
+    X86(0xC3); // retq
+  }
+  vt->ivlen = PN_TUPLE_LEN(ivars);
+  vt->ivars = ivars;
+}
+
 static inline long potion_obj_find_ivar(Potion *P, PN self, PN ivar) {
   PNType t = PN_TYPE(self);
+  vPN(Vtable) vt = (struct PNVtable *)PN_VTABLE(t);
+  if (vt->ivfunc != NULL)
+    return vt->ivfunc(PN_UNIQ(ivar));
+
   if (t > PN_TUSER) {
     PN ivars = ((struct PNVtable *)PN_VTABLE(t))->ivars;
     if (ivars != PN_NIL)
