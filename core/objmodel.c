@@ -60,15 +60,13 @@ PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
     X86(0x89); X86(0xE5); // mov %esp %ebp
     X86(0x8B); X86(0x55); X86(0x08); // mov 0x8(%ebp) %edx
 #define X86C(op32, op64) op32
-#define X86_PRE()
 #else
 #define X86C(op32, op64) op64
-#define X86_PRE() X86(0x48)
 #endif
     PN_TUPLE_EACH(ivars, i, v, {
       X86(0x81); X86(X86C(0xFA, 0xFF));
         X86I(PN_UNIQ(v)); // cmp UNIQ %edi
-      X86(0x75); X86(X86C(8, 6)); // jne +11
+      X86(0x75); X86(X86C(7, 6)); // jne +7
       X86(0xB8); X86I(i); // mov i %rax
 #if __WORDSIZE != 64
       X86(0x5D);
