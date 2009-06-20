@@ -26,6 +26,10 @@ PN potion_table_string(Potion *P, PN cl, PN self) {
   return out;
 }
 
+PN potion_table_empty(Potion *P) {
+  return (PN)PN_ALLOC_N(PN_TTABLE, struct PNTable, sizeof(kh_PN_t));
+}
+
 PN potion_table_cast(Potion *P, PN self) {
   if (PN_IS_TUPLE(self)) {
     int ret; unsigned k;
@@ -87,7 +91,7 @@ PN potion_tuple_empty(Potion *P) {
   return (PN)t;
 }
 
-PN potion_tuple_with_size(Potion *P, PN_SIZE size) {
+PN potion_tuple_with_size(Potion *P, unsigned long size) {
   NEW_TUPLE(t, size);
   return (PN)t;
 }
@@ -205,6 +209,7 @@ long potion_tuple_binary_search(PN self, PN x) {
   return -1;
 }
 
+// TODO: replace with bsearch from libc and using object comparison
 PN potion_tuple_bsearch(Potion *P, PN cl, PN self, PN x) {
   long idx = potion_tuple_binary_search(self, x);
   return idx == -1 ? PN_NIL : PN_NUM(idx);

@@ -155,6 +155,11 @@ PNType potion_kind_of(PN obj) {
   return potion_type(obj);
 }
 
+void potion_p(Potion *P, PN x) {
+  potion_send(potion_send(x, PN_string), PN_print);
+  printf("\n");
+}
+
 void potion_esp(void **esp) {
   PN x;
   *esp = (void *)&x;

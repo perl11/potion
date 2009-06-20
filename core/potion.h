@@ -96,6 +96,7 @@ struct PNMemory;
 
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       (((long)(x))>>1)
+#define PN_RAND()       PN_NUM(potion_rand_int())
 #define PN_STR_PTR(x)   potion_str_ptr(x)
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
 #define PN_CLOSURE(x)   ((struct PNClosure *)(x))
@@ -494,6 +495,7 @@ extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
 Potion *potion_create(void *);
 void potion_destroy(Potion *);
 PNType potion_kind_of(PN);
+void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
 PN potion_str2(Potion *, char *, size_t);
 PN potion_byte_str(Potion *, const char *);
@@ -521,14 +523,18 @@ PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);
 
 PN potion_tuple_empty(Potion *);
-PN potion_tuple_with_size(Potion *, PN_SIZE);
+PN potion_tuple_with_size(Potion *, unsigned long);
 PN potion_tuple_new(Potion *, PN);
 PN potion_tuple_push(Potion *, PN, PN);
 PN_SIZE potion_tuple_push_unless(Potion *, PN, PN);
 PN_SIZE potion_tuple_find(Potion *, PN, PN);
 PN potion_tuple_at(Potion *, PN, PN, PN);
+PN potion_table_empty(Potion *);
+PN potion_table_put(Potion *, PN, PN, PN, PN);
 PN potion_table_set(Potion *, PN, PN, PN);
 PN potion_table_at(Potion *, PN, PN, PN);
+long potion_tuple_binary_search(PN, PN);
+void potion_tuple_ins_sort(PN);
 PN potion_lick(Potion *, PN, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
