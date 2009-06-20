@@ -61,7 +61,7 @@
 
 #define GC_MINOR_UPDATE(p) do { \
   if (PN_IS_PTR(p)) { \
-    PN _pnv = potion_fwd(p); \
+    PN _pnv = potion_fwd((_PN)p); \
     if (IN_BIRTH_REGION(_pnv) && !IS_GC_PROTECTED(_pnv)) \
       { GC_FORWARD((_PN *)&(p), _pnv); } \
   } \
@@ -69,7 +69,7 @@
 
 #define GC_MAJOR_UPDATE(p) do { \
   if (PN_IS_PTR(p)) { \
-    PN _pnv = potion_fwd(p); \
+    PN _pnv = potion_fwd((_PN)p); \
     if (!IS_GC_PROTECTED(_pnv) && \
         (IN_BIRTH_REGION(_pnv) || IN_OLDER_REGION(_pnv))) \
       {GC_FORWARD((_PN *)&(p), _pnv);} \
