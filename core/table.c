@@ -196,12 +196,14 @@ PN potion_tuple_length(Potion *P, PN cl, PN self) {
 
 long potion_tuple_binary_search(PN self, PN x) {
   struct PNTuple *t = PN_GET_TUPLE(self);
+  PNUniq xu = PN_UNIQ(x);
   long i = 0, j = t->len - 1;
   while (i <= j) {
     long m = (i + j) / 2;
-    if (t->set[m] == x)
+    PNUniq u = PN_UNIQ(t->set[m]);
+    if (u == xu)
       return m;
-    else if (t->set[m] > x)
+    else if (u > xu)
       j = m - 1;
     else
       i = m + 1;
@@ -209,29 +211,18 @@ long potion_tuple_binary_search(PN self, PN x) {
   return -1;
 }
 
-// TODO: replace with bsearch from libc and using object comparison
-PN potion_tuple_bsearch(Potion *P, PN cl, PN self, PN x) {
-  long idx = potion_tuple_binary_search(self, x);
-  return idx == -1 ? PN_NIL : PN_NUM(idx);
-}
-
 void potion_tuple_ins_sort(PN self) {
   struct PNTuple *t = PN_GET_TUPLE(self);
   unsigned long i, j, tmp;
   for (i = 1; i < t->len; i++) {
     j = i;
-    while (j > 0 && t->set[j - 1] > t->set[j]) {
+    while (j > 0 && PN_UNIQ(t->set[j - 1]) > PN_UNIQ(t->set[j])) {
       tmp = t->set[j];
       t->set[j] = t->set[j - 1];
       t->set[j - 1] = tmp;
       j--;
     }
   }
-}
-
-PN potion_tuple_nsort(Potion *P, PN cl, PN self) {
-  potion_tuple_ins_sort(self);
-  return self;
 }
 
 PN potion_lobby_list(Potion *P, PN cl, PN self, PN size) {
@@ -249,7 +240,6 @@ void potion_table_init(Potion *P) {
   potion_method(tbl_vt, "string", potion_table_string, 0);
   potion_type_func(tpl_vt, (PN_F)potion_tuple_at);
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
-  potion_method(tpl_vt, "bsearch", potion_tuple_bsearch, "value=N");
   potion_method(tpl_vt, "each", potion_tuple_each, "index=N");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
   potion_method(tpl_vt, "join", potion_tuple_join, 0);
@@ -257,7 +247,6 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "print", potion_tuple_print, 0);
   potion_method(tpl_vt, "put", potion_tuple_put, "index=o,value=o");
   // TODO: add Tuple remove
-  potion_method(tpl_vt, "nsort", potion_tuple_nsort, 0);
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
   potion_method(P->lobby, "list", potion_lobby_list, 0);
 }

@@ -43,37 +43,37 @@ current_time(void)
 //
 // TODO: use a b-tree class rather than tuples
 //
-PN gc_make_tree(int depth) {
+PN gc_make_tree(int depth, PN PN_left, PN PN_right) {
   vPN(Object) x;
   PN l, r;
   if (depth <= 0)
     return (PN)ALLOC_NODE();
 
-  l = gc_make_tree(depth - 1);
-  r = gc_make_tree(depth - 1);
+  l = gc_make_tree(depth - 1, PN_left, PN_right);
+  r = gc_make_tree(depth - 1, PN_left, PN_right);
   x = ALLOC_NODE();
-  x->ivars[0] = l;
-  x->ivars[1] = r;
+  potion_obj_set(P, PN_NIL, x, PN_left, l);
+  potion_obj_set(P, PN_NIL, x, PN_right, r);
   return (PN)x;
 }
 
-PN gc_populate_tree(PN node, int depth) {
+PN gc_populate_tree(PN node, int depth, PN PN_left, PN PN_right) {
   if (depth <= 0)
     return;
 
   depth--;
-  ((struct PNObject *)node)->ivars[0] = (PN)ALLOC_NODE();
-  potion_gc_update(P, node);
+  potion_obj_set(P, PN_NIL, node, PN_left, (PN)ALLOC_NODE());
+  PN_TOUCH(node);
 #ifdef HOLES
   n = (PN)ALLOC_NODE();
 #endif
-  ((struct PNObject *)node)->ivars[1] = (PN)ALLOC_NODE();
-  potion_gc_update(P, node);
+  potion_obj_set(P, PN_NIL, node, PN_right, (PN)ALLOC_NODE());
+  PN_TOUCH(node);
 #ifdef HOLES
   n = (PN)ALLOC_NODE();
 #endif
-  gc_populate_tree(((struct PNObject *)node)->ivars[0], depth);
-  gc_populate_tree(((struct PNObject *)node)->ivars[1], depth);
+  gc_populate_tree(potion_obj_get(P, PN_NIL, node, PN_left), depth, PN_left, PN_right);
+  gc_populate_tree(potion_obj_get(P, PN_NIL, node, PN_right), depth, PN_left, PN_right);
 }
 
 int gc_tree_depth(PN node, int side, int depth) {
@@ -88,23 +88,27 @@ int tree_size(int i) {
 
 int main(void) {
   POTION_INIT_STACK(sp);
-  PN klass, ary, temp, long_lived;
+  PN klass, ary, temp, long_lived, PN_left, PN_right;
   int i, j, count;
 
   P = potion_create(sp);
   klass = potion_type_new(P, tree_type, PN_VTABLE(PN_TOBJECT));
-  ((struct PNVtable *)klass)->ivars = 2;
+  ((struct PNVtable *)klass)->ivlen = 2;
+  ((struct PNVtable *)klass)->ivars = potion_tuple_with_size(P, 2);
+  PN_TUPLE_AT(((struct PNVtable *)klass)->ivars, 0) = PN_left = potion_str(P, "left");
+  PN_TUPLE_AT(((struct PNVtable *)klass)->ivars, 1) = PN_right = potion_str(P, "right");
+  potion_tuple_ins_sort(((struct PNVtable *)klass)->ivars);
   PN_FLEX_SIZE(P->vts) = PN_TUSER + 2;
 
   printf("Stretching memory with a binary tree of depth %d\n",
     tree_stretch);
-  temp = gc_make_tree(tree_stretch);
+  temp = gc_make_tree(tree_stretch, PN_left, PN_right);
   temp = 0;
 
   printf("Creating a long-lived binary tree of depth %d\n",
     tree_long_lived);
   long_lived = (PN)ALLOC_NODE();
-  gc_populate_tree(long_lived, tree_long_lived);
+  gc_populate_tree(long_lived, tree_long_lived, PN_left, PN_right);
 
   printf("Creating a long-lived array of %d doubles\n",
     array_size);
@@ -120,7 +124,7 @@ int main(void) {
     start = current_time();
     for (j = 0; j < iter; ++j) {
       temp = (PN)ALLOC_NODE();
-      gc_populate_tree(temp, i);
+      gc_populate_tree(temp, i, PN_left, PN_right);
     }
     finish = current_time();
     printf("\tTop down construction took %d msec\n",
@@ -128,7 +132,7 @@ int main(void) {
 
     start = current_time();
     for (j = 0; j < iter; ++j) {
-      temp = gc_make_tree(i);
+      temp = gc_make_tree(i, PN_left, PN_right);
       temp = 0;
     }
     finish = current_time();
@@ -144,5 +148,7 @@ int main(void) {
 	  P->mem->minors, P->mem->majors,
 	  POTION_BIRTH_SIZE >> 10, POTION_MAX_BIRTH_SIZE >> 10,
 	  POTION_GC_THRESHOLD >> 10);
+
+  potion_destroy(P);
   return 0;
 }

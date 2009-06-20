@@ -63,7 +63,7 @@
   if (PN_IS_PTR(p)) { \
     PN _pnv = potion_fwd(p); \
     if (IN_BIRTH_REGION(_pnv) && !IS_GC_PROTECTED(_pnv)) \
-      { GC_FORWARD(&(p), _pnv); } \
+      { GC_FORWARD((_PN *)&(p), _pnv); } \
   } \
 } while(0)
 

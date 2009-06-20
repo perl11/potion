@@ -18,7 +18,8 @@ struct PNVtable {
 #ifdef JIT_MCACHE
   PN_MCACHE_FUNC mcache;
 #endif
-  int ivars;
+  int ivlen;
+  PN ivars;
   kh_PN_t kh[0];
 };
 

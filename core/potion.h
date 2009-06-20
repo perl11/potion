@@ -508,6 +508,8 @@ PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);
 void potion_type_func(PN, PN_F);
 PN potion_obj_call(Potion *, PN, PN, ...);
+PN potion_obj_get(Potion *, PN, PN, PN);
+PN potion_obj_set(Potion *, PN, PN, PN, PN);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_call(Potion *, PN, PN_SIZE, PN * volatile);
 PN potion_lookup(Potion *, PN, PN, PN);

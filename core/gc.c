@@ -253,7 +253,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
 
   if (ptr->vt > PN_TUSER) {
     sz = sizeof(struct PNObject) +
-      (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivars * sizeof(PN));
+      (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen * sizeof(PN));
     goto done;
   }
 
@@ -335,7 +335,8 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
   }
 
   if (ptr->vt > PN_TUSER) {
-    int ivars = ((struct PNVtable *)PN_VTABLE(ptr->vt))->ivars;
+    GC_MINOR_UPDATE(PN_VTABLE(ptr->vt));
+    int ivars = ((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen;
     for (i = 0; i < ivars; i++)
       GC_MINOR_UPDATE(((struct PNObject *)ptr)->ivars[i]);
     goto done;
@@ -369,6 +370,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     break;
     case PN_TVTABLE:
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->parent);
+      GC_MINOR_UPDATE(((struct PNVtable *)ptr)->ivars);
       GC_MINOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:
@@ -412,7 +414,8 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
   }
 
   if (ptr->vt > PN_TUSER) {
-    int ivars = ((struct PNVtable *)PN_VTABLE(ptr->vt))->ivars;
+    GC_MAJOR_UPDATE(PN_VTABLE(ptr->vt));
+    int ivars = ((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen;
     for (i = 0; i < ivars; i++)
       GC_MAJOR_UPDATE(((struct PNObject *)ptr)->ivars[i]);
     goto done;
@@ -446,6 +449,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     break;
     case PN_TVTABLE:
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->parent);
+      GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->ivars);
       GC_MAJOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:

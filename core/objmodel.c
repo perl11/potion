@@ -37,7 +37,8 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
   vt->type = t;
   vt->parent = self;
   vt->func = NULL;
-  vt->ivars = 0;
+  vt->ivlen = 0;
+  vt->ivars = PN_NIL;
 #ifdef JIT_MCACHE
   vt->mcache = (PN_MCACHE_FUNC)PN_ALLOC_FUNC(8192);
 #endif
@@ -47,6 +48,30 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
 
 void potion_type_func(PN vt, PN_F func) {
   ((struct PNVtable *)vt)->func = func;
+}
+
+static inline long potion_obj_find_ivar(Potion *P, PN self, PN ivar) {
+  PNType t = PN_TYPE(self);
+  if (t > PN_TUSER) {
+    PN ivars = ((struct PNVtable *)PN_VTABLE(t))->ivars;
+    if (ivars != PN_NIL)
+      return potion_tuple_binary_search(ivars, ivar);
+  }
+  return -1;
+}
+
+PN potion_obj_get(Potion *P, PN cl, PN self, PN ivar) {
+  long i = potion_obj_find_ivar(P, self, ivar);
+  if (i >= 0)
+    return ((struct PNObject *)self)->ivars[i];
+  return PN_NIL;
+}
+
+PN potion_obj_set(Potion *P, PN cl, PN self, PN ivar, PN value) {
+  long i = potion_obj_find_ivar(P, self, ivar);
+  if (i >= 0)
+    ((struct PNObject *)self)->ivars[i] = value;
+  return value;
 }
 
 PN potion_obj_call(Potion *P, PN cl, PN count, ...) {
