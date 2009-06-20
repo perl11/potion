@@ -71,6 +71,7 @@ typedef struct {
       (OP_F)NULL, \
       (OP_F)potion_##arch##_return, \
       (OP_F)potion_##arch##_method, \
+      (OP_F)potion_##arch##_class \
     }, \
     .finish = potion_##arch##_finish, \
     .ivars = potion_##arch##_ivars \

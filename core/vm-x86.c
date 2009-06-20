@@ -643,6 +643,9 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   });
 }
 
+void potion_x86_class(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_x86_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp) {
 #ifdef JIT_ICACHE
 #if __WORDSIZE != 64

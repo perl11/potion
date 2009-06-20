@@ -50,6 +50,8 @@ void potion_type_func(PN vt, PN_F func) {
 PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
   struct PNVtable *vt = (struct PNVtable *)self;
 #if POTION_JIT == 1
+  // TODO: allocate assembled instructions together into single pages
+  // since many times these tables are <100 bytes.
   PNAsm * volatile asmb = potion_asm_new(P);
   P->targets[POTION_JIT_TARGET].ivars(P, ivars, &asmb);
   vt->ivfunc = PN_ALLOC_FUNC(asmb->len);
@@ -57,6 +59,7 @@ PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
 #endif
   vt->ivlen = PN_TUPLE_LEN(ivars);
   vt->ivars = ivars;
+  return self;
 }
 
 static inline long potion_obj_find_ivar(Potion *P, PN self, PN ivar) {

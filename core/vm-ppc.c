@@ -315,6 +315,9 @@ void potion_ppc_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 void potion_ppc_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_OP **pos, long lregs, long start, long regs) {
 }
 
+void potion_ppc_class(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_ppc_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp) {
 }
 

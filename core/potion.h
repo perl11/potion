@@ -486,8 +486,8 @@ static inline PN potion_data_alloc(Potion *P, int siz) {
 #define potion_method(RCV, MSG, FN, SIG) \
   potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
 
-extern PN PN_allocate, PN_break, PN_call, PN_compile, PN_continue,
-   PN_def, PN_delegated, PN_else, PN_elsif, PN_if,
+extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
+   PN_continue, PN_def, PN_delegated, PN_else, PN_elsif, PN_if,
    PN_lookup, PN_loop, PN_print, PN_return, PN_string, PN_while;
 
 //
@@ -508,6 +508,7 @@ void potion_release(Potion *, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);
 void potion_type_func(PN, PN_F);
+PN potion_class(Potion *, PN, PN, PN);
 PN potion_ivars(Potion *, PN, PN, PN);
 PN potion_obj_call(Potion *, PN, PN, ...);
 PN potion_obj_get(Potion *, PN, PN, PN);

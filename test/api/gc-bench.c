@@ -25,7 +25,7 @@ static const int array_size = 2000000;
 static const int min_tree = 4;
 static const int max_tree = 20;
 
-static int tree_type = PN_TUSER + 1;
+static PNType tree_type;
 
 #define ALLOC_NODE() PN_ALLOC_N(tree_type, struct PNObject, 2 * sizeof(PN))
 
@@ -92,12 +92,11 @@ int main(void) {
   int i, j, count;
 
   P = potion_create(sp);
-  klass = potion_type_new(P, tree_type, PN_VTABLE(PN_TOBJECT));
   ary = potion_tuple_with_size(P, 2);
   PN_TUPLE_AT(ary, 0) = PN_left = potion_str(P, "left");
   PN_TUPLE_AT(ary, 1) = PN_right = potion_str(P, "right");
-  potion_ivars(P, PN_NIL, klass, ary);
-  PN_FLEX_SIZE(P->vts) = PN_TUSER + 2;
+  klass = potion_class(P, PN_NIL, P->lobby, ary);
+  tree_type = ((struct PNVtable *)klass)->type;
 
   printf("Stretching memory with a binary tree of depth %d\n",
     tree_stretch);

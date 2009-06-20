@@ -128,6 +128,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(CALL, (P, f, &asmb, pos, need))
       CASE_OP(RETURN, (P, f, &asmb, pos))
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))
+      CASE_OP(CLASS, (P, f, &asmb, &pos, need))
     }
   }
 
@@ -384,6 +385,8 @@ reentry:
         });
         reg[areg] = (PN)cl;
       }
+      break;
+      case OP_CLASS:
       break;
     }
     pos++;
