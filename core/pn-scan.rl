@@ -161,7 +161,7 @@
       TOKEN2(STRING2, potion_str2(P, ts + 3, (te - ts) - 3)); };
 
     message     => { TOKEN2(MESSAGE, potion_str2(P, ts, te - ts)); };
-    path        => { TOKEN2(PATH, potion_str2(P, ts, te - ts)); };
+    path        => { TOKEN2(PATH, potion_str2(P, ts + 1, te - (ts + 1))); };
     query       => { TOKEN2(QUERY, potion_str2(P, ts + 1, (te - ts) - 1)); };
     querypath   => { TOKEN2(PATHQ, potion_str2(P, ts + 1, (te - ts) - 1)); };
   *|;

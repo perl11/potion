@@ -387,6 +387,21 @@ reentry:
       }
       break;
       case OP_CLASS:
+        switch (PN_TYPE(reg[op.b])) {
+          case PN_TCLOSURE: {
+            vPN(Proto) proto = PN_PROTO(PN_CLOSURE(reg[op.b])->data[0]);
+            PN ivars = potion_tuple_with_size(P, PN_TUPLE_LEN(proto->paths));
+            PN_TUPLE_EACH(proto->paths, i, v, {
+              PN_TUPLE_AT(ivars, i) = PN_TUPLE_AT(proto->values, PN_INT(v));
+            });
+            reg[op.a] = potion_class(P, reg[op.b], PN_NIL, ivars);
+          }
+          break;
+
+          default:
+            reg[op.a] = potion_class(P, PN_NIL, reg[op.b], PN_NIL);
+          break;
+        }
       break;
     }
     pos++;

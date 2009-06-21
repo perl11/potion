@@ -55,15 +55,21 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
       potion_bytes_obj_string(P, out, v);
   });
   pn_printf(P, out, ") %ld registers\n", PN_INT(t->stack));
-  PN_TUPLE_EACH(t->locals, i, v, {
-    pn_printf(P, out, ".local \"");
+  PN_TUPLE_EACH(t->paths, i, v, {
+    pn_printf(P, out, ".path /");
+    v = PN_TUPLE_AT(t->values, PN_INT(v));
     potion_bytes_obj_string(P, out, v);
-    pn_printf(P, out, "\" ; %u\n", i);
+    pn_printf(P, out, " ; %u\n", i);
+  });
+  PN_TUPLE_EACH(t->locals, i, v, {
+    pn_printf(P, out, ".local ");
+    potion_bytes_obj_string(P, out, v);
+    pn_printf(P, out, " ; %u\n", i);
   });
   PN_TUPLE_EACH(t->upvals, i, v, {
-    pn_printf(P, out, ".upval \"");
+    pn_printf(P, out, ".upval ");
     potion_bytes_obj_string(P, out, v);
-    pn_printf(P, out, "\" ; %u\n", i);
+    pn_printf(P, out, " ; %u\n", i);
   });
   PN_TUPLE_EACH(t->values, i, v, {
     pn_printf(P, out, ".value ");
@@ -439,6 +445,8 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
         } else {
           // TODO: Report error: 'continue' outside of loop.
         }
+      } else if (t->a[0] == PN_self) {
+        PN_ASM1(OP_SELF, reg);
       } else {
         u8 opcode = OP_GETUPVAL;
         PN_SIZE num = PN_NONE;
@@ -489,12 +497,14 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
     case AST_PATHQ: {
       PN_SIZE num = PN_PUT(f->values, t->a[0]);
       u8 breg = reg;
+      if (count == 0) {
+        PN_PUT(f->paths, PN_NUM(num));
+        PN_ASM1(OP_SELF, reg);
+      }
       PN_ASM2(OP_LOADK, ++breg, num);
-      PN_ASM2(OP_GETPATH, breg, reg);
+      PN_ASM2(OP_GETPATH, reg, breg);
       if (t->part == AST_PATHQ)
         PN_ASM2(OP_TEST, reg, breg);
-      else
-        PN_ASM2(OP_MOVE, reg, breg);
     }
     break;
 
@@ -587,6 +597,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   f->source = source;
   f->stack = PN_NUM(1);
   f->protos = PN_TUP0();
+  f->paths = PN_TUP0();
   f->locals = PN_TUP0();
   f->upvals = PN_TUP0();
   f->values = PN_TUP0();
@@ -598,6 +609,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
 
   f->localsize = PN_TUPLE_LEN(f->locals);
   f->upvalsize = PN_TUPLE_LEN(f->upvals);
+  f->pathsize = PN_TUPLE_LEN(f->paths);
   return (PN)f;
 }
 
@@ -645,6 +657,7 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   f->sig = READ_VALUES(pn, *ptr);
   f->stack = READ_CONST(pn, *ptr);
   f->values = READ_VALUES(pn, *ptr);
+  f->paths = READ_VALUES(pn, *ptr);
   f->locals = READ_VALUES(pn, *ptr);
   f->upvals = READ_VALUES(pn, *ptr);
   f->protos = READ_PROTOS(pn, *ptr);
@@ -657,6 +670,7 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   f->asmb = (PN)asmb;
   f->localsize = PN_TUPLE_LEN(f->locals);
   f->upvalsize = PN_TUPLE_LEN(f->upvals);
+  f->pathsize = PN_TUPLE_LEN(f->paths);
   *ptr += len;
   return (PN)f;
 }
@@ -713,6 +727,7 @@ long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
   WRITE_VALUES(f->sig, ptr);
   WRITE_CONST(f->stack, ptr);
   WRITE_VALUES(f->values, ptr);
+  WRITE_VALUES(f->paths, ptr);
   WRITE_VALUES(f->locals, ptr);
   WRITE_VALUES(f->upvals, ptr);
   WRITE_PROTOS(f->protos, ptr);

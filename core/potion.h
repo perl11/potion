@@ -260,11 +260,12 @@ struct PNProto {
   PN source; // program name or enclosing scope
   PN sig;    // argument signature
   PN stack;  // size of the stack
+  PN paths;  // paths (instance variables)
   PN locals; // local variables
   PN upvals; // variables in upper scopes
   PN values; // numbers, strings, etc.
   PN protos; // nested closures
-  PN_SIZE localsize, upvalsize;
+  PN_SIZE pathsize, localsize, upvalsize;
   PN asmb;   // assembled instructions
   PN_F jit;  // jit function pointer
 };
@@ -488,7 +489,8 @@ static inline PN potion_data_alloc(Potion *P, int siz) {
 
 extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
    PN_continue, PN_def, PN_delegated, PN_else, PN_elsif, PN_if,
-   PN_lookup, PN_loop, PN_print, PN_return, PN_string, PN_while;
+   PN_lookup, PN_loop, PN_print, PN_return, PN_self, PN_string,
+   PN_while;
 
 //
 // the Potion functions
