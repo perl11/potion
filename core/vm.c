@@ -244,6 +244,12 @@ reentry:
         reg[op.a] = potion_lick(P, reg[op.a], attr, inner);
       }
       break;
+      case OP_GETPATH:
+        reg[op.a] = potion_obj_get(P, PN_NIL, reg[op.a], PN_TUPLE_AT(f->values, op.b));
+      break;
+      case OP_SETPATH:
+        potion_obj_set(P, PN_NIL, reg[op.a], PN_TUPLE_AT(f->values, op.b), reg[op.a + 1]);
+      break;
       case OP_ADD:
         reg[op.a] = reg[op.a] + (reg[op.b]-1);
       break;

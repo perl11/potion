@@ -215,6 +215,19 @@ PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
   return potion_send_dyn(self, method);
 }
 
+PN potion_object_new(Potion *P, PN cl, PN self, ...) {
+  vPN(Vtable) vt = (struct PNVtable *)self;
+  PN obj = (PN)PN_ALLOC_N(vt->type, struct PNObject, vt->ivlen * sizeof(PN));
+  PN_SIZE i = 0;
+  // TODO: call initialize
+  va_list args;
+  va_start(args, self);
+  for (i = 0; i < vt->ivlen; i++)
+    ((struct PNObject *)obj)->ivars[i] = va_arg(args, PN);
+  va_end(args);
+  return obj;
+}
+
 static PN potion_lobby_self(Potion *P, PN cl, PN self) {
   return self;
 }
@@ -254,6 +267,7 @@ void potion_lobby_init(Potion *P) {
   potion_send(P->lobby, PN_def, potion_str(P, "Ref"),      PN_VTABLE(PN_TWEAK));
   potion_send(P->lobby, PN_def, potion_str(P, "Lick"),     PN_VTABLE(PN_TLICK));
 
+  potion_type_func(PN_VTABLE(PN_TVTABLE), (PN_F)potion_object_new);
   potion_method(P->lobby, "callcc", potion_callcc, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);
   potion_method(P->lobby, "srand", potion_srand, "seed=N");
