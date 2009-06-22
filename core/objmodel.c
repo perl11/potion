@@ -248,6 +248,29 @@ PN potion_lobby_kind(Potion *P, PN cl, PN self) {
   return PN_VTABLE(t);
 }
 
+PN potion_about(Potion *P, PN cl, PN self) {
+  PN about = potion_table_empty(P);
+  potion_table_put(P, PN_NIL, about, potion_str(P, "_why"),
+    potion_str(P, "“I love _why, but learning Ruby from him is like trying to learn to pole vault "
+      "by having Salvador Dali punch you in the face.” - Steven Frank"));
+  potion_table_put(P, PN_NIL, about, potion_str(P, "minimalism"),
+    potion_str(P, "“The sad thing about ‘minimalism’ is that it has a name.” "
+      "- Steve Dekorte"));
+  potion_table_put(P, PN_NIL, about, potion_str(P, "stage fright"),
+    potion_str(P, "“Recently no move on Potion. I git pull everyday.” "
+      "- matz"));
+  potion_table_put(P, PN_NIL, about, potion_str(P, "terms of use"),
+    potion_str(P, "“Setting up my new anarchist bulletin board so that during registration, if you accept "
+      "the terms and conditions, you are banned forever.” - Dr. Casey Hall"));
+  potion_table_put(P, PN_NIL, about, potion_str(P, "help"),
+    potion_str(P, "`man which` - Evan Weaver"));
+  potion_table_put(P, PN_NIL, about, potion_str(P, "ts"),
+    potion_str(P, "“pigeon%” - Guy Decoux (1955 - 2008)"));
+  potion_table_put(P, PN_NIL, about, potion_str(P, "summary"),
+    potion_str(P, "“I smell as how a leprechaun looks.” - Alana Post"));
+  return about;
+}
+
 void potion_object_init(Potion *P) {
   PN clo_vt = PN_VTABLE(PN_TCLOSURE);
   PN ref_vt = PN_VTABLE(PN_TWEAK);
@@ -278,6 +301,7 @@ void potion_lobby_init(Potion *P) {
   potion_send(P->lobby, PN_def, potion_str(P, "Lick"),     PN_VTABLE(PN_TLICK));
 
   potion_type_func(PN_VTABLE(PN_TVTABLE), (PN_F)potion_object_new);
+  potion_method(P->lobby, "about", potion_about, 0);
   potion_method(P->lobby, "callcc", potion_callcc, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);
   potion_method(P->lobby, "srand", potion_srand, "seed=N");
