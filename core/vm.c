@@ -11,6 +11,8 @@
 #include "internal.h"
 #include "opcodes.h"
 #include "asm.h"
+#include "khash.h"
+#include "table.h"
 
 extern PNTarget potion_target_x86, potion_target_ppc;
 
@@ -321,6 +323,9 @@ reentry:
       break;
       case OP_CALL:
         switch (PN_TYPE(reg[op.a])) {
+          case PN_TVTABLE:
+            reg[op.a + 1] = potion_object_new(P, PN_NIL, reg[op.a]);
+            reg[op.a] = ((struct PNVtable *)reg[op.a])->ctor;
           case PN_TCLOSURE:
             if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) {
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);

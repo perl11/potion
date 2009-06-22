@@ -142,8 +142,8 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   PN_ASM2(OP_PROTO, reg, num); \
   PN_TUPLE_EACH(((struct PNProto *)block)->upvals, i, v, { \
     PN_SIZE numup = PN_GET(f->upvals, v); \
-    if (numup != PN_NONE) PN_ASM2(OP_GETUPVAL, reg, numup); \
-    else                  PN_ASM2(OP_GETLOCAL, reg, PN_GET(f->locals, v)); \
+    if (numup != PN_NONE) PN_ASM2(OP_GETUPVAL, 0, numup); \
+    else                  PN_ASM2(OP_GETLOCAL, 0, PN_GET(f->locals, v)); \
   }); \
 })
 #define PN_UPVAL(name) ({ \

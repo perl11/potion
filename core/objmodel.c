@@ -233,17 +233,9 @@ PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
   return potion_send_dyn(self, method);
 }
 
-PN potion_object_new(Potion *P, PN cl, PN self, ...) {
+PN potion_object_new(Potion *P, PN cl, PN self) {
   vPN(Vtable) vt = (struct PNVtable *)self;
-  PN obj = (PN)PN_ALLOC_N(vt->type, struct PNObject, vt->ivlen * sizeof(PN));
-  PN_SIZE i = 0;
-  // TODO: call initialize
-  va_list args;
-  va_start(args, self);
-  for (i = 0; i < vt->ivlen; i++)
-    ((struct PNObject *)obj)->ivars[i] = va_arg(args, PN);
-  va_end(args);
-  return obj;
+  return (PN)PN_ALLOC_N(vt->type, struct PNObject, vt->ivlen * sizeof(PN));
 }
 
 static PN potion_lobby_self(Potion *P, PN cl, PN self) {

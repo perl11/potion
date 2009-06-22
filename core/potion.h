@@ -515,6 +515,7 @@ PN potion_ivars(Potion *, PN, PN, PN);
 PN potion_obj_call(Potion *, PN, PN, ...);
 PN potion_obj_get(Potion *, PN, PN, PN);
 PN potion_obj_set(Potion *, PN, PN, PN, PN);
+PN potion_object_new(Potion *, PN, PN);
 PN potion_delegated(Potion *, PN, PN);
 PN potion_call(Potion *, PN, PN_SIZE, PN * volatile);
 PN potion_lookup(Potion *, PN, PN, PN);
