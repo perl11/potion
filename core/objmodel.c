@@ -33,9 +33,6 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
   vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, sizeof(kh_PN_t));
   vt->type = t;
   vt->parent = self;
-  vt->func = NULL;
-  vt->ivlen = 0;
-  vt->ivars = PN_NIL;
 #ifdef JIT_MCACHE
   vt->mcache = (PN_MCACHE_FUNC)PN_ALLOC_FUNC(8192);
 #endif
@@ -55,12 +52,15 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   self = potion_type_new(P, t, parent);
   if (PN_IS_TUPLE(pvars)) {
     if (!PN_IS_TUPLE(ivars)) ivars = PN_TUP0();
-    PN_TUPLE_EACH(pvars, i, v, {
-      ivars = PN_PUSH(ivars, v);
-    });
+    PN_TUPLE_EACH(pvars, i, v, {PN_PUT(ivars, v);});
   }
   if (PN_IS_TUPLE(ivars))
     potion_ivars(P, PN_NIL, self, ivars);
+
+  if (!PN_IS_CLOSURE(cl))
+    cl = ((struct PNVtable *)parent)->ctor;
+  ((struct PNVtable *)self)->ctor = cl;
+
   PN_FLEX_SIZE(P->vts)++;
   return self;
 }

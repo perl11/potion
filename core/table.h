@@ -21,6 +21,7 @@ struct PNVtable {
   PNType type;
   PN parent;
   PN_F func;
+  PN ctor;
 #ifdef JIT_MCACHE
   PN_MCACHE_FUNC mcache;
 #endif
