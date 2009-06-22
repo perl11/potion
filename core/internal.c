@@ -10,8 +10,6 @@
 #include "internal.h"
 #include "gc.h"
 
-#define TYPE_BATCH_SIZE 4096
-
 PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
    PN_delegated, PN_else, PN_elsif, PN_if, PN_lookup, PN_loop, PN_print,
    PN_return, PN_self, PN_string, PN_while;
@@ -93,15 +91,6 @@ Potion *potion_create(void *sp) {
 
 void potion_destroy(Potion *P) {
   potion_gc_release(P);
-}
-
-PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
-  PNType t = PN_FLEX_SIZE(P->vts) + PN_TNIL;
-  PN_FLEX_NEEDS(1, P->vts, PNFlex, TYPE_BATCH_SIZE);
-  self = potion_type_new(P, t, PN_VTABLE(PN_TOBJECT));
-  potion_ivars(P, PN_NIL, self, ivars);
-  PN_FLEX_SIZE(P->vts)++;
-  return self;
 }
 
 PN potion_delegated(Potion *P, PN closure, PN self) {

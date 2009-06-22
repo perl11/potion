@@ -47,6 +47,24 @@ void potion_type_func(PN vt, PN_F func) {
   ((struct PNVtable *)vt)->func = func;
 }
 
+PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
+  PN parent = (self == P->lobby ? PN_VTABLE(PN_TOBJECT) : self);
+  PN pvars = ((struct PNVtable *)parent)->ivars;
+  PNType t = PN_FLEX_SIZE(P->vts) + PN_TNIL;
+  PN_FLEX_NEEDS(1, P->vts, PNFlex, TYPE_BATCH_SIZE);
+  self = potion_type_new(P, t, parent);
+  if (PN_IS_TUPLE(pvars)) {
+    if (!PN_IS_TUPLE(ivars)) ivars = PN_TUP0();
+    PN_TUPLE_EACH(pvars, i, v, {
+      ivars = PN_PUSH(ivars, v);
+    });
+  }
+  if (PN_IS_TUPLE(ivars))
+    potion_ivars(P, PN_NIL, self, ivars);
+  PN_FLEX_SIZE(P->vts)++;
+  return self;
+}
+
 PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
   struct PNVtable *vt = (struct PNVtable *)self;
 #if POTION_JIT == 1

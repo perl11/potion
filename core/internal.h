@@ -29,6 +29,8 @@ typedef unsigned char u8;
 #define max(a, b) ((a) >= (b) ? (a) : (b))
 #endif
 
+#define TYPE_BATCH_SIZE 4096
+
 #define PN_FLEX_NEW(N, T, S) \
   (N) = PN_ALLOC_N(PN_TFLEX, T, (sizeof(*(N)->ptr) * S)); \
   (N)->siz = sizeof(*(N)->ptr) * S; \

@@ -400,12 +400,12 @@ reentry:
             PN_TUPLE_EACH(proto->paths, i, v, {
               PN_TUPLE_AT(ivars, i) = PN_TUPLE_AT(proto->values, PN_INT(v));
             });
-            reg[op.a] = potion_class(P, reg[op.b], PN_NIL, ivars);
+            reg[op.a] = potion_class(P, reg[op.b], reg[op.a], ivars);
           }
           break;
 
           default:
-            reg[op.a] = potion_class(P, PN_NIL, reg[op.b], PN_NIL);
+            reg[op.a] = potion_class(P, PN_NIL, reg[op.a], reg[op.b]);
           break;
         }
       break;
