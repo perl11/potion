@@ -21,6 +21,19 @@ PN potion_vm_proto(Potion *P, PN cl, PN args) {
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
 
+PN potion_vm_class(Potion *P, PN cl, PN self) {
+  if (PN_TYPE(cl) == PN_TCLOSURE) {
+    vPN(Proto) proto = PN_PROTO(PN_CLOSURE(cl)->data[0]);
+    PN ivars = potion_tuple_with_size(P, PN_TUPLE_LEN(proto->paths));
+    PN_TUPLE_EACH(proto->paths, i, v, {
+      PN_TUPLE_AT(ivars, i) = PN_TUPLE_AT(proto->values, PN_INT(v));
+    });
+    return potion_class(P, cl, self, ivars);
+  }
+
+  return potion_class(P, PN_NIL, self, cl);
+}
+
 #define STACK_MAX 4096
 #define JUMPS_MAX 1024
 
@@ -133,7 +146,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(CALL, (P, f, &asmb, pos, need))
       CASE_OP(RETURN, (P, f, &asmb, pos))
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))
-      CASE_OP(CLASS, (P, f, &asmb, &pos, need))
+      CASE_OP(CLASS, (P, f, &asmb, pos, need))
     }
   }
 
@@ -404,21 +417,7 @@ reentry:
       }
       break;
       case OP_CLASS:
-        switch (PN_TYPE(reg[op.b])) {
-          case PN_TCLOSURE: {
-            vPN(Proto) proto = PN_PROTO(PN_CLOSURE(reg[op.b])->data[0]);
-            PN ivars = potion_tuple_with_size(P, PN_TUPLE_LEN(proto->paths));
-            PN_TUPLE_EACH(proto->paths, i, v, {
-              PN_TUPLE_AT(ivars, i) = PN_TUPLE_AT(proto->values, PN_INT(v));
-            });
-            reg[op.a] = potion_class(P, reg[op.b], reg[op.a], ivars);
-          }
-          break;
-
-          default:
-            reg[op.a] = potion_class(P, PN_NIL, reg[op.a], reg[op.b]);
-          break;
-        }
+        reg[op.a] = potion_vm_class(P, reg[op.b], reg[op.a]);
       break;
     }
     pos++;
