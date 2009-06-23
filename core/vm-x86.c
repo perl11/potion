@@ -11,6 +11,8 @@
 #include "internal.h"
 #include "opcodes.h"
 #include "asm.h"
+#include "khash.h"
+#include "table.h"
 
 #define RBP(x)  (0x100 - ((x + 1) * sizeof(PN)))
 #define RBPI(x) (0x100 - ((x + 1) * sizeof(int)))
@@ -591,23 +593,32 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   int argc = op.b - op.a;
-  // (Potion *, CL) as the first argument
-  X86_ARGO(start - 3, 0);
-  X86_ARGO(op.a, 1);
-  while (--argc >= 0) X86_ARGO(op.a + argc + 1, argc + 2);
 
   // check type of the closure
-  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(B) %rax
+  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(A) %rax
   ASM(0xF6); ASM(0xC0); ASM(0x01); // test 0x1 %al
-  ASM(0x75); ASM(X86C(27, 30)); // jne [a]
+  ASM(0x75); ASM(X86C(45, 74)); // jne [a]
   ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); // test REFMASK %eax
-  ASM(0x74); ASM(X86C(19, 22)); // je [a]
+  ASM(0x74); ASM(X86C(37, 66)); // je [a]
   X86_PRE(); ASM(0x83); ASM(0xE0); ASM(0xF8); // and ~PRIMITIVE %rax
+
+  // if a class, pull out the constructor
+  ASM(0x81); ASM(0x38); ASMI(PN_TVTABLE); // cmpq VTABLE (%eax)
+  ASM(0x75); ASM(X86C(26, 36)); // jne [c]
+  X86_ARGO(start - 3, 0);
+  X86_ARGO(op.a, 2);
+  X86_PRE(); ASM(0xB8); ASMN(potion_object_new); // mov &potion_object_new %rax
+  ASM(0xFF); ASM(0xD0); // callq %rax
+  X86_MOV_RBP(0x89, op.a + 1); // mov %rax local
+  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(A) %rax
+  X86_PRE(); ASM(0x8B); ASM(0x40);
+    ASM((char *)&((struct PNVtable *)P->lobby)->ctor - (char *)P->lobby); // mov N(%rax) %rax
+  X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op.a)); // mov %rax %rbp(A)
+
+  // check type of the closure
   ASM(0x81); ASM(0x38); ASMI(PN_TCLOSURE); // cmpq CLOSURE (%eax)
   ASM(0x75); ASM(X86C(8, 10)); // jne [a]
-
-  // if a closure, load the function pointer
-  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(B) %rax
+  X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(A) %rax
   X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); // mov N(%rax) %rax
   ASM(0xEB); ASM(X86C(19, 22)); // jmp [b]
 
@@ -616,13 +627,17 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   X86_ARGO(op.a + 1, 2);
   X86_PRE(); ASM(0xB8); ASMN(potion_obj_call); // mov &potion_obj_call %rax
 
+  // (Potion *, CL) as the first argument
+  X86_ARGO(start - 3, 0);
+  X86_ARGO(op.a, 1);
+  while (--argc >= 0) X86_ARGO(op.a + argc + 1, argc + 2);
   ASM(0xFF); ASM(0xD0); // [b] callq *%rax
   X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op.a)); /* mov %rbp(A) %rax */
 }
 
 void potion_x86_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
-  X86_MOV_RBP(0x8B, 0); /* mov -0(%rbp) %eax */ \
-  ASM(0xC9); ASM(0xC3); /* leave; ret */
+  X86_MOV_RBP(0x8B, 0); // mov -0(%rbp) %eax
+  ASM(0xC9); ASM(0xC3); // leave; ret
 }
 
 PN potion_f_protos(Potion *P, PN cl, PN i) {
