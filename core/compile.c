@@ -418,8 +418,12 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
         PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
       } else if (t->a[0] == PN_class) {
         u8 breg = reg;
-        if (t->a[2] != PN_NIL)
+        if (t->a[2] != PN_NIL) {
+          // TODO: a hack to make sure constructors always return self
+          PN ctor = (struct PNSource *)PN_S(t->a[2], 0);
+          PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MESSAGE, potion_str(P, "self")))));
           PN_BLOCK(++breg, t->a[2], t->a[1]);
+        }
         PN_ASM2(OP_CLASS, reg, breg);
       } else if (t->a[0] == PN_loop) {
         int jmp = PN_OP_LEN(f->asmb); breg++;
