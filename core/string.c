@@ -43,10 +43,11 @@ PN potion_str(Potion *P, const char *str) {
 
 PN potion_str2(Potion *P, char *str, size_t len) {
   PN s;
-  char c = str[len];
-  str[len] = '\0';
-  s = potion_str(P, str);
-  str[len] = c;
+  char *tmp = (char *)malloc(len + 1);
+  memcpy(tmp, str, len);
+  tmp[len] = '\0';
+  s = potion_str(P, tmp);
+  free(tmp);
   return s;
 }
 

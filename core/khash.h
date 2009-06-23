@@ -276,10 +276,10 @@ static inline khint_t __luaS_hash_string(const char *s)
     h = h ^ ((h << 5) + (h >> 2) + (unsigned char)s[l1 - 1]);
   return h;
 }
-#define kh_str_hash_func(key) __luaS_hash_string(PN_STR_PTR(key))
-#define kh_str_hash_equal(a, b) (strcmp(PN_STR_PTR(a), PN_STR_PTR(b)) == 0)
-#define kh_pnstr_hash_func(key) __luaS_hash_string(key)
-#define kh_pnstr_hash_equal(a, b) (strcmp(PN_STR_PTR(a), b) == 0)
+#define kh_pnstr_hash_func(key) __luaS_hash_string(PN_STR_PTR(key))
+#define kh_pnstr_hash_equal(a, b) (strcmp(PN_STR_PTR(a), PN_STR_PTR(b)) == 0)
+#define kh_str_hash_func(key) __luaS_hash_string(key)
+#define kh_str_hash_equal(a, b) (strcmp(PN_STR_PTR(a), b) == 0)
 #define kh_pn_hash_func(key) (uint32_t)PN_UNIQ(key)
 #define kh_pn_hash_equal(a, b) (a == b)
 
@@ -307,8 +307,8 @@ static inline khint_t __luaS_hash_string(const char *s)
 #define kh_n_buckets(h) ((h)->n_buckets)
 
 #define KHASH_MAP_INIT_STR(name)								\
-	KHASH_INIT(name, _PN, PNUniq, const char *, 0, kh_str_hash_func, \
-    kh_str_hash_equal, kh_pnstr_hash_func, kh_pnstr_hash_equal)
+	KHASH_INIT(name, _PN, PNUniq, const char *, 0, kh_pnstr_hash_func, \
+    kh_pnstr_hash_equal, kh_str_hash_func, kh_str_hash_equal)
 
 #define KHASH_MAP_INIT_PN(name)								\
 	KHASH_INIT(name, _PN, _PN, _PN, 1, kh_pn_hash_func, \
