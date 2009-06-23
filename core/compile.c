@@ -26,7 +26,7 @@ const struct {
   {"newlick", 2}, {"getpath", 2}, {"setpath", 2}, {"add", 2}, {"sub", 2},
   {"mult", 2}, {"div", 2}, {"mod", 2}, {"pow", 2}, {"not", 1}, {"cmp", 2},
   {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2}, {"gt", 2}, {"gte", 2},
-  {"bitl", 2}, {"bitr", 2}, {"bind", 2}, {"jump", 1}, {"test", 2},
+  {"bitl", 2}, {"bitr", 2}, {"def", 2}, {"bind", 2}, {"jump", 1}, {"test", 2},
   {"testjmp", 2}, {"notjmp", 2}, {"named", 2}, {"call", 2},
   {"tailcall", 2}, {"return", 1}, {"proto", 2}, {"class", 2}
 };
@@ -282,10 +282,16 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
       }
 
       if (lhs->part == AST_MESSAGE || lhs->part == AST_QUERY) {
-        num = PN_UPVAL(lhs->a[0]);
-        if (num == PN_NONE) {
-          num = PN_PUT(f->locals, lhs->a[0]);
-          opcode = OP_SETLOCAL;
+        if (c == 0) {
+          num = PN_UPVAL(lhs->a[0]);
+          if (num == PN_NONE) {
+            num = PN_PUT(f->locals, lhs->a[0]);
+            opcode = OP_SETLOCAL;
+          }
+        } else {
+          num = PN_PUT(f->values, lhs->a[0]);
+          opcode = OP_DEF;
+          breg++;
         }
       } else if (lhs->part == AST_PATH || lhs->part == AST_PATHQ) {
         num = PN_PUT(f->values, lhs->a[0]);
@@ -420,7 +426,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
         u8 breg = reg;
         if (t->a[2] != PN_NIL) {
           // TODO: a hack to make sure constructors always return self
-          PN ctor = (struct PNSource *)PN_S(t->a[2], 0);
+          PN ctor = PN_S(t->a[2], 0);
           PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MESSAGE, potion_str(P, "self")))));
           PN_BLOCK(++breg, t->a[2], t->a[1]);
         }

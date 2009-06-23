@@ -301,6 +301,9 @@ reentry:
       case OP_BITR:
         reg[op.a] = PN_NUM(PN_INT(reg[op.a]) >> PN_INT(reg[op.b]));
       break;
+      case OP_DEF:
+        reg[op.a] = potion_def_method(P, PN_NIL, reg[op.a], PN_TUPLE_AT(f->values, op.b), reg[op.a + 1]);
+      break;
       case OP_BIND:
         reg[op.a] = potion_bind(P, reg[op.b], reg[op.a]);
       break;

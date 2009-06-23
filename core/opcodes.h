@@ -53,6 +53,7 @@ enum PN_OPCODE {
   OP_GTE,
   OP_BITL,
   OP_BITR,
+  OP_DEF,
   OP_BIND,
   OP_JMP,
   OP_TEST,
