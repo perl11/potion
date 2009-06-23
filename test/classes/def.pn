@@ -1,0 +1,4 @@
+Triplet = class (a, b, c): /first = a, /second = b, /third = c.
+Triplet sum = (): /first + /second + /third.
+Triplet (71, 42, 90) sum
+# 203
