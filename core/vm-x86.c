@@ -315,8 +315,8 @@ void potion_x86_settable(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
-  X86_ARGO(op.b, 2);
-  X86_ARGO(op.a + 1, 3);
+  X86_ARGO(op.a + 1, 2);
+  X86_ARGO(op.b, 3);
   X86_PRE(); ASM(0xB8); ASMN(potion_table_set); // mov &potion_tuple_push %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
   X86_MOV_RBP(0x89, op.a); // mov %rax local

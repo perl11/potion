@@ -239,7 +239,7 @@ reentry:
         reg[op.a] = PN_PUSH(reg[op.a], reg[op.b]);
       break;
       case OP_SETTABLE:
-        potion_table_set(P, reg[op.a], reg[op.b], reg[op.a+1]);
+        potion_table_set(P, reg[op.a], reg[op.a + 1], reg[op.b]);
       break;
       case OP_NEWLICK: {
         PN attr = op.b > op.a ? reg[op.a + 1] : PN_NIL;
@@ -248,10 +248,10 @@ reentry:
       }
       break;
       case OP_GETPATH:
-        reg[op.a] = potion_obj_get(P, PN_NIL, reg[op.a], PN_TUPLE_AT(f->values, op.b));
+        reg[op.a] = potion_obj_get(P, PN_NIL, reg[op.a], reg[op.b]);
       break;
       case OP_SETPATH:
-        potion_obj_set(P, PN_NIL, reg[op.a], PN_TUPLE_AT(f->values, op.b), reg[op.a + 1]);
+        potion_obj_set(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]);
       break;
       case OP_ADD:
         reg[op.a] = reg[op.a] + (reg[op.b]-1);
