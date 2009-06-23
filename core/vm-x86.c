@@ -449,6 +449,9 @@ void potion_x86_bitr(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   });
 }
 
+void potion_x86_def(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_x86_bind(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
 #ifdef JIT_ICACHE

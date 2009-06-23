@@ -119,6 +119,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(GTE, (P, f, &asmb, pos))
       CASE_OP(BITL, (P, f, &asmb, pos))
       CASE_OP(BITR, (P, f, &asmb, pos))
+      CASE_OP(DEF, (P, f, &asmb, pos, need))
       CASE_OP(BIND, (P, f, &asmb, pos, need))
       CASE_OP(JMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(TEST, (P, f, &asmb, pos))

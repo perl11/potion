@@ -61,6 +61,7 @@ typedef struct {
       (OP_F)potion_##arch##_gte, \
       (OP_F)potion_##arch##_bitl, \
       (OP_F)potion_##arch##_bitr, \
+      (OP_F)potion_##arch##_def, \
       (OP_F)potion_##arch##_bind, \
       (OP_F)potion_##arch##_jmp, \
       (OP_F)potion_##arch##_test, \

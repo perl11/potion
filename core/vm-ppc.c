@@ -264,6 +264,9 @@ void potion_ppc_bitr(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   });
 }
 
+void potion_ppc_def(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_ppc_bind(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
