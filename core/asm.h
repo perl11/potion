@@ -43,8 +43,8 @@ typedef struct {
       (OP_F)NULL, \
       (OP_F)potion_##arch##_settable, \
       (OP_F)potion_##arch##_newlick, \
-      (OP_F)NULL, \
-      (OP_F)NULL, \
+      (OP_F)potion_##arch##_getpath, \
+      (OP_F)potion_##arch##_setpath, \
       (OP_F)potion_##arch##_add, \
       (OP_F)potion_##arch##_sub, \
       (OP_F)potion_##arch##_mult, \

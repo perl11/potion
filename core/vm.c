@@ -105,6 +105,8 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))
       CASE_OP(SETTABLE, (P, f, &asmb, pos, need))
       CASE_OP(NEWLICK, (P, f, &asmb, pos, need))
+      CASE_OP(GETPATH, (P, f, &asmb, pos, need))
+      CASE_OP(SETPATH, (P, f, &asmb, pos, need))
       CASE_OP(ADD, (P, f, &asmb, pos))
       CASE_OP(SUB, (P, f, &asmb, pos))
       CASE_OP(MULT, (P, f, &asmb, pos))
