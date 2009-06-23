@@ -419,7 +419,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
       } else if (t->a[0] == PN_class) {
         u8 breg = reg;
         if (t->a[2] != PN_NIL)
-          PN_BLOCK(++breg, t->a[2], PN_NIL);
+          PN_BLOCK(++breg, t->a[2], t->a[1]);
         PN_ASM2(OP_CLASS, reg, breg);
       } else if (t->a[0] == PN_loop) {
         int jmp = PN_OP_LEN(f->asmb); breg++;
