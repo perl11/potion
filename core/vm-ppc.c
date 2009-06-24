@@ -313,6 +313,9 @@ void potion_ppc_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 void potion_ppc_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
+void potion_ppc_callset(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_ppc_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_MOV(3, REG(op.a)); // or r3,rA,rA

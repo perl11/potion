@@ -144,6 +144,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(NOTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(NAMED, (P, f, &asmb, pos, need))
       CASE_OP(CALL, (P, f, &asmb, pos, need))
+      CASE_OP(CALLSET, (P, f, &asmb, pos, need))
       CASE_OP(RETURN, (P, f, &asmb, pos))
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))
       CASE_OP(CLASS, (P, f, &asmb, pos, need))
@@ -375,6 +376,9 @@ reentry:
             reg[op.a] = potion_obj_call(P, reg[op.a], 1, reg[op.a + 2]);
           break;
         }
+      break;
+      case OP_CALLSET:
+        reg[op.a] = potion_obj_callset(P, reg[op.a], 2, reg[op.a + 2], reg[op.a + 3]);
       break;
       case OP_RETURN:
         if (current != stack) {

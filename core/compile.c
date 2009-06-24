@@ -27,7 +27,7 @@ const struct {
   {"mult", 2}, {"div", 2}, {"mod", 2}, {"pow", 2}, {"not", 1}, {"cmp", 2},
   {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2}, {"gt", 2}, {"gte", 2},
   {"bitl", 2}, {"bitr", 2}, {"def", 2}, {"bind", 2}, {"jump", 1}, {"test", 2},
-  {"testjmp", 2}, {"notjmp", 2}, {"named", 2}, {"call", 2},
+  {"testjmp", 2}, {"notjmp", 2}, {"named", 2}, {"call", 2}, {"callset", 2},
   {"tailcall", 2}, {"return", 1}, {"proto", 2}, {"class", 2}
 };
 
@@ -269,9 +269,8 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
     case AST_ASSIGN: {
       vPN(Source) lhs = (struct PNSource *)t->a[0];
       PN_SIZE num = PN_NONE, c = count;
-      u8 opcode = OP_SETUPVAL, breg = reg;
+      u8 opcode = OP_GETUPVAL, breg = reg;
 
-      // TODO: handle assignment to function calls
       if (lhs->part == AST_EXPR) {
         unsigned long i = 0;
         c = PN_TUPLE_LEN(lhs->a[0]) - 1;
@@ -286,7 +285,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           num = PN_UPVAL(lhs->a[0]);
           if (num == PN_NONE) {
             num = PN_PUT(f->locals, lhs->a[0]);
-            opcode = OP_SETLOCAL;
+            opcode = OP_GETLOCAL;
           }
         } else {
           num = PN_PUT(f->values, lhs->a[0]);
@@ -301,29 +300,42 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           PN_ASM1(OP_SELF, reg);
         }
         PN_ASM2(OP_LOADK, ++breg, num);
-        opcode = OP_SETPATH;
+        opcode = OP_GETPATH;
         num = ++breg;
       }
 
-      potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], breg);
-
-      if (opcode == OP_SETUPVAL) {
-        if (lhs->part == AST_QUERY) {
-          PN_ASM2(OP_GETUPVAL, breg, num);
-          PN_ASM2(OP_TESTJMP, breg, 1);
-        }
-      } else if (opcode == OP_SETLOCAL) {
-        if (lhs->part == AST_QUERY) {
-          PN_ASM2(OP_GETLOCAL, breg, num);
-          PN_ASM2(OP_TESTJMP, breg, 1);
-        }
-      } else if (opcode == OP_SETPATH) {
-        if (lhs->part == AST_PATHQ) {
-          PN_ASM2(OP_GETPATH, reg, num);
-          PN_ASM2(OP_TESTJMP, reg, 1);
+      if (lhs->a[1] != PN_NIL) {
+        breg = reg;
+        PN_ASM2(opcode, breg, num);
+        PN_ASM1(OP_SELF, ++breg);
+        PN_ARG_TABLE(lhs->a[1], breg, 1);
+        // TODO: no block allowed here?
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], ++breg);
+        PN_ASM2(OP_CALLSET, reg, breg);
+      } else {
+        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], breg);
+        if (opcode == OP_GETUPVAL) {
+          if (lhs->part == AST_QUERY) {
+            PN_ASM2(OP_GETUPVAL, breg, num);
+            PN_ASM2(OP_TESTJMP, breg, 1);
+          }
+          PN_ASM2(OP_SETUPVAL, reg, num);
+        } else if (opcode == OP_GETLOCAL) {
+          if (lhs->part == AST_QUERY) {
+            PN_ASM2(OP_GETLOCAL, breg, num);
+            PN_ASM2(OP_TESTJMP, breg, 1);
+          }
+          PN_ASM2(OP_SETLOCAL, reg, num);
+        } else if (opcode == OP_GETPATH) {
+          if (lhs->part == AST_PATHQ) {
+            PN_ASM2(OP_GETPATH, reg, num);
+            PN_ASM2(OP_TESTJMP, reg, 1);
+          }
+          PN_ASM2(OP_SETPATH, reg, num);
+        } else {
+          PN_ASM2(opcode, reg, num);
         }
       }
-      PN_ASM2(opcode, reg, num);
       PN_REG(f, breg);
     }
     break;

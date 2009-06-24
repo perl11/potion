@@ -18,16 +18,17 @@ typedef PN (*PN_IVAR_FUNC)(PNUniq hash);
 
 struct PNVtable {
   PN_OBJECT_HEADER
-  PNType type;
   PN parent;
-  PN_F func;
+  PNType type;
+  int ivlen;
+  PN ivars;
   PN ctor;
+  PN_F call;
+  PN_F callset;
 #ifdef JIT_MCACHE
   PN_MCACHE_FUNC mcache;
 #endif
   PN_IVAR_FUNC ivfunc;
-  int ivlen;
-  PN ivars;
   kh_PN_t kh[0];
 };
 

@@ -40,8 +40,12 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
   return (PN)vt;
 }
 
-void potion_type_func(PN vt, PN_F func) {
-  ((struct PNVtable *)vt)->func = func;
+void potion_type_call_is(PN vt, PN_F func) {
+  ((struct PNVtable *)vt)->call = func;
+}
+
+void potion_type_callset_is(PN vt, PN_F func) {
+  ((struct PNVtable *)vt)->callset = func;
 }
 
 PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
@@ -113,10 +117,23 @@ PN potion_obj_set(Potion *P, PN cl, PN self, PN ivar, PN value) {
 
 PN potion_obj_call(Potion *P, PN cl, PN count, ...) {
   vPN(Vtable) vt = (struct PNVtable *)PN_VTABLE(PN_TYPE(cl));
-  if (vt->func != NULL) {
+  if (vt->call != NULL) {
     va_list args;
     va_start(args, count);
-    cl = vt->func(P, PN_NIL, cl, va_arg(args, PN));
+    cl = vt->call(P, PN_NIL, cl, va_arg(args, PN));
+    va_end(args);
+  }
+  return cl;
+}
+
+PN potion_obj_callset(Potion *P, PN cl, PN count, ...) {
+  vPN(Vtable) vt = (struct PNVtable *)PN_VTABLE(PN_TYPE(cl));
+  if (vt->callset != NULL) {
+    va_list args;
+    va_start(args, count);
+    PN a = va_arg(args, PN);
+    PN b = va_arg(args, PN);
+    cl = vt->callset(P, PN_NIL, cl, a, b);
     va_end(args);
   }
   return cl;
@@ -303,7 +320,7 @@ void potion_lobby_init(Potion *P) {
   potion_send(P->lobby, PN_def, potion_str(P, "Ref"),      PN_VTABLE(PN_TWEAK));
   potion_send(P->lobby, PN_def, potion_str(P, "Lick"),     PN_VTABLE(PN_TLICK));
 
-  potion_type_func(PN_VTABLE(PN_TVTABLE), (PN_F)potion_object_new);
+  potion_type_call_is(PN_VTABLE(PN_TVTABLE), (PN_F)potion_object_new);
   potion_method(P->lobby, "about", potion_about, 0);
   potion_method(P->lobby, "callcc", potion_callcc, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);

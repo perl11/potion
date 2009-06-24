@@ -646,6 +646,9 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op.a)); /* mov %rbp(A) %rax */
 }
 
+void potion_x86_callset(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_x86_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   X86_MOV_RBP(0x8B, 0); // mov -0(%rbp) %eax
   ASM(0xC9); ASM(0xC3); // leave; ret
