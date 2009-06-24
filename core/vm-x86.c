@@ -203,11 +203,10 @@ void potion_x86_local(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   X86_ARGI(reg, 3 + arg);
 }
 
-void potion_x86_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long lregs, int upc) {
+void potion_x86_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long lregs, long start, int upc) {
   int upi;
-  X86_ARGI(1, 1);
   for (upi = 0; upi < upc; upi++) {
-    X86_MOV_RBP(0x8B, 1);
+    X86_MOV_RBP(0x8B, start - 2);
     X86_PRE(); ASM(0x8B); ASM(0x40);
       ASM(sizeof(struct PNClosure) + ((upi + 1) * sizeof(PN))); // 0x30(%rax)
     X86_MOV_RBP(0x89, lregs + upi);

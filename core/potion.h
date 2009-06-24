@@ -343,7 +343,7 @@ typedef struct {
   void (*stack)    (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, long);
   void (*registers)(Potion *P, struct PNProto * volatile f, PNAsm * volatile *, long);
   void (*local)    (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, long, long);
-  void (*upvals)   (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, long, int);
+  void (*upvals)   (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, long, long, int);
   void (*jmpedit)  (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, unsigned char *, int);
   OP_F op[OP_MAX];
   void (*finish)   (Potion *P, struct PNProto * volatile f, PNAsm * volatile *);

@@ -94,7 +94,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
 
   // if CL passed in with upvals, load them
   if (upc > 0)
-    target->upvals(P, f, &asmb, lregs, upc);
+    target->upvals(P, f, &asmb, lregs, need, upc);
 
   for (pos = 0; pos < PN_FLEX_SIZE(f->asmb) / sizeof(PN_OP); pos++) {
     offs[pos] = asmb->len;

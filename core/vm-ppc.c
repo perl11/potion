@@ -107,7 +107,7 @@ void potion_ppc_registers(Potion *P, struct PNProto * volatile f, PNAsm * volati
 void potion_ppc_local(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long reg, long arg) {
 }
 
-void potion_ppc_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long lregs, int upc) {
+void potion_ppc_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long lregs, long start, int upc) {
 }
 
 void potion_ppc_jmpedit(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, unsigned char *asmj, int dist) {
