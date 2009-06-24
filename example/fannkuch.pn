@@ -1,7 +1,7 @@
 range = (a, b):
   i = 0, l = list(b-a+1)
   while (a + i <= b):
-    l put(i, a + i++).
+    l (i) = a + i++.
   l.
 
 fannkuch = (n):
@@ -10,23 +10,23 @@ fannkuch = (n):
 
   while (true):
     if (check < 30):
-      perm string print, "\n" print
+      perm join print, "\n" print
       check++.
 
     while (r != 1):
-      count put(r-1, r)
+      count (r-1) = r
       r--.
 
     if (perm(0) != 1 and perm(m) != n):
       i = 0
       while (i < n):
-        perml put(i, perm(i))
+        perml (i) = perm (i)
         i++.
       flips = 0
       while (perml(0) != 1):
         i = 0, j = perml(0) - 1
         while (i < j):
-          t = perml(i), perml put(i, perml(j)), perml put(j, t)
+          t = perml(i), perml (i) = perml(j), perml (j) = t
           i++, j--.
         flips++.
       if (flips > maxf): maxf = flips.
@@ -34,14 +34,14 @@ fannkuch = (n):
 
     while (true):
       if (r == n):
-        maxf string print, "\n" print
+        maxf join print, "\n" print
         return (maxf).
       i = 0, j = perm(0)
       while (i < r):
-        perm put(i, perm(i+1))
+        perm (i) = perm(i+1)
         i++.
-      perm put(r, j)
-      count put(r, count(r) - 1)
+      perm (r) = j
+      count (r) = count(r) - 1
       if (count(r) > 0): break.
       r++
 _ n
