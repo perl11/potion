@@ -371,6 +371,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     case PN_TVTABLE:
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->parent);
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->ivars);
+      GC_MINOR_UPDATE(((struct PNVtable *)ptr)->ctor);
       GC_MINOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:
@@ -450,6 +451,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     case PN_TVTABLE:
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->parent);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->ivars);
+      GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->ctor);
       GC_MAJOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:
