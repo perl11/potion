@@ -476,6 +476,14 @@ void potion_x86_bitr(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 }
 
 void potion_x86_def(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(start - 3, 0);
+  X86_ARGO(op.a, 2);
+  X86_ARGO(op.a + 1, 3);
+  X86_ARGO(op.b, 4);
+  X86_PRE(); ASM(0xB8); ASMN(potion_def_method); // mov &potion_def_method %rax
+  ASM(0xFF); ASM(0xD0); // callq %rax
+  X86_MOV_RBP(0x89, op.a); // mov %rax local
 }
 
 void potion_x86_bind(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {

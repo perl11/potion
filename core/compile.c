@@ -290,8 +290,9 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           }
         } else {
           num = PN_PUT(f->values, lhs->a[0]);
+          PN_ASM2(OP_LOADK, ++breg, num);
           opcode = OP_DEF;
-          breg++;
+          num = ++breg;
         }
       } else if (lhs->part == AST_PATH || lhs->part == AST_PATHQ) {
         num = PN_PUT(f->values, lhs->a[0]);
