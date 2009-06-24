@@ -104,8 +104,10 @@ PN potion_obj_get(Potion *P, PN cl, PN self, PN ivar) {
 
 PN potion_obj_set(Potion *P, PN cl, PN self, PN ivar, PN value) {
   long i = potion_obj_find_ivar(P, self, ivar);
-  if (i >= 0)
+  if (i >= 0) {
     ((struct PNObject *)self)->ivars[i] = value;
+    PN_TOUCH(self);
+  }
   return value;
 }
 
