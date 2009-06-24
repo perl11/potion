@@ -57,12 +57,12 @@
 #define X86_ARGI(regn, argn) potion_x86_c_arg(P, asmp, 0, regn, argn)
 #define TAG_JMP(jpos) \
         ASM(0xE9); \
-        if (jpos >= pos) { \
+        if ((int)jpos >= (int)pos) { \
           jmps[*jmpc].from = asmp[0]->len; \
           ASMI(0); \
           jmps[*jmpc].to = jpos + 1; \
           *jmpc = *jmpc + 1; \
-        } else if (jpos < pos) { \
+        } else if ((int)jpos < (int)pos) { \
           ASMI(offs[jpos + 1] - ((asmp[0]->len) + 4)); \
         } else { \
           ASMI(0); \

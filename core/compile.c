@@ -448,21 +448,21 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           PN_BLOCK(breg, t->a[2], t->a[1]);
         }
         PN_ASM2(OP_CLASS, reg, breg);
-      } else if (t->a[0] == PN_loop) {
-        int jmp = PN_OP_LEN(f->asmb); breg++;
-        PN_ARG_TABLE(t->a[1], breg, 0);
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg);
-        PN_ASM1(OP_JMP, (jmp - PN_OP_LEN(f->asmb)) - 1);
-      } else if (t->a[0] == PN_while) {
-        int jmp1, jmp2 = PN_OP_LEN(f->asmb); breg++;
+      } else if (t->a[0] == PN_while || t->a[0] == PN_loop) {
+        int jmp1 = 0, jmp2 = PN_OP_LEN(f->asmb); breg++;
         struct PNLoop l; l.bjmpc = 0; l.cjmpc = 0;
         int i;
-        PN_ARG_TABLE(t->a[1], breg, 0);
-        jmp1 = PN_OP_LEN(f->asmb);
-        PN_ASM2(OP_NOTJMP, breg, 0);
+        if (t->a[0] == PN_while) {
+          // TODO: error if args to `loop`?
+          PN_ARG_TABLE(t->a[1], breg, 0);
+          jmp1 = PN_OP_LEN(f->asmb);
+          PN_ASM2(OP_NOTJMP, breg, 0);
+        }
         potion_source_asmb(P, f, &l, 0, (struct PNSource *)t->a[2], reg);
         PN_ASM1(OP_JMP, (jmp2 - PN_OP_LEN(f->asmb)) - 1);
-        PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
+        if (t->a[0] == PN_while) {
+          PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
+        }
         for (i = 0; i < l.bjmpc; i++) {
           PN_OP_AT(f->asmb, l.bjmps[i]).a = (PN_OP_LEN(f->asmb) - l.bjmps[i]) - 1;
         }

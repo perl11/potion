@@ -5,44 +5,51 @@ range = (a, b):
   l.
 
 fannkuch = (n):
-  maxf = 0, m = n-1, r = n, check = 0
-  perm = range(1, n), count = perm clone, perml = perm clone
+  flips = 0, maxf = 0, k = 0, m = n - 1, r = n, check = 0
+  perml = range(0, n), count = list(n), perm = list(n)
 
-  while (true):
+  loop:
     if (check < 30):
-      perm join print, "\n" print
+      perml join print, "\n" print
       check++.
 
     while (r != 1):
       count (r-1) = r
       r--.
 
-    if (perm(0) != 1 and perm(m) != n):
-      i = 0
+    if (perml (0) != 0 and perml (m) != m):
+      flips = 0, i = 1
       while (i < n):
-        perml (i) = perm (i)
+        perm (i) = perml (i)
         i++.
-      flips = 0
-      while (perml(0) != 1):
-        i = 0, j = perml(0) - 1
+      k = perml (0)
+      loop:
+        i = 1, j = k - 1
         while (i < j):
-          t = perml(i), perml (i) = perml(j), perml (j) = t
+          t = perm (i), perm (i) = perm (j), perm (j) = t
           i++, j--.
-        flips++.
+        flips++
+        j = perm (k), perm (k) = k, k = j
+        if (k == 0): break.
+      .
       if (flips > maxf): maxf = flips.
     .
 
-    while (true):
+    loop:
       if (r == n):
-        maxf join print, "\n" print
+        maxf string print, "\n" print
         return (maxf).
-      i = 0, j = perm(0)
+
+      i = 0, j = perml (0)
       while (i < r):
-        perm (i) = perm(i+1)
-        i++.
-      perm (r) = j
-      count (r) = count(r) - 1
-      if (count(r) > 0): break.
+        k = i + 1
+        perml (i) = perml (k)
+        i = k.
+      perml (r) = j
+
+      j = count (r) - 1
+      count (r) = j
+      if (j > 0): break.
       r++
 _ n
 
