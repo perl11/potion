@@ -142,8 +142,8 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   PN_ASM2(OP_PROTO, reg, num); \
   PN_TUPLE_EACH(((struct PNProto *)block)->upvals, i, v, { \
     PN_SIZE numup = PN_GET(f->upvals, v); \
-    if (numup != PN_NONE) PN_ASM2(OP_GETUPVAL, 0, numup); \
-    else                  PN_ASM2(OP_GETLOCAL, 0, PN_GET(f->locals, v)); \
+    if (numup != PN_NONE) PN_ASM2(OP_GETUPVAL, reg, numup); \
+    else                  PN_ASM2(OP_GETLOCAL, reg, PN_GET(f->locals, v)); \
   }); \
 })
 #define PN_UPVAL(name) ({ \
@@ -430,7 +430,8 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           // TODO: a hack to make sure constructors always return self
           PN ctor = PN_S(t->a[2], 0);
           PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MESSAGE, potion_str(P, "self")))));
-          PN_BLOCK(++breg, t->a[2], t->a[1]);
+          breg++;
+          PN_BLOCK(breg, t->a[2], t->a[1]);
         }
         PN_ASM2(OP_CLASS, reg, breg);
       } else if (t->a[0] == PN_loop) {
@@ -494,8 +495,10 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           PN_ASM2(OP_LOADK, reg, num);
           PN_ASM2(OP_BIND, reg, breg);
           PN_ARG_TABLE(t->a[1], breg, 1);
-          if (t->a[2] != PN_NIL)
-            PN_BLOCK(++breg, t->a[2], PN_NIL);
+          if (t->a[2] != PN_NIL) {
+            breg++;
+            PN_BLOCK(breg, t->a[2], PN_NIL);
+          }
           if (t->part == AST_MESSAGE) {
             PN_ASM2(OP_CALL, reg, breg);
           } else
@@ -508,8 +511,10 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
             PN_ASM2(opcode, reg, num);
             PN_ASM1(OP_SELF, ++breg);
             PN_ARG_TABLE(t->a[1], breg, 1);
-            if (t->a[2] != PN_NIL)
-              PN_BLOCK(++breg, t->a[2], PN_NIL);
+            if (t->a[2] != PN_NIL) {
+              breg++;
+              PN_BLOCK(breg, t->a[2], PN_NIL);
+            }
             PN_ASM2(OP_CALL, reg, breg);
           } else
             PN_ASM2(opcode, reg, num);

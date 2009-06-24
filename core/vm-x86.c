@@ -673,20 +673,20 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   X86_MOV_RBP(0x89, op.a);
   PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
     (*pos)++;
-    op = PN_OP_AT(f->asmb, *pos);
-    if (op.code == OP_GETUPVAL) {
-      X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(lregs + op.b)); // mov upval %rdx
-    } else if (op.code == OP_GETLOCAL) {
+    PN_OP opp = PN_OP_AT(f->asmb, *pos);
+    if (opp.code == OP_GETUPVAL) {
+      X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(lregs + opp.b)); // mov upval %rdx
+    } else if (opp.code == OP_GETLOCAL) {
       X86_ARGO(start - 3, 0);
-      X86_ARGO(regs + op.b, 1);
+      X86_ARGO(regs + opp.b, 1);
       X86_PRE(); ASM(0xB8); ASMN(potion_ref); // mov &potion_ref %rax
       ASM(0xFF); ASM(0xD0); // callq %rax
       X86_PRE(); ASM(0x89); ASM(0xC2); // mov %rax %rdx
-      X86_MOV_RBP(0x89, regs + op.b); // mov %rax local
+      X86_MOV_RBP(0x89, regs + opp.b); // mov %rax local
     } else {
       fprintf(stderr, "** missing an upval to proto %p\n", (void *)proto);
     }
-    X86_MOV_RBP(0x8B, op.a); // mov cl %rax
+    X86_MOV_RBP(0x8B, opp.a); // mov cl %rax
     X86_PRE(); ASM(0x89); ASM(0x50); // mov %rdx N(%rax)
       ASM(sizeof(struct PNClosure) + (sizeof(PN) * (i + 1)));
   });
