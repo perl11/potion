@@ -631,11 +631,10 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   ASM(0x75); ASM(X86C(8, 10)); // jne [a]
   X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(A) %rax
   X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); // mov N(%rax) %rax
-  ASM(0xEB); ASM(X86C(19, 22)); // jmp [b]
+  ASM(0xEB); ASM(X86C(12, 18)); // jmp [b]
 
   // if not a closure, send to potion_jit_callout
   X86_MOVQ(op.a + 1, op.b - op.a - 2); // mov -A(%rbp) NUM
-  X86_ARGO(op.a + 1, 2);
   X86_PRE(); ASM(0xB8); ASMN(potion_obj_call); // mov &potion_obj_call %rax
 
   // (Potion *, CL) as the first argument
