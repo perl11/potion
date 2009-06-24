@@ -1,0 +1,50 @@
+tree_size = (i):
+  (1 << (i + 1)) - 1.
+
+populate_tree = (node, depth):
+  if (depth > 0):
+    depth--
+    node put(0, list(2))
+    node put(1, list(2))
+    populate_tree(node(0), depth)
+    populate_tree(node(1), depth).
+  .
+
+new_tree = (depth):
+  x = list(2)
+  if (depth > 0):
+    x put(0, new_tree(depth - 1))
+    x put(1, new_tree(depth - 1)).
+  x.
+
+"Stretching memory with a binary tree of depth 20\n" print
+temp = new_tree(20)
+temp = 0
+
+"Creating a long-lived binary tree of depth 18\n" print
+longlived = new_tree(18)
+
+"Creating a long-lived array of 2000000 items\n" print
+ary = list(2000000)
+
+i = 4
+while (i <= 20):
+  iter = 2 * tree_size(20) / tree_size(i)
+  ("Creating ", iter, " trees of depth ", i, "\n") join print
+
+  j = 0
+  while (j < iter):
+    temp = list(2)
+    populate_tree(temp, i)
+    temp = 0
+    j++.
+
+  j = 0
+  while (j < iter):
+    temp = new_tree(i)
+    temp = 0
+    j++.
+
+  i = i + 2.
+
+0

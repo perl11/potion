@@ -3,26 +3,26 @@ mindepth = 4
 maxdepth = mindepth + 2
 if (maxdepth < n): maxdepth = n.
 
-new_tree = class (item, depth):
-  /item = item
+new_tree = (item, depth):
   if (depth > 0):
     i = item + item, depth--
-    /left = new_tree (i - 1, depth)
-    /right = new_tree (i, depth).
-  .
+    (item, new_tree(i - 1, depth), new_tree(i, depth)).
+  else:
+    (item).
+.
 
 item_check = (tree):
-  if (tree /left):
-    tree /item + item_check (tree /left) - item_check (tree /right).
+  if (tree(2)):
+    tree(0) + item_check(tree(1)) - item_check(tree(2)).
   else:
-    tree /item.
-  .
+    tree(0).
+.
 
 stretch_depth = maxdepth + 1
 check = item_check(new_tree(0, stretch_depth))
 ("stretch tree of depth ", stretch_depth,
  "\t check: ", check, "\n") join print
- 
+
 longlivedtree = new_tree(0, maxdepth)
 
 depth = mindepth, while (depth <= maxdepth):
