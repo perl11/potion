@@ -117,18 +117,22 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
   if (argn == 0) {
     // OPT: the first argument is always (Potion *)
     if (!out) {
-      X86_PRE(); ASM(0x8b); ASM(0x45); ASM(2 * sizeof(PN));
-      X86_PRE(); ASM(0x89); ASM(0x04); ASM(0x24);
+      X86_PRE(); ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));
+      X86_PRE(); ASM(0x89); ASM(0x14); ASM(0x24);
     }
   } else {
-    if (out) { X86_MOV_RBP(0x8b, regn); }
+    if (out) {
+      X86_PRE(); ASM(0x8b); ASM(0x55); ASM(RBP(regn));
+    }
     if (!out) argn += 2;
     if (out) {
-      X86_PRE(); ASM(0x89); ASM(0x44); ASM(0x24); ASM(argn * sizeof(PN));
+      X86_PRE(); ASM(0x89); ASM(0x54); ASM(0x24); ASM(argn * sizeof(PN));
     } else {
-      X86_PRE(); ASM(0x8b); ASM(0x45); ASM(argn * sizeof(PN));
+      X86_PRE(); ASM(0x8b); ASM(0x55); ASM(argn * sizeof(PN));
     }
-    if (!out) { X86_MOV_RBP(0x89, regn); }
+    if (!out) {
+      X86_PRE(); ASM(0x89); ASM(0x55); ASM(RBP(regn));
+    }
   }
 #else
   switch (argn) {
