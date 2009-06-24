@@ -83,7 +83,7 @@ Potion *potion_create(void *sp) {
   Potion *P = potion_gc_boot(sp);
   P->vt = PN_TSTATE;
   P->uniq = (PNUniq)potion_rand_int();
-  PN_FLEX_NEW(P->vts, PNFlex, TYPE_BATCH_SIZE);
+  PN_FLEX_NEW(P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
   PN_FLEX_SIZE(P->vts) = PN_TYPE_ID(PN_TUSER) + 1;
   potion_init(P);
   return P;
@@ -95,7 +95,7 @@ void potion_destroy(Potion *P) {
 
 PN potion_delegated(Potion *P, PN closure, PN self) {
   PNType t = PN_FLEX_SIZE(P->vts) + PN_TNIL;
-  PN_FLEX_NEEDS(1, P->vts, PNFlex, TYPE_BATCH_SIZE);
+  PN_FLEX_NEEDS(1, P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
   return potion_type_new(P, t, self);
 }
 

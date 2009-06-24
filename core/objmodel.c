@@ -48,7 +48,7 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   PN parent = (self == P->lobby ? PN_VTABLE(PN_TOBJECT) : self);
   PN pvars = ((struct PNVtable *)parent)->ivars;
   PNType t = PN_FLEX_SIZE(P->vts) + PN_TNIL;
-  PN_FLEX_NEEDS(1, P->vts, PNFlex, TYPE_BATCH_SIZE);
+  PN_FLEX_NEEDS(1, P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
   self = potion_type_new(P, t, parent);
   if (PN_IS_TUPLE(pvars)) {
     if (!PN_IS_TUPLE(ivars)) ivars = PN_TUP0();
@@ -62,6 +62,7 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   ((struct PNVtable *)self)->ctor = cl;
 
   PN_FLEX_SIZE(P->vts)++;
+  PN_TOUCH(P->vts);
   return self;
 }
 

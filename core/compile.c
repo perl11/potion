@@ -689,7 +689,7 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   f->protos = READ_PROTOS(pn, *ptr);
 
   len = READ_PN(pn, *ptr);
-  PN_FLEX_NEW(asmb, PNAsm, len);
+  PN_FLEX_NEW(asmb, PN_TFLEXB, PNAsm, len);
   PN_MEMCPY_N(asmb->ptr, *ptr, u8, len);
   asmb->len = len;
 

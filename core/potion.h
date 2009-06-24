@@ -58,8 +58,9 @@ struct PNMemory;
 #define PN_TTABLE       (15+PN_TNIL)
 #define PN_TLICK        (16+PN_TNIL)
 #define PN_TFLEX        (17+PN_TNIL)
-#define PN_TSTRINGS     (18+PN_TNIL)
-#define PN_TUSER        (19+PN_TNIL)
+#define PN_TFLEXB       (18+PN_TNIL)
+#define PN_TSTRINGS     (19+PN_TNIL)
+#define PN_TUSER        (20+PN_TNIL)
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))

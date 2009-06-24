@@ -31,18 +31,18 @@ typedef unsigned char u8;
 
 #define TYPE_BATCH_SIZE 4096
 
-#define PN_FLEX_NEW(N, T, S) \
-  (N) = PN_ALLOC_N(PN_TFLEX, T, (sizeof(*(N)->ptr) * S)); \
+#define PN_FLEX_NEW(N, V, T, S) \
+  (N) = PN_ALLOC_N(V, T, (sizeof(*(N)->ptr) * S)); \
   (N)->siz = sizeof(*(N)->ptr) * S; \
   (N)->len = 0
 
-#define PN_FLEX_NEEDS(X, N, T, S) ({ \
+#define PN_FLEX_NEEDS(X, N, V, T, S) ({ \
   PN_SIZE capa = (N)->siz / sizeof(*(N)->ptr); \
   if (capa < (N)->len + X) { \
     while (capa < (N)->len + X) \
       capa += S; \
     capa = sizeof(*(N)->ptr) * capa; \
-    PN_REALLOC(N, PN_TFLEX, T, capa); \
+    PN_REALLOC(N, V, T, capa); \
     (N)->siz = capa; \
   } \
 })

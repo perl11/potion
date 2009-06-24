@@ -296,6 +296,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNStrTable) + sizeof(kh_str_t);
     break;
     case PN_TFLEX:
+    case PN_TFLEXB:
       sz = sizeof(PNFlex) + ((PNFlex *)ptr)->siz;
     break;
     case PN_TUSER:
@@ -392,6 +393,10 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     case PN_TTABLE:
       GC_MINOR_UPDATE_TABLE(((struct PNTable *)ptr)->kh, 1);
     break;
+    case PN_TFLEX:
+      for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
+        GC_MINOR_UPDATE(PN_FLEX_AT(ptr, i));
+    break;
     case PN_TSTRINGS:
       GC_MINOR_UPDATE_TABLE(((struct PNStrTable *)ptr)->kh, 0);
     break;
@@ -471,6 +476,10 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     break;
     case PN_TTABLE:
       GC_MAJOR_UPDATE_TABLE(((struct PNTable *)ptr)->kh, 1);
+    break;
+    case PN_TFLEX:
+      for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
+        GC_MAJOR_UPDATE(PN_FLEX_AT(ptr, i));
     break;
     case PN_TSTRINGS:
       GC_MAJOR_UPDATE_TABLE(((struct PNStrTable *)ptr)->kh, 0);
