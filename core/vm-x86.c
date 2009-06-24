@@ -117,21 +117,21 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
   if (argn == 0) {
     // OPT: the first argument is always (Potion *)
     if (!out) {
-      X86_PRE(); ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));
-      X86_PRE(); ASM(0x89); ASM(0x14); ASM(0x24);
+      ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));
+      ASM(0x89); ASM(0x14); ASM(0x24);
     }
   } else {
     if (out) {
-      X86_PRE(); ASM(0x8b); ASM(0x55); ASM(RBP(regn));
+      ASM(0x8b); ASM(0x55); ASM(RBP(regn));
     }
     if (!out) argn += 2;
     if (out) {
-      X86_PRE(); ASM(0x89); ASM(0x54); ASM(0x24); ASM(argn * sizeof(PN));
+      ASM(0x89); ASM(0x54); ASM(0x24); ASM(argn * sizeof(PN));
     } else {
-      X86_PRE(); ASM(0x8b); ASM(0x55); ASM(argn * sizeof(PN));
+      ASM(0x8b); ASM(0x55); ASM(argn * sizeof(PN));
     }
     if (!out) {
-      X86_PRE(); ASM(0x89); ASM(0x55); ASM(RBP(regn));
+      ASM(0x89); ASM(0x55); ASM(RBP(regn));
     }
   }
 #else
@@ -601,9 +601,9 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   // check type of the closure
   X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(A) %rax
   ASM(0xF6); ASM(0xC0); ASM(0x01); // test 0x1 %al
-  ASM(0x75); ASM(X86C(45, 74)); // jne [a]
+  ASM(0x75); ASM(X86C(61, 74)); // jne [a]
   ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); // test REFMASK %eax
-  ASM(0x74); ASM(X86C(37, 66)); // je [a]
+  ASM(0x74); ASM(X86C(53, 66)); // je [a]
   X86_PRE(); ASM(0x83); ASM(0xE0); ASM(0xF8); // and ~PRIMITIVE %rax
 
   // if a class, pull out the constructor
