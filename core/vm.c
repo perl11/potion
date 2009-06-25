@@ -5,6 +5,7 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <math.h>
 #include "potion.h"
@@ -16,8 +17,20 @@
 
 extern PNTarget potion_target_x86, potion_target_ppc;
 
-PN potion_vm_proto(Potion *P, PN cl, PN args) {
-  return potion_vm(P, PN_CLOSURE(cl)->data[0], P->lobby, args,
+PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
+  PN ary = PN_NIL;
+  vPN(Proto) f = (struct PNProto *)PN_CLOSURE(cl)->data[0];
+  if (PN_IS_TUPLE(f->sig)) {
+    va_list args;
+    va_start(args, self);
+    ary = PN_TUP0();
+    PN_TUPLE_EACH(f->sig, i, v, {
+      if (PN_IS_STR(v))
+        ary = PN_PUSH(ary, va_arg(args, PN));
+    });
+    va_end(args);
+  }
+  return potion_vm(P, (PN)f, self, ary,
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
 
