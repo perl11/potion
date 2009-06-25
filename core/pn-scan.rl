@@ -11,7 +11,10 @@
 #include "pn-gram.h"
 #include "pn-ast.h"
 
-#define TOKEN2(id,v) LemonPotion(pParser, PN_TOK_##id, v, P); last = PN_TOK_##id
+#define TOKEN2(id,v) \
+  LemonPotion(pParser, PN_TOK_##id, v, P); \
+  if (P->yerror > 0) cs = potion_error; \
+  last = PN_TOK_##id
 #define TOKEN1(id)   if (last != PN_TOK_##id) { TOKEN(id); }
 #define TOKEN(id)    TOKEN2(id, PN_NIL)
 
@@ -19,8 +22,9 @@
   machine utf8;
 
   comma       = ",";
-  newline     = "\r"? "\n" %{ lineno++; };
+  newline     = "\r"? "\n" %{ lineno++; nl = p; };
   whitespace  = " " | "\f" | "\t" | "\v";
+  eats        = (newline | whitespace)*;
   utfw        = alnum | "_" | "$" | "@" | "{" | "}" |
                 (0xc4 0xa8..0xbf) | (0xc5..0xdf 0x80..0xbf) |
                 (0xe0..0xef 0x80..0xbf 0x80..0xbf) |
@@ -39,13 +43,13 @@
   machine potion;
   include utf8;
 
-  begin_block = ":";
+  begin_block = ":" eats;
   end_block   = ".";
   ellipsis    = "_" | "…";
   end_blocks  = ellipsis whitespace* %{ tm = p; } utfw+;
-  begin_table = "(";
+  begin_table = "(" eats;
   end_table   = ")";
-  begin_data  = "[";
+  begin_data  = "[" eats;
   end_data    = "]";
   path        = "/" ("/" | utfw)+;
   query       = "?" message;
@@ -107,35 +111,36 @@
 
   main := |*
     comma       => { TOKEN1(SEP); };
-    newline+    => { TOKEN1(SEP); };
+    newline+    => { if (last != PN_NIL) TOKEN1(SEP); };
     whitespace;
     comment;
 
-    "!"|"not"   => { TOKEN(NOT); };
-    "||"|"or"   => { TOKEN(OR); };
-    "&&"|"and"  => { TOKEN(AND); };
-    "<=>"       => { TOKEN(CMP); };
-    "=="        => { TOKEN(EQ); };
-    "!="        => { TOKEN(NEQ); };
-    ">"         => { TOKEN(GT); };
-    ">="        => { TOKEN(GTE); };
-    "<"         => { TOKEN(LT); };
-    "<="        => { TOKEN(LTE); };
-    "|"         => { TOKEN(PIPE); };
-    "^"         => { TOKEN(CARET); };
-    "&"         => { TOKEN(AMP); };
-    "<<"        => { TOKEN(BITL); };
-    ">>"        => { TOKEN(BITR); };
-    "+"         => { TOKEN(PLUS); };
+    ("!" | "not") eats  => { TOKEN(NOT); };
+    ("||" | "or") eats  => { TOKEN(OR); };
+    ("&&" | "and") eats => { TOKEN(AND); };
+
+    "<=>" eats  => { TOKEN(CMP); };
+    "==" eats   => { TOKEN(EQ); };
+    "!=" eats   => { TOKEN(NEQ); };
+    ">" eats    => { TOKEN(GT); };
+    ">=" eats   => { TOKEN(GTE); };
+    "<" eats    => { TOKEN(LT); };
+    "<=" eats   => { TOKEN(LTE); };
+    "|" eats    => { TOKEN(PIPE); };
+    "^" eats    => { TOKEN(CARET); };
+    "&" eats    => { TOKEN(AMP); };
+    "<<" eats   => { TOKEN(BITL); };
+    ">>" eats   => { TOKEN(BITR); };
+    "+" eats    => { TOKEN(PLUS); };
     "++"        => { TOKEN(PPLUS); };
-    "-"         => { TOKEN(MINUS); };
+    "-" eats    => { TOKEN(MINUS); };
     "--"        => { TOKEN(MMINUS); };
-    "*"         => { TOKEN(TIMES); };
-    "/"         => { TOKEN(DIV); };
-    "%"         => { TOKEN(REM); };
-    "**"        => { TOKEN(POW); };
+    "*" eats    => { TOKEN(TIMES); };
+    "/" eats    => { TOKEN(DIV); };
+    "%" eats    => { TOKEN(REM); };
+    "**" eats   => { TOKEN(POW); };
 #   "~"         => { TOKEN(WAVY); };
-    "="         => { TOKEN(ASSIGN); };
+    "=" eats    => { TOKEN(ASSIGN); };
 
     begin_table => { TOKEN2(BEGIN_TABLE, PN_TUP0()); };
     end_table   => { TOKEN(END_TABLE); };
@@ -169,9 +174,52 @@
   write data nofinal;
 }%%
 
+static char *potion_token_friendly(int tok) {
+  switch (tok) {
+    case PN_TOK_OR: return "an `or` keyword";
+    case PN_TOK_AND: return "an `and` keyword";
+    case PN_TOK_ASSIGN: return "an equals sign `=` (used for assignment)";
+    case PN_TOK_CMP: return "a comparison operator `<=>`";
+    case PN_TOK_EQ: return "a double equals sign `==` (used to check equality)";
+    case PN_TOK_NEQ: return "a not equals operator `!=`";
+    case PN_TOK_GT: return "a greater-than sign `>`";
+    case PN_TOK_GTE: return "a greater-than-or-equals sign `>=`";
+    case PN_TOK_LT: return "a less-than sign `<`";
+    case PN_TOK_LTE: return "a less-than-or-equals sign `<=`";
+    case PN_TOK_PIPE: return "a pipe character `|` (used for bitwise OR)";
+    case PN_TOK_CARET: return "a caret symbol `^` (used for bitwise XOR)";
+    case PN_TOK_AMP: return "an ampersand `&` (used for bitwise AND)";
+    case PN_TOK_BITL: return "a left bitshift `<<`";
+    case PN_TOK_BITR: return "a right bitshift `>>`";
+    case PN_TOK_PLUS: return "a plus sign `+` (used for addition)";
+    case PN_TOK_MINUS: return "a minus sign `-` (used for subtraction)";
+    case PN_TOK_TIMES: return "an asterisk `*` (used for multiplication)";
+    case PN_TOK_DIV: return "a slash `/` (used for division and instance variables)";
+    case PN_TOK_REM: return "a percent `%` (used for modulo math)";
+    case PN_TOK_PPLUS: return "a plus-plus `++` (used to increment a number)";
+    case PN_TOK_MMINUS: return "a minus-minus `--` (used to decrement a number)";
+    case PN_TOK_NOT: return "a logical not (a `!` or `not`)";
+    case PN_TOK_SEP: return "a newline or comma";
+    case PN_TOK_NIL: return "`nil`";
+    case PN_TOK_TRUE: return "`true`";
+    case PN_TOK_FALSE: return "`false`";
+    case PN_TOK_BEGIN_BLOCK: return "a colon `:` (used to start off a block or function)";
+    case PN_TOK_END_BLOCK: return "a period `.` (used to finish a block or function)";
+    case PN_TOK_BEGIN_TABLE: return "an opening paren `(` (used to start off a table or list)";
+    case PN_TOK_END_TABLE: return "a closing paren `(` (used to start off a table or list)";
+    case PN_TOK_BEGIN_LICK: return "an opening bracket `[` (used to start off a lick)";
+    case PN_TOK_END_LICK: return "a closing bracket `]` (used to start off a lick)";
+  }
+  return NULL;
+}
+
+static int potion_error_len = 32;
+static char *potion_error_sample[32];
+
+// TODO: make `sbuf` and `code` safe for gc movement
 PN potion_parse(Potion *P, PN code) {
   int cs, act;
-  char *p, *pe, *ts, *te, *tm = 0, *eof = 0;
+  char *p, *pe, *ts, *te, *tm = 0, *eof = 0, *nl = 0;
   int lineno = 0, nbuf = 0;
   void * volatile pParser = LemonPotionAlloc(P);
   PN last = PN_NIL;
@@ -179,14 +227,30 @@ PN potion_parse(Potion *P, PN code) {
 
   P->dast = 0;
   P->xast = 1;
+  P->yerror = -1;
   P->source = PN_NIL;
   p = PN_STR_PTR(code);
-  pe = p + PN_STR_LEN(code) + 1;
+  eof = pe = p + PN_STR_LEN(code) + 1;
 
   %% write init;
   %% write exec;
 
   LemonPotion(pParser, 0, 0, P);
+
+  // TODO: figure out why a closing newline is throwing a ragel error
+  if (cs == potion_error && *p != 0) {
+    lineno++;
+    if (P->yerror > 0) {
+      char *name = potion_token_friendly(P->yerror);
+      if (name == NULL) name = P->yerrname;
+
+      printf("Syntax error, %s was found in the wrong place.\n", name);
+      printf("(Check line %d at character %d.)\n", lineno, (p - nl) + 1);
+    } else {
+      printf("Strange character on line %d at character %d.\n", lineno, (p - nl) + 1);
+    }
+    P->source = PN_NIL;
+  }
 
   last = P->source;
   P->source = PN_NIL;

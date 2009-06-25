@@ -364,6 +364,8 @@ struct Potion_State {
   PN unclosed; /* used by parser for named block endings */
   int dast; /* parsing depth */
   int xast; /* extra ast allocations */
+  int yerror; /* lemon token causing parse error */
+  char *yerrname; /* lemon error token name */
   struct PNMemory *mem; /* allocator/gc */
 };
 
