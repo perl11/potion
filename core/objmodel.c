@@ -291,6 +291,11 @@ PN potion_about(Potion *P, PN cl, PN self) {
   return about;
 }
 
+PN potion_exit(Potion *P, PN cl, PN self) {
+  potion_destroy(P);
+  exit(0);
+}
+
 void potion_object_init(Potion *P) {
   PN clo_vt = PN_VTABLE(PN_TCLOSURE);
   PN ref_vt = PN_VTABLE(PN_TWEAK);
@@ -323,6 +328,7 @@ void potion_lobby_init(Potion *P) {
   potion_type_call_is(PN_VTABLE(PN_TVTABLE), (PN_F)potion_object_new);
   potion_method(P->lobby, "about", potion_about, 0);
   potion_method(P->lobby, "callcc", potion_callcc, 0);
+  potion_method(P->lobby, "exit", potion_exit, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);
   potion_method(P->lobby, "srand", potion_srand, "seed=N");
   potion_method(P->lobby, "rand", potion_rand, 0);

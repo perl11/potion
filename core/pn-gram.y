@@ -16,7 +16,6 @@
 %type arg { PNArg }
 %token_prefix PN_TOK_
 %token_destructor { if (PN_IS_PTR($$)) { P->xast++; } }
-%parse_failure { printf("-- LEMON FAIL --\n"); }
 %syntax_error {
   P->yerror = yymajor;
   P->yerrname = (char *)yyTokenName[yymajor];

@@ -813,6 +813,7 @@ PN potion_run(Potion *P, PN code) {
 PN potion_eval(Potion *P, const char *str) {
   PN bytes = potion_byte_str(P, str);
   PN code = potion_parse(P, bytes);
+  if (code == PN_NIL) return PN_NIL;
   code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
   return potion_run(P, code);
 }

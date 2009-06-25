@@ -231,7 +231,7 @@ char *potion_code_excerpt(char *sample, char *nl, char *p, char *pe) {
 // TODO: make `sbuf` and `code` safe for gc movement
 PN potion_parse(Potion *P, PN code) {
   int cs, act;
-  char *p, *pe, *ts, *te, *tm = 0, *eof = 0, *nl = 0;
+  char *p, *pe, *nl, *ts, *te, *tm = 0, *eof = 0;
   int lineno = 0, nbuf = 0;
   void * volatile pParser = LemonPotionAlloc(P);
   PN last = PN_NIL;
@@ -241,7 +241,7 @@ PN potion_parse(Potion *P, PN code) {
   P->xast = 1;
   P->yerror = -1;
   P->source = PN_NIL;
-  p = PN_STR_PTR(code);
+  nl = p = PN_STR_PTR(code);
   eof = pe = p + PN_STR_LEN(code) + 1;
 
   %% write init;
