@@ -27,11 +27,11 @@ Let's start with some code.
 
 <pre>
 <code>
-  loop: "QUAFF" print.
+  loop: "quaff" print.
 </code>
 </pre>
 
-I know this isn't terribly useful, but it's an infinite printing of the word "QUAFF."
+I know this isn't terribly useful, but it's an infinite printing of the string @"quaff"@.
 
 A colon starts a *code block*. And the period ends it. The @loop@ command then runs the code block endlessly. You will see the colon and period combination reused throughout Potion.
 

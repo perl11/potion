@@ -35,6 +35,10 @@
      and dump code. Decent speed and cross-
      architecture. Heavily based on Lua's VM.
 
+   * A lightweight generational GC, based on
+     Basile Starynkevitch's work on Qish.
+     <http://starynkevitch.net/Basile/qishintro.html>
+
    * Bootstrapped "id" object model, based on
      Ian Piumarta's soda languages. This means
      everything in the language, including
@@ -42,17 +46,12 @@
      are part of the object model.
      (See COPYING for citations.)
 
-   * Scoped mixins. Basically, you can modify
-     object behavior within a scope. So changes
-     to core classes can be localized.
-     ++ INCOMPLETE ++
-
    * Interpreter is thread-safe and reentrant.
      I hope this will facilitate coroutines,
      parallel interpreters and sandboxing.
 
    * Small. Under 10kloc. Right now we're like
-     4,000 or something. Install sloccount
+     6,000 or something. Install sloccount
      and run: make sloc.
 
    * Reified AST and bytecode structures. This
@@ -64,9 +63,15 @@
      fully bootstrapped, especially as it is tied
      into the JIT so closely.
 
-   * A lightweight generational GC, based on
-     Basile Starynkevitch's work on Qish.
-     <http://starynkevitch.net/Basile/qishintro.html>
+   * Memory-efficient classes. Stored like C
+     structs. (Although the method lookup table
+     can be used like a hash for storing arbitrary
+     data.)
+
+   * The JIT is also used to speed up some other
+     bottlenecks. For example, instance variable
+     and method lookup tables are compiled into
+     machine code.
 
   However, some warnings:
 
@@ -82,12 +87,12 @@
 
   ~ a whiff of potion ~
 
-    add = (x, y): x + y.
-    add(2, 4) string print
+    5 times: "Odelay!" print.
 
   Or,
 
-    "hello world" print
+    add = (x, y): x + y.
+    add(2, 4) string print
 
   Or,
 
@@ -184,8 +189,8 @@
 
     But it also includes a data language.
 
-     ### EXAMPLE REMOVED
-     ... the data format is being redesigned
+      app = [window (width=200, height=400)
+        [button "OK", button "Cancel"]]
       
     The code and data languages can be interleaved
     over and over again. In a way, I'm trying to find
@@ -267,6 +272,10 @@
   Matz, for answering my questions about conservative GC and
   for encouraging me so much. Potion's stack scanning code and
   some of the object model come from Ruby.
+
+  Steve Dekorte for the Io language, libgarbagecollector and
+  libcoroutine -- I referred frequently to all of them in
+  sorting out what I wanted.
 
   Of course, Mauricio Fernandez for his inspiring programming
   journal housed at http://eigenclass.org/R2/ and for works
