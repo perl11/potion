@@ -1,0 +1,5 @@
+("cheese", "bread", "mayo") each (food):
+  food length string print.
+0
+
+# 6540

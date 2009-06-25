@@ -79,6 +79,15 @@ This one illustrates a bit better how tables get used as argument lists. We have
 
 Here's a case where a list is being called as a function. Yes, everything is a function! We could also have called: @foods (index=2)@.
 
+Functions can also be attached to methods, for use as anonymous blocks (as in Ruby.)
+
+<pre>
+<code>
+  (dog="canine", cat="feline", fox="vulpine") each (key, val):
+    (key, " is a ", val) join print.
+</code>
+</pre>
+
 h2. The Object-Oriented Side
 
 <pre>

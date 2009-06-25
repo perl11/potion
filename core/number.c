@@ -61,6 +61,13 @@ static PN potion_num_string(Potion *P, PN closure, PN self) {
   return str;
 }
 
+static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
+  int i, j = PN_INT(self);
+  for (i = 0; i < j; i++) {
+    PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
+  }
+}
+
 PN potion_decimal(Potion *P, int len, int intg, char *str) {
   int i, rlen = intg + PN_PREC;
   vPN(Decimal) n = PN_ALLOC_N(PN_TNUMBER, struct PNDecimal, sizeof(PN) * rlen);
@@ -87,4 +94,5 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "/", potion_div,  "value=N");
   potion_method(num_vt, "number", potion_num_number, 0);
   potion_method(num_vt, "string", potion_num_string, 0);
+  potion_method(num_vt, "times", potion_num_times, 0);
 }
