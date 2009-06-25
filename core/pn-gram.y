@@ -52,7 +52,9 @@ statement(A) ::= statement(B) ASSIGN statement(C). { A = PN_AST2(ASSIGN, B, C); 
 statement(A) ::= MINUS statement(B). { A = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), B); }
 statement(A) ::= NOT statement(B). { A = PN_AST(NOT, B); }
 statement(A) ::= statement(B) OR statement(D). { A = PN_OP(AST_OR, B, D); }
+statement(A) ::= statement(B) OR ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_OR, B, D)); }
 statement(A) ::= statement(B) AND statement(D). { A = PN_OP(AST_AND, B, D); }
+statement(A) ::= statement(B) AND ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_AND, B, D)); }
 statement(A) ::= statement(B) CMP statement(D). { A = PN_OP(AST_CMP, B, D); }
 statement(A) ::= statement(B) EQ statement(D). { A = PN_OP(AST_EQ, B, D); }
 statement(A) ::= statement(B) NEQ statement(D). { A = PN_OP(AST_NEQ, B, D); }
@@ -61,16 +63,27 @@ statement(A) ::= statement(B) GTE statement(D). { A = PN_OP(AST_GTE, B, D); }
 statement(A) ::= statement(B) LT statement(D). { A = PN_OP(AST_LT, B, D); }
 statement(A) ::= statement(B) LTE statement(D). { A = PN_OP(AST_LTE, B, D); }
 statement(A) ::= statement(B) PIPE statement(D). { A = PN_OP(AST_PIPE, B, D); }
+statement(A) ::= statement(B) PIPE ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_PIPE, B, D)); }
 statement(A) ::= statement(B) CARET statement(D). { A = PN_OP(AST_CARET, B, D); }
+statement(A) ::= statement(B) CARET ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_CARET, B, D)); }
 statement(A) ::= statement(B) AMP statement(D). { A = PN_OP(AST_AMP, B, D); }
+statement(A) ::= statement(B) AMP ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_AMP, B, D)); }
 statement(A) ::= statement(B) BITL statement(D). { A = PN_OP(AST_BITL, B, D); }
+statement(A) ::= statement(B) BITL ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_BITL, B, D)); }
 statement(A) ::= statement(B) BITR statement(D). { A = PN_OP(AST_BITR, B, D); }
+statement(A) ::= statement(B) BITR ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_BITR, B, D)); }
 statement(A) ::= statement(B) PLUS statement(D). { A = PN_OP(AST_PLUS, B, D); }
+statement(A) ::= statement(B) PLUS ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_PLUS, B, D)); }
 statement(A) ::= statement(B) MINUS statement(D). { A = PN_OP(AST_MINUS, B, D); }
+statement(A) ::= statement(B) MINUS ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_MINUS, B, D)); }
 statement(A) ::= statement(B) TIMES statement(D). { A = PN_OP(AST_TIMES, B, D); }
+statement(A) ::= statement(B) TIMES ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_TIMES, B, D)); }
 statement(A) ::= statement(B) DIV statement(D). { A = PN_OP(AST_DIV, B, D); }
+statement(A) ::= statement(B) DIV ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_DIV, B, D)); }
 statement(A) ::= statement(B) REM statement(D). { A = PN_OP(AST_REM, B, D); }
+statement(A) ::= statement(B) REM ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_REM, B, D)); }
 statement(A) ::= statement(B) POW statement(D). { A = PN_OP(AST_POW, B, D); }
+statement(A) ::= statement(B) POW ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_POW, B, D)); }
 
 expr(A) ::= expr(B) call(C). { A = PN_PUSH(B, C); }
 expr(A) ::= arg(B). { A = PN_TUP(B.b == PN_NIL ? B.v : PN_AST2(PROTO, B.v, B.b)); }
