@@ -228,7 +228,15 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  fprintf(stderr, "// TODO: read from stdin\n");
-  potion_cmd_usage();
+  Potion *P = potion_create(sp);
+  potion_eval(P,
+    "loop:\n" \
+    "  '>> ' print\n" \
+    "  code = read\n" \
+    "  if (not code): break.\n" \
+    "  if (code != ''):\n" \
+    "    ('=> ', code eval, \"\\n\") join print.\n" \
+    ".");
+  potion_destroy(P);
   return 0;
 }

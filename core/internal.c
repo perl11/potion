@@ -75,6 +75,7 @@ static void potion_init(Potion *P) {
   potion_source_init(P);
   potion_lick_init(P);
   potion_compiler_init(P);
+  potion_file_init(P);
 
   GC_PROTECT(P);
 }

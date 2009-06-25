@@ -13,6 +13,15 @@ PN potion_file_with(Potion *P, PN cl, PN self, PN path) {
   return PN_NIL;
 }
 
+PN potion_lobby_read(Potion *P, PN cl, PN self) {
+  const int linemax = 1024;
+  char line[linemax];
+  if (fgets(line, linemax, stdin) != NULL)
+    return potion_str(P, line);
+  return PN_NIL;
+}
+
 void potion_file_init(Potion *P) {
   // PN file_vt = PN_VTABLE(PN_TFILE);
+  potion_method(P->lobby, "read", potion_lobby_read, 0);
 }

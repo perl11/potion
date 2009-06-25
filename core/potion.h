@@ -563,6 +563,7 @@ void potion_source_init(Potion *);
 void potion_lick_init(Potion *);
 void potion_compiler_init(Potion *);
 void potion_vm_init(Potion *);
+void potion_file_init(Potion *);
 void potion_dump_stack(Potion *);
 
 PN potion_any_is_nil(Potion *, PN, PN);
