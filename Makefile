@@ -105,10 +105,10 @@ core/callcc.o: core/callcc.c
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
 core/pn-scan.c: core/pn-scan.rl
-	@if [ "${RAGELV}" != "6.4" ]; then \
-		if [ "${RAGELV}" != "6.3" ]; then \
-			if [ "${RAGELV}" != "6.2" ]; then \
-				${ECHO} "** potion may not work with ragel ${RAGELV}! try version 6.2 or 6.3."; \
+	@if [ "${RAGELV}" != "6.5" ]; then \
+		if [ "${RAGELV}" != "6.4" ]; then \
+			if [ "${RAGELV}" != "6.3" ]; then \
+				${ECHO} "** potion may not work with ragel ${RAGELV}! try version 6.3 or up."; \
 			fi; \
 		fi; \
 	fi
