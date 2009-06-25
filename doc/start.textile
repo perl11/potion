@@ -1,0 +1,125 @@
+h1. The Short Potion Pamphlet
+
+Well, here we go. You want to learn Potion? Sure, okay. But first, bear in mind that Potion isn't done yet. And it does very little. It's completely esoteric. So long as we've got that straight.
+
+So why exactly are you learning this nascent do-nothing probably-broken language? For fun, right? (I certainly hope so, since that's all I've possibly got to offer.)
+
+h2. An Understanding
+
+Potion's mantra is: _Everything is an object. But objects aren't everything._
+
+There is also an addendum to that: _Oh, and everything is a function._
+
+h2. Special Things?
+
+So is there anything unusual about Potion? Anything of particular interest?
+
+* Potion compiles programs down to machine code.
+* It includes a small generational near-exact garbage collector.
+* It is two languages: one for code, one for data.
+* It's written in under 10,000 lines of C.
+
+Potion is inspired by fellow languages Io, Ruby, OCaml, Lua, REBOL and C. In that order. (Also, heavy European influence: particularly the works of Ian Piumarta, Nicolas Cannasse and Basile Starynkevitch.)
+
+h2. A Sip
+
+Let's start with some code.
+
+<pre>
+<code>
+  loop: "QUAFF" print.
+</code>
+</pre>
+
+I know this isn't terribly useful, but it's an infinite printing of the word "QUAFF."
+
+A colon starts a *code block*. And the period ends it. The @loop@ command then runs the code block endlessly. You will see the colon and period combination reused throughout Potion.
+
+<pre>
+<code>
+  ("cheese", "bread", "mayo") at (1) print
+</code>
+</pre>
+
+This one prints the message "bread". The stuff in parentheses is a *list*. We have a list of foodstuffs. And it's being sent a message named @at@. Every list has an @at@ message that looks up an item by its position in the list.
+
+Notice that after the @at@ message is another list. The @1@ is an argument to @at@. It's the position we want to look up. It looks like a list (and it _is_ a list,) but we call it an argument because it comes after a message.
+
+<pre>
+<code>
+  (language="Potion", pointless=true) at (key="language") print
+</code>
+</pre>
+
+Okay, this one looks similar to the list, but it's not. Here we have a *table*. The table pairs up things. The string @"language"@ is paired up with the string @"Potion"@.
+
+Notice the arguments are also a table. Lists and tables are sort of interchangeable. You can use a table or a list as arguments.
+ 
+h2. The Functional Side
+
+Functions are all over Potion. Whether its anonymous lambdas, blocks or type functions.
+
+<pre>
+<code>
+  minus = (x, y): x - y.
+  minus (y=10, x=6)
+</code>
+</pre>
+
+This one illustrates a bit better how tables get used as argument lists. We have the @minus@ variable which contains a *function*. The function subtracts @y@ from @x@. In this case, it'll return @-4@.
+
+(This is similar to keyword arguments in Lua and Python, yes. However, it's important to see that lists and tables and arguments in Potion all share the same syntax. Less to remember.)
+
+<pre>
+<code>
+  foods = ("cheese", "bread", "mayo")
+  foods (2)
+</code>
+</pre>
+
+Here's a case where a list is being called as a function. Yes, everything is a function! We could also have called: @foods (index=2)@.
+
+h2. The Object-Oriented Side
+
+<pre>
+<code>
+  Person = class: /name, /age, /sex.
+  Person print = ():
+    ("My name is ", /name, ".") join print.
+</code>
+</pre>
+
+The above describes a *class* in Potion. Objects are very memory-efficient. Each Person object will store three things: the name, age and sex. (These are not kept in a hashtable. They are kept in memory, immediately following the object's header.)
+
+However, if you are desperate to use an object as a hashtable, you can store anything you like in an object's singleton method table. Not just methods can go there. Anything can be wrapped in a closure.
+
+<pre>
+<code>
+  p = Person ()
+</code>
+</pre>
+
+Yep, classes are functions, too! They create objects.
+
+But how does subclassing work?
+
+<pre>
+<code>
+  Constable = Person class: /rank.
+  Constable print = ():
+    ("My name is ", /name, " and I'm a ", /rank, ".") join print.
+</code>
+</pre>
+
+The @class@ message just gets sent to the parent class. And that's it.
+
+h2. The Data
+
+<pre>
+<code>
+  app = [window (width=200, height=400) [para "Welcome.", button "OK"]]
+  app attr ("width")
+</code>
+</pre>
+
+Lastly, here we have a *lick*. This is the data language brought up earlier in the section about special things. It won't really be covered in this little pamphlet, but it's something to mention.

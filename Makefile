@@ -4,6 +4,8 @@ OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
+DOC = doc/start.textile
+DOCHTML = ${DOC:.textile=.html}
 
 PREFIX = /usr/local
 CC = gcc
@@ -208,6 +210,15 @@ tarball: core/version.h core/pn-scan.c core/pn-gram.c
 	tar czvf pkg/${PKG}.tar.gz ${PKG}
 	rm -rf ${PKG}
 
+%.html: %.textile
+	@${ECHO} DOC $<
+	@${ECHO} "<html><head><style type=\"text/css\">@import 'doc.css';</style>" > $@
+	@${ECHO} "</head><body>" >> $@
+	@redcloth $< >> $@
+	@${ECHO} "</body></html>" >> $@
+
+doc: ${DOCHTML}
+
 sloc: clean
 	@cp core/pn-scan.rl core/pn-scan-rl.c
 	@sloccount core
@@ -218,8 +229,8 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} tools/lemon
+	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML} tools/lemon
 	@rm -f core/config.h core/version.h core/pn-gram.c core/pn-gram.h core/pn-gram.out core/pn-scan.c
 	@rm -f potion potion.exe test/api/potion-test test/api/gc-test test/api/gc-bench
 
-.PHONY: all clean rebuild test
+.PHONY: all clean doc rebuild test

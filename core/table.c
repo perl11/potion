@@ -234,9 +234,9 @@ void potion_table_init(Potion *P) {
   PN tpl_vt = PN_VTABLE(PN_TTUPLE);
   potion_type_call_is(tbl_vt, (PN_F)potion_table_at);
   potion_type_callset_is(tbl_vt, (PN_F)potion_table_put);
-  potion_method(tbl_vt, "at", potion_table_at, "index=o");
+  potion_method(tbl_vt, "at", potion_table_at, "key=o");
   potion_method(tbl_vt, "length", potion_table_length, 0);
-  potion_method(tbl_vt, "put", potion_table_put, "index=o,value=o");
+  potion_method(tbl_vt, "put", potion_table_put, "key=o,value=o");
   potion_method(tbl_vt, "remove", potion_table_remove, "index=o");
   potion_method(tbl_vt, "string", potion_table_string, 0);
   potion_type_call_is(tpl_vt, (PN_F)potion_tuple_at);
