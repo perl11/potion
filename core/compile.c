@@ -508,10 +508,12 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           }
           PN_ASM2(OP_LOADK, reg, num);
           PN_ASM2(OP_BIND, reg, breg);
-          PN_ARG_TABLE(t->a[1], breg, 1);
-          if (t->a[2] != PN_NIL) {
+          // TODO: allow block arguments to mix
+          if (t->a[2] == PN_NIL) {
+            PN_ARG_TABLE(t->a[1], breg, 1);
+          } else {
             breg++;
-            PN_BLOCK(breg, t->a[2], PN_NIL);
+            PN_BLOCK(breg, t->a[2], t->a[1]);
           }
           if (t->part == AST_MESSAGE) {
             PN_ASM2(OP_CALL, reg, breg);

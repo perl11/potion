@@ -54,6 +54,16 @@ PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
   return PN_NIL;
 }
 
+PN potion_table_each(Potion *P, PN cl, PN self, PN block) {
+  vPN(Table) t = (struct PNTable *)potion_fwd(self);
+  unsigned k;
+  for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
+    if (kh_exist(t->kh, k)) {
+      PN_CLOSURE(block)->method(P, block, self, kh_key(t->kh, k), kh_value(t->kh, k));
+    }
+  return self;
+}
+
 PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
   int ret;
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
@@ -140,9 +150,9 @@ PN potion_tuple_clone(Potion *P, PN cl, PN self) {
   return (PN)t2;
 }
 
-PN potion_tuple_each(Potion *P, PN cl, PN self, PN nil, PN block) {
+PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
   PN_TUPLE_EACH(self, i, v, {
-    PN_CLOSURE(block)->method(P, block, v);
+    PN_CLOSURE(block)->method(P, block, self, v);
   });
   return self;
 }
@@ -235,6 +245,7 @@ void potion_table_init(Potion *P) {
   potion_type_call_is(tbl_vt, (PN_F)potion_table_at);
   potion_type_callset_is(tbl_vt, (PN_F)potion_table_put);
   potion_method(tbl_vt, "at", potion_table_at, "key=o");
+  potion_method(tbl_vt, "each", potion_table_each, 0);
   potion_method(tbl_vt, "length", potion_table_length, 0);
   potion_method(tbl_vt, "put", potion_table_put, "key=o,value=o");
   potion_method(tbl_vt, "remove", potion_table_remove, "index=o");
