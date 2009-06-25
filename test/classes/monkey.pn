@@ -1,0 +1,7 @@
+ary = (9, 14, 56)
+ary kind sum = ():
+  i = 0
+  each (x): i = i + x.
+  i.
+ary sum
+# 79
