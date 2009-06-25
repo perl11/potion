@@ -215,7 +215,6 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
   PNType t = PN_TYPE(rcv);
   if (!PN_TYPECHECK(t)) return PN_NIL;
   vt = PN_VTABLE(t);
-  // TODO: enable mcache -- need to hash the (t,msg) tuple
   while (PN_IS_PTR(vt)) {
     closure = ((msg == PN_lookup) && (t == PN_TVTABLE))
       ? potion_lookup(P, 0, vt, msg)
@@ -223,9 +222,6 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
     if (closure) break;
     vt = ((struct PNVtable *)vt)->parent; 
   }
-  // TODO: replace with `forward` method call
-  if (!closure)
-    fprintf(stderr, "lookup failed %p %s\n", (void *)vt, PN_STR_PTR(msg));
   return closure;
 }
 
