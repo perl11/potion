@@ -258,11 +258,11 @@ PN potion_parse(Potion *P, PN code) {
       if (name == NULL) name = P->yerrname;
 
       printf("! Syntax error, %s was found in the wrong place.\n", name);
-      printf("  Check line %d at character %ld: %s\n",
-        lineno, (p - nl) + 1, potion_code_excerpt(sample, nl, p, pe));
+      printf("  Check line %d at character %d: %s\n",
+        lineno, (int)((p - nl) + 1), potion_code_excerpt(sample, nl, p, pe));
     } else {
-      printf("! Syntax error, strange character on line %d at character %ld: %s\n",
-        lineno, (p - nl) + 1, potion_code_excerpt(sample, nl, p, pe));
+      printf("! Syntax error, strange character on line %d at character %d: %s\n",
+        lineno, (int)((p - nl) + 1), potion_code_excerpt(sample, nl, p, pe));
       printf("  Please remember that Potion only supports the UTF-8 encoding for source code.\n");
     }
     P->source = PN_NIL;
