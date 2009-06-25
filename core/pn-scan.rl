@@ -206,15 +206,27 @@ static char *potion_token_friendly(int tok) {
     case PN_TOK_BEGIN_BLOCK: return "a colon `:` (used to start off a block or function)";
     case PN_TOK_END_BLOCK: return "a period `.` (used to finish a block or function)";
     case PN_TOK_BEGIN_TABLE: return "an opening paren `(` (used to start off a table or list)";
-    case PN_TOK_END_TABLE: return "a closing paren `(` (used to start off a table or list)";
+    case PN_TOK_END_TABLE: return "a closing paren `)` (used to start off a table or list)";
     case PN_TOK_BEGIN_LICK: return "an opening bracket `[` (used to start off a lick)";
     case PN_TOK_END_LICK: return "a closing bracket `]` (used to start off a lick)";
   }
   return NULL;
 }
 
-static int potion_error_len = 32;
-static char *potion_error_sample[32];
+static int potion_sample_len = 32;
+
+char *potion_code_excerpt(char *sample, char *nl, char *p, char *pe) {
+  char *nl2 = p;
+  while (nl2 < pe && *nl2 != 0 && *nl2 != '\r' && *nl2 != '\n') nl2++;
+  if (nl2 - nl <= potion_sample_len) {
+    sprintf(sample, "%.*s", (int)(nl2 - nl), nl);
+  } else if (p - nl <= potion_sample_len) {
+    sprintf(sample, "%.*s", potion_sample_len, nl);
+  } else {
+    sprintf(sample, "...%.*s", potion_sample_len, p - 16);
+  }
+  return sample;
+}
 
 // TODO: make `sbuf` and `code` safe for gc movement
 PN potion_parse(Potion *P, PN code) {
@@ -239,15 +251,19 @@ PN potion_parse(Potion *P, PN code) {
 
   // TODO: figure out why a closing newline is throwing a ragel error
   if (cs == potion_error && *p != 0) {
+    char sample[potion_sample_len + 6];
     lineno++;
     if (P->yerror > 0) {
       char *name = potion_token_friendly(P->yerror);
       if (name == NULL) name = P->yerrname;
 
-      printf("Syntax error, %s was found in the wrong place.\n", name);
-      printf("(Check line %d at character %d.)\n", lineno, (p - nl) + 1);
+      printf("! Syntax error, %s was found in the wrong place.\n", name);
+      printf("  Check line %d at character %ld: %s\n",
+        lineno, (p - nl) + 1, potion_code_excerpt(sample, nl, p, pe));
     } else {
-      printf("Strange character on line %d at character %d.\n", lineno, (p - nl) + 1);
+      printf("! Syntax error, strange character on line %d at character %ld: %s\n",
+        lineno, (p - nl) + 1, potion_code_excerpt(sample, nl, p, pe));
+      printf("  Please remember that Potion only supports the UTF-8 encoding for source code.\n");
     }
     P->source = PN_NIL;
   }

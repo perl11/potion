@@ -80,6 +80,8 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
         printf("\n\n-- loaded --\n");
     } else {
       code = potion_parse(P, buf);
+      if (code == PN_NIL)
+        goto done;
       if (verbose > 1) {
         printf("\n-- parsed --\n");
         potion_send(potion_send(code, PN_string), PN_print);
