@@ -176,6 +176,7 @@
 
 static char *potion_token_friendly(int tok) {
   switch (tok) {
+    case 0: return "end of file";
     case PN_TOK_OR: return "an `or` keyword";
     case PN_TOK_AND: return "an `and` keyword";
     case PN_TOK_ASSIGN: return "an equals sign `=` (used for assignment)";
@@ -250,22 +251,29 @@ PN potion_parse(Potion *P, PN code) {
   LemonPotion(pParser, 0, 0, P);
 
   // TODO: figure out why a closing newline is throwing a ragel error
-  if (cs == potion_error && *p != 0) {
+  if (cs == potion_error) {
     char sample[potion_sample_len + 6];
     lineno++;
-    if (P->yerror > 0) {
-      char *name = potion_token_friendly(P->yerror);
+    if (P->yerror >= 0) {
+      int yerror = P->yerror;
+      if (yerror & PN_TOK_MISSING) yerror ^= PN_TOK_MISSING;
+      char *name = potion_token_friendly(yerror);
       if (name == NULL) name = P->yerrname;
 
-      printf("! Syntax error, %s was found in the wrong place.\n", name);
-      printf("  Check line %d at character %d: %s\n",
+      if (P->yerror & PN_TOK_MISSING) {
+        printf("** Syntax error: missing %s.\n", name);
+      } else {
+        printf("** Syntax error: %s was found in the wrong place.\n", name);
+      }
+      printf("** Where: (line %d, character %d) %s\n",
         lineno, (int)((p - nl) + 1), potion_code_excerpt(sample, nl, p, pe));
-    } else {
-      printf("! Syntax error, strange character on line %d at character %d: %s\n",
+      P->source = PN_NIL;
+    } else if (*p != 0) {
+      printf("** Syntax error: bad character, Potion only supports UTF-8 encoding.\n"
+             "** Where: (line %d, character %d) %s\n",
         lineno, (int)((p - nl) + 1), potion_code_excerpt(sample, nl, p, pe));
-      printf("  Please remember that Potion only supports the UTF-8 encoding for source code.\n");
+      P->source = PN_NIL;
     }
-    P->source = PN_NIL;
   }
 
   last = P->source;

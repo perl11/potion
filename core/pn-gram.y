@@ -10,17 +10,35 @@
 #include "potion.h"
 #include "internal.h"
 #include "pn-ast.h"
+#include "pn-gram.h"
+#define TOK_NEED(t1, t2) \
+  if (x == PN_TOK_##t1) { \
+    yymajor = PN_TOK_##t2; \
+    P->yerror = PN_TOK_MISSING | PN_TOK_##t2; \
+    break; \
+  }
 }
+%name LemonPotion
 %extra_argument { Potion *P }
 %token_type { PN }
 %type arg { PNArg }
 %token_prefix PN_TOK_
 %token_destructor { if (PN_IS_PTR($$)) { P->xast++; } }
+
 %syntax_error {
   P->yerror = yymajor;
+  if (!yymajor) {
+    int i = yypParser->yyidx - 1, x = 0;
+    while (i > 0) {
+      x = yypParser->yystack[i].major;
+      TOK_NEED(BEGIN_LICK, END_LICK);
+      TOK_NEED(BEGIN_TABLE, END_TABLE);
+      TOK_NEED(BEGIN_BLOCK, END_BLOCK);
+      i--;
+    }
+  }
   P->yerrname = (char *)yyTokenName[yymajor];
 }
-%name LemonPotion
 
 %left OR AND.
 %right ASSIGN.

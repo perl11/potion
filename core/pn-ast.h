@@ -49,6 +49,8 @@ enum PN_AST {
   AST_PROTO
 };
 
+#define PN_TOK_MISSING 0x10000
+
 #define PN_AST(T, A)  potion_source(P, AST_##T, A, PN_NIL, PN_NIL)
 #define PN_AST2(T, A, B)  potion_source(P, AST_##T, A, B, PN_NIL)
 #define PN_OP(T, A, B)    potion_source(P, T, A, B, PN_NIL)
