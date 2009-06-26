@@ -35,6 +35,13 @@ static PN potion_num_number(Potion *P, PN closure, PN self) {
   return self;
 }
 
+static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) {
+  int i, j = PN_INT(end), k = PN_INT(step);
+  for (i = PN_INT(self); i <= j; i += k) {
+    PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
+  }
+}
+
 static PN potion_num_string(Potion *P, PN closure, PN self) {
   PN str;
   if (PN_IS_NUM(self)) {
@@ -93,6 +100,7 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "*", potion_mult, "value=N");
   potion_method(num_vt, "/", potion_div,  "value=N");
   potion_method(num_vt, "number", potion_num_number, 0);
+  potion_method(num_vt, "step", potion_num_step, "end=N,step=N");
   potion_method(num_vt, "string", potion_num_string, 0);
   potion_method(num_vt, "times", potion_num_times, 0);
 }
