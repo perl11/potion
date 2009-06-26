@@ -1,10 +1,11 @@
-h1. The Short Potion Pamphlet
+
+h1. A Short Pamphlet
 
 h4. by why the lucky stiff
 
-Well, here we go. You want to learn Potion? Sure, okay. But first, bear in mind that Potion isn't done yet. And it does very little. It's completely esoteric. So long as we've got that straight.
+Well, here we go. You want to learn Potion[1]? Sure, okay. But first, bear in mind that Potion isn't done yet. And it does very little. It's completely esoteric. So long as we've got that straight.
 
-So why exactly are you learning this nascent do-nothing probably-broken language? For fun, right? (I certainly hope so, since that's all I've possibly got to offer.)
+So why exactly are you learning this nascent do-nothing probably-broken language? For fun, right? Look, I'm giving you till the end of sentence to come up with a good reason.
 
 h2. An Understanding
 
@@ -27,6 +28,8 @@ h2. A Sip
 
 Let's start with some code.
 
+h3. Ad Nauseam 
+
 <pre>
 <code>
   loop: "quaff" print.
@@ -37,6 +40,8 @@ I know this isn't terribly useful, but it's an infinite printing of the string @
 
 A colon starts a *code block*. And the period ends it. The @loop@ command then runs the code block endlessly. You will see the colon and period combination reused throughout Potion.
 
+h3. A List
+
 <pre>
 <code>
   ("cheese", "bread", "mayo") at (1) print
@@ -46,6 +51,8 @@ A colon starts a *code block*. And the period ends it. The @loop@ command then r
 This one prints the message "bread". The stuff in parentheses is a *list*. We have a list of foodstuffs. And it's being sent a message named @at@. Every list has an @at@ message that looks up an item by its position in the list.
 
 Notice that after the @at@ message is another list. The @1@ is an argument to @at@. It's the position we want to look up. It looks like a list (and it _is_ a list,) but we call it an argument because it comes after a message.
+
+h3. A Table
 
 <pre>
 <code>
@@ -59,7 +66,9 @@ Notice the arguments are also a table. Lists and tables are sort of interchangea
  
 h2. The Functional Side
 
-Functions are all over Potion. Whether it be anonymous lambdas, blocks or type functions.
+Functions are throughout Potion. Whether it be anonymous lambdas, blocks or type functions.
+
+h3. A Function
 
 <pre>
 <code>
@@ -72,6 +81,8 @@ This one illustrates a bit better how tables get used as argument lists. We have
 
 (This is similar to keyword arguments in Lua and Python, yes. However, it's important to see that lists and tables and arguments in Potion all share the same syntax. Less to remember.)
 
+h3. A List as a Function
+
 <pre>
 <code>
   foods = ("cheese", "bread", "mayo")
@@ -81,7 +92,7 @@ This one illustrates a bit better how tables get used as argument lists. We have
 
 Here's a case where a list is being called as a function. Yes, everything is a function! We could also have called: @foods (index=2)@.
 
-Functions can also be attached to methods, for use as anonymous blocks (as in Ruby.)
+h3. A Block
 
 <pre>
 <code>
@@ -89,6 +100,8 @@ Functions can also be attached to methods, for use as anonymous blocks (as in Ru
     (key, " is a ", val) join print.
 </code>
 </pre>
+
+Functions can also be attached to methods, for use as anonymous blocks (as in Ruby.)
 
 h2. The Object-Oriented Side
 
@@ -104,6 +117,8 @@ The above describes a *class* in Potion. Objects are very memory-efficient. Each
 
 However, if you are desperate to use an object as a hashtable, you can store anything you like in an object's singleton method table. Not just methods can go there. Anything can be wrapped in a closure.
 
+h3. Making Objects
+
 <pre>
 <code>
   p = Person ()
@@ -113,6 +128,8 @@ However, if you are desperate to use an object as a hashtable, you can store any
 Yep, classes are functions, too! They create objects.
 
 But how does subclassing work?
+
+h3. A Subclass
 
 <pre>
 <code>
@@ -145,3 +162,34 @@ Are you starting to see some patterns in this code?
 * Tables and lists are reused as function and block arguments. And as attributes in licks.
 * Generally, lowercase is used. Except in the case of class names. (But it's nothing special, you can use lowercase for classes if you want.)
 
+h2. Footnotes
+
+fn1. The "programming language":http://github.com/why/potion. Not the drink of fables.
+
+h2. Potion's License
+
+Potion is free software, released under an MIT license -- the verybrief paragraphs below. There is satisfaction simply in havingcreated this. Please use this how you may, even in commercial oracademic software. I've had a good time and am want for nothing.
+
+<hr />
+
+Copyright (c) 2009 why the lucky stiff
+
+HOWEVER. The follow MIT licensed codes have been employed.
+
+Be it known, parts of the object model taken from "obj.c":http://www.piumarta.com/software/id-objmodel/.
+  (c) 2007 Ian Piumarta
+
+And, also, the design of the VM bytecode is from "Lua":http://luaforge.net/docman/view.php/83/98/ANoFrillsIntroToLua51VMInstructions.pdf.
+  (c) 1994-2006 Lua.org, PUC-Rio
+
+The Mersenne Twister ("MT19937":http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html)
+  (c) 1997-2002, Makoto Matsumoto and Takuji Nishimura
+
+Lastly, "khash.h":http://attractivechaos.awardspace.com/khash.h.html.
+  (c) 2008, by Attractive Chaos
+
+Permission is hereby granted, free of charge, to any personobtaining a copy of this software and associated documentationfiles (the "Software"), to deal in the Software without restriction,including without limitation the rights to use, copy, modify, merge,publish, distribute, sublicense, and/or sell copies of the Software,and to permit persons to whom the Software is furnished to do so,subject to the following conditions:
+  
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+   
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OFANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITEDTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR APARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENTSHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OROTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORTOR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTIONWITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THESOFTWARE.
