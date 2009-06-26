@@ -1,5 +1,7 @@
 h1. The Short Potion Pamphlet
 
+h4. by why the lucky stiff
+
 Well, here we go. You want to learn Potion? Sure, okay. But first, bear in mind that Potion isn't done yet. And it does very little. It's completely esoteric. So long as we've got that straight.
 
 So why exactly are you learning this nascent do-nothing probably-broken language? For fun, right? (I certainly hope so, since that's all I've possibly got to offer.)
@@ -8,7 +10,7 @@ h2. An Understanding
 
 Potion's mantra is: _Everything is an object. But objects aren't everything._
 
-There is also an addendum to that: _Oh, and everything is a function._
+Etched beneath that in faint pencil: _Oh, and everything is a function._
 
 h2. Special Things?
 
@@ -57,7 +59,7 @@ Notice the arguments are also a table. Lists and tables are sort of interchangea
  
 h2. The Functional Side
 
-Functions are all over Potion. Whether its anonymous lambdas, blocks or type functions.
+Functions are all over Potion. Whether it be anonymous lambdas, blocks or type functions.
 
 <pre>
 <code>
@@ -131,4 +133,15 @@ h2. The Data
 </code>
 </pre>
 
-Lastly, here we have a *lick*. This is the data language brought up earlier in the section about special things. It won't really be covered in this little pamphlet, but it's something to mention.
+Lastly, here we have a *lick*. This is the data language brought up earlier in the section about special things.
+
+h2. Pause For Effect
+
+Okay, let's stop. So you've basically seen everything in the language already. Sorry about that. It kind of blows that there's no surprises left. :(
+
+Are you starting to see some patterns in this code?
+
+* Methods, blocks and functions all use the colon-dot syntax.
+* Tables and lists are reused as function and block arguments. And as attributes in licks.
+* Generally, lowercase is used. Except in the case of class names. (But it's nothing special, you can use lowercase for classes if you want.)
+
