@@ -213,8 +213,7 @@ tarball: core/version.h core/pn-scan.c core/pn-gram.c
 %.html: %.textile
 	@${ECHO} DOC $<
 	@${ECHO} "<html><head><style type=\"text/css\">@import 'doc.css';</style>" > $@
-	@${ECHO} "<div id='potion'><div id='subbox1'><div id='subbox2'><div id='subbox3'>" >> $@
-	@${ECHO} "<img src='potion-1.png' /></div></div></div></div>" >> $@
+	@${ECHO} "<div id='potion'><img src='potion-1.png' /></div>" >> $@
 	@${ECHO} "</head><body><div id='central'>" >> $@
 	@redcloth $< >> $@
 	@${ECHO} "</div></body></html>" >> $@

@@ -18,22 +18,15 @@ h2 {
 }
 #potion {
   text-align: center;
-  /* border-bottom: solid 1px #F39; */
   margin-bottom: 1px;
 }
-/*
-#subbox1 {
-  border-bottom: solid 1px #F9C;
-  margin-bottom: 1px;
+
+hr {
+  height: 3px;
+  border: none;
+  border-top: solid 1px #EEE;
+  border-bottom: solid 1px #F39;
 }
-#subbox2 {
-  border-bottom: solid 1px #EEE;
-  margin-bottom: 1px;
-}
-#subbox3 {
-  margin-bottom: 40px;
-}
-*/
 #central {
   max-width: 740px;
   margin: 40px auto;
