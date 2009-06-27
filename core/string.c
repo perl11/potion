@@ -200,7 +200,7 @@ void potion_str_hash_init(Potion *P) {
 void potion_str_init(Potion *P) {
   PN str_vt = PN_VTABLE(PN_TSTRING);
   PN byt_vt = PN_VTABLE(PN_TBYTES);
-  potion_type_call_is(str_vt, (PN_F)potion_str_at);
+  potion_type_call_is(str_vt, PN_FUNC(potion_str_at, 0));
   potion_method(str_vt, "eval", potion_str_eval, 0);
   potion_method(str_vt, "length", potion_str_length, 0);
   potion_method(str_vt, "number", potion_str_number, 0);

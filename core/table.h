@@ -23,8 +23,8 @@ struct PNVtable {
   int ivlen;
   PN ivars;
   PN ctor;
-  PN_F call;
-  PN_F callset;
+  PN call;
+  PN callset;
 #ifdef JIT_MCACHE
   PN_MCACHE_FUNC mcache;
 #endif

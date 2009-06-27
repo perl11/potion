@@ -362,6 +362,7 @@ struct Potion_State {
   PNFlex * volatile vts; /* built in types */
   PN source; /* temporary ast node */
   PN unclosed; /* used by parser for named block endings */
+  PN call, callset; /* generic call and callset */
   int dast; /* parsing depth */
   int xast; /* extra ast allocations */
   int yerror; /* lemon token causing parse error */
@@ -512,12 +513,12 @@ PN potion_bytes_append(Potion *, PN, PN, PN);
 void potion_release(Potion *, PN);
 PN potion_def_method(Potion *P, PN, PN, PN, PN);
 PN potion_type_new(Potion *, PNType, PN);
-void potion_type_call_is(PN, PN_F);
-void potion_type_callset_is(PN, PN_F);
+void potion_type_call_is(PN, PN);
+void potion_type_callset_is(PN, PN);
 PN potion_class(Potion *, PN, PN, PN);
 PN potion_ivars(Potion *, PN, PN, PN);
-PN potion_obj_call(Potion *, PN, PN, ...);
-PN potion_obj_callset(Potion *, PN, PN, ...);
+PN potion_obj_get_call(Potion *, PN);
+PN potion_obj_get_callset(Potion *, PN);
 PN potion_obj_get(Potion *, PN, PN, PN);
 PN potion_obj_set(Potion *, PN, PN, PN, PN);
 PN potion_object_new(Potion *, PN, PN);

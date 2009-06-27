@@ -384,14 +384,17 @@ reentry:
             }
           break;
           
-          default:
-            // TODO: support multiple args
-            reg[op.a] = potion_obj_call(P, reg[op.a], 1, reg[op.a + 2]);
+          default: {
+            reg[op.a + 1] = reg[op.a];
+            reg[op.a] = potion_obj_get_call(P, reg[op.a]);
+            if (PN_IS_CLOSURE(reg[op.a]))
+              reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, &reg[op.a + 1]);
+          }
           break;
         }
       break;
       case OP_CALLSET:
-        reg[op.a] = potion_obj_callset(P, reg[op.a], 2, reg[op.a + 2], reg[op.a + 3]);
+        reg[op.a] = potion_obj_get_callset(P, reg[op.b]);
       break;
       case OP_RETURN:
         if (current != stack) {

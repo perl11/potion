@@ -306,12 +306,12 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
 
       if (lhs->a[1] != PN_NIL) {
         breg = reg;
-        PN_ASM2(opcode, breg, num);
-        PN_ASM1(OP_SELF, ++breg);
+        PN_ASM2(opcode, ++breg, num);
+        PN_ASM2(OP_CALLSET, reg, breg);
         PN_ARG_TABLE(lhs->a[1], breg, 1);
         // TODO: no block allowed here?
         potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], ++breg);
-        PN_ASM2(OP_CALLSET, reg, breg);
+        PN_ASM2(OP_CALL, reg, breg);
       } else {
         potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], breg);
         if (opcode == OP_GETUPVAL) {

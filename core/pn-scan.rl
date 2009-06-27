@@ -10,6 +10,8 @@
 #include "internal.h"
 #include "pn-gram.h"
 #include "pn-ast.h"
+#include "khash.h"
+#include "table.h"
 
 #define TOKEN2(id,v) \
   LemonPotion(pParser, PN_TOK_##id, v, P); \
@@ -362,6 +364,9 @@ int potion_sig_find(Potion *P, PN cl, PN name)
 {
   PN_SIZE idx = 0;
   PN sig;
+  if (!PN_IS_CLOSURE(cl))
+    cl = potion_obj_get_call(P, cl);
+
   if (!PN_IS_CLOSURE(cl))
     return -1;
 

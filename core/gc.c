@@ -365,6 +365,8 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((Potion *)ptr)->vts);
       GC_MINOR_UPDATE(((Potion *)ptr)->source);
       GC_MINOR_UPDATE(((Potion *)ptr)->unclosed);
+      GC_MINOR_UPDATE(((Potion *)ptr)->call);
+      GC_MINOR_UPDATE(((Potion *)ptr)->callset);
     break;
     case PN_TFILE:
       GC_MINOR_UPDATE(((struct PNFile *)ptr)->path);
@@ -373,6 +375,8 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->parent);
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->ivars);
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->ctor);
+      GC_MINOR_UPDATE(((struct PNVtable *)ptr)->call);
+      GC_MINOR_UPDATE(((struct PNVtable *)ptr)->callset);
       GC_MINOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:
@@ -449,6 +453,8 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((Potion *)ptr)->vts);
       GC_MAJOR_UPDATE(((Potion *)ptr)->source);
       GC_MAJOR_UPDATE(((Potion *)ptr)->unclosed);
+      GC_MAJOR_UPDATE(((Potion *)ptr)->call);
+      GC_MAJOR_UPDATE(((Potion *)ptr)->callset);
     break;
     case PN_TFILE:
       GC_MAJOR_UPDATE(((struct PNFile *)ptr)->path);
@@ -457,6 +463,8 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->parent);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->ivars);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->ctor);
+      GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->call);
+      GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->callset);
       GC_MAJOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:
