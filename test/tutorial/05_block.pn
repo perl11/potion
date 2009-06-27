@@ -1,0 +1,5 @@
+(dog="canine", cat="feline", fox="vulpine") each (key, val):
+  if (key == "dog"): (key, " is a ", val) join print.
+.
+''
+# dog is a canine

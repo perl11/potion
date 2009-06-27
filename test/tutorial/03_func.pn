@@ -1,0 +1,3 @@
+minus = (x, y): x - y.
+minus (y=10, x=6)
+# -4

@@ -1,0 +1,6 @@
+Person = class: /name, /age, /sex.
+Person print = ():
+  ("My name is ", /name, ".") join print.
+p = Person ()
+p print
+# My name is nil.nil

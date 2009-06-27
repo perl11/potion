@@ -133,24 +133,30 @@ h3. A Subclass
 
 <pre>
 <code>
-  Constable = Person class: /rank.
-  Constable print = ():
+  Policeman = Person class (rank): /rank = rank.
+  Policeman print = ():
     ("My name is ", /name, " and I'm a ", /rank, ".") join print.
+
+  Policeman ("Constable") print
 </code>
 </pre>
 
 The @class@ message just gets sent to the parent class. And that's it.
+
+Notice the first line of the code. The end of the statement is a block. That block is the object's constructor. So, in the last line, we're passing in the string "Constable" as the @rank@ argument.
 
 h2. The Data
 
 <pre>
 <code>
   app = [window (width=200, height=400) [para "Welcome.", button "OK"]]
-  app attr ("width")
+  app first name
 </code>
 </pre>
 
 Lastly, here we have a *lick*. This is the data language brought up earlier in the section about special things.
+
+This code will print "window" since that's the name of the first item in the lick.
 
 h2. Pause For Effect
 

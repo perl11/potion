@@ -1,0 +1,3 @@
+foods = ("cheese", "bread", "mayo")
+(foods (2), foods (index=2))
+# (mayo, mayo)

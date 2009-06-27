@@ -157,6 +157,11 @@ PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
   return self;
 }
 
+PN potion_tuple_first(Potion *P, PN cl, PN self) {
+  if (PN_TUPLE_LEN(self) < 1) return PN_NIL;
+  return PN_TUPLE_AT(self, 0);
+}
+
 PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
   PN out = potion_byte_str(P, "");
   PN_TUPLE_EACH(self, i, v, {
@@ -164,6 +169,12 @@ PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
     potion_bytes_obj_string(P, out, v);
   });
   return out;
+}
+
+PN potion_tuple_last(Potion *P, PN cl, PN self) {
+  long len = PN_TUPLE_LEN(self);
+  if (len < 1) return PN_NIL;
+  return PN_TUPLE_AT(self, len - 1);
 }
 
 PN potion_tuple_string(Potion *P, PN cl, PN self) {
@@ -255,7 +266,9 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "each", potion_tuple_each, "index=N");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
+  potion_method(tpl_vt, "first", potion_tuple_first, 0);
   potion_method(tpl_vt, "join", potion_tuple_join, 0);
+  potion_method(tpl_vt, "last", potion_tuple_last, 0);
   potion_method(tpl_vt, "length", potion_tuple_length, 0);
   potion_method(tpl_vt, "print", potion_tuple_print, 0);
   potion_method(tpl_vt, "put", potion_tuple_put, "index=N,value=o");

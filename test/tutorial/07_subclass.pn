@@ -1,0 +1,7 @@
+Person = class: /name, /age, /sex.
+Policeman = Person class (rank): /rank = rank.
+Policeman print = ():
+  ("My name is ", /name, " and I'm a ", /rank, ".") join print.
+
+Policeman ("Constable") print
+# My name is nil and I'm a Constable.nil
