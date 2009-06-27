@@ -22,6 +22,7 @@
 %extra_argument { Potion *P }
 %token_type { PN }
 %type arg { PNArg }
+%type closure { PNArg }
 %token_prefix PN_TOK_
 %token_destructor { if (PN_IS_PTR($$)) { P->xast++; } }
 
@@ -104,7 +105,10 @@ statement(A) ::= statement(B) POW statement(D). { A = PN_OP(AST_POW, B, D); }
 statement(A) ::= statement(B) POW ASSIGN statement(D). { A = PN_AST2(ASSIGN, B, PN_OP(AST_POW, B, D)); }
 
 expr(A) ::= expr(B) call(C). { A = PN_PUSH(B, C); }
-expr(A) ::= arg(B). { A = PN_TUP(B.b == PN_NIL ? B.v : PN_AST2(PROTO, B.v, B.b)); }
+expr(A) ::= closure(B). { A = PN_TUP(PN_AST2(PROTO, B.v, B.b)); }
+expr(A) ::= table(B). { A = PN_TUP(B); }
+expr(A) ::= value(B). { A = PN_TUP(B); }
+expr(A) ::= value(B) arg(C). { PN_S(B, 1) = C.v; PN_S(B, 2) = C.b; A = PN_TUP(B); }
 expr(A) ::= call(B). { A = PN_TUP(B); }
 
 call(A) ::= name(B). { A = B; }
@@ -116,11 +120,13 @@ arg(A) ::= table(B) table(C) block(D). { PN_CLOSE(PN_S(C, 0));
 arg(A) ::= value(B) table(C) block(D). { PN_CLOSE(PN_S(C, 0));
   A.v = PN_AST(TABLE, PN_PUSH(PN_TUP(PN_AST(EXPR, PN_TUP(B))), PN_AST(EXPR, PN_TUP(PN_AST2(PROTO, C, D)))));
   A.b = PN_NIL; }
-arg(A) ::= table(B) block(C). { PN_CLOSE(PN_S(B, 0)); A.v = B; A.b = C; }
 arg(A) ::= value(B) block(C). { A.v = B; A.b = C; }
 arg(A) ::= table(B). { A.v = B; A.b = PN_NIL; }
 arg(A) ::= value(B). { A.v = B; A.b = PN_NIL; }
-arg(A) ::= block(B). { A.v = PN_NIL; A.b = B; }
+arg(A) ::= closure(B). { A = B; }
+
+closure(A) ::= table(B) block(C). { PN_CLOSE(PN_S(B, 0)); A.v = B; A.b = C; }
+closure(A) ::= block(B). { A.v = PN_NIL; A.b = B; }
 
 name(A) ::= MESSAGE(B). { A = PN_AST(MESSAGE, B); }
 name(A) ::= QUERY(B). { A = PN_AST(QUERY, B); }
