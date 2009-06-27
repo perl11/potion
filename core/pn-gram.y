@@ -110,6 +110,12 @@ expr(A) ::= call(B). { A = PN_TUP(B); }
 call(A) ::= name(B). { A = B; }
 call(A) ::= name(B) arg(C). { PN_CLOSE(B); PN_S(B, 1) = C.v; PN_S(B, 2) = C.b; A = B; }
 
+arg(A) ::= table(B) table(C) block(D). { PN_CLOSE(PN_S(C, 0));
+  PN_PUSH(PN_S(B, 0), PN_AST(EXPR, PN_TUP(PN_AST2(PROTO, C, D))));
+  A.v = B; A.b = PN_NIL; }
+arg(A) ::= value(B) table(C) block(D). { PN_CLOSE(PN_S(C, 0));
+  A.v = PN_AST(TABLE, PN_PUSH(PN_TUP(PN_AST(EXPR, PN_TUP(B))), PN_AST(EXPR, PN_TUP(PN_AST2(PROTO, C, D)))));
+  A.b = PN_NIL; }
 arg(A) ::= table(B) block(C). { PN_CLOSE(PN_S(B, 0)); A.v = B; A.b = C; }
 arg(A) ::= value(B) block(C). { A.v = B; A.b = C; }
 arg(A) ::= table(B). { A.v = B; A.b = PN_NIL; }
