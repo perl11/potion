@@ -608,9 +608,9 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   // check type of the closure
   X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(A) %rax
   ASM(0xF6); ASM(0xC0); ASM(0x01); // test 0x1 %al
-  ASM(0x75); ASM(X86C(53, 68)); // jne [a]
+  ASM(0x75); ASM(X86C(56, 68)); // jne [a]
   ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); // test REFMASK %eax
-  ASM(0x74); ASM(X86C(45, 60)); // je [a]
+  ASM(0x74); ASM(X86C(48, 60)); // je [a]
   X86_PRE(); ASM(0x83); ASM(0xE0); ASM(0xF8); // and ~PRIMITIVE %rax
 
   // if a class, pull out the constructor
@@ -628,7 +628,7 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 
   // check type of the closure
   ASM(0x81); ASM(0x38); ASMI(PN_TCLOSURE); // cmpq CLOSURE (%eax)
-  ASM(0x74); ASM(X86C(24, 30)); // je [a]
+  ASM(0x74); ASM(X86C(22, 30)); // je [a]
 
   // if not a closure, get the type's closure
   X86_MOV_RBP(0x8B, op.a);
