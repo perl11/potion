@@ -1,3 +1,7 @@
 1 to 5 (x): x string print.
 5 to 1 (x): x string print.
-# 1234554321nil
+
+one = 1, five = 5
+five to (one) (x): x string print.
+one to (five) (x): x string print.
+# 12345543215432112345nil
