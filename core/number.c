@@ -70,9 +70,9 @@ static PN potion_num_string(Potion *P, PN closure, PN self) {
 
 static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
   int i, j = PN_INT(self);
-  for (i = 0; i < j; i++) {
+  for (i = 0; i < j; i++)
     PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
-  }
+  return PN_NUM(i);
 }
 
 static PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
@@ -80,6 +80,7 @@ static PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
   if (k < j) s = -1;
   for (i = j; i != k + s; i += s)
     PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
+  return PN_NUM(abs(i - j));
 }
 
 PN potion_decimal(Potion *P, int len, int intg, char *str) {

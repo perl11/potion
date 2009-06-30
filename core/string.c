@@ -72,7 +72,7 @@ static PN potion_str_number(Potion *P, PN closure, PN self) {
     if (str[i] < '0' || str[i] > '9')
       break;
   if (i < 10 && i == len) {
-    return PN_NUM(sign * PN_ATOI(str, i));
+    return PN_NUM(sign * PN_ATOI(str, i, 10));
   }
 
   return potion_decimal(P, PN_STR_LEN(self), dec + i, PN_STR_PTR(self));
