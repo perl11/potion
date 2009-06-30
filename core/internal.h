@@ -47,16 +47,19 @@ typedef unsigned char u8;
   } \
 })
 
-#define PN_ATOI(X,N) ({ \
+#define PN_ATOI(X,N,B) ({ \
   char *Ap = X; \
   int Ai = 0; \
   size_t Al = N; \
   while (Al--) { \
-    if ((*Ap >= '0') && (*Ap <= '9')) { \
-      Ai = (Ai * 10) + (*Ap - '0'); \
-      Ap++; \
-    } \
+    if ((*Ap >= '0') && (*Ap <= '9')) \
+      Ai = (Ai * B) + (*Ap - '0'); \
+    else if ((*Ap >= 'A') && (*Ap <= 'F')) \
+      Ai = (Ai * B) + ((*Ap - 'A') + 10); \
+    else if ((*Ap >= 'a') && (*Ap <= 'f')) \
+      Ai = (Ai * B) + ((*Ap - 'a') + 10); \
     else break; \
+    Ap++; \
   } \
   Ai; \
 })

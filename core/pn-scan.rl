@@ -54,14 +54,15 @@
   begin_data  = "[" eats;
   end_data    = "]";
   path        = "/" ("/" | utfw)+;
-  query       = "?" message;
-  querypath   = "?" path;
+  query       = "?" eats message;
+  querypath   = "?" eats path;
   comment     = "#"+ (utf8 - newline)*;
 
   nil         = "nil";
   true        = "true";
   false       = "false";
   int         = [0-9]{1,9};
+  hex         = "0x" [0-9A-Fa-f]+;
   dec         = ("0" | [1-9] [0-9]*) %{ tm = NULL; }
                 ("." %{ tm = p; } [0-9]+)? ("e" [\-+] [0-9]+)?;
   schar1      = utf8 -- "\\'";
@@ -78,7 +79,7 @@
   string3     = "%% " (utf8+ -- newline{2});
 
   string1 := |*
-    "\\'"       => { SCHAR(ts + 1, 1); };
+    "''"       => { SCHAR(ts + 1, 1); };
     "'"         => { TOKEN2(STRING, potion_str2(P, PN_STR_PTR(sbuf), nbuf)); fgoto main; };
     schar1      => { SCHAR(ts, te - ts); };
   *|;
@@ -158,7 +159,8 @@
     nil         => { TOKEN2(NIL, PN_NIL); };
     true        => { TOKEN2(TRUE, PN_TRUE); };
     false       => { TOKEN2(FALSE, PN_FALSE); };
-    int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts))); };
+    int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts, 10))); };
+    hex         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts + 2, te - (ts + 2), 16))); };
     dec         => { TOKEN2(DECIMAL, 
       potion_decimal(P, te - ts, (tm == NULL ? te : tm - 1) - ts, ts)); };
     quote1      => { nbuf = 0; fgoto string1; };

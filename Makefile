@@ -212,7 +212,10 @@ tarball: core/version.h core/pn-scan.c core/pn-gram.c
 
 %.html: %.textile
 	@${ECHO} DOC $<
-	@${ECHO} "<html><head><style type=\"text/css\">@import 'doc.css';</style>" > $@
+	@${ECHO} "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"DTD/xhtml1-transitional.dtd\">" > $@
+	@${ECHO} "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">" >> $@
+	@${ECHO} "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" >> $@
+	@${ECHO} "<style type=\"text/css\">@import 'doc.css';</style>" >> $@
 	@${ECHO} "<div id='potion'><img src='potion-1.png' /></div>" >> $@
 	@${ECHO} "</head><body><div id='central'>" >> $@
 	@redcloth $< >> $@

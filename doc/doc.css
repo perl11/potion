@@ -6,7 +6,10 @@ body {
 h1, h4 {
   text-align: center;
 }
-h1, h2 {
+h1 {
+  color: #390;
+}
+h2 {
   color: #F39;
 }
 h4 {
@@ -34,8 +37,13 @@ hr {
   max-width: 740px;
   margin: 40px auto;
 }
+#central p, #central h1, #central h2, #central h3,
+#central pre {
+  margin-left: 20px;
+  margin-right: 20px;
+}
 pre {
-  font: Monaco, Liberation Mono, monospace;
+  font: normal 16px Monaco, Liberation Mono, monospace;
   background: #CE6;
   color: #500;
   font-weight: bold;
