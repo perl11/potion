@@ -266,6 +266,7 @@ struct PNProto {
   PN upvals; // variables in upper scopes
   PN values; // numbers, strings, etc.
   PN protos; // nested closures
+  PN tree; // abstract syntax tree
   PN_SIZE pathsize, localsize, upvalsize;
   PN asmb;   // assembled instructions
   PN_F jit;  // jit function pointer

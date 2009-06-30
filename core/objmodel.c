@@ -25,6 +25,12 @@ PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   return (PN)c;
 }
 
+PN potion_closure_code(Potion *P, PN cl, PN self) {
+  if (PN_CLOSURE(self)->extra > 0 && PN_IS_PROTO(PN_CLOSURE(self)->data[0])) 
+    return PN_CLOSURE(self)->data[0];
+  return PN_NIL;
+}
+
 PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   int x = 0;
   PN out = potion_byte_str(P, "Function(");
@@ -299,6 +305,7 @@ void potion_object_init(Potion *P) {
   PN clo_vt = PN_VTABLE(PN_TCLOSURE);
   PN ref_vt = PN_VTABLE(PN_TWEAK);
   PN obj_vt = PN_VTABLE(PN_TOBJECT);
+  potion_method(clo_vt, "code", potion_closure_code, 0);
   potion_method(clo_vt, "string", potion_closure_string, 0);
   potion_method(ref_vt, "string", potion_ref_string, 0);
   potion_method(obj_vt, "forward", potion_object_forward, 0);
