@@ -41,7 +41,7 @@ I know this isn't terribly useful, but it's an infinite printing of the string @
 
 A colon starts a *code block*. And the period ends it. The @loop@ command then runs the code block endlessly. You will see the colon and period combination reused throughout Potion.
 
-The @print@ message is sent to the string @'quaff'@. Strings are an object, like everything. They receive messages. Messages are separated from objects by a space. (Although in this case, one can write @'quaff'print@ and Potion will be fine.)
+The @print@ message is sent to the string @'quaff'@. Strings are an object, like everything. They receive messages. Messages are separated from objects by a space. (In most languages, you use a dot to separate messages. But, like English, the period signifies the end of something rather than a separation.)
 
 h3. A List
 
@@ -248,6 +248,20 @@ This also means that tables can be written using newlines as separators:
    pointless=true)
 </code>
 </pre>
+
+h3. Spaces
+
+Spaces are used to separate messages and objects and operators, but they usually are only used for clarity's sake.
+
+To borrow an earlier example, it turns out the following is legit.
+
+<pre>
+<code>
+  ('cheese','bread','mayo')at(1)print
+</code>
+</pre>
+
+There is some flexibility, in order to avoid senseless syntax errors.
 
 h3. Comments
 
