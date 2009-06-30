@@ -2,4 +2,4 @@ a = (1, 1, 2, 3, 5, 8)
 b = "Orville Redenbacher's Son"
 (a ?length, a ?length (), b ?slice, b ?slice (2, 5),
  a ?nothing, a ?nothing ("newp"), b ?longth, b ?langth (6, 8))
-# (true, 6, true, vil, false, (1, 1, 2, 3, 5, 8), false, Orville Redenbacher's Son)
+# (true, 6, true, vil, false, nil, false, nil)
