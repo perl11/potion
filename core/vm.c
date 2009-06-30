@@ -418,8 +418,8 @@ reentry:
         vPN(Closure) cl;
         unsigned areg = op.a;
         proto = PN_TUPLE_AT(f->protos, op.b);
-        cl = (struct PNClosure *)potion_closure_new(P, (PN_F)potion_vm_proto, PN_NIL,
-          PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
+        cl = (struct PNClosure *)potion_closure_new(P, (PN_F)potion_vm_proto,
+          PN_PROTO(proto)->sig, PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
         cl->data[0] = proto;
         PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
           pos++;

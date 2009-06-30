@@ -668,8 +668,8 @@ void potion_x86_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 PN potion_f_protos(Potion *P, PN cl, PN i) {
   PN p = PN_PROTO(PN_CLOSURE(cl)->data[0])->protos;
   PN proto = PN_TUPLE_AT(p, i);
-  vPN(Closure) c = (struct PNClosure *)potion_closure_new(P, NULL, PN_NIL,
-    PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
+  vPN(Closure) c = (struct PNClosure *)potion_closure_new(P, NULL,
+    PN_PROTO(proto)->sig, PN_TUPLE_LEN(PN_PROTO(proto)->upvals) + 1);
   c->method = PN_PROTO(proto)->jit;
   c->data[0] = proto;
   return (PN)c;

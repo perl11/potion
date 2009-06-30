@@ -26,7 +26,18 @@ PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
 }
 
 PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
-  return potion_byte_str(P, "#<closure>");
+  int x = 0;
+  PN out = potion_byte_str(P, "Function(");
+  if (PN_IS_TUPLE(PN_CLOSURE(self)->sig)) {
+    PN_TUPLE_EACH(PN_CLOSURE(self)->sig, i, v, {
+      if (PN_IS_STR(v)) {
+        if (x++ > 0) pn_printf(P, out, ", ");
+        potion_bytes_obj_string(P, out, v);
+      }
+    });
+  }
+  pn_printf(P, out, ")");
+  return out;
 }
 
 PN potion_type_new(Potion *P, PNType t, PN self) {
@@ -146,7 +157,7 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   unsigned k = kh_put(PN, vt->kh, key, &ret);
   if (!PN_IS_CLOSURE(method)) {
     if (PN_IS_PROTO(method))
-      cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_NIL, 1);
+      cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_PROTO(method)->sig, 1);
     else
       cl = potion_closure_new(P, (PN_F)potion_getter_method, PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = method;
@@ -304,7 +315,7 @@ void potion_lobby_init(Potion *P) {
   potion_send(P->lobby, PN_def, potion_str(P, "Boolean"),  PN_VTABLE(PN_TBOOLEAN));
   potion_send(P->lobby, PN_def, potion_str(P, "String"),   PN_VTABLE(PN_TSTRING));
   potion_send(P->lobby, PN_def, potion_str(P, "Table"),    PN_VTABLE(PN_TTABLE));
-  potion_send(P->lobby, PN_def, potion_str(P, "Closure"),  PN_VTABLE(PN_TCLOSURE));
+  potion_send(P->lobby, PN_def, potion_str(P, "Function"), PN_VTABLE(PN_TCLOSURE));
   potion_send(P->lobby, PN_def, potion_str(P, "Tuple"),    PN_VTABLE(PN_TTUPLE));
   potion_send(P->lobby, PN_def, potion_str(P, "Potion"),   PN_VTABLE(PN_TSTATE));
   potion_send(P->lobby, PN_def, potion_str(P, "Source"),   PN_VTABLE(PN_TSOURCE));

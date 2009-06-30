@@ -370,10 +370,7 @@ int potion_sig_find(Potion *P, PN cl, PN name)
   if (!PN_IS_CLOSURE(cl))
     return -1;
 
-  if (PN_CLOSURE(cl)->extra > 0 && PN_IS_PROTO(PN_CLOSURE(cl)->data[0]))
-    sig = PN_PROTO(PN_CLOSURE(cl)->data[0])->sig;
-  else
-    sig = PN_CLOSURE(cl)->sig;
+  sig = PN_CLOSURE(cl)->sig;
 
   if (!PN_IS_TUPLE(sig))
     return -1;

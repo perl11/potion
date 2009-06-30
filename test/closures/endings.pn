@@ -7,4 +7,4 @@ func2 = (x, y):
 _ func2
 
 (func, func2)
-# (#<closure>, #<closure>)
+# (Function(x, y), Function(x, y))
