@@ -6,7 +6,7 @@ Well, here we go. You want to learn Potion[1]? Sure, okay. But first, bear in mi
 
 So why exactly are you learning this nascent do-nothing probably-broken language? For fun, right? I'm giving you till the end of sentence to come up with a good reason.
 
-And I'd say this pamphlet isn't for beginners to computer programming. Just for those curious about what Potion is like.
+This pamphlet probably isn't for beginners to computer programming. Just for those curious about what Potion is like.
 
 h2. An Understanding
 
@@ -274,6 +274,21 @@ Lines preceded by the octothorpe are ignored by Potion.
 </code>
 </pre>
 
+h3. Code Blocks
+
+Lines can be grouped together into blocks. Think of it a collection of code you've group together to run later. Blocks start with a colon and end with a dot.
+
+<pre>
+<code>
+  block = :
+    'potion' print.
+</code>
+</pre>
+
+h2. Built-in Types
+
+Potion has a rather small set of built-in types and libraries. This is to keep the language core small for folks who want to embed Potion and to constraint its memory footprint.
+
 h3. True, False, Nil.
 
 Potion has three keywords for these built-in types.
@@ -317,9 +332,97 @@ Double-quoted strings allow a number of escape codes.
  * @"\t"@ for a tab.
  * @"\uXXXX"@ for a Unicode character.
 
+h2. Expressions
+
+In my opinion, a language can be called "functional" if every expression returns a value. This is just how Potion is designed. Every expression is a function, since it takes arguments and returns results. There is no @void@.
+
+h3. if, elsif, else
+
+The @if@ keyword tests its arguments for truth. Its block is then executed if they pass.
+
+<pre>
+<code>
+  if (age > 100): 'ancient'.
+</code>
+</pre>
+
+Like any function, @if@ returns a result. If the condition fails, you get @nil@. Otherwise, you get the result of the code executed inside the block.
+
+Beyond @if@, you can chain @elsif@ and @else@ to catch other conditions.
+
+<pre>
+<code>
+  author =
+    if (title == 'Jonathan Strange & Mr. Norrell'):
+      'Susanna Clarke'.
+    elsif (title == 'The Star Diaries'):
+      'Stanislaw Lem'.
+    elsif (title == 'The Slynx'):
+      'Tatyana Tolstaya'.
+    else:
+      '... probably Philip K. Dick'.
+</code>
+</pre>
+
+These three keywords can all be executed like functions, even though they are compiled into basic instructions.
+
+h3. loop
+
+The @loop@ keyword executes its block endlessly.
+
+<pre>
+<code>
+  loop: 'quaff' print.
+</code>
+</pre>
+
+h3. while
+
+The @while@ keyword will execute its block endlessly, as long as its arguments stay true.
+
+<pre>
+<code>
+  count = 8
+  while (count > 0):
+    'quaff' print
+    count--.
+</code>
+</pre>
+
+h3. to
+
+Potion has no @for@ keyword. One alternative is the @to@ keyword.
+
+<pre>
+<code>
+  1 to 5 (a):
+    a string print.
+</code>
+</pre>
+
+The @to@ keyword will loop from the first number, up to the last.
+
+Another option is the @times@ method, which starts at zero.
+
+<pre>
+<code>
+  5 times: 'Odelay' print.
+</code>
+</pre>
+
+Notice how the block doesn't need parentheses if we don't want the block arguments coming in.
+
+h3. return
+
+Returns a value from the function. You only need to use the @return@ keyword explicitly if you're looking to quit in the middle of the function.
+
+h2. Names and Objects
+
+The most expressive parts of a program are the naming and creation of unique objects.
+
 h3. Variables
 
-Generally, any UTF-8 set of characters which isn't seen as a built-in type can be used as a variable. Variables are assigned with a plain equals sign.
+Generally, any UTF-8 set of characters which isn't seen as a built-in type or operator can be used as a variable. Variables are assigned with a plain equals sign.
 
 <pre>
 <code>
@@ -334,7 +437,7 @@ You must set a variable before using it (even if just to @nil@.) Otherwise, Poti
 
 h3. Messages
 
-Messages follow the same rules as variables. A message name can be any UTF-8 character which isn't a built-in type.
+Messages follow the same rules as variables. A message name can be any UTF-8 character which isn't a built-in type or operator.
 
 <pre>
 <code>
@@ -377,6 +480,47 @@ A better example of this would be if you are in a web application and you wanted
 </pre>
 
 That way if @query@ is empty, you won't get an error, you'll just get nil. Assuming that @query@ is a table, though -- you'll get back the value filed under the @'session'@ key.
+
+h3. Paths
+
+A path is any set of non-whitespace UTF-8 characters preceded by a slash. A path is also called an "instance variable" in programming jargon.
+
+<pre>
+<code>
+  BTree = class: /left, /right.
+  b = BTree ()
+  b /left = BTree ()
+  b /right = BTree ()
+</code>
+</pre>
+
+Paths cannot be randomly added to the object after the object is created. Each object has a strict set of paths. Every path which is used in the constructor is added to the object upon creation.
+
+h3. Path Queries
+
+As with methods, you can query an object to see if it has a given path.
+
+<pre>
+<code>
+  BTree = class: /left, /right.
+  b = BTree ()
+
+  if (b ? /left):
+    'left path found!' print.
+</code>
+</pre>
+
+h2. And That's It?
+
+Yes, that's the important stuff for now. But a number of new features are coming to Potion soon.
+
+* Mixins, a syntax for blending methods into classes.
+* Coroutines, a technique for inprocess threading.
+* Continuations, for saving and resuming the stack.
+* Pattern matching, for expressing conditions on object layout.
+* And also: floats, bignums, marshalling.
+
+Thankyou for reading along. I hope this was only a brief interruption to an otherwise lush and exotic life. I'm sorry to disappoint with so little. Perhaps one day I can make things right?
 
 h2. Footnotes
 
