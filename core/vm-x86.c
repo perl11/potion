@@ -753,6 +753,32 @@ void potion_x86_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 #endif
 }
 
+void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
+  unsigned k;
+#if __WORDSIZE != 64
+  ASM(0x55); // push %ebp
+  ASM(0x89); ASM(0xE5); // mov %esp %ebp
+  ASM(0x8B); ASM(0x55); ASM(0x08); // mov 0x8(%ebp) %edx
+#endif
+  for (k = kh_end(vt->kh); k > kh_begin(vt->kh); k--) {
+    if (kh_exist(vt->kh, k - 1)) {
+      ASM(0x81); ASM(X86C(0xFA, 0xFF));
+        ASMI(PN_UNIQ(kh_key(vt->kh, k - 1))); // cmp NAME %edi
+      ASM(0x75); ASM(X86C(8, 11)); // jne +11
+      X86_PRE(); ASM(0xB8); ASMN(kh_value(vt->kh, k - 1)); // mov CL %rax
+#if __WORDSIZE != 64
+      ASM(0x5D);
+#endif
+      ASM(0xC3); // retq
+    }
+  }
+  ASM(0xB8); ASMI(0); // mov NIL %eax
+#if __WORDSIZE != 64
+  ASM(0x5D);
+#endif
+  ASM(0xC3); // retq
+}
+
 void potion_x86_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
 #if __WORDSIZE != 64
   ASM(0x55); // push %ebp

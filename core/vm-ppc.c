@@ -333,6 +333,9 @@ void potion_ppc_class(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 void potion_ppc_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp) {
 }
 
+void potion_ppc_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
+}
+
 void potion_ppc_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
 }
 

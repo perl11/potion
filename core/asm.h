@@ -76,6 +76,7 @@ typedef struct {
       (OP_F)potion_##arch##_class \
     }, \
     .finish = potion_##arch##_finish, \
+    .mcache = potion_##arch##_mcache, \
     .ivars = potion_##arch##_ivars \
   }
 

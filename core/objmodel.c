@@ -50,9 +50,6 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
   vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, sizeof(kh_PN_t));
   vt->type = t;
   vt->parent = self;
-#ifdef JIT_MCACHE
-  vt->mcache = (PN_MCACHE_FUNC)PN_ALLOC_FUNC(8192);
-#endif
   PN_VTABLE(t) = (PN)vt;
   return (PN)vt;
 }
@@ -171,37 +168,19 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   }
   kh_value(vt->kh, k) = method;
   PN_TOUCH(self);
-#ifdef JIT_MCACHE
-#define X86(ins) *asmb = (u8)(ins); asmb++
-#define X86I(pn) *((unsigned int *)asmb) = (unsigned int)(pn); asmb += sizeof(unsigned int)
-#define X86N(pn) *((PN *)asmb) = (PN)(pn); asmb += sizeof(PN)
-  {
-    u8 *asmb = (u8 *)vt->mcache;
-#if __WORDSIZE != 64
-    X86(0x55); // push %ebp
-    X86(0x89); X86(0xE5); // mov %esp %ebp
-    X86(0x8B); X86(0x55); X86(0x08); // mov 0x8(%ebp) %edx
-#define X86C(op32, op64) op32
-#else
-#define X86C(op32, op64) op64
-#endif
-    for (k = kh_end(vt->kh); k > kh_begin(vt->kh); k--) {
-      if (kh_exist(vt->kh, k - 1)) {
-        X86(0x81); X86(X86C(0xFA, 0xFF));
-          X86I(kh_key(vt->kh, k - 1)); // cmp NAME %edi
-        X86(0x75); X86(X86C(8, 11)); // jne +11
-        X86(0x48); X86(0xB8); X86N(kh_value(vt->kh, k - 1)); // mov CL %rax
-#if __WORDSIZE != 64
-        X86(0x5D);
-#endif
-        X86(0xC3); // retq
-      }
+#if POTION_JIT == 1
+  // TODO: make this more flexible, store in fixed gc, see ivfunc TODO also
+  if (P->targets[POTION_JIT_TARGET].mcache != NULL) {
+    PNAsm * volatile asmb = potion_asm_new(P);
+    P->targets[POTION_JIT_TARGET].mcache(P, vt, &asmb);
+    if (asmb->len <= 4096) {
+      if (vt->mcache == NULL)
+        vt->mcache = PN_ALLOC_FUNC(4096);
+      PN_MEMCPY_N(vt->mcache, asmb->ptr, u8, asmb->len);
+    } else if (vt->mcache != NULL) {
+      potion_munmap(vt->mcache, 4096);
+      vt->mcache = NULL;
     }
-    X86(0xB8); X86I(0); // mov NIL %eax
-#if __WORDSIZE != 64
-    X86(0x5D);
-#endif
-    X86(0xC3); // retq
   }
 #endif
   return method;
@@ -209,13 +188,11 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
 
 PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   vPN(Vtable) vt = (struct PNVtable *)self;
-#ifdef JIT_MCACHE
-  return vt->mcache(PN_UNIQ(key));
-#else
+  if (vt->mcache != NULL)
+    return vt->mcache(PN_UNIQ(key));
   unsigned k = kh_get(PN, vt->kh, key);
   if (k != kh_end(vt->kh)) return kh_value(vt->kh, k);
   return PN_NIL;
-#endif
 }
 
 PN potion_bind(Potion *P, PN rcv, PN msg) {

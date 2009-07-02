@@ -39,6 +39,7 @@ struct PNProto;
 struct PNTuple;
 struct PNWeakRef;
 struct PNMemory;
+struct PNVtable;
 
 #define PN_TNIL         0x250000
 #define PN_TNUMBER      (1+PN_TNIL)
@@ -340,15 +341,16 @@ PN_FLEX(PNAsm, unsigned char);
 typedef void (*OP_F)(Potion *P, struct PNProto *, PNAsm * volatile *, ...);
 
 typedef struct {
-  void (*setup)    (Potion *P, struct PNProto * volatile f, PNAsm * volatile *);
-  void (*stack)    (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, long);
-  void (*registers)(Potion *P, struct PNProto * volatile f, PNAsm * volatile *, long);
-  void (*local)    (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, long, long);
-  void (*upvals)   (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, long, long, int);
-  void (*jmpedit)  (Potion *P, struct PNProto * volatile f, PNAsm * volatile *, unsigned char *, int);
+  void (*setup)    (Potion *, struct PNProto * volatile, PNAsm * volatile *);
+  void (*stack)    (Potion *, struct PNProto * volatile, PNAsm * volatile *, long);
+  void (*registers)(Potion *, struct PNProto * volatile, PNAsm * volatile *, long);
+  void (*local)    (Potion *, struct PNProto * volatile, PNAsm * volatile *, long, long);
+  void (*upvals)   (Potion *, struct PNProto * volatile, PNAsm * volatile *, long, long, int);
+  void (*jmpedit)  (Potion *, struct PNProto * volatile, PNAsm * volatile *, unsigned char *, int);
   OP_F op[OP_MAX];
-  void (*finish)   (Potion *P, struct PNProto * volatile f, PNAsm * volatile *);
-  void (*ivars)    (Potion *P, PN, PNAsm * volatile *);
+  void (*finish)   (Potion *, struct PNProto * volatile, PNAsm * volatile *);
+  void (*mcache)   (Potion *, struct PNVtable * volatile, PNAsm * volatile *);
+  void (*ivars)    (Potion *, PN, PNAsm * volatile *);
 } PNTarget;
 
 //
