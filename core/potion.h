@@ -471,7 +471,9 @@ static inline PN potion_data_alloc(Potion *P, int siz) {
 #define potion_send_dyn(RCV, MSG, ARGS...) ({ \
     PN r = (PN)(RCV); \
     PN c = potion_bind(P, r, (MSG)); \
-    ((struct PNClosure *)c)->method(P, c, r, ##ARGS); \
+    if (PN_IS_CLOSURE(c)) \
+      ((struct PNClosure *)c)->method(P, c, r, ##ARGS); \
+    c; \
   })
 #if ICACHE
 #define potion_send(RCV, MSG, ARGS...) ({ \
@@ -483,7 +485,11 @@ static inline PN potion_data_alloc(Potion *P, int siz) {
     int thisTN = PN_FLEX_SIZE(P->vts); \
     thisVT == prevVT && prevTN == thisTN ? closure : \
       (prevVT = thisVT, prevTN = thisTN, closure = potion_bind(P, r, (MSG))); \
-    ((struct PNClosure *)closure)->method(P, closure, r, ##ARGS); \
+    if (PN_IS_CLOSURE(closure)) \
+      r = ((struct PNClosure *)closure)->method(P, closure, r, ##ARGS); \
+    else \
+      r = closure; \
+    r; \
   })
 #else
 #define potion_send potion_send_dyn
@@ -496,6 +502,7 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
    PN_continue, PN_def, PN_delegated, PN_else, PN_elsif, PN_if,
    PN_lookup, PN_loop, PN_print, PN_return, PN_self, PN_string,
    PN_while;
+extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitl, PN_bitr;
 
 //
 // the Potion functions
@@ -536,6 +543,14 @@ PN potion_decimal(Potion *, int, int, char *);
 PN potion_pow(Potion *, PN, PN, PN);
 PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);
+
+PN potion_obj_add(Potion *, PN, PN);
+PN potion_obj_sub(Potion *, PN, PN);
+PN potion_obj_mult(Potion *, PN, PN);
+PN potion_obj_div(Potion *, PN, PN);
+PN potion_obj_rem(Potion *, PN, PN);
+PN potion_obj_bitl(Potion *, PN, PN);
+PN potion_obj_bitr(Potion *, PN, PN);
 
 PN potion_tuple_empty(Potion *);
 PN potion_tuple_with_size(Potion *, unsigned long);

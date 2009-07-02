@@ -234,6 +234,34 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
   return closure;
 }
 
+PN potion_obj_add(Potion *P, PN a, PN b) {
+  return potion_send(a, PN_add, b);
+}
+
+PN potion_obj_sub(Potion *P, PN a, PN b) {
+  return potion_send(a, PN_sub, b);
+}
+
+PN potion_obj_mult(Potion *P, PN a, PN b) {
+  return potion_send(a, PN_mult, b);
+}
+
+PN potion_obj_div(Potion *P, PN a, PN b) {
+  return potion_send(a, PN_div, b);
+}
+
+PN potion_obj_rem(Potion *P, PN a, PN b) {
+  return potion_send(a, PN_rem, b);
+}
+
+PN potion_obj_bitl(Potion *P, PN a, PN b) {
+  return potion_send(a, PN_bitl, b);
+}
+
+PN potion_obj_bitr(Potion *P, PN a, PN b) {
+  return potion_send(a, PN_bitr, b);
+}
+
 PN potion_ref(Potion *P, PN data) {
   if (PN_IS_REF(data)) return data;
   vPN(WeakRef) ref = PN_ALLOC(PN_TWEAK, struct PNWeakRef);

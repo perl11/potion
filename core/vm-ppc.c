@@ -176,35 +176,35 @@ void potion_ppc_getpath(Potion *P, struct PNProto * volatile f, PNAsm * volatile
 void potion_ppc_setpath(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
-void potion_ppc_add(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_ppc_add(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_MATH({
     PPC(31, REG(op.a), REG(op.a), REG(op.b) << 3 | 0x2, 0x14); // add rA,rA,rB
   });
 }
 
-void potion_ppc_sub(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_ppc_sub(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_MATH({
     PPC(31, REG(op.a), REG(op.b), REG(op.a) << 3, 0x50); // subf rA,rA,rB
   });
 }
 
-void potion_ppc_mult(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_ppc_mult(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_MATH({
     PPC(31, REG(op.a), REG(op.a), REG(op.b) << 3 | 0x1, 0xD6); // mullw rA,rA,rB
   });
 }
 
-void potion_ppc_div(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_ppc_div(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_MATH({
     PPC(31, REG(op.a), REG(op.a), REG(op.b) << 3 | 0x3, 0xD6); // divw rA,rA,rB
   });
 }
 
-void potion_ppc_rem(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_ppc_rem(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_MATH({
     PPC(31, REG_TMP, REG(op.a), REG(op.b) << 3 | 0x3, 0xD6); // divw rD,rA,rB
@@ -256,14 +256,14 @@ void potion_ppc_gte(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
   PPC_CMP(0x419C0000); // blt
 }
 
-void potion_ppc_bitl(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_ppc_bitl(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_MATH({
     PPC(31, REG(op.a), REG(op.a), REG(op.b) << 3, 0x30); // slw rA,rA,rB
   });
 }
 
-void potion_ppc_bitr(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_ppc_bitr(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_MATH({
     PPC(31, REG(op.a), REG(op.a), REG(op.b) << 3 | 0x6, 0x30); // sraw rA,rA,rB
