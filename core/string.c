@@ -124,10 +124,7 @@ static PN potion_str_slice(Potion *P, PN closure, PN self, PN start, PN end) {
 }
 
 static PN potion_str_at(Potion *P, PN closure, PN self, PN index) {
-  char *str = PN_STR_PTR(self);
-  size_t len = potion_cp_strlen_utf8(str);
-  size_t offset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(index, len, 0)));
-  return potion_str2(P, str + offset, 1);
+  return potion_str_slice(P, closure, self, index, PN_NUM(PN_INT(index) + 1));
 }
 
 PN potion_byte_str(Potion *P, const char *str) {
