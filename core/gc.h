@@ -89,7 +89,6 @@
         kh_val(name, kh, k) = v2; \
       } \
     } \
-  GC_MINOR_UPDATE(kh->table); \
 } while (0)
 
 #define GC_MAJOR_UPDATE_TABLE(name, kh, is_map) do { \
@@ -105,7 +104,6 @@
         kh_val(name, kh, k) = v2; \
       } \
     } \
-  GC_MAJOR_UPDATE(kh->table); \
 } while (0)
 
 PN_SIZE potion_stack_len(Potion *, _PN **);

@@ -47,9 +47,10 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
 }
 
 PN potion_type_new(Potion *P, PNType t, PN self) {
-  vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, sizeof(kh_PN_t));
+  vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, 0);
   vt->type = t;
   vt->parent = self;
+  vt->methods = (struct PNTable *)potion_table_empty(P);
   PN_VTABLE(t) = (PN)vt;
   return (PN)vt;
 }
@@ -157,7 +158,9 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int ret;
   PN cl;
   vPN(Vtable) vt = (struct PNVtable *)self;
-  unsigned k = kh_put(PN, vt->kh, key, &ret);
+  unsigned k = kh_put(PN, vt->methods, key, &ret);
+  PN_QUICK_FWD(struct PNTable *, vt->methods);
+
   if (!PN_IS_CLOSURE(method)) {
     if (PN_IS_PROTO(method))
       cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_PROTO(method)->sig, 1);
@@ -166,8 +169,10 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
     PN_CLOSURE(cl)->data[0] = method;
     method = cl;
   }
-  kh_val(PN, vt->kh, k) = method;
+
+  kh_val(PN, vt->methods, k) = method;
   PN_TOUCH(self);
+
 #if POTION_JIT == 1
   // TODO: make this more flexible, store in fixed gc, see ivfunc TODO also
   if (P->targets[POTION_JIT_TARGET].mcache != NULL) {
@@ -190,8 +195,8 @@ PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   vPN(Vtable) vt = (struct PNVtable *)self;
   if (vt->mcache != NULL)
     return vt->mcache(PN_UNIQ(key));
-  unsigned k = kh_get(PN, vt->kh, key);
-  if (k != kh_end(vt->kh)) return kh_val(PN, vt->kh, k);
+  unsigned k = kh_get(PN, vt->methods, key);
+  if (k != kh_end(vt->methods)) return kh_val(PN, vt->methods, k);
   return PN_NIL;
 }
 

@@ -277,7 +277,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNFile);
     break;
     case PN_TVTABLE:
-      sz = sizeof(struct PNVtable) + sizeof(kh_PN_t);
+      sz = sizeof(struct PNVtable);
     break;
     case PN_TSOURCE:
     // TODO: look up ast size (see core/pn-ast.c)
@@ -290,10 +290,10 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNProto);
     break;
     case PN_TTABLE:
-      sz = sizeof(struct PNTable) + sizeof(kh_PN_t);
+      sz = sizeof(struct PNTable) + kh_mem(PN, ptr);
     break;
     case PN_TSTRINGS:
-      sz = sizeof(struct PNStrTable) + sizeof(kh_str_t);
+      sz = sizeof(struct PNTable) + kh_mem(str, ptr);
     break;
     case PN_TFLEX:
     case PN_TFLEXB:
@@ -374,10 +374,10 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     case PN_TVTABLE:
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->parent);
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->ivars);
+      GC_MINOR_UPDATE(((struct PNVtable *)ptr)->methods);
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->ctor);
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->call);
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->callset);
-      GC_MINOR_UPDATE_TABLE(PN, ((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:
       GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[0]);
@@ -395,14 +395,14 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
     case PN_TTABLE:
-      GC_MINOR_UPDATE_TABLE(PN, ((struct PNTable *)ptr)->kh, 1);
+      GC_MINOR_UPDATE_TABLE(PN, ((struct PNTable *)ptr), 1);
     break;
     case PN_TFLEX:
       for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
         GC_MINOR_UPDATE(PN_FLEX_AT(ptr, i));
     break;
     case PN_TSTRINGS:
-      GC_MINOR_UPDATE_TABLE(str, ((struct PNStrTable *)ptr)->kh, 0);
+      GC_MINOR_UPDATE_TABLE(str, ((struct PNTable *)ptr), 0);
     break;
   }
 
@@ -462,10 +462,10 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     case PN_TVTABLE:
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->parent);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->ivars);
+      GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->methods);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->ctor);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->call);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->callset);
-      GC_MAJOR_UPDATE_TABLE(PN, ((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[0]);
@@ -483,14 +483,14 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
     case PN_TTABLE:
-      GC_MAJOR_UPDATE_TABLE(PN, ((struct PNTable *)ptr)->kh, 1);
+      GC_MAJOR_UPDATE_TABLE(PN, ((struct PNTable *)ptr), 1);
     break;
     case PN_TFLEX:
       for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
         GC_MAJOR_UPDATE(PN_FLEX_AT(ptr, i));
     break;
     case PN_TSTRINGS:
-      GC_MAJOR_UPDATE_TABLE(str, ((struct PNStrTable *)ptr)->kh, 0);
+      GC_MAJOR_UPDATE_TABLE(str, ((struct PNTable *)ptr), 0);
     break;
   }
 

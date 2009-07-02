@@ -14,16 +14,17 @@
 
 unsigned potion_add_str(Potion *P, PN self, PN s) {
   int ret;
-  vPN(StrTable) t = (struct PNStrTable *)self;
-  unsigned k = kh_put(str, t->kh, s, &ret);
+  vPN(Table) t = (struct PNTable *)potion_fwd(self);
+  unsigned k = kh_put(str, t, s, &ret);
+  PN_QUICK_FWD(struct PNTable *, t);
   PN_TOUCH(self);
   return k;
 }
 
 PN potion_lookup_str(Potion *P, PN self, const char *str) {
-  vPN(StrTable) t = (struct PNStrTable *)self;
-  unsigned k = kh_get(str, t->kh, str);
-  if (k != kh_end(t->kh)) return kh_key(str, t->kh, k);
+  vPN(Table) t = (struct PNTable *)potion_fwd(self);
+  unsigned k = kh_get(str, t, str);
+  if (k != kh_end(t)) return kh_key(str, t, k);
   return PN_NIL;
 }
 
@@ -193,7 +194,7 @@ static PN potion_bytes_print(Potion *P, PN closure, PN self) {
 }
 
 void potion_str_hash_init(Potion *P) {
-  vPN(StrTable) t = PN_CALLOC_N(PN_TSTRINGS, struct PNStrTable, sizeof(kh_str_t));
+  vPN(Table) t = PN_CALLOC_N(PN_TSTRINGS, struct PNTable, 0);
   P->strings = (PN)t;
 }
 

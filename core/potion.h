@@ -315,6 +315,11 @@ static inline PNType potion_type(PN obj) {
   }
 }
 
+// macro for doing a single fwd check after a possible realloc
+#define PN_QUICK_FWD(t, obj) \
+  if (((struct PNFwd *)obj)->fwd == POTION_FWD) \
+    obj = (t)(((struct PNFwd *)obj)->ptr);
+
 // resolve forwarding pointers for mutable types (PNTuple, PNBytes, etc.)
 static inline PN potion_fwd(PN obj) {
   while (PN_IS_PTR(obj) && ((struct PNFwd *)obj)->fwd == POTION_FWD)
