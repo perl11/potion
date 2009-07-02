@@ -12,13 +12,13 @@
 #include "khash.h"
 #include "table.h"
 
-unsigned potion_add_str(Potion *P, PN self, PN s) {
+PN potion_add_str(Potion *P, PN self, PN s) {
   int ret;
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
-  unsigned k = kh_put(str, t, s, &ret);
+  kh_put(str, t, s, &ret);
   PN_QUICK_FWD(struct PNTable *, t);
-  PN_TOUCH(self);
-  return k;
+  PN_TOUCH(t);
+  return t;
 }
 
 PN potion_lookup_str(Potion *P, PN self, const char *str) {
@@ -36,7 +36,7 @@ PN potion_str(Potion *P, const char *str) {
     s->len = (unsigned int)len;
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
-    potion_add_str(P, P->strings, (PN)s);
+    P->strings = potion_add_str(P, P->strings, (PN)s);
     val = (PN)s;
   }
   return val;
