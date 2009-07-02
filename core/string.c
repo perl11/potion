@@ -20,15 +20,15 @@ unsigned potion_add_str(Potion *P, PN self, PN s) {
   return k;
 }
 
-PN potion_lookup_str(PN self, const char *str) {
+PN potion_lookup_str(Potion *P, PN self, const char *str) {
   vPN(StrTable) t = (struct PNStrTable *)self;
   unsigned k = kh_get(str, t->kh, str);
-  if (k != kh_end(t->kh)) return kh_key(t->kh, k);
+  if (k != kh_end(t->kh)) return kh_key(str, t->kh, k);
   return PN_NIL;
 }
 
 PN potion_str(Potion *P, const char *str) {
-  PN val = potion_lookup_str(P->strings, str);
+  PN val = potion_lookup_str(P, P->strings, str);
   if (!val) {
     size_t len = strlen(str);
     vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);

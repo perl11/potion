@@ -76,34 +76,36 @@
   } \
 } while(0)
 
-#define GC_MINOR_UPDATE_TABLE(kh, is_map) do { \
+#define GC_MINOR_UPDATE_TABLE(name, kh, is_map) do { \
   unsigned k; \
   for (k = kh_begin(kh); k != kh_end(kh); ++k) \
-    if (kh_exist(kh, k)) { \
-      PN v1 = kh_key(kh, k); \
+    if (kh_exist(name, kh, k)) { \
+      PN v1 = kh_key(name, kh, k); \
       GC_MINOR_UPDATE(v1); \
-      kh_key(kh, k) = v1; \
+      kh_key(name, kh, k) = v1; \
       if (is_map) { \
-        PN v2 = kh_value(kh, k); \
+        PN v2 = kh_val(name, kh, k); \
         GC_MINOR_UPDATE(v2); \
-        kh_value(kh, k) = v2; \
+        kh_val(name, kh, k) = v2; \
       } \
     } \
+  GC_MINOR_UPDATE(kh->table); \
 } while (0)
 
-#define GC_MAJOR_UPDATE_TABLE(kh, is_map) do { \
+#define GC_MAJOR_UPDATE_TABLE(name, kh, is_map) do { \
   unsigned k; \
   for (k = kh_begin(kh); k != kh_end(kh); ++k) \
-    if (kh_exist(kh, k)) { \
-      PN v1 = kh_key(kh, k); \
+    if (kh_exist(name, kh, k)) { \
+      PN v1 = kh_key(name, kh, k); \
       GC_MAJOR_UPDATE(v1); \
-      kh_key(kh, k) = v1; \
+      kh_key(name, kh, k) = v1; \
       if (is_map) { \
-        PN v2 = kh_value(kh, k); \
+        PN v2 = kh_val(name, kh, k); \
         GC_MAJOR_UPDATE(v2); \
-        kh_value(kh, k) = v2; \
+        kh_val(name, kh, k) = v2; \
       } \
     } \
+  GC_MAJOR_UPDATE(kh->table); \
 } while (0)
 
 PN_SIZE potion_stack_len(Potion *, _PN **);

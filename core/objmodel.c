@@ -166,7 +166,7 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
     PN_CLOSURE(cl)->data[0] = method;
     method = cl;
   }
-  kh_value(vt->kh, k) = method;
+  kh_val(PN, vt->kh, k) = method;
   PN_TOUCH(self);
 #if POTION_JIT == 1
   // TODO: make this more flexible, store in fixed gc, see ivfunc TODO also
@@ -191,7 +191,7 @@ PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   if (vt->mcache != NULL)
     return vt->mcache(PN_UNIQ(key));
   unsigned k = kh_get(PN, vt->kh, key);
-  if (k != kh_end(vt->kh)) return kh_value(vt->kh, k);
+  if (k != kh_end(vt->kh)) return kh_val(PN, vt->kh, k);
   return PN_NIL;
 }
 

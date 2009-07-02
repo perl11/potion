@@ -377,7 +377,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->ctor);
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->call);
       GC_MINOR_UPDATE(((struct PNVtable *)ptr)->callset);
-      GC_MINOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
+      GC_MINOR_UPDATE_TABLE(PN, ((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:
       GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[0]);
@@ -395,14 +395,14 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
     case PN_TTABLE:
-      GC_MINOR_UPDATE_TABLE(((struct PNTable *)ptr)->kh, 1);
+      GC_MINOR_UPDATE_TABLE(PN, ((struct PNTable *)ptr)->kh, 1);
     break;
     case PN_TFLEX:
       for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
         GC_MINOR_UPDATE(PN_FLEX_AT(ptr, i));
     break;
     case PN_TSTRINGS:
-      GC_MINOR_UPDATE_TABLE(((struct PNStrTable *)ptr)->kh, 0);
+      GC_MINOR_UPDATE_TABLE(str, ((struct PNStrTable *)ptr)->kh, 0);
     break;
   }
 
@@ -465,7 +465,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->ctor);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->call);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->callset);
-      GC_MAJOR_UPDATE_TABLE(((struct PNVtable *)ptr)->kh, 1);
+      GC_MAJOR_UPDATE_TABLE(PN, ((struct PNVtable *)ptr)->kh, 1);
     break;
     case PN_TSOURCE:
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[0]);
@@ -483,14 +483,14 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
     case PN_TTABLE:
-      GC_MAJOR_UPDATE_TABLE(((struct PNTable *)ptr)->kh, 1);
+      GC_MAJOR_UPDATE_TABLE(PN, ((struct PNTable *)ptr)->kh, 1);
     break;
     case PN_TFLEX:
       for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
         GC_MAJOR_UPDATE(PN_FLEX_AT(ptr, i));
     break;
     case PN_TSTRINGS:
-      GC_MAJOR_UPDATE_TABLE(((struct PNStrTable *)ptr)->kh, 0);
+      GC_MAJOR_UPDATE_TABLE(str, ((struct PNStrTable *)ptr)->kh, 0);
     break;
   }
 

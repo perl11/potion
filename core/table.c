@@ -16,11 +16,11 @@ PN potion_table_string(Potion *P, PN cl, PN self) {
   PN out = potion_byte_str(P, "(");
   unsigned k, i = 0;
   for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
-    if (kh_exist(t->kh, k)) {
+    if (kh_exist(PN, t->kh, k)) {
       if (i++ > 0) pn_printf(P, out, ", ");
-      potion_bytes_obj_string(P, out, kh_key(t->kh, k));
+      potion_bytes_obj_string(P, out, kh_key(PN, t->kh, k));
       pn_printf(P, out, "=");
-      potion_bytes_obj_string(P, out, kh_value(t->kh, k));
+      potion_bytes_obj_string(P, out, kh_val(PN, t->kh, k));
     }
   pn_printf(P, out, ")");
   return out;
@@ -36,7 +36,7 @@ PN potion_table_cast(Potion *P, PN self) {
     vPN(Table) t = PN_ALLOC_N(PN_TTABLE, struct PNTable, sizeof(kh_PN_t));
     PN_TUPLE_EACH(self, i, v, {
       k = kh_put(PN, t->kh, PN_NUM(i), &ret);
-      kh_value(t->kh, k) = v;
+      kh_val(PN, t->kh, k) = v;
     });
     ((struct PNFwd *)self)->fwd = POTION_FWD;
     ((struct PNFwd *)self)->siz = potion_type_size(P, (const struct PNObject *)self);
@@ -50,7 +50,7 @@ PN potion_table_cast(Potion *P, PN self) {
 PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   unsigned k = kh_get(PN, t->kh, key);
-  if (k != kh_end(t->kh)) return kh_value(t->kh, k);
+  if (k != kh_end(t->kh)) return kh_val(PN, t->kh, k);
   return PN_NIL;
 }
 
@@ -58,8 +58,8 @@ PN potion_table_each(Potion *P, PN cl, PN self, PN block) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   unsigned k;
   for (k = kh_begin(t->kh); k != kh_end(t->kh); ++k)
-    if (kh_exist(t->kh, k)) {
-      PN_CLOSURE(block)->method(P, block, self, kh_key(t->kh, k), kh_value(t->kh, k));
+    if (kh_exist(PN, t->kh, k)) {
+      PN_CLOSURE(block)->method(P, block, self, kh_key(PN, t->kh, k), kh_val(PN, t->kh, k));
     }
   return self;
 }
@@ -68,7 +68,7 @@ PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
   int ret;
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   unsigned k = kh_put(PN, t->kh, key, &ret);
-  kh_value(t->kh, k) = value;
+  kh_val(PN, t->kh, k) = value;
   PN_TOUCH(self);
   return self;
 }

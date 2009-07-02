@@ -761,11 +761,11 @@ void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
   ASM(0x8B); ASM(0x55); ASM(0x08); // mov 0x8(%ebp) %edx
 #endif
   for (k = kh_end(vt->kh); k > kh_begin(vt->kh); k--) {
-    if (kh_exist(vt->kh, k - 1)) {
+    if (kh_exist(PN, vt->kh, k - 1)) {
       ASM(0x81); ASM(X86C(0xFA, 0xFF));
-        ASMI(PN_UNIQ(kh_key(vt->kh, k - 1))); // cmp NAME %edi
+        ASMI(PN_UNIQ(kh_key(PN, vt->kh, k - 1))); // cmp NAME %edi
       ASM(0x75); ASM(X86C(8, 11)); // jne +11
-      X86_PRE(); ASM(0xB8); ASMN(kh_value(vt->kh, k - 1)); // mov CL %rax
+      X86_PRE(); ASM(0xB8); ASMN(kh_val(PN, vt->kh, k - 1)); // mov CL %rax
 #if __WORDSIZE != 64
       ASM(0x5D);
 #endif
