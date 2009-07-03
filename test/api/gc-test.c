@@ -48,15 +48,15 @@ void gc_test_alloc4(CuTest *T) {
 void gc_test_forward(CuTest *T) {
   PN_SIZE count;
   char *fj = "frances johnson.";
-  PN ptr = potion_data_alloc(P, 16);
-  register unsigned long old = ptr & 0xFFFF;
-  memcpy(((struct PNData *)ptr)->data, fj, 16);
+  vPN(Data) ptr = potion_data_alloc(P, 16);
+  register unsigned long old = (PN)ptr & 0xFFFF;
+  memcpy(ptr->data, fj, 16);
 
   count = potion_mark_stack(P, 1);
-  CuAssert(T, "copied location identical to original", (old & 0xFFFF) != ptr);
-  CuAssertIntEquals(T, "copied object not still PN_TUSER", ((struct PNData *)ptr)->vt, PN_TUSER);
+  CuAssert(T, "copied location identical to original", (old & 0xFFFF) != (PN)ptr);
+  CuAssertIntEquals(T, "copied object not still PN_TUSER", ptr->vt, PN_TUSER);
   CuAssert(T, "copied data not identical to original",
-    strncmp(((struct PNData *)ptr)->data, fj, 16) == 0);
+    strncmp(ptr->data, fj, 16) == 0);
 }
 
 CuSuite *gc_suite() {

@@ -196,7 +196,6 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
 
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
 reentry:
-  // TODO: place the stack in P, allow it to allocate as needed
   if (current - stack >= STACK_MAX) {
     fprintf(stderr, "all registers used up!");
     exit(1);

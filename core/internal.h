@@ -14,7 +14,7 @@ typedef unsigned char u8;
 #define PN_ALLOC_N(V,T,C)    (T *)potion_gc_alloc(P, V, sizeof(T)+C)
 #define PN_CALLOC_N(V,T,C)   (T *)potion_gc_calloc(P, V, sizeof(T)+C)
 #define PN_REALLOC(X,V,T,N)  (X)=(T *)potion_gc_realloc(P, V, (struct PNObject *)(X), sizeof(T) + N)
-#define PN_DALLOC_N(T,N)     (T *)potion_data_alloc(P, sizeof(T)*N)
+#define PN_DALLOC_N(T,N)     potion_data_alloc(P, sizeof(T)*N)
 
 #define PN_MEMZERO(X,T)      memset((X), 0, sizeof(T))
 #define PN_MEMZERO_N(X,T,N)  memset((X), 0, sizeof(T)*(N))

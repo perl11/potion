@@ -80,6 +80,7 @@ static const double __kh_HASH_UPPER = 0.77;
   } \
   static inline kh_t *kh_resize_##name(Potion *P, kh_t *h, khint_t new_n_buckets) \
   { \
+    vPN(Data) nft = 0; \
     uint32_t *new_flags = 0; \
     khint_t j = 1; \
     { \
@@ -88,10 +89,11 @@ static const double __kh_HASH_UPPER = 0.77;
       new_n_buckets = __ac_prime_list[t+1]; \
       if (h->size >= (khint_t)(new_n_buckets * __kh_HASH_UPPER + 0.5)) j = 0; \
       else { \
-        new_flags = (uint32_t*)malloc(((new_n_buckets>>4) + 1) * sizeof(uint32_t)); \
-        memset(new_flags, 0xaa, ((new_n_buckets>>4) + 1) * sizeof(uint32_t)); \
+        nft = PN_DALLOC_N(uint32_t, (new_n_buckets >> 4) + 1); \
         if (h->n_buckets < new_n_buckets) \
           PN_REALLOC(h, PN_TUSER, kh_t, kh_size_##name(new_n_buckets)); \
+        new_flags = (uint32_t *)nft->data; \
+        memset(new_flags, 0xaa, ((new_n_buckets>>4) + 1) * sizeof(uint32_t)); \
       } \
     } \
     if (j) { \
@@ -126,8 +128,8 @@ static const double __kh_HASH_UPPER = 0.77;
       if (h->n_buckets > new_n_buckets) \
         PN_REALLOC(h, PN_TUSER, kh_t, kh_size_##name(new_n_buckets)); \
       j = (new_n_buckets >> 4) + 1; \
+      new_flags = (uint32_t *)nft->data; \
       while (j-- > 0) KHASH_FLAG(name, h, j << 4) = new_flags[j]; \
-      free(new_flags); \
       h->n_buckets = new_n_buckets; \
       h->n_occupied = h->size; \
       h->upper_bound = (khint_t)(h->n_buckets * __kh_HASH_UPPER + 0.5); \

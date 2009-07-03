@@ -471,10 +471,10 @@ static inline void *potion_gc_realloc(Potion *P, PNType vt, struct PNObject * vo
   return dst;
 }
 
-static inline PN potion_data_alloc(Potion *P, int siz) {
+static inline struct PNData *potion_data_alloc(Potion *P, int siz) {
   struct PNData *data = potion_gc_alloc(P, PN_TUSER, sizeof(struct PNData) + siz);
   data->siz = siz;
-  return (PN)data;
+  return data;
 }
 
 //
@@ -487,7 +487,7 @@ static inline PN potion_data_alloc(Potion *P, int siz) {
 // method caches
 // (more great stuff from ian piumarta)
 //
-// TODO: make the ICACHE per-thread
+// TODO: get rid of this, let's prefer the mcache in PNVtable
 //
 #define potion_send_dyn(RCV, MSG, ARGS...) ({ \
     PN r = (PN)(RCV); \
