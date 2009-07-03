@@ -18,7 +18,7 @@ PN potion_add_str(Potion *P, PN self, PN s) {
   kh_put(str, t, s, &ret);
   PN_QUICK_FWD(struct PNTable *, t);
   PN_TOUCH(t);
-  return t;
+  return (PN)t;
 }
 
 PN potion_lookup_str(Potion *P, PN self, const char *str) {
@@ -33,7 +33,7 @@ PN potion_str(Potion *P, const char *str) {
   if (!val) {
     size_t len = strlen(str);
     vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
-    s->len = (unsigned int)len;
+    s->len = (PN_SIZE)len;
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
     P->strings = potion_add_str(P, P->strings, (PN)s);
@@ -43,13 +43,36 @@ PN potion_str(Potion *P, const char *str) {
 }
 
 PN potion_str2(Potion *P, char *str, size_t len) {
-  PN s;
-  char *tmp = (char *)malloc(len + 1);
-  memcpy(tmp, str, len);
-  tmp[len] = '\0';
-  s = potion_str(P, tmp);
-  free(tmp);
-  return s;
+  PN exist = PN_NIL;
+
+  vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
+  s->len = (PN_SIZE)len;
+  PN_MEMCPY_N(s->chars, str, char, len);
+  s->chars[len] = '\0';
+
+  exist = potion_lookup_str(P, P->strings, s->chars);
+  if (!exist) {
+    P->strings = potion_add_str(P, P->strings, (PN)s);
+    exist = (PN)s;
+  }
+  return exist;
+}
+
+PN_SIZE potion_str_format(Potion *P, const char *format, ...) {
+  vPN(String) s;
+  PN_SIZE len;
+  va_list args;
+
+  va_start(args, format);
+  len = (PN_SIZE)vsnprintf(NULL, 0, format, args);
+  va_end(args);
+  s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
+
+  va_start(args, format);
+  vsnprintf(s->chars, len + 1, format, args);
+  va_end(args);
+
+  return s->len = len;
 }
 
 static PN potion_str_length(Potion *P, PN closure, PN self) {
