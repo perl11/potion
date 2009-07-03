@@ -38,6 +38,7 @@ struct PNClosure;
 struct PNProto;
 struct PNTuple;
 struct PNWeakRef;
+struct PNError;
 struct PNMemory;
 struct PNVtable;
 
@@ -61,7 +62,8 @@ struct PNVtable;
 #define PN_TFLEX        (17+PN_TNIL)
 #define PN_TFLEXB       (18+PN_TNIL)
 #define PN_TSTRINGS     (19+PN_TNIL)
-#define PN_TUSER        (20+PN_TNIL)
+#define PN_TERROR       (20+PN_TNIL)
+#define PN_TUSER        (21+PN_TNIL)
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -293,6 +295,18 @@ struct PNWeakRef {
 };
 
 //
+// an error, including a description,
+// file location, a brief excerpt.
+//
+struct PNError {
+  PN_OBJECT_HEADER
+  PN parent;
+  PN message;
+  PN line, chr;
+  PN excerpt;
+};
+
+//
 // a lick is a unit of generic tree data.
 //
 struct PNLick {
@@ -516,6 +530,7 @@ extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitl, PN_bitr;
 //
 Potion *potion_create(void *);
 void potion_destroy(Potion *);
+PN potion_error(Potion *, PN, long, long, PN);
 PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
@@ -581,6 +596,7 @@ PN potion_source_dump(Potion *, PN, PN);
 Potion *potion_gc_boot(void *);
 void potion_lobby_init(Potion *);
 void potion_object_init(Potion *);
+void potion_error_init(Potion *);
 void potion_primitive_init(Potion *);
 void potion_num_init(Potion *);
 void potion_str_hash_init(Potion *);

@@ -39,6 +39,7 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TPROTO, obj_vt);
   potion_type_new(P, PN_TWEAK, obj_vt);
   potion_type_new(P, PN_TLICK, obj_vt);
+  potion_type_new(P, PN_TERROR, obj_vt);
   potion_str_hash_init(P);
 
   PN_allocate = potion_str(P, "allocate");
@@ -77,6 +78,7 @@ static void potion_init(Potion *P) {
   potion_vm_init(P);
   potion_lobby_init(P);
   potion_object_init(P);
+  potion_error_init(P);
   potion_primitive_init(P);
   potion_num_init(P);
   potion_str_init(P);
@@ -163,6 +165,29 @@ PN potion_call(Potion *P, PN cl, PN_SIZE argc, PN * volatile argv) {
 
 PNType potion_kind_of(PN obj) {
   return potion_type(obj);
+}
+
+PN potion_error(Potion *P, PN msg, long lineno, long charno, PN excerpt) {
+  struct PNError *e = PN_ALLOC(PN_TERROR, struct PNError);
+  e->message = msg;
+  e->line = PN_NUM(lineno);
+  e->chr = PN_NUM(charno);
+  e->excerpt = excerpt;
+  return (PN)e;
+}
+
+PN potion_error_string(Potion *P, PN cl, PN self) {
+  vPN(Error) e = (struct PNError *)self;
+  if (e->excerpt == PN_NIL)
+    return potion_str_format(P, "** %s\n", PN_STR_PTR(e->message));
+  return potion_str_format(P, "** %s\n"
+    "** Where: (line %ld, character %ld) %s\n", PN_STR_PTR(e->message),
+    PN_INT(e->line), PN_INT(e->chr), PN_STR_PTR(e->excerpt));
+}
+
+void potion_error_init(Potion *P) {
+  PN err_vt = PN_VTABLE(PN_TERROR);
+  potion_method(err_vt, "string", potion_error_string, 0);
 }
 
 void potion_p(Potion *P, PN x) {

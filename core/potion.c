@@ -80,8 +80,10 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
         printf("\n\n-- loaded --\n");
     } else {
       code = potion_parse(P, buf);
-      if (code == PN_NIL)
+      if (PN_TYPE(code) == PN_TERROR) {
+        potion_send(potion_send(code, PN_string), PN_print);
         goto done;
+      }
       if (verbose > 1) {
         printf("\n-- parsed --\n");
         potion_send(potion_send(code, PN_string), PN_print);
@@ -237,8 +239,11 @@ int main(int argc, char *argv[]) {
     "  code = read\n" \
     "  if (not code): break.\n" \
     "  if (code != ''):\n" \
-    "    ('=> ', code eval, \"\\n\") join print.\n" \
-    ".");
+    "    obj = code eval\n" \
+    "    if (obj kind == Error):\n" \
+    "      obj string print." \
+    "    else: ('=> ', obj, \"\\n\") join print.\n" \
+    "_ loop");
   potion_destroy(P);
   return 0;
 }

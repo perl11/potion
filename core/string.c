@@ -58,7 +58,7 @@ PN potion_str2(Potion *P, char *str, size_t len) {
   return exist;
 }
 
-PN_SIZE potion_str_format(Potion *P, const char *format, ...) {
+PN potion_str_format(Potion *P, const char *format, ...) {
   vPN(String) s;
   PN_SIZE len;
   va_list args;
@@ -72,7 +72,7 @@ PN_SIZE potion_str_format(Potion *P, const char *format, ...) {
   vsnprintf(s->chars, len + 1, format, args);
   va_end(args);
 
-  return s->len = len;
+  return (PN)s;
 }
 
 static PN potion_str_length(Potion *P, PN closure, PN self) {

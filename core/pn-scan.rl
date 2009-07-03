@@ -15,7 +15,7 @@
 
 #define TOKEN2(id,v) \
   LemonPotion(pParser, PN_TOK_##id, v, P); \
-  if (P->yerror > 0) cs = potion_error; \
+  if (P->yerror > 0) cs = plex_error; \
   last = PN_TOK_##id
 #define TOKEN1(id)   if (last != PN_TOK_##id) { TOKEN(id); }
 #define TOKEN(id)    TOKEN2(id, PN_NIL)
@@ -42,7 +42,7 @@
 #define SCHAR(ptr, len) PN_MEMCPY_N(PN_STR_PTR(sbuf) + nbuf, ptr, char, len); nbuf += len
   
 %%{
-  machine potion;
+  machine plex;
   include utf8;
 
   begin_block = ":" eats;
@@ -218,19 +218,17 @@ static char *potion_token_friendly(int tok) {
   return NULL;
 }
 
-static int potion_sample_len = 32;
+static int potion_sample_len = 52;
 
-char *potion_code_excerpt(char *sample, char *nl, char *p, char *pe) {
+PN potion_code_excerpt(Potion *P, char *nl, char *p, char *pe) {
   char *nl2 = p;
   while (nl2 < pe && *nl2 != 0 && *nl2 != '\r' && *nl2 != '\n') nl2++;
   if (nl2 - nl <= potion_sample_len) {
-    sprintf(sample, "%.*s", (int)(nl2 - nl), nl);
+    return potion_str_format(P, "%.*s", (int)(nl2 - nl), nl);
   } else if (p - nl <= potion_sample_len) {
-    sprintf(sample, "%.*s", potion_sample_len, nl);
-  } else {
-    sprintf(sample, "...%.*s", potion_sample_len, p - 16);
+    return potion_str_format(P, "%.*s", potion_sample_len, nl);
   }
-  return sample;
+  return potion_str_format(P, "...%.*s", potion_sample_len, p - 16);
 }
 
 // TODO: make `sbuf` and `code` safe for gc movement
@@ -253,10 +251,12 @@ PN potion_parse(Potion *P, PN code) {
   %% write exec;
 
   LemonPotion(pParser, 0, 0, P);
+  last = P->source;
+  P->source = PN_NIL;
 
   // TODO: figure out why a closing newline is throwing a ragel error
-  if (cs == potion_error) {
-    char sample[potion_sample_len + 6];
+  if (cs == plex_error) {
+    PN msg = PN_NIL;
     lineno++;
     if (P->yerror >= 0) {
       int yerror = P->yerror;
@@ -265,23 +265,19 @@ PN potion_parse(Potion *P, PN code) {
       if (name == NULL) name = P->yerrname;
 
       if (P->yerror & PN_TOK_MISSING) {
-        printf("** Syntax error: missing %s.\n", name);
+        msg = potion_str_format(P, "Syntax error: missing %s.", name);
       } else {
-        printf("** Syntax error: %s was found in the wrong place.\n", name);
+        msg = potion_str_format(P, "Syntax error: %s was found in the wrong place.", name);
       }
-      printf("** Where: (line %d, character %d) %s\n",
-        lineno, (int)((p - nl) + 1), potion_code_excerpt(sample, nl, p, pe));
-      P->source = PN_NIL;
     } else if (*p != 0) {
-      printf("** Syntax error: bad character, Potion only supports UTF-8 encoding.\n"
-             "** Where: (line %d, character %d) %s\n",
-        lineno, (int)((p - nl) + 1), potion_code_excerpt(sample, nl, p, pe));
-      P->source = PN_NIL;
+      msg = potion_str_format(P, "Syntax error: bad character, Potion only supports UTF-8 encoding.");
+    }
+
+    if (msg != PN_NIL) {
+      last = potion_error(P, msg, lineno, (int)((p - nl) + 1), potion_code_excerpt(P, nl, p, pe));
     }
   }
 
-  last = P->source;
-  P->source = PN_NIL;
   return last;
 }
 
