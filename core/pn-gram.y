@@ -149,6 +149,7 @@ table(A) ::= BEGIN_TABLE all(B) END_TABLE. { A = PN_AST(TABLE, B); }
 table(A) ::= BEGIN_TABLE END_TABLE. { A = PN_AST(TABLE, PN_NIL); }
 
 lick(A) ::= BEGIN_LICK items(B) END_LICK. { A = PN_AST(TABLE, B); }
+lick(A) ::= BEGIN_LICK items(B) SEP END_LICK. { A = PN_AST(TABLE, B); }
 lick(A) ::= BEGIN_LICK END_LICK. { A = PN_AST(TABLE, PN_NIL); }
 
 items(A) ::= items(B) SEP item(C). { A = PN_PUSH(B, C); }
