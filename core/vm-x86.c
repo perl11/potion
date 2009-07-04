@@ -254,7 +254,8 @@ void potion_x86_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   X86_ARGO(start - 2, 1);
   X86_PRE(); ASM(0xB8); ASMN(potion_f_values); // mov &potion_f_values %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
-  X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNTuple) + (op.b * sizeof(PN))); // mov N(%rax) %rax
+  X86_PRE(); ASM(0x05); ASMI(sizeof(struct PNTuple) + (op.b * sizeof(PN))); // add N,%rax
+  X86_PRE(); ASM(0x8B); ASM(0); // mov (%rax) %rax
   X86_MOV_RBP(0x89, op.a);
 }
 
