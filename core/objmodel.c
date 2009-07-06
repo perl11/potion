@@ -173,8 +173,9 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   kh_val(PN, vt->methods, k) = method;
   PN_TOUCH(self);
 
-#if POTION_JIT == 1
+#ifdef JIT_MCACHE
   // TODO: make this more flexible, store in fixed gc, see ivfunc TODO also
+  // this is disabled until method weakrefs can be stored in fixed memory
   if (P->targets[POTION_JIT_TARGET].mcache != NULL) {
     PNAsm * volatile asmb = potion_asm_new(P);
     P->targets[POTION_JIT_TARGET].mcache(P, vt, &asmb);
@@ -193,8 +194,10 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
 
 PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   vPN(Vtable) vt = (struct PNVtable *)self;
+#ifdef JIT_MCACHE
   if (vt->mcache != NULL)
     return vt->mcache(PN_UNIQ(key));
+#endif
   unsigned k = kh_get(PN, vt->methods, key);
   if (k != kh_end(vt->methods)) return kh_val(PN, vt->methods, k);
   return PN_NIL;
@@ -265,7 +268,7 @@ PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {
 }
 
 PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
-  return potion_send_dyn(self, method);
+  return potion_send(self, method);
 }
 
 PN potion_object_new(Potion *P, PN cl, PN self) {

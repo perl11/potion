@@ -20,7 +20,7 @@ RAGEL = ragel
 STRIP ?= `./tools/config.sh ${CC} strip`
 
 # TODO: -O2 doesn't include -fno-stack-protector
-DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2 -DICACHE -DMCACHE/; s/1/-g -DDEBUG/"`
+DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
 
 VERSION = `./tools/config.sh ${CC} version`

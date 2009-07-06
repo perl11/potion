@@ -487,34 +487,13 @@ static inline struct PNData *potion_data_alloc(Potion *P, int siz) {
 // method caches
 // (more great stuff from ian piumarta)
 //
-// TODO: get rid of this, let's prefer the mcache in PNVtable
-//
-#define potion_send_dyn(RCV, MSG, ARGS...) ({ \
+#define potion_send(RCV, MSG, ARGS...) ({ \
     PN r = (PN)(RCV); \
     PN c = potion_bind(P, r, (MSG)); \
     if (PN_IS_CLOSURE(c)) \
-      ((struct PNClosure *)c)->method(P, c, r, ##ARGS); \
+      c = ((struct PNClosure *)c)->method(P, c, r, ##ARGS); \
     c; \
   })
-#if ICACHE
-#define potion_send(RCV, MSG, ARGS...) ({ \
-    PN r = (PN)(RCV); \
-    static PNType prevVT = 0; \
-    static int prevTN = 0; \
-    static PN closure = 0; \
-    PNType thisVT = potion_type(r); \
-    int thisTN = PN_FLEX_SIZE(P->vts); \
-    thisVT == prevVT && prevTN == thisTN ? closure : \
-      (prevVT = thisVT, prevTN = thisTN, closure = potion_bind(P, r, (MSG))); \
-    if (PN_IS_CLOSURE(closure)) \
-      r = ((struct PNClosure *)closure)->method(P, closure, r, ##ARGS); \
-    else \
-      r = closure; \
-    r; \
-  })
-#else
-#define potion_send potion_send_dyn
-#endif
 
 #define potion_method(RCV, MSG, FN, SIG) \
   potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
