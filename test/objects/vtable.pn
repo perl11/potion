@@ -5,4 +5,4 @@ String def ("length2", (): length.)
 Number def ("zero", 0)
 
 (1 test, "Potion" length2, 4 zero)
-# (Function(x), 6, 0)
+# (3, 6, 0)
