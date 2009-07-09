@@ -27,6 +27,8 @@
   newline     = "\r"? "\n" %{ lineno++; nl = p; };
   whitespace  = " " | "\f" | "\t" | "\v";
   eats        = (newline | whitespace)*;
+  preline     = "\r"? "\n" %{ nl = p; };
+  prespace    = (preline | whitespace)*;
   utfw        = alnum | "_" | "$" | "@" | "{" | "}" |
                 (0xc4 0xa8..0xbf) | (0xc5..0xdf 0x80..0xbf) |
                 (0xe0..0xef 0x80..0xbf 0x80..0xbf) |
@@ -112,6 +114,52 @@
     schar2      => { SCHAR(ts, te - ts); };
   *|;
 
+  strlick := |*
+    prespace ('[' | '{' | '(') => { SCHAR(ts, te - ts); inlick++; };
+    prespace ('}' | ')')       => { SCHAR(ts, te - ts); inlick--; };
+    (comma | newline+) => {
+      if (inlick <= 1) {
+        TOKEN2(STRING, potion_str2(P, PN_STR_PTR(sbuf), nbuf));
+        TOKEN1(SEP);
+        fgoto main;
+      } else {
+        SCHAR(ts, te - ts);
+      }
+    };
+    end_data => {
+      inlick--;
+      if (inlick <= 0) {
+        TOKEN2(STRING, potion_str2(P, PN_STR_PTR(sbuf), nbuf));
+        TOKEN(END_LICK);
+        fgoto main;
+      } else {
+        SCHAR(ts, te - ts);
+      }
+    };
+    utf8 => { SCHAR(ts, te - ts); };
+  *|;
+
+  lick := |*
+    comma       => { TOKEN1(SEP); fgoto main; };
+    newline+    => { if (last != PN_NIL) TOKEN1(SEP); fgoto main; };
+    whitespace;
+    comment;
+
+    begin_table => { TOKEN2(BEGIN_TABLE, PN_TUP0()); fgoto main; };
+    begin_data  => { TOKEN(BEGIN_LICK); inlick = 1; fgoto main; };
+
+    nil         => { TOKEN2(NIL, PN_NIL); fgoto main; };
+    true        => { TOKEN2(TRUE, PN_TRUE); fgoto main; };
+    false       => { TOKEN2(FALSE, PN_FALSE); fgoto main; };
+    int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts, 10))); fgoto main; };
+    hex         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts + 2, te - (ts + 2), 16))); fgoto main; };
+    dec         => { TOKEN2(DECIMAL, 
+      potion_decimal(P, te - ts, (tm == NULL ? te : tm - 1) - ts, ts)); fgoto main; };
+    quote1      => { nbuf = 0; fgoto string1; };
+    quote2      => { nbuf = 0; fgoto string2; };
+    utf8        => { nbuf = 0; inlick = 1; SCHAR(ts, te - ts); fgoto strlick; };
+  *|;
+
   main := |*
     comma       => { TOKEN1(SEP); };
     newline+    => { if (last != PN_NIL) TOKEN1(SEP); };
@@ -147,8 +195,8 @@
 
     begin_table => { TOKEN2(BEGIN_TABLE, PN_TUP0()); };
     end_table   => { TOKEN(END_TABLE); };
-    begin_data  => { TOKEN(BEGIN_LICK); };
-    end_data    => { TOKEN(END_LICK); };
+    begin_data  => { TOKEN(BEGIN_LICK); inlick = 1; };
+    end_data    => { TOKEN(END_LICK); inlick = 0; };
     begin_block => { TOKEN(BEGIN_BLOCK); P->dast++; };
     end_block   => { TOKEN(END_BLOCK); P->dast--; };
     end_blocks  => { 
@@ -169,7 +217,7 @@
       if (te[-1] == '\n') te--; if (te[-1] == '\r') te--;
       TOKEN2(STRING2, potion_str2(P, ts + 3, (te - ts) - 3)); };
 
-    message     => { TOKEN2(MESSAGE, potion_str2(P, ts, te - ts)); };
+    message     => { TOKEN2(MESSAGE, potion_str2(P, ts, te - ts)); if (inlick) { inlick = 0; fgoto lick; } };
     path        => { TOKEN2(PATH, potion_str2(P, ts + 1, te - (ts + 1))); };
     query       => { TOKEN2(QUERY, potion_str2(P, ts + 1, (te - ts) - 1)); };
     querypath   => { TOKEN2(PATHQ, potion_str2(P, ts + 1, (te - ts) - 1)); };
@@ -235,7 +283,7 @@ PN potion_code_excerpt(Potion *P, char *nl, char *p, char *pe) {
 PN potion_parse(Potion *P, PN code) {
   int cs, act;
   char *p, *pe, *nl, *ts, *te, *tm = 0, *eof = 0;
-  int lineno = 0, nbuf = 0;
+  int lineno = 0, nbuf = 0, inlick = 0;
   void * volatile pParser = LemonPotionAlloc(P);
   PN last = PN_NIL;
   PN sbuf = potion_bytes(P, 4096);
