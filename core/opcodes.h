@@ -51,6 +51,7 @@ enum PN_OPCODE {
   OP_LTE,
   OP_GT,
   OP_GTE,
+  OP_BITN,
   OP_BITL,
   OP_BITR,
   OP_DEF,

@@ -35,22 +35,22 @@
         X86_PRE(); ASM(0xC7); /* movl */ \
         ASM(0x45); ASM(RBP(reg)); /* -A(%rbp) */ \
         ASMI((PN)(x))
-#define X86_MATH(func, ops) ({ \
+#define X86_MATH(two, func, ops) ({ \
         int asmpos = 0; \
         X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /* mov -A(%rbp) %edx */ \
-        X86_MOV_RBP(0x8B, op.b); /* mov -B(%rbp) %eax */ \
+        if (two) { X86_MOV_RBP(0x8B, op.b); /* mov -B(%rbp) %eax */ } \
         ASM(0xF6); ASM(0xC2); ASM(0x01); /* test 0x1 %dl */ \
         asmpos = (*asmp)->len; \
         ASM(0x74); ASM(0); /* je [a] */ \
-        ASM(0xF6); ASM(0xC0); ASM(0x01); /* test 0x1 %al */ \
-        ASM(0x74); ASM(0); /* je [a] */ \
+        if (two) { ASM(0xF6); ASM(0xC0); ASM(0x01); /* test 0x1 %al */ } \
+        if (two) { ASM(0x74); ASM(0); /* je [a] */ } \
         ASM(0xD1); ASM(0xFA); /* sar %edx */ \
-        ASM(0xD1); ASM(0xF8); /* sar %eax */ \
+        if (two) { ASM(0xD1); ASM(0xF8); /* sar %eax */ } \
         ops; /* add, sub, ... */ \
         X86_POST(); /* cltq */ \
         X86_PRE(); ASM(0x8D); ASM(0x44); ASM(0x00); ASM(0x01); /* lea 0x1(%eax+%eax*1) %eax */ \
         (*asmp)->ptr[asmpos + 1] = ((*asmp)->len - asmpos); \
-        (*asmp)->ptr[asmpos + 6] = ((*asmp)->len - asmpos) - 5; \
+        if (two) { (*asmp)->ptr[asmpos + 6] = ((*asmp)->len - asmpos) - 5; } \
         asmpos = (*asmp)->len; \
         ASM(0xEB); ASM(0); /*  jmp [b] */ \
         X86_ARGO(start - 3, 0); /* [a] */ \
@@ -389,7 +389,7 @@ void potion_x86_setpath(Potion *P, struct PNProto * volatile f, PNAsm * volatile
 
 void potion_x86_add(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_MATH(potion_obj_add, {
+  X86_MATH(1, potion_obj_add, {
     ASM(0x89); ASM(0xD1); // mov %rdx %rcx
     ASM(0x01); ASM(0xC1); // add %rax %rcx
     ASM(0x89); ASM(0xC8); // mov %rcx %rax
@@ -398,7 +398,7 @@ void potion_x86_add(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 
 void potion_x86_sub(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_MATH(potion_obj_sub, {
+  X86_MATH(1, potion_obj_sub, {
     ASM(0x89); ASM(0xD1); // mov %rdx %rcx
     ASM(0x29); ASM(0xC1); // sub %rax %rcx
     ASM(0x89); ASM(0xC8); // mov %rcx %rax
@@ -407,14 +407,14 @@ void potion_x86_sub(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 
 void potion_x86_mult(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_MATH(potion_obj_mult, {
+  X86_MATH(1, potion_obj_mult, {
     ASM(0x0F); ASM(0xAF); ASM(0xC2); // imul %rdx %rax
   });
 }
 
 void potion_x86_div(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_MATH(potion_obj_div, {
+  X86_MATH(1, potion_obj_div, {
     ASM(0x89); ASM(0xC1); // mov %eax %ecx
     ASM(0x89); ASM(0xD0); // mov %edx %eax
     ASM(0xC1); ASM(0xFA); ASM(0x1F); // sar 0x1f %edx
@@ -424,7 +424,7 @@ void potion_x86_div(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 
 void potion_x86_rem(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_MATH(potion_obj_rem, {
+  X86_MATH(1, potion_obj_rem, {
     ASM(0x89); ASM(0xC1); // mov %eax %ecx
     ASM(0x89); ASM(0xD0); // mov %edx %eax
     ASM(0xC1); ASM(0xFA); ASM(0x1F); // sar 0x1f %edx
@@ -473,9 +473,21 @@ void potion_x86_gte(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
   X86_CMP(0x7C); // jl
 }
 
+int potion_bitten(unsigned int x) {
+  return ~x;
+}
+
+void potion_x86_bitn(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_MATH(0, potion_obj_bitl, {
+    ASM(0x89); ASM(0xD0); // mov %edx %eax
+    ASM(0xF7); ASM(0xD0); // not %eax
+  });
+}
+
 void potion_x86_bitl(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_MATH(potion_obj_bitl, {
+  X86_MATH(1, potion_obj_bitl, {
     ASM(0x89); ASM(0xC1); // mov %eax %ecx
     ASM(0x89); ASM(0xD0); // mov %edx %eax
     ASM(0xD3); ASM(0xE0); // sar %cl %eax
@@ -484,7 +496,7 @@ void potion_x86_bitl(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 
 void potion_x86_bitr(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_MATH(potion_obj_bitr, {
+  X86_MATH(1, potion_obj_bitr, {
     ASM(0x89); ASM(0xC1); // mov %eax %ecx
     ASM(0x89); ASM(0xD0); // mov %edx %eax
     ASM(0xD3); ASM(0xF8); // sar %cl %eax

@@ -247,6 +247,10 @@ PN potion_obj_rem(Potion *P, PN a, PN b) {
   return potion_send(a, PN_rem, b);
 }
 
+PN potion_obj_bitn(Potion *P, PN a) {
+  return potion_send(a, PN_bitn);
+}
+
 PN potion_obj_bitl(Potion *P, PN a, PN b) {
   return potion_send(a, PN_bitl, b);
 }

@@ -12,7 +12,7 @@
 
 const char *potion_ast_names[] = {
   "code", "value", "assign", "not", "or", "and", "cmp", "eq", "neq",
-  "gt", "gte", "lt", "lte", "pipe", "caret", "amp", "bitl",
+  "gt", "gte", "lt", "lte", "pipe", "caret", "amp", "wavy", "bitl",
   "bitr", "plus", "minus", "inc", "times", "div", "rem", "pow",
   "message", "path", "query", "pathq", "expr", "table",
   "block", "lick", "proto"
@@ -20,7 +20,7 @@ const char *potion_ast_names[] = {
 
 const int potion_ast_sizes[] = {
   1, 3, 2, 1, 2, 2, 2, 2, 2,
-  2, 2, 2, 2, 2, 2, 2, 2,
+  2, 2, 2, 2, 2, 2, 2, 1, 2,
   2, 2, 2, 2, 2, 2, 2, 2,
   3, 1, 1, 1, 1, 1, 1, 3,
   2

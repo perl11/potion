@@ -190,7 +190,7 @@
     "/" eats    => { TOKEN(DIV); };
     "%" eats    => { TOKEN(REM); };
     "**" eats   => { TOKEN(POW); };
-#   "~"         => { TOKEN(WAVY); };
+    "~" eats    => { TOKEN(WAVY); };
     "=" eats    => { TOKEN(ASSIGN); };
 
     begin_table => { TOKEN2(BEGIN_TABLE, PN_TUP0()); inlick = 0; };
@@ -242,6 +242,7 @@ static char *potion_token_friendly(int tok) {
     case PN_TOK_PIPE: return "a pipe character `|` (used for bitwise OR)";
     case PN_TOK_CARET: return "a caret symbol `^` (used for bitwise XOR)";
     case PN_TOK_AMP: return "an ampersand `&` (used for bitwise AND)";
+    case PN_TOK_WAVY: return "a wavy tilde `~` (used for bitwise negation)";
     case PN_TOK_BITL: return "a left bitshift `<<`";
     case PN_TOK_BITR: return "a right bitshift `>>`";
     case PN_TOK_PLUS: return "a plus sign `+` (used for addition)";

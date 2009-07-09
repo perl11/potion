@@ -26,7 +26,7 @@ const struct {
   {"newlick", 2}, {"getpath", 2}, {"setpath", 2}, {"add", 2}, {"sub", 2},
   {"mult", 2}, {"div", 2}, {"mod", 2}, {"pow", 2}, {"not", 1}, {"cmp", 2},
   {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2}, {"gt", 2}, {"gte", 2},
-  {"bitl", 2}, {"bitr", 2}, {"def", 2}, {"bind", 2}, {"message", 2},
+  {"bitn", 2}, {"bitl", 2}, {"bitr", 2}, {"def", 2}, {"bind", 2}, {"message", 2},
   {"jump", 1}, {"test", 2}, {"testjmp", 2}, {"notjmp", 2}, {"named", 2},
   {"call", 2}, {"callset", 2}, {"tailcall", 2}, {"return", 1},
   {"proto", 2}, {"class", 2}
@@ -410,19 +410,16 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
     }
     break;
 
-    case AST_NOT:
+    case AST_NOT: case AST_WAVY:
       PN_ARG(0, reg);
-      PN_ASM2(OP_NOT, reg, reg);
+      PN_ASM2(t->part == AST_WAVY ? OP_BITN : OP_NOT, reg, reg);
     break;
 
     case AST_AND: case AST_OR: {
       int jmp;
       PN_ARG(0, reg);
       jmp = PN_OP_LEN(f->asmb);
-      if (t->part == AST_AND)
-        PN_ASM2(OP_NOTJMP, reg, 0);
-      else
-        PN_ASM2(OP_TESTJMP, reg, 0);
+      PN_ASM2(t->part == AST_AND ? OP_NOTJMP : OP_TESTJMP, reg, 0);
       PN_ARG(1, reg);
       PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
     }

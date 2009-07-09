@@ -145,6 +145,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(LTE, (P, f, &asmb, pos))
       CASE_OP(GT, (P, f, &asmb, pos))
       CASE_OP(GTE, (P, f, &asmb, pos))
+      CASE_OP(BITN, (P, f, &asmb, pos, need))
       CASE_OP(BITL, (P, f, &asmb, pos, need))
       CASE_OP(BITR, (P, f, &asmb, pos, need))
       CASE_OP(DEF, (P, f, &asmb, pos, need))
@@ -324,6 +325,10 @@ reentry:
       break;
       case OP_GTE:
         reg[op.a] = PN_BOOL((long)(reg[op.a]) >= (long)(reg[op.b]));
+      break;
+      // TODO: handle non-numbers in math ops
+      case OP_BITN:
+        reg[op.a] = PN_NUM(~PN_INT(reg[op.b]));
       break;
       case OP_BITL:
         reg[op.a] = PN_NUM(PN_INT(reg[op.a]) << PN_INT(reg[op.b]));

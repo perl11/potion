@@ -29,6 +29,7 @@ enum PN_AST {
   AST_PIPE,
   AST_CARET,
   AST_AMP,
+  AST_WAVY,
   AST_BITL,
   AST_BITR,
   AST_PLUS,

@@ -256,6 +256,9 @@ void potion_ppc_gte(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
   PPC_CMP(0x419C0000); // blt
 }
 
+void potion_ppc_bitn(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_ppc_bitl(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_MATH({
