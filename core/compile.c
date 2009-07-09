@@ -26,9 +26,10 @@ const struct {
   {"newlick", 2}, {"getpath", 2}, {"setpath", 2}, {"add", 2}, {"sub", 2},
   {"mult", 2}, {"div", 2}, {"mod", 2}, {"pow", 2}, {"not", 1}, {"cmp", 2},
   {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2}, {"gt", 2}, {"gte", 2},
-  {"bitl", 2}, {"bitr", 2}, {"def", 2}, {"bind", 2}, {"jump", 1}, {"test", 2},
-  {"testjmp", 2}, {"notjmp", 2}, {"named", 2}, {"call", 2}, {"callset", 2},
-  {"tailcall", 2}, {"return", 1}, {"proto", 2}, {"class", 2}
+  {"bitl", 2}, {"bitr", 2}, {"def", 2}, {"bind", 2}, {"message", 2},
+  {"jump", 1}, {"test", 2}, {"testjmp", 2}, {"notjmp", 2}, {"named", 2},
+  {"call", 2}, {"callset", 2}, {"tailcall", 2}, {"return", 1},
+  {"proto", 2}, {"class", 2}
 };
 
 PN potion_proto_tree(Potion *P, PN cl, PN self) {
@@ -527,8 +528,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
             PN_ASM2(OP_MOVE, oreg, reg);
           }
           PN_ASM2(OP_LOADK, reg, num);
-          PN_ASM2(OP_BIND, reg, breg);
-          PN_ASM2(OP_MESSAGE, reg, reg);
+          PN_ASM2(t->part == AST_MESSAGE || t->a[1] != PN_NIL ? OP_MESSAGE : OP_BIND, reg, breg);
           if (t->part == AST_QUERY && t->a[1] != PN_NIL) {
             jmp = PN_OP_LEN(f->asmb);
             PN_ASM2(OP_NOTJMP, reg, 0);
@@ -539,15 +539,14 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
             breg++;
             PN_BLOCK(breg, t->a[2], t->a[1]);
           }
-          if (t->part == AST_MESSAGE) {
+          if (t->a[1] != PN_NIL || t->a[2] != PN_NIL) {
             PN_ASM2(OP_CALL, reg, breg);
-          } else
-            if (t->a[1] != PN_NIL) {
-              PN_ASM2(OP_CALL, reg, breg);
+            if (t->part == AST_QUERY) {
               PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
-            } else {
-              PN_ASM2(OP_TEST, reg, breg);
             }
+          } else if (t->part == AST_QUERY) {
+            PN_ASM2(OP_TEST, reg, breg);
+          }
         } else {
           PN_ASM2(opcode, reg, num);
           if (call) {

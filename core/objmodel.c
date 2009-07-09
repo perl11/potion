@@ -18,7 +18,8 @@ PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   PN_SIZE i;
   vPN(Closure) c = PN_ALLOC_N(PN_TCLOSURE, struct PNClosure, extra * sizeof(PN));
   c->method = meth;
-  c->sig = sig;
+  if (PN_IS_TUPLE(sig) && PN_TUPLE_LEN(sig) > 0)
+    c->sig = sig;
   c->extra = extra;
   for (i = 0; i < c->extra; i++)
     c->data[i] = PN_NIL;
@@ -217,6 +218,13 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
     vt = ((struct PNVtable *)vt)->parent; 
   }
   return closure;
+}
+
+PN potion_message(Potion *P, PN rcv, PN msg) {
+  PN cl = potion_bind(P, rcv, msg);
+  if (PN_IS_CLOSURE(cl) && (PN_CLOSURE(cl)->sig == PN_NIL || PN_TUPLE_AT(PN_CLOSURE(cl)->sig, 0) == PN_NUM('|')))
+    return PN_CLOSURE(cl)->method(P, cl, rcv, PN_NIL);
+  return cl;
 }
 
 PN potion_obj_add(Potion *P, PN a, PN b) {

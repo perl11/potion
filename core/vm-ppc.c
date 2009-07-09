@@ -276,6 +276,9 @@ void potion_ppc_def(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 void potion_ppc_bind(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
+void potion_ppc_message(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_ppc_jmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   TAG_JMP(0x48000000, pos + op.a); // b

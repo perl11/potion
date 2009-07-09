@@ -110,6 +110,6 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "number", potion_num_number, 0);
   potion_method(num_vt, "step", potion_num_step, "end=N,step=N");
   potion_method(num_vt, "string", potion_num_string, 0);
-  potion_method(num_vt, "times", potion_num_times, 0);
+  potion_method(num_vt, "times", potion_num_times, "block=&");
   potion_method(num_vt, "to", potion_num_to, "end=N");
 }

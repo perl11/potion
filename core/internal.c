@@ -70,7 +70,7 @@ static void potion_init(Potion *P) {
   PN_bitr = potion_str(P, ">>");
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup, 0));
-  potion_def_method(P, 0, vtable, PN_def, PN_FUNC(potion_def_method, 0));
+  potion_def_method(P, 0, vtable, PN_def, PN_FUNC(potion_def_method, "name=S,block=&"));
 
   potion_send(vtable, PN_def, PN_allocate, PN_FUNC(potion_allocate, 0));
   potion_send(vtable, PN_def, PN_delegated, PN_FUNC(potion_delegated, 0));

@@ -165,7 +165,7 @@ PN potion_tuple_first(Potion *P, PN cl, PN self) {
 PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
   PN out = potion_byte_str(P, "");
   PN_TUPLE_EACH(self, i, v, {
-    if (sep) potion_bytes_append(P, PN_NIL, out, sep);
+    if (i > 0 && sep != PN_NIL) potion_bytes_obj_string(P, out, sep);
     potion_bytes_obj_string(P, out, v);
   });
   return out;
@@ -256,7 +256,7 @@ void potion_table_init(Potion *P) {
   potion_type_call_is(tbl_vt, PN_FUNC(potion_table_at, "key=o"));
   potion_type_callset_is(tbl_vt, PN_FUNC(potion_table_put, "key=o,value=o"));
   potion_method(tbl_vt, "at", potion_table_at, "key=o");
-  potion_method(tbl_vt, "each", potion_table_each, 0);
+  potion_method(tbl_vt, "each", potion_table_each, "block=&");
   potion_method(tbl_vt, "length", potion_table_length, 0);
   potion_method(tbl_vt, "put", potion_table_put, "key=o,value=o");
   potion_method(tbl_vt, "remove", potion_table_remove, "index=o");
@@ -264,15 +264,15 @@ void potion_table_init(Potion *P) {
   potion_type_call_is(tpl_vt, PN_FUNC(potion_tuple_at, "index=N"));
   potion_type_callset_is(tpl_vt, PN_FUNC(potion_tuple_put, "index=N,value=o"));
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
-  potion_method(tpl_vt, "each", potion_tuple_each, "index=N");
+  potion_method(tpl_vt, "each", potion_tuple_each, "block=&");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
   potion_method(tpl_vt, "first", potion_tuple_first, 0);
-  potion_method(tpl_vt, "join", potion_tuple_join, 0);
+  potion_method(tpl_vt, "join", potion_tuple_join, "|sep=S");
   potion_method(tpl_vt, "last", potion_tuple_last, 0);
   potion_method(tpl_vt, "length", potion_tuple_length, 0);
   potion_method(tpl_vt, "print", potion_tuple_print, 0);
   potion_method(tpl_vt, "put", potion_tuple_put, "index=N,value=o");
   // TODO: add Tuple remove
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
-  potion_method(P->lobby, "list", potion_lobby_list, 0);
+  potion_method(P->lobby, "list", potion_lobby_list, "length=N");
 }

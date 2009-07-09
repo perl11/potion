@@ -149,6 +149,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(BITR, (P, f, &asmb, pos, need))
       CASE_OP(DEF, (P, f, &asmb, pos, need))
       CASE_OP(BIND, (P, f, &asmb, pos, need))
+      CASE_OP(MESSAGE, (P, f, &asmb, pos, need))
       CASE_OP(JMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(TEST, (P, f, &asmb, pos))
       CASE_OP(NOT, (P, f, &asmb, pos))
@@ -335,6 +336,9 @@ reentry:
       break;
       case OP_BIND:
         reg[op.a] = potion_bind(P, reg[op.b], reg[op.a]);
+      break;
+      case OP_MESSAGE:
+        reg[op.a] = potion_message(P, reg[op.b], reg[op.a]);
       break;
       case OP_JMP:
         pos += op.a;

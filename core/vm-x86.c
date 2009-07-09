@@ -261,7 +261,7 @@ void potion_x86_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 
 void potion_x86_self(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  // TODO: optimize so that if this is followed by a BIND, it'll just
+  // TODO: optimize so that if this is followed by a BIND or MESSAGE, it'll just
   // use the self register directly.
   X86_MOV_RBP(0x8B, start - 1);
   X86_MOV_RBP(0x89, op.a);
@@ -508,6 +508,16 @@ void potion_x86_bind(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   X86_ARGO(op.b, 1); // (7, 3)
   X86_ARGO(op.a, 2); // (7, 3)
   X86_PRE(); ASM(0xB8); ASMN(potion_bind); // mov &potion_bind %rax
+  ASM(0xFF); ASM(0xD0); // callq %rax
+  X86_MOV_RBP(0x89, op.a); // mov %rax local
+}
+
+void potion_x86_message(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(start - 3, 0); // (0, 3)
+  X86_ARGO(op.b, 1); // (7, 3)
+  X86_ARGO(op.a, 2); // (7, 3)
+  X86_PRE(); ASM(0xB8); ASMN(potion_message); // mov &potion_message %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
   X86_MOV_RBP(0x89, op.a); // mov %rax local
 }

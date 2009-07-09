@@ -536,6 +536,7 @@ PN potion_delegated(Potion *, PN, PN);
 PN potion_call(Potion *, PN, PN_SIZE, PN * volatile);
 PN potion_lookup(Potion *, PN, PN, PN);
 PN potion_bind(Potion *, PN, PN);
+PN potion_message(Potion *, PN, PN);
 PN potion_closure_new(Potion *, PN_F, PN, PN_SIZE);
 PN potion_callcc(Potion *, PN, PN);
 PN potion_ref(Potion *, PN);
