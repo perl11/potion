@@ -193,8 +193,8 @@
 #   "~"         => { TOKEN(WAVY); };
     "=" eats    => { TOKEN(ASSIGN); };
 
-    begin_table => { TOKEN2(BEGIN_TABLE, PN_TUP0()); };
-    end_table   => { TOKEN(END_TABLE); };
+    begin_table => { TOKEN2(BEGIN_TABLE, PN_TUP0()); inlick = 0; };
+    end_table   => { TOKEN(END_TABLE); inlick = 0; };
     begin_data  => { TOKEN(BEGIN_LICK); inlick = 1; };
     end_data    => { TOKEN(END_LICK); inlick = 0; };
     begin_block => { TOKEN(BEGIN_BLOCK); P->dast++; };
