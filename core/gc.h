@@ -7,7 +7,11 @@
 #define POTION_GC_H
 
 #ifndef POTION_BIRTH_SIZE
-#define POTION_BIRTH_SIZE  ((PN_SIZE_T * 2) << 20)
+#define POTION_BIRTH_SIZE  (PN_SIZE_T << 21)
+#endif
+
+#ifndef POTION_MIN_BIRTH_SIZE
+#define POTION_MIN_BIRTH_SIZE  (PN_SIZE_T << 15)
 #endif
 
 #ifndef POTION_MAX_BIRTH_SIZE
@@ -105,6 +109,16 @@
       } \
     } \
 } while (0)
+
+static inline int potion_birth_suggest(int need, volatile void *oldlo, volatile void *oldhi) {
+  int suggest = ((char *)oldhi - (char *)oldlo) / 2;
+  if (need * 2 > suggest) suggest = need * 2;
+  if (POTION_MIN_BIRTH_SIZE > suggest)
+    suggest = POTION_MIN_BIRTH_SIZE;
+  else if (POTION_BIRTH_SIZE < suggest)
+    suggest = POTION_BIRTH_SIZE;
+  return PN_ALIGN(suggest, POTION_MIN_BIRTH_SIZE);
+}
 
 PN_SIZE potion_stack_len(Potion *, _PN **);
 PN_SIZE potion_mark_stack(Potion *, int);

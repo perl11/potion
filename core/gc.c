@@ -126,7 +126,7 @@ static int potion_gc_minor(Potion *P, int sz) {
   scanptr = 0;
 
   sz += 2 * POTION_PAGESIZE;
-  sz = max(sz, POTION_BIRTH_SIZE);
+  sz = max(sz, potion_birth_suggest(sz, M->old_lo, M->old_cur));
 
   newad = pngc_page_new(&sz, 0);
   DEL_BIRTH_REGION();
@@ -147,6 +147,7 @@ static int potion_gc_major(Potion *P, int siz) {
   void *protptr = (void *)M + PN_ALIGN(sizeof(struct PNMemory), 8);
   void *scanptr = 0;
   void *newbirth = 0;
+  int birthest = 0;
   int birthsiz = 0;
   int newoldsiz = 0;
   int oldsiz = 0;
@@ -165,7 +166,8 @@ static int potion_gc_major(Potion *P, int siz) {
     "(old: %p -> %p = %ld)\n",
     M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
     M->old_lo, M->old_hi, (long)(M->old_hi - M->old_lo));
-  newoldsiz = (((char *)prevoldcur - (char *)prevoldlo) + siz + POTION_BIRTH_SIZE +
+  birthest = potion_birth_suggest(siz, prevoldlo, prevoldcur);
+  newoldsiz = (((char *)prevoldcur - (char *)prevoldlo) + siz + birthest +
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
   newold = pngc_page_new(&newoldsiz, 0);
   M->old_cur = scanptr = newold + (sizeof(PN) * 2);
@@ -187,7 +189,7 @@ static int potion_gc_major(Potion *P, int siz) {
   prevoldhi = 0;
   prevoldcur = 0;
 
-  birthsiz = siz + POTION_BIRTH_SIZE;
+  birthsiz = siz + birthest;
   newbirth = pngc_page_new(&birthsiz, 0);
   
   DEL_BIRTH_REGION();
@@ -195,7 +197,7 @@ static int potion_gc_major(Potion *P, int siz) {
   SET_STOREPTR(5);
 
   oldsiz = ((char *)M->old_cur - (char *)newold) +
-    (birthsiz + 2 * POTION_BIRTH_SIZE + 4 * POTION_PAGESIZE);
+    (birthsiz + 2 * birthest + 4 * POTION_PAGESIZE);
   oldsiz = PN_ALIGN(oldsiz, POTION_PAGESIZE);
   if (oldsiz < newoldsiz) {
     pngc_page_delete((void *)newold + oldsiz, newoldsiz - oldsiz);
@@ -218,14 +220,13 @@ void potion_garbagecollect(Potion *P, int sz, int full) {
   M->collecting = 1;
 
   if (M->old_lo == NULL) {
-    int gensz = POTION_BIRTH_SIZE * 4;
+    int gensz = POTION_MIN_BIRTH_SIZE * 4;
     void *page = pngc_page_new(&gensz, 0);
     SET_GEN(old, page, gensz);
   }
 
-  if ((char *) M->old_cur + sz + POTION_BIRTH_SIZE +
-      ((char *) M->birth_hi - (char *) M->birth_lo)
-      > (char *) M->old_hi)
+  if ((char *) M->old_cur + sz + potion_birth_suggest(sz, M->old_lo, M->old_cur) +
+      ((char *) M->birth_hi - (char *) M->birth_lo) > (char *) M->old_hi)
     full = 1;
 #if POTION_GC_PERIOD>0
   else if (M->pass % POTION_GC_PERIOD == POTION_GC_PERIOD - 1)
@@ -388,10 +389,12 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->source);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->sig);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->stack);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->paths);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->locals);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->upvals);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->values);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->protos);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->tree);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
     case PN_TTABLE:
@@ -475,10 +478,12 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->source);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->sig);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->stack);
+      GC_MAJOR_UPDATE(((struct PNProto *)ptr)->paths);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->locals);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->upvals);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->values);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->protos);
+      GC_MAJOR_UPDATE(((struct PNProto *)ptr)->tree);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
     case PN_TTABLE:
@@ -521,7 +526,7 @@ done:
 //
 Potion *potion_gc_boot(void *sp) {
   Potion *P;
-  int bootsz = POTION_BIRTH_SIZE * 2;
+  int bootsz = POTION_MIN_BIRTH_SIZE;
   void *page1 = pngc_page_new(&bootsz, 0);
   struct PNMemory *M = (struct PNMemory *)page1;
   PN_MEMZERO(M, struct PNMemory);
