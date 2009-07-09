@@ -139,6 +139,7 @@
     utf8 => { SCHAR(ts, te - ts); };
   *|;
 
+  # TODO: this is lousy stuff, will need to wait until i move to peg/leg.
   lick := |*
     comma       => { TOKEN1(SEP); fgoto main; };
     newline+    => { if (last != PN_NIL) TOKEN1(SEP); fgoto main; };
