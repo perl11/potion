@@ -528,6 +528,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           }
           PN_ASM2(OP_LOADK, reg, num);
           PN_ASM2(OP_BIND, reg, breg);
+          PN_ASM2(OP_MESSAGE, reg, reg);
           if (t->part == AST_QUERY && t->a[1] != PN_NIL) {
             jmp = PN_OP_LEN(f->asmb);
             PN_ASM2(OP_NOTJMP, reg, 0);

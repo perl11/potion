@@ -504,49 +504,11 @@ void potion_x86_def(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 
 void potion_x86_bind(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-#ifdef JIT_ICACHE
-  u8 *ictype, *icname;
-  // place the receiver's class in %eax
-  ASM(0xB8); ASMI(1); // mov 0x1 %rax
-  X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.b)); // mov %rbp(B) %rdx
-  ASM(0xF6); ASM(0xC2); ASM(0x01); // test 0x1 %dl
-  ASM(0x75); ASM(X86C(21, 24)); // jne [b]
-  ASM(0xF7); ASM(0xC2); ASMI(PN_REF_MASK); // test REFMASK %edx
-  ASM(0x75); ASM(X86C(7, 8)); // jne [a]
-  X86_PRE(); ASM(0x89); ASM(0xD0); // mov %rdx %rax
-  ASM(0x83); ASM(0xE0); ASM(PN_PRIMITIVE); // and 0x7 %eax
-  ASM(0xEB); ASM(X86C(6, 8)); // jmp [b]
-  X86_PRE(); ASM(0x83); ASM(0xE2); ASM(0xF8); // [a] and ~PRIMITIVE %edx
-  X86_PRE(); ASM(0x8B); ASM(0x42); ASM(0); // %rdx.vt %rax
-  // [b] compare to TYPE 
-  X86_PRE(); ASM(0x89); ASM(0xC2); // mov %rax %rdx
-  X86_PRE(); ASM(0xB8); ictype = asmp[0]->ptr; ASMN(0); // mov TYPE %rax
-  X86_PRE(); ASM(0x39); ASM(0xC2); // cmp %rax %rdx
-  ASM(0x75); ASM(X86C(14, 21)); // jne [c]
-  // compare %rbp(A) and NAME
-  X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); // mov %rbp(A) %rdx
-  X86_PRE(); ASM(0xB8); icname = asmp[0]->ptr; ASMN(0); // mov NAME %rax
-  X86_PRE(); ASM(0x39); ASM(0xC2); // cmp %rax %rdx
-  ASM(0x75); ASM(X86C(10, 12)); // jne [d]
-  ASM(0xEB); ASM(X86C(46, 55)); // jmp [e]
-  // [c] cache new type
-  X86_PRE(); ASM(0x89); ASM(0xD0); // mov %rdx %rax
-  X86_PRE(); ASM(0x89); ASM(0x05); ASMI(ictype - (asmp[0]->ptr + 4)); // mov %rax TYPE
-  // [d] cache new method
-  X86_MOV_RBP(0x8B, op.a); // mov %rbp(A) %rax
-  X86_PRE(); ASM(0x89); ASM(0x05); ASMI(icname - (asmp[0]->ptr + 4)); // mov %rax NAME 
-#endif
   X86_ARGO(start - 3, 0); // (0, 3)
   X86_ARGO(op.b, 1); // (7, 3)
   X86_ARGO(op.a, 2); // (7, 3)
   X86_PRE(); ASM(0xB8); ASMN(potion_bind); // mov &potion_bind %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
-#ifdef JIT_ICACHE
-  X86_PRE(); ASM(0x89); ASM(0x05); ASMI(X86C(3, 4)); // mov %rax CLO
-  ASM(0xEB); ASM(X86C(1, 2) + sizeof(PN)); // jmp over [e]
-  // [e] load cached method
-  X86_PRE(); ASM(0xB8); ASMN(0); // mov CLO %rax
-#endif
   X86_MOV_RBP(0x89, op.a); // mov %rax local
 }
 
@@ -734,24 +696,6 @@ void potion_x86_class(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 }
 
 void potion_x86_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp) {
-#ifdef JIT_ICACHE
-#if __WORDSIZE != 64
-  if (1) { // TODO: only scan if relative jumps are used
-    long ici = 0; int *ipos, ival; 
-    for (ici = 0; ici < asmp[0]->capa; ici++) {
-      if (asmp[0]->ptr[ici] != 0x89) continue;
-      if (asmp[0]->ptr[ici+1] != 0x05) continue;
-      if (asmp[0]->ptr[ici+5] != 0 && asmp[0]->ptr[ici+5] != 0xff) continue;
-      ipos = (int *)(asmp[0]->ptr+ici+2);
-      ival = *ipos;
-      asmp[0]->ptr[ici] = 0xA3;   // mov %eax MEMOFF
-      asmp[0]->ptr[ici+5] = 0x90; // nop
-      ipos = (int *)(asmp[0]->ptr+ici+1);
-      *ipos = fn+ici+6+ival;
-    }
-  }
-#endif
-#endif
 }
 
 void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
