@@ -221,15 +221,16 @@ void potion_garbagecollect(Potion *P, int sz, int full) {
 
   if (M->old_lo == NULL) {
     int gensz = POTION_MIN_BIRTH_SIZE * 4;
+    if (gensz < sz * 4)
+      gensz = min(POTION_MAX_BIRTH_SIZE, PN_ALIGN(sz * 4, POTION_PAGESIZE));
     void *page = pngc_page_new(&gensz, 0);
     SET_GEN(old, page, gensz);
-  }
-
-  if ((char *) M->old_cur + sz + potion_birth_suggest(sz, M->old_lo, M->old_cur) +
+    full = 0;
+  } else if ((char *) M->old_cur + sz + potion_birth_suggest(sz, M->old_lo, M->old_cur) +
       ((char *) M->birth_hi - (char *) M->birth_lo) > (char *) M->old_hi)
     full = 1;
 #if POTION_GC_PERIOD>0
-  else if (M->pass % POTION_GC_PERIOD == POTION_GC_PERIOD - 1)
+  else if (M->pass % POTION_GC_PERIOD == POTION_GC_PERIOD)
     full = 1;
 #endif
 

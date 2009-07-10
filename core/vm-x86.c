@@ -473,10 +473,6 @@ void potion_x86_gte(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
   X86_CMP(0x7C); // jl
 }
 
-int potion_bitten(unsigned int x) {
-  return ~x;
-}
-
 void potion_x86_bitn(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MATH(0, potion_obj_bitl, {
