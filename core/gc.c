@@ -261,7 +261,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
 
   switch (ptr->vt) {
     case PN_TNUMBER:
-      sz = sizeof(struct PNDecimal) + (sizeof(PN) * ((struct PNDecimal *)ptr)->len);
+      sz = sizeof(struct PNDecimal) + (sizeof(double) * ((struct PNDecimal *)ptr)->len);
     break;
     case PN_TSTRING:
       sz = sizeof(struct PNString) + PN_STR_LEN(ptr) + 1;

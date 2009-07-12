@@ -11,6 +11,37 @@
 #include "potion.h"
 #include "internal.h"
 
+static double mpbbx = 0.0, mpbdx, mpbx2, mprbx, mprdx, mprx2, mprxx;
+const int mpnbt = 48, mpnpr = 16, mpmcrx = 7, mpnrow = 16, mpnsp1 = 3, mpnsp2 = 9;
+
+double potion_num_double(PN num) {
+  if (PN_IS_NUM(num))
+    return (double)PN_INT(num);
+  if (!PN_IS_DECIMAL(num))
+    return 0.0;
+  vPN(Decimal) n = (struct PNDecimal *)num;
+  if (n->sign == 0)
+    return 0.0;
+  if (n->real[0] >= 22.0)
+    return (n->sign > 0) ? HUGE_VAL : -HUGE_VAL;
+  if (n->real[0] <= -24.0)
+    return (n->sign > 0) ? 0.0 : -0.0;
+
+  int na = n->sign;
+  double da = PN_MANTISSA(n, 0);
+  if (na == 2)
+    da += PN_MANTISSA(n, 1) * mprdx;
+  else if (na >= 3)
+    da += (PN_MANTISSA(n, 1) * mprdx + PN_MANTISSA(n, 2) * mprx2);
+
+  if (n->real[0] == -23.0) {
+    da *= mprdx;
+    da *= ldexp(1.0, -mpnbt * 22);
+  } else
+    da *= ldexp(1.0, mpnbt * (int)n->real[0]);
+  return (n->sign > 0) ? da : -da;
+}
+
 PN potion_pow(Potion *P, PN cl, PN num, PN sup) {
   return PN_NUM((int)pow((double)PN_INT(num), (double)PN_INT(sup)));
 }
@@ -42,30 +73,13 @@ static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) 
   }
 }
 
-static PN potion_num_string(Potion *P, PN closure, PN self) {
-  PN str;
-  if (PN_IS_NUM(self)) {
-    char ints[21];
+PN potion_num_string(Potion *P, PN closure, PN self) {
+  char ints[21];
+  if (PN_IS_NUM(self))
     sprintf(ints, "%ld", PN_INT(self));
-    str = potion_byte_str(P, ints);
-  } else {
-    vPN(Decimal) n = (struct PNDecimal *)self;
-    char ints[n->len + 2];
-    int i, prec;
-    for (prec = 1; prec < PN_PREC; prec++)
-      if (n->digits[n->len - prec] != 0)
-        break;
-    if (prec > 1) prec--;
-    for (i = 0; i < n->len - prec; i++) {
-      int dot = (i >= n->len - PN_PREC);
-      if (i == n->len - PN_PREC)
-        sprintf(ints + i, ".");
-      sprintf(ints + i + dot, "%d", (int)n->digits[i]);
-    }
-    ints[i+1] = '\0';
-    str = potion_byte_str(P, ints);
-  }
-  return str;
+  else
+    sprintf(ints, "%f", potion_num_double(self));
+  return potion_byte_str(P, ints);
 }
 
 static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
@@ -84,24 +98,57 @@ static PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
 }
 
 PN potion_decimal(Potion *P, int len, int intg, char *str) {
-  int i, rlen = intg + PN_PREC;
-  vPN(Decimal) n = PN_ALLOC_N(PN_TNUMBER, struct PNDecimal, sizeof(PN) * rlen);
+  char *ptr;
+  const unsigned int digits_per_step = 6;
+  const int factor_per_step = 1000000;
+  double v;
+  int i = 0, neg = 0, rlen = ((len - 1) / digits_per_step) + 3;
+  vPN(Decimal) n = PN_ALLOC_N(PN_TNUMBER, struct PNDecimal, sizeof(double) * rlen);
 
-  n->sign = (str[0] == '-');
-  n->len = rlen;
-  for (i = 0; i < rlen; i++) {
-    int x = i;
-    if (x >= intg) x++;
-    if (x > len || str[x] < '0' || str[x] > '9')
-      n->digits[i] = 0;
-    else
-      n->digits[i] = str[x] - '0';
+  if (str[0] == '-') {
+    i++;
+    neg = 1;
   }
+
+  ptr = str + i + min(len - i, digits_per_step);
+  n->sign = 1;
+  n->real[0] = 0.0;
+  n->real[1] = strtod(str + i, &ptr);
+  i += digits_per_step;
+
+  while (i < len)
+  {
+    int n = min(len - i, digits_per_step);
+    ptr = str + i + n;
+    v = strtod(str + i, &ptr);  
+    if (n < digits_per_step) {
+      int j, f = 1;
+      for (j = 0; j < n; j++) f *= 10;
+      // mpmuld(n, (double)f, 0, n, prec_words);
+    } else {
+      // mpmuld(n, (double)factor_per_step, 0, n, prec_words);
+    }
+    // mpadd(n, mp_real(v, 8), n, prec_words);
+    i += digits_per_step;
+  }
+
+  if (neg) n->sign = -n->sign;
+  // TODO: allow exponent in string
 
   return (PN)n;
 }
 
 void potion_num_init(Potion *P) {
+  if (mpbbx == 0.0) {
+    mpbbx = 16777216.0;
+    mpbdx = mpbbx * mpbbx;
+    mpbx2 = mpbdx * mpbdx; 
+    mprbx = 1.0 / mpbbx;
+    mprdx = 1.0 / mpbdx;
+    mprx2 = mprdx * mprdx;
+    mprxx = 16.0 * mprx2;
+  }
+
   PN num_vt = PN_VTABLE(PN_TNUMBER);
   potion_method(num_vt, "+", potion_add,  "value=N");
   potion_method(num_vt, "-", potion_sub,  "value=N");

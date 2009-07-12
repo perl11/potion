@@ -208,7 +208,7 @@ struct PNBytes {
   char chars[0];
 };
 
-#define PN_PREC 8
+#define PN_MANTISSA(d, n) d->real[1 + n]
 
 //
 // decimals are floating point numbers
@@ -216,9 +216,9 @@ struct PNBytes {
 //
 struct PNDecimal {
   PN_OBJECT_HEADER
-  PN_SIZE sign;
   PN_SIZE len;
-  PN digits[0];
+  int sign;
+  double real[0];
 };
 
 //
@@ -591,6 +591,7 @@ void potion_file_init(Potion *);
 void potion_dump_stack(Potion *);
 
 PN potion_any_is_nil(Potion *, PN, PN);
+PN potion_num_string(Potion *, PN, PN);
 PN potion_gc_reserved(Potion *, PN, PN);
 PN potion_gc_actual(Potion *, PN, PN);
 PN potion_gc_fixed(Potion *, PN, PN);
