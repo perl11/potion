@@ -100,6 +100,7 @@ struct PNVtable;
 
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       (((long)(x))>>1)
+#define PN_PREC 16
 #define PN_RAND()       PN_NUM(potion_rand_int())
 #define PN_STR_PTR(x)   potion_str_ptr(x)
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
@@ -385,6 +386,7 @@ struct Potion_State {
   PN source; /* temporary ast node */
   PN unclosed; /* used by parser for named block endings */
   PN call, callset; /* generic call and callset */
+  int prec; /* decimal precision */
   int dast; /* parsing depth */
   int xast; /* extra ast allocations */
   int yerror; /* lemon token causing parse error */
