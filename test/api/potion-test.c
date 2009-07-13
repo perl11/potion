@@ -57,7 +57,7 @@ void potion_test_int3(CuTest *T) {
 }
 
 void potion_test_decimal(CuTest *T) {
-  PN dec = potion_decimal(P, 5, 5, "14466");
+  PN dec = potion_decimal(P, "14466", 5);
   CuAssert(T, "decimal not a number", PN_TYPE(dec) == PN_TNUMBER);
 }
 

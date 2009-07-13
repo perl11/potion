@@ -65,8 +65,8 @@
   false       = "false";
   int         = [0-9]{1,9};
   hex         = "0x" [0-9A-Fa-f]+;
-  dec         = ("0" | [1-9] [0-9]*) %{ tm = NULL; }
-                ("." %{ tm = p; } [0-9]+)? ("e" [\-+] [0-9]+)?;
+  dec         = ("0" | [1-9] [0-9]*)
+                ("." [0-9]+)? ("e" [\-+] [0-9]+)?;
   schar1      = utf8 -- "\\'";
   escape1     = "\\\"" | "\\\\" | "\\/";
   escn        = "\\n";
@@ -154,8 +154,7 @@
     false       => { TOKEN2(FALSE, PN_FALSE); fgoto main; };
     int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts, 10))); fgoto main; };
     hex         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts + 2, te - (ts + 2), 16))); fgoto main; };
-    dec         => { TOKEN2(DECIMAL, 
-      potion_decimal(P, te - ts, (tm == NULL ? te : tm - 1) - ts, ts)); fgoto main; };
+    dec         => { TOKEN2(DECIMAL, potion_decimal(P, ts, te - ts)); fgoto main; };
     quote1      => { nbuf = 0; fgoto string1; };
     quote2      => { nbuf = 0; fgoto string2; };
     utf8        => { nbuf = 0; inlick = 1; SCHAR(ts, te - ts); fgoto strlick; };
@@ -210,8 +209,7 @@
     false       => { TOKEN2(FALSE, PN_FALSE); };
     int         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts, te - ts, 10))); };
     hex         => { TOKEN2(INT, PN_NUM(PN_ATOI(ts + 2, te - (ts + 2), 16))); };
-    dec         => { TOKEN2(DECIMAL, 
-      potion_decimal(P, te - ts, (tm == NULL ? te : tm - 1) - ts, ts)); };
+    dec         => { TOKEN2(DECIMAL, potion_decimal(P, ts, te - ts)); };
     quote1      => { nbuf = 0; fgoto string1; };
     quote2      => { nbuf = 0; fgoto string2; };
     string3     => { 

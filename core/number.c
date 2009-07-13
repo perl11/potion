@@ -19,7 +19,7 @@ PN potion_real(Potion *P, double v) {
   return (PN)d;
 }
 
-PN potion_decimal(Potion *P, int len, int intg, char *str) {
+PN potion_decimal(Potion *P, char *str, int len) {
   char *ptr = str + len;
   return potion_real(P, strtod(str, &ptr));
 }
@@ -92,15 +92,15 @@ static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) 
 
 PN potion_num_string(Potion *P, PN closure, PN self) {
   char ints[32];
-  if (PN_IS_NUM(self))
+  if (PN_IS_NUM(self)) {
     sprintf(ints, "%ld", PN_INT(self));
-  else {
+  } else {
     int len = sprintf(ints, "%.10f", ((struct PNDecimal *)self)->value);
     while (len > 0 && ints[len - 1] == '0') len--;
     if (ints[len - 1] == '.') len++;
     ints[len] = '\0';
   }
-  return potion_byte_str(P, ints);
+  return potion_str(P, ints);
 }
 
 static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {

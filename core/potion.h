@@ -542,7 +542,7 @@ PN potion_callcc(Potion *, PN, PN);
 PN potion_ref(Potion *, PN);
 PN potion_sig(Potion *, char *);
 int potion_sig_find(Potion *, PN, PN);
-PN potion_decimal(Potion *, int, int, char *);
+PN potion_decimal(Potion *, char *, int);
 PN potion_pow(Potion *, PN, PN, PN);
 PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);

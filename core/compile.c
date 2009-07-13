@@ -692,7 +692,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
     if (PN_IS_PTR(val)) { \
       if (val & 2) { \
         size_t len = ((val ^ 2) >> 4) - 1; \
-        val = potion_decimal(P, len, 0, (char *)ptr); \
+        val = potion_decimal(P, (char *)ptr, len); \
         ptr += len; \
       } else { \
         size_t len = (val >> 4) - 1; \
@@ -766,7 +766,7 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
       ptr += PN_STR_LEN(val); \
     } else if (PN_IS_DECIMAL(val)) { \
       PN str = potion_num_string(P, PN_NIL, val); \
-      PN count = ((PN_STR_LEN(val)+1) << 4) | 2; \
+      PN count = ((PN_STR_LEN(str)+1) << 4) | 2; \
       WRITE_PN(count, ptr); \
       PN_MEMCPY_N(ptr, PN_STR_PTR(str), char, PN_STR_LEN(str)); \
       ptr += PN_STR_LEN(str); \

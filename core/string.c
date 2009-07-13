@@ -99,7 +99,7 @@ static PN potion_str_number(Potion *P, PN closure, PN self) {
     return PN_NUM(sign * PN_ATOI(str, i, 10));
   }
 
-  return potion_decimal(P, PN_STR_LEN(self), dec + i, PN_STR_PTR(self));
+  return potion_decimal(P, PN_STR_PTR(self), PN_STR_LEN(self));
 }
 
 static PN potion_str_string(Potion *P, PN closure, PN self) {

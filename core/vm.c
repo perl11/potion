@@ -182,6 +182,12 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   return f->jit = (PN_F)fn;
 }
 
+#define PN_VM_MATH(name, oper) \
+  if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b])) \
+    reg[op.a] = PN_NUM(PN_INT(reg[op.a]) oper PN_INT(reg[op.b])); \
+  else \
+    reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);
+
 PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   vPN(Proto) f = (struct PNProto *)proto;
 
@@ -284,19 +290,19 @@ reentry:
         potion_obj_set(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]);
       break;
       case OP_ADD:
-        reg[op.a] = reg[op.a] + (reg[op.b]-1);
+        PN_VM_MATH(add, +);
       break;
       case OP_SUB:
-        reg[op.a] = reg[op.a] - (reg[op.b]-1);
+        PN_VM_MATH(sub, -);
       break;
       case OP_MULT:
-        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) * PN_INT(reg[op.b]));
+        PN_VM_MATH(mult, *);
       break;
       case OP_DIV:
-        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) / PN_INT(reg[op.b]));
+        PN_VM_MATH(div, /);
       break;
       case OP_REM:
-        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) % PN_INT(reg[op.b]));
+        PN_VM_MATH(rem, %);
       break;
       case OP_POW:
         reg[op.a] = PN_NUM((int)pow((double)PN_INT(reg[op.a]),
@@ -326,15 +332,14 @@ reentry:
       case OP_GTE:
         reg[op.a] = PN_BOOL((long)(reg[op.a]) >= (long)(reg[op.b]));
       break;
-      // TODO: handle non-numbers in math ops
       case OP_BITN:
-        reg[op.a] = PN_NUM(~PN_INT(reg[op.b]));
+        reg[op.a] = PN_IS_NUM(reg[op.b]) ? PN_NUM(~PN_INT(reg[op.b])) : potion_obj_bitn(P, reg[op.b]);
       break;
       case OP_BITL:
-        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) << PN_INT(reg[op.b]));
+        PN_VM_MATH(bitl, <<);
       break;
       case OP_BITR:
-        reg[op.a] = PN_NUM(PN_INT(reg[op.a]) >> PN_INT(reg[op.b]));
+        PN_VM_MATH(bitr, >>);
       break;
       case OP_DEF:
         reg[op.a] = potion_def_method(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]);
