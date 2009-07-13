@@ -217,9 +217,7 @@ struct PNBytes {
 //
 struct PNDecimal {
   PN_OBJECT_HEADER
-  PN_SIZE len;
-  int sign;
-  double real[0];
+  double value;
 };
 
 //
