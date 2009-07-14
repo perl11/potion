@@ -32,6 +32,10 @@ PN potion_pow(Potion *P, PN cl, PN num, PN sup) {
   return potion_real(P, z);
 }
 
+PN potion_sqrt(Potion *P, PN cl, PN num) {
+  return potion_real(P, sqrt(PN_DBL(num)));
+}
+
 #define PN_NUM_MATH(int_math) \
   if (PN_IS_NUM(self) && PN_IS_NUM(num)) \
     return PN_NUM(PN_INT(self) int_math PN_INT(num)); \
@@ -91,11 +95,11 @@ static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) 
 }
 
 PN potion_num_string(Potion *P, PN closure, PN self) {
-  char ints[32];
+  char ints[40];
   if (PN_IS_NUM(self)) {
     sprintf(ints, "%ld", PN_INT(self));
   } else {
-    int len = sprintf(ints, "%.10f", ((struct PNDecimal *)self)->value);
+    int len = sprintf(ints, "%.16f", ((struct PNDecimal *)self)->value);
     while (len > 0 && ints[len - 1] == '0') len--;
     if (ints[len - 1] == '.') len++;
     ints[len] = '\0';
@@ -128,7 +132,9 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "~", potion_bitn, 0);
   potion_method(num_vt, "<<", potion_bitl, "value=N");
   potion_method(num_vt, ">>", potion_bitr, "value=N");
+  potion_method(num_vt, "**", potion_pow, "value=N");
   potion_method(num_vt, "number", potion_num_number, 0);
+  potion_method(num_vt, "sqrt", potion_sqrt, 0);
   potion_method(num_vt, "step", potion_num_step, "end=N,step=N");
   potion_method(num_vt, "string", potion_num_string, 0);
   potion_method(num_vt, "times", potion_num_times, "block=&");

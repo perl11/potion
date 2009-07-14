@@ -203,8 +203,18 @@ static PN potion_bytes_length(Potion *P, PN closure, PN self) {
   return PN_NUM(PN_STR_LEN(str));
 }
 
+// TODO: ensure it's UTF-8 data
 static PN potion_bytes_string(Potion *P, PN closure, PN self) {
-  return self;
+  PN exist = potion_lookup_str(P, P->strings, PN_STR_PTR(self));
+  if (!exist) {
+    PN_SIZE len = PN_STR_LEN(self);
+    vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
+    s->len = len;
+    PN_MEMCPY_N(s->chars, PN_STR_PTR(self), char, len + 1);
+    P->strings = potion_add_str(P, P->strings, (PN)s);
+    exist = (PN)s;
+  }
+  return exist;
 }
 
 static PN potion_bytes_print(Potion *P, PN closure, PN self) {

@@ -1,0 +1,52 @@
+A = (i, j):
+  ij = i + j
+  1.0 / (ij * (ij + 1) / 2 + i + 1).
+
+Av = (n, x, y):
+  i = 0
+  while (i < n):
+    a = 0, j = 0
+    while (j < n):
+      a += A (i, j) * x (j)
+      j++.
+    y (i) = a
+    i++.
+  .
+
+Atv = (n, x, y):
+  i = 0
+  while (i < n):
+    a = 0, j = 0
+    while (j < n):
+      a += A (j, i) * x (j)
+      j++.
+    y (i) = a
+    i++.
+  .
+
+AtAv = (n, x, y, t):
+  Av (n, x, t)
+  Atv (n, t, y).
+
+n = 100
+u = list(n), v = list(n), t = list(n)
+i = 0
+while (i < n):
+  u (i) = 1
+  i++.
+
+i = 0
+while (i < 10):
+  AtAv (n, u, v, t)
+  AtAv (n, v, u, t)
+  i++.
+
+vBv = 0, vv = 0, i = 0
+while (i < n):
+  ui = u (i), vi = v (i)
+  vBv += ui * vi
+  vv += vi * vi
+  i++.
+
+a = vBv / vv
+a sqrt string slice (0, 11)
