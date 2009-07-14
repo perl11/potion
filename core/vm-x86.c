@@ -165,17 +165,23 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
       X86_PRE(); ASM(out ? 0x8b : 0x89); ASM(0x4d); ASM(RBP(regn));
     break;
     case 4:
-      ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM(0x85); ASM(RBP(regn));
-      ASM(0xff); ASM(0xff); ASM(0xff);
+      ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM(0x45); ASM(RBP(regn));
     break;
     case 5:
-      ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM(0x8d); ASM(RBP(regn));
-      ASM(0xff); ASM(0xff); ASM(0xff);
+      ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM(0x4d); ASM(RBP(regn));
     break;
     default:
-      if (out) X86_MOV_RBP(0x8b, regn);
-      X86_PRE(); ASM(out ? 0x89 : 0x8b); ASM(0x44); ASM(0x24); ASM((argn - 4) * sizeof(PN));
-      if (!out) X86_MOV_RBP(0x89, regn);
+      if (out) {
+        X86_PRE(); ASM(0x8B); ASM(0x5d); ASM(RBP(regn)); // mov %rbp(A) %rbx
+        if (argn == 6) {
+          X86_PRE(); ASM(0x89); ASM(0x1c); ASM(0x24);    // mov %rbx (%rsp)
+        } else {
+          X86_PRE(); ASM(0x89); ASM(0x5c); ASM(0x24); ASM((argn - 6) * sizeof(PN)); // mov %rbx N(%rsp)
+        }
+      } else {
+        X86_PRE(); ASM(0x8b); ASM(0x5d); ASM((argn - 4) * sizeof(PN));
+        X86_PRE(); ASM(0x89); ASM(0x5d); ASM(RBP(regn)); // mov %rbp(A) %rbx
+      }
     break;
   }
 #endif
