@@ -12,31 +12,34 @@
 #include "khash.h"
 #include "table.h"
 
-PN potion_add_str(Potion *P, PN self, PN s) {
+void potion_add_str(Potion *P, PN s) {
   int ret;
-  vPN(Table) t = (struct PNTable *)potion_fwd(self);
+  vPN(Table) t = (struct PNTable *)P->strings;
   kh_put(str, t, s, &ret);
   PN_QUICK_FWD(struct PNTable *, t);
   PN_TOUCH(t);
-  return (PN)t;
+  if (P->strings != (PN)t) {
+    P->strings = (PN)t;
+    PN_TOUCH(P);
+  }
 }
 
-PN potion_lookup_str(Potion *P, PN self, const char *str) {
-  vPN(Table) t = (struct PNTable *)potion_fwd(self);
+PN potion_lookup_str(Potion *P, const char *str) {
+  vPN(Table) t = (struct PNTable *)P->strings;
   unsigned k = kh_get(str, t, str);
   if (k != kh_end(t)) return kh_key(str, t, k);
   return PN_NIL;
 }
 
 PN potion_str(Potion *P, const char *str) {
-  PN val = potion_lookup_str(P, P->strings, str);
+  PN val = potion_lookup_str(P, str);
   if (!val) {
     size_t len = strlen(str);
     vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
     s->len = (PN_SIZE)len;
     PN_MEMCPY_N(s->chars, str, char, len);
     s->chars[len] = '\0';
-    P->strings = potion_add_str(P, P->strings, (PN)s);
+    potion_add_str(P, (PN)s);
     val = (PN)s;
   }
   return val;
@@ -50,9 +53,9 @@ PN potion_str2(Potion *P, char *str, size_t len) {
   PN_MEMCPY_N(s->chars, str, char, len);
   s->chars[len] = '\0';
 
-  exist = potion_lookup_str(P, P->strings, s->chars);
+  exist = potion_lookup_str(P, s->chars);
   if (!exist) {
-    P->strings = potion_add_str(P, P->strings, (PN)s);
+    potion_add_str(P, (PN)s);
     exist = (PN)s;
   }
   return exist;
@@ -205,13 +208,13 @@ static PN potion_bytes_length(Potion *P, PN closure, PN self) {
 
 // TODO: ensure it's UTF-8 data
 static PN potion_bytes_string(Potion *P, PN closure, PN self) {
-  PN exist = potion_lookup_str(P, P->strings, PN_STR_PTR(self));
+  PN exist = potion_lookup_str(P, PN_STR_PTR(self));
   if (!exist) {
     PN_SIZE len = PN_STR_LEN(self);
     vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
     s->len = len;
     PN_MEMCPY_N(s->chars, PN_STR_PTR(self), char, len + 1);
-    P->strings = potion_add_str(P, P->strings, (PN)s);
+    potion_add_str(P, (PN)s);
     exist = (PN)s;
   }
   return exist;
