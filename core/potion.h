@@ -104,6 +104,7 @@ struct PNVtable;
 #define PN_RAND()       PN_NUM(potion_rand_int())
 #define PN_STR_PTR(x)   potion_str_ptr(x)
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
+#define PN_STR_B(x)     potion_bytes_string(P, PN_NIL, x)
 #define PN_CLOSURE(x)   ((struct PNClosure *)(x))
 #define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method
 #define PN_PROTO(x)     ((struct PNProto *)(x))
@@ -517,6 +518,7 @@ PN potion_str2(Potion *, char *, size_t);
 PN potion_str_format(Potion *, const char *, ...);
 PN potion_byte_str(Potion *, const char *);
 PN potion_bytes(Potion *, size_t);
+PN potion_bytes_string(Potion *, PN, PN);
 PN_SIZE pn_printf(Potion *, PN, const char *, ...);
 void potion_bytes_obj_string(Potion *, PN, PN);
 PN potion_bytes_append(Potion *, PN, PN, PN);

@@ -168,7 +168,7 @@ PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
     if (i > 0 && sep != PN_NIL) potion_bytes_obj_string(P, out, sep);
     potion_bytes_obj_string(P, out, v);
   });
-  return out;
+  return PN_STR_B(out);
 }
 
 PN potion_tuple_last(Potion *P, PN cl, PN self) {

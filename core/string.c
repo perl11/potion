@@ -207,8 +207,8 @@ static PN potion_bytes_length(Potion *P, PN closure, PN self) {
 }
 
 // TODO: ensure it's UTF-8 data
-static PN potion_bytes_string(Potion *P, PN closure, PN self) {
-  PN exist = potion_lookup_str(P, PN_STR_PTR(self));
+PN potion_bytes_string(Potion *P, PN closure, PN self) {
+  PN exist = potion_lookup_str(P, PN_STR_PTR(self = potion_fwd(self)));
   if (!exist) {
     PN_SIZE len = PN_STR_LEN(self);
     vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
