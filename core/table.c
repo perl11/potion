@@ -192,6 +192,15 @@ PN potion_tuple_string(Potion *P, PN cl, PN self) {
   return out;
 }
 
+PN potion_tuple_pop(Potion *P, PN cl, PN self, PN key) {
+  vPN(Tuple) t = PN_GET_TUPLE(self);
+  PN obj = t->set[t->len - 1];
+  PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len - 1));
+  t->len--;
+  PN_TOUCH(self);
+  return obj;
+}
+
 PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
   if (PN_IS_NUM(key)) {
     long i = PN_INT(key), len = PN_TUPLE_LEN(self);
@@ -271,6 +280,7 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "last", potion_tuple_last, 0);
   potion_method(tpl_vt, "length", potion_tuple_length, 0);
   potion_method(tpl_vt, "print", potion_tuple_print, 0);
+  potion_method(tpl_vt, "pop", potion_tuple_pop, 0);
   potion_method(tpl_vt, "put", potion_tuple_put, "index=N,value=o");
   // TODO: add Tuple remove
   potion_method(tpl_vt, "string", potion_tuple_string, 0);

@@ -46,7 +46,7 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
            :"a"(cc->data[12] + 3), "b"(start), "c"(end), "d"(cc->data)
           );
 #endif
-  return PN_NIL;
+  return cl;
 }
 
 PN potion_callcc(Potion *P, PN cl, PN self) {
