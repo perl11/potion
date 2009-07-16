@@ -33,7 +33,7 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
   // move stack pointer, fill in stack, resume
   //
 #ifdef POTION_X86
-#if __WORDSIZE__ == 64
+#if __WORDSIZE == 64
   __asm__ ("mov 0x8(%3), %%rsp;"
            "add $0x10, %3;"
         "loop:"
@@ -43,11 +43,10 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
            "add $0x8, %3;"
            "cmp %1, %2;"
            "jne loop;"
-           "mov %4, %%rax;"
+           "mov %0, %%rax;"
            "leave; ret"
            :/* no output */
-           :"r"(cc->data[12] + 3), "r"(start), "r"(end), "r"(cc->data),
-            "r"(cl)
+           :"r"(cl), "r"(start), "r"(end), "r"(cc->data)
            :"%rax", "%rsp"
           );
 #else
@@ -60,11 +59,10 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
            "add $0x4, %3;"
            "cmp %1, %2;"
            "jne loop;"
-           "mov %4, %%eax;"
+           "mov %0, %%eax;"
            "leave; ret"
            :/* no output */
-           :"r"(cc->data[12] + 3), "r"(start), "r"(end), "r"(cc->data),
-            "r"(cl)
+           :"r"(cl), "r"(start), "r"(end), "r"(cc->data)
            :"%eax", "%esp"
           );
 #endif
