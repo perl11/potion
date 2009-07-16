@@ -85,6 +85,16 @@ void pngc_page_delete(void *mem, int sz) {
   potion_munmap(mem, PN_ALIGN(sz, POTION_PAGESIZE));
 }
 
+static inline int NEW_BIRTH_REGION(struct PNMemory *M, void **wb, int sz) {
+  int keeps = wb - (void **)M->birth_storeptr;
+  void *newad = pngc_page_new(&sz, 0);
+  wb = (void *)(((void **)(newad + sz)) - (keeps + 4));
+  PN_MEMCPY_N(wb + 1, M->birth_storeptr + 1, void *, keeps);
+  DEL_BIRTH_REGION();
+  SET_GEN(birth, newad, sz);
+  SET_STOREPTR(5 + keeps);
+}
+
 //
 // Both this function and potion_gc_major embody a simple
 // Cheney loop (also called a "two-finger collector.")
@@ -95,8 +105,7 @@ void pngc_page_delete(void *mem, int sz) {
 static int potion_gc_minor(Potion *P, int sz) {
   struct PNMemory *M = P->mem;
   void *scanptr = 0;
-  void *newad = 0;
-  void **storead = 0;
+  void **storead = 0, **wb = 0;
 
   if (sz < 0)
     sz = 0;
@@ -113,8 +122,8 @@ static int potion_gc_minor(Potion *P, int sz) {
     (long)((void *)M->birth_hi - (void *)M->birth_storeptr));
   potion_mark_stack(P, 1);
 
-  for (storead = ((void **)M->birth_storeptr) - 1;
-       storead < (void **)M->birth_hi; storead++) {
+  wb = (void **)M->birth_storeptr;
+  for (storead = wb; storead < (void **)M->birth_hi; storead++) {
     PN v = (PN)*storead;
     if (PN_IS_PTR(v))
       potion_mark_minor(P, (const struct PNObject *)v);
@@ -128,10 +137,7 @@ static int potion_gc_minor(Potion *P, int sz) {
   sz += 2 * POTION_PAGESIZE;
   sz = max(sz, potion_birth_suggest(sz, M->old_lo, M->old_cur));
 
-  newad = pngc_page_new(&sz, 0);
-  DEL_BIRTH_REGION();
-  SET_GEN(birth, newad, sz);
-  SET_STOREPTR(5);
+  sz = NEW_BIRTH_REGION(M, wb, sz);
   M->minors++;
 
   info("(new young: %p -> %p = %d)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
@@ -146,7 +152,7 @@ static int potion_gc_major(Potion *P, int siz) {
   void *newold = 0;
   void *protptr = (void *)M + PN_ALIGN(sizeof(struct PNMemory), 8);
   void *scanptr = 0;
-  void *newbirth = 0;
+  void **wb = 0;
   int birthest = 0;
   int birthsiz = 0;
   int newoldsiz = 0;
@@ -175,6 +181,7 @@ static int potion_gc_major(Potion *P, int siz) {
 
   potion_mark_stack(P, 2);
 
+  wb = (void **)M->birth_storeptr;
   if (M->birth_lo != M) {
     while ((PN)protptr < (PN)M->protect)
       protptr = potion_mark_major(P, protptr);
@@ -189,13 +196,7 @@ static int potion_gc_major(Potion *P, int siz) {
   prevoldhi = 0;
   prevoldcur = 0;
 
-  birthsiz = siz + birthest;
-  newbirth = pngc_page_new(&birthsiz, 0);
-  
-  DEL_BIRTH_REGION();
-  SET_GEN(birth, newbirth, birthsiz);
-  SET_STOREPTR(5);
-
+  birthsiz = NEW_BIRTH_REGION(M, wb, siz + birthest);
   oldsiz = ((char *)M->old_cur - (char *)newold) +
     (birthsiz + 2 * birthest + 4 * POTION_PAGESIZE);
   oldsiz = PN_ALIGN(oldsiz, POTION_PAGESIZE);
@@ -408,6 +409,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
         GC_MINOR_UPDATE(PN_FLEX_AT(ptr, i));
     break;
     case PN_TCONT:
+      GC_KEEP(ptr);
       pngc_mark_array(P, (_PN *)((struct PNCont *)ptr)->stack + 3, ((struct PNCont *)ptr)->len - 3, 1);
     break;
     case PN_TSTRINGS:
@@ -500,6 +502,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
         GC_MAJOR_UPDATE(PN_FLEX_AT(ptr, i));
     break;
     case PN_TCONT:
+      GC_KEEP(ptr);
       pngc_mark_array(P, (_PN *)((struct PNCont *)ptr)->stack + 3, ((struct PNCont *)ptr)->len - 3, 2);
     break;
     case PN_TSTRINGS:
