@@ -58,7 +58,7 @@
   path        = "/" ("/" | utfw)+;
   query       = "?" eats message;
   querypath   = "?" eats path;
-  comment     = "#"+ (utf8 - newline)*;
+  comment     = "#"+ (utf8 - newline)* newline?;
 
   nil         = "nil";
   true        = "true";
