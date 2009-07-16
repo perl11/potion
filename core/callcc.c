@@ -14,7 +14,6 @@
 PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   int i = 0, diff;
   struct PNCont *cc = (struct PNCont *)self;
-  PN_SIZE n;
   PN rcx, *start, *end, *sp1 = P->mem->cstack, *sp2 = NULL;
 #if POTION_STACK_DIR > 0
   start = (PN *)cc->stack[0];
