@@ -11,20 +11,20 @@
 #include "potion.h"
 #include "internal.h"
 
-PN potion_callcc_yield(Potion *P, PN cl, PN self) {
+PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   int i = 0, diff;
-  struct PNClosure *cc = PN_CLOSURE(cl);
+  struct PNCont *cc = (struct PNCont *)self;
   PN_SIZE n;
   PN rcx, *start, *end, *sp1 = P->mem->cstack, *sp2 = NULL;
 #if POTION_STACK_DIR > 0
-  start = (PN *)cc->data[0];
-  end = (PN *)cc->data[1];
+  start = (PN *)cc->stack[0];
+  end = (PN *)cc->stack[1];
 #else
-  start = (PN *)cc->data[1];
-  end = (PN *)cc->data[0];
+  start = (PN *)cc->stack[1];
+  end = (PN *)cc->stack[0];
 #endif
 
-  if ((PN)sp1 != cc->data[0]) {
+  if ((PN)sp1 != cc->stack[0]) {
     fprintf(stderr, "** TODO: continuations which switch stacks must be rewritten.\n");
     return PN_NIL;
   }
@@ -35,7 +35,8 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
 #ifdef POTION_X86
 #if __WORDSIZE == 64
   __asm__ ("mov 0x8(%3), %%rsp;"
-           "add $0x10, %3;"
+           "mov 0x10(%3), %%rbp;"
+           "add $0x18, %3;"
         "loop:"
            "mov (%3), %%rax;"
            "add $0x8, %1;"
@@ -46,12 +47,13 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
            "mov %0, %%rax;"
            "leave; ret"
            :/* no output */
-           :"r"(cl), "r"(start), "r"(end), "r"(cc->data)
+           :"r"(cl), "r"(start), "r"(end), "r"(cc->stack)
            :"%rax", "%rsp"
           );
 #else
   __asm__ ("mov 0x4(%3), %%esp;"
-           "add $0x8, %3;"
+           "mov 0x8(%3), %%ebp;"
+           "add $0xc, %3;"
         "loop:"
            "mov (%3), %%eax;"
            "add $0x4, %1;"
@@ -62,7 +64,7 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
            "mov %0, %%eax;"
            "leave; ret"
            :/* no output */
-           :"r"(cl), "r"(start), "r"(end), "r"(cc->data)
+           :"r"(cl), "r"(start), "r"(end), "r"(cc->stack)
            :"%eax", "%esp"
           );
 #endif
@@ -73,10 +75,11 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
 }
 
 PN potion_callcc(Potion *P, PN cl, PN self) {
-  struct PNClosure *cc;
+  struct PNCont *cc;
   PN_SIZE n;
-  PN *start, *end, *sp1 = P->mem->cstack, *sp2 = NULL;
+  PN *start, *end, *sp1 = P->mem->cstack, *sp2, *sp3;
   POTION_ESP(&sp2);
+  POTION_EBP(&sp3);
 #if POTION_STACK_DIR > 0
   n = sp2 - sp1;
   start = sp1;
@@ -87,9 +90,22 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   end = sp1;
 #endif
 
-  cc = (struct PNClosure *)potion_closure_new(P, (PN_F)potion_callcc_yield, PN_NIL, n + 1);
-  cc->data[0] = (PN)sp1;
-  cc->data[1] = (PN)sp2;
-  PN_MEMCPY_N((char *)(cc->data + 2), start + 1, PN, n - 1);
+  cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 2));
+  cc->len = n + 2;
+  cc->stack[0] = (PN)sp1;
+  cc->stack[1] = (PN)sp2;
+  cc->stack[2] = (PN)sp3;
+  PN_MEMCPY_N((char *)(cc->stack + 3), start + 1, PN, n - 1);
   return (PN)cc;
 }
+
+PN potion_continuation_string(Potion *P, PN cl, PN self) {
+  return potion_str(P, "Continuation");
+}
+
+void potion_cont_init(Potion *P) {
+  PN cnt_vt = PN_VTABLE(PN_TCONT);
+  potion_type_call_is(cnt_vt, PN_FUNC(potion_continuation_yield, 0));
+  potion_method(cnt_vt, "string", potion_continuation_string, 0);
+}
+

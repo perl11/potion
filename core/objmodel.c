@@ -356,6 +356,7 @@ void potion_lobby_init(Potion *P) {
   potion_send(P->lobby, PN_def, potion_str(P, "Ref"),      PN_VTABLE(PN_TWEAK));
   potion_send(P->lobby, PN_def, potion_str(P, "Lick"),     PN_VTABLE(PN_TLICK));
   potion_send(P->lobby, PN_def, potion_str(P, "Error"),    PN_VTABLE(PN_TERROR));
+  potion_send(P->lobby, PN_def, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
   potion_type_call_is(PN_VTABLE(PN_TVTABLE), PN_FUNC(potion_object_new, 0));

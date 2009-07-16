@@ -39,6 +39,7 @@ struct PNProto;
 struct PNTuple;
 struct PNWeakRef;
 struct PNError;
+struct PNCont;
 struct PNMemory;
 struct PNVtable;
 
@@ -63,7 +64,8 @@ struct PNVtable;
 #define PN_TFLEXB       (18+PN_TNIL)
 #define PN_TSTRINGS     (19+PN_TNIL)
 #define PN_TERROR       (20+PN_TNIL)
-#define PN_TUSER        (21+PN_TNIL)
+#define PN_TCONT        (21+PN_TNIL)
+#define PN_TUSER        (22+PN_TNIL)
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -314,6 +316,19 @@ struct PNLick {
   PN name;
   PN attr;
   PN inner;
+};
+
+//
+// a continuation saves the stack and all
+// stack pointers.
+//
+struct PNCont {
+  PN_OBJECT_HEADER
+  PN_SIZE len;
+  PN stack[0]; // [0] = head of potion stack
+               // [1] = current %rsp
+               // [2] = current %rbp
+               // [3+] = full stack dump, ascending
 };
 
 // the potion type is the 't' in the vtable tuple (m,t)
@@ -590,6 +605,7 @@ void potion_lick_init(Potion *);
 void potion_compiler_init(Potion *);
 void potion_vm_init(Potion *);
 void potion_file_init(Potion *);
+void potion_cont_init(Potion *);
 void potion_dump_stack(Potion *);
 
 PN potion_any_is_nil(Potion *, PN, PN);

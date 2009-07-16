@@ -40,6 +40,7 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TWEAK, obj_vt);
   potion_type_new(P, PN_TLICK, obj_vt);
   potion_type_new(P, PN_TERROR, obj_vt);
+  potion_type_new(P, PN_TCONT, obj_vt);
   potion_str_hash_init(P);
 
   PN_allocate = potion_str(P, "allocate");
@@ -80,6 +81,7 @@ static void potion_init(Potion *P) {
   potion_lobby_init(P);
   potion_object_init(P);
   potion_error_init(P);
+  potion_cont_init(P);
   potion_primitive_init(P);
   potion_num_init(P);
   potion_str_init(P);
@@ -204,8 +206,9 @@ void potion_esp(void **esp) {
 
 void potion_dump_stack(Potion *P) {
   PN_SIZE n;
-  PN *end, *start = P->mem->cstack;
+  PN *end, *ebp, *start = P->mem->cstack;
   POTION_ESP(&end);
+  POTION_EBP(&ebp);
 #if POTION_STACK_DIR > 0
   n = end - start;
 #else
@@ -215,8 +218,9 @@ void potion_dump_stack(Potion *P) {
 #endif
 
   printf("-- dumping %u from %p to %p --\n", n, start, end);
+  printf("   ebp = %p, *ebp = %lx\n", ebp, *ebp);
   while (n--) {
-    printf("stack(%u) = %lx\n", n, *start);
+    printf("   stack(%u) = %lx\n", n, *start);
     start++;
   }
 }

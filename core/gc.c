@@ -301,6 +301,9 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
     case PN_TFLEXB:
       sz = sizeof(PNFlex) + ((PNFlex *)ptr)->siz;
     break;
+    case PN_TCONT:
+      sz = sizeof(struct PNCont) + (((struct PNCont *)ptr)->len * sizeof(PN));
+    break;
     case PN_TUSER:
       sz = sizeof(struct PNData) + ((struct PNData *)ptr)->siz;
     break;
@@ -354,8 +357,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       for (i = 0; i < ((struct PNClosure *)ptr)->extra; i++)
         GC_MINOR_UPDATE(((struct PNClosure *)ptr)->data[i]);
     break;
-    case PN_TTUPLE:
-    {
+    case PN_TTUPLE: {
       struct PNTuple * volatile t = (struct PNTuple *)potion_fwd((PN)ptr);
       for (i = 0; i < t->len; i++)
         GC_MINOR_UPDATE(t->set[i]);
@@ -404,6 +406,9 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     case PN_TFLEX:
       for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
         GC_MINOR_UPDATE(PN_FLEX_AT(ptr, i));
+    break;
+    case PN_TCONT:
+      pngc_mark_array(P, (_PN *)((struct PNCont *)ptr)->stack + 3, ((struct PNCont *)ptr)->len - 3, 1);
     break;
     case PN_TSTRINGS:
       GC_MINOR_UPDATE_TABLE(str, ((struct PNTable *)ptr), 0);
@@ -493,6 +498,9 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     case PN_TFLEX:
       for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
         GC_MAJOR_UPDATE(PN_FLEX_AT(ptr, i));
+    break;
+    case PN_TCONT:
+      pngc_mark_array(P, (_PN *)((struct PNCont *)ptr)->stack + 3, ((struct PNCont *)ptr)->len - 3, 2);
     break;
     case PN_TSTRINGS:
       GC_MAJOR_UPDATE_TABLE(str, ((struct PNTable *)ptr), 0);
