@@ -161,6 +161,7 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   vPN(Vtable) vt = (struct PNVtable *)self;
   unsigned k = kh_put(PN, vt->methods, key, &ret);
   PN_QUICK_FWD(struct PNTable *, vt->methods);
+  PN_TOUCH(vt->methods);
 
   if (!PN_IS_CLOSURE(method)) {
     if (PN_IS_PROTO(method))

@@ -14,18 +14,13 @@
 
 void potion_add_str(Potion *P, PN s) {
   int ret;
-  vPN(Table) t = (struct PNTable *)P->strings;
-  kh_put(str, t, s, &ret);
-  PN_QUICK_FWD(struct PNTable *, t);
-  PN_TOUCH(t);
-  if (P->strings != (PN)t) {
-    P->strings = (PN)t;
-    PN_TOUCH(P);
-  }
+  kh_put(str, P->strings, s, &ret);
+  PN_QUICK_FWD(struct PNTable *, P->strings);
+  PN_TOUCH(P->strings);
 }
 
 PN potion_lookup_str(Potion *P, const char *str) {
-  vPN(Table) t = (struct PNTable *)P->strings;
+  vPN(Table) t = P->strings;
   unsigned k = kh_get(str, t, str);
   if (k != kh_end(t)) return kh_key(str, t, k);
   return PN_NIL;
@@ -227,8 +222,7 @@ static PN potion_bytes_print(Potion *P, PN closure, PN self) {
 }
 
 void potion_str_hash_init(Potion *P) {
-  vPN(Table) t = PN_CALLOC_N(PN_TSTRINGS, struct PNTable, 0);
-  P->strings = (PN)t;
+  P->strings = PN_CALLOC_N(PN_TSTRINGS, struct PNTable, 0);
 }
 
 void potion_str_init(Potion *P) {

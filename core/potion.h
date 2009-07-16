@@ -394,7 +394,7 @@ typedef struct {
 struct Potion_State {
   PN_OBJECT_HEADER
   PNTarget targets[POTION_TARGETS];
-  PN strings; /* table of all strings */
+  struct PNTable *strings; /* table of all strings */
   PN lobby; /* root namespace */
   PNFlex * volatile vts; /* built in types */
   PN source; /* temporary ast node */
