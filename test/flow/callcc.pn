@@ -3,3 +3,7 @@ goto = callcc
 name = names pop
 (name, "\n") join print
 if (name != "Ron"): goto ().
+# Ringo
+# Max
+# Ron
+# nil

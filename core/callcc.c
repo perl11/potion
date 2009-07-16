@@ -12,7 +12,6 @@
 #include "internal.h"
 
 PN potion_callcc_yield(Potion *P, PN cl, PN self) {
-#if __WORDSIZE == 64
   int i = 0, diff;
   struct PNClosure *cc = PN_CLOSURE(cl);
   PN_SIZE n;
@@ -33,24 +32,49 @@ PN potion_callcc_yield(Potion *P, PN cl, PN self) {
   //
   // move stack pointer, fill in stack, resume
   //
-  __asm__ ("mov 0x8(%%rdx), %%rsp;"
-           "add $0x10, %%rdx;"
+#ifdef POTION_X86
+#if __WORDSIZE__ == 64
+  __asm__ ("mov 0x8(%3), %%rsp;"
+           "add $0x10, %3;"
         "loop:"
-           "mov (%%rdx), %%r8d;"
-           "add $0x8, %%rbx;"
-           "mov %%r8d, (%%rbx);"
-           "add $0x8, %%rdx;"
-           "cmp %%rbx, %%rcx;"
+           "mov (%3), %%rax;"
+           "add $0x8, %1;"
+           "mov %%rax, (%1);"
+           "add $0x8, %3;"
+           "cmp %1, %2;"
            "jne loop;"
-           :"=a"(rcx)
-           :"a"(cc->data[12] + 3), "b"(start), "c"(end), "d"(cc->data)
+           "mov %4, %%rax;"
+           "leave; ret"
+           :/* no output */
+           :"r"(cc->data[12] + 3), "r"(start), "r"(end), "r"(cc->data),
+            "r"(cl)
+           :"%rax", "%rsp"
           );
+#else
+  __asm__ ("mov 0x4(%3), %%esp;"
+           "add $0x8, %3;"
+        "loop:"
+           "mov (%3), %%eax;"
+           "add $0x4, %1;"
+           "mov %%eax, (%1);"
+           "add $0x4, %3;"
+           "cmp %1, %2;"
+           "jne loop;"
+           "mov %4, %%eax;"
+           "leave; ret"
+           :/* no output */
+           :"r"(cc->data[12] + 3), "r"(start), "r"(end), "r"(cc->data),
+            "r"(cl)
+           :"%eax", "%esp"
+          );
+#endif
+#else
+  fprintf(stderr, "** TODO: callcc does not work outside of X86.\n");
 #endif
   return cl;
 }
 
 PN potion_callcc(Potion *P, PN cl, PN self) {
-#if __WORDSIZE == 64
   struct PNClosure *cc;
   PN_SIZE n;
   PN *start, *end, *sp1 = P->mem->cstack, *sp2 = NULL;
@@ -70,8 +94,4 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   cc->data[1] = (PN)sp2;
   PN_MEMCPY_N((char *)(cc->data + 2), start + 1, PN, n - 1);
   return (PN)cc;
-#else
-  fprintf(stderr, "** TODO: callcc for 32-bit.\n");
-  return PN_NIL;
-#endif
 }
