@@ -121,6 +121,10 @@ PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   return tuple;
 }
 
+PN potion_tuple_append(Potion *P, PN cl, PN self, PN value) {
+  return potion_tuple_push(P, self, value);
+}
+
 PN_SIZE potion_tuple_find(Potion *P, PN tuple, PN value) {
   PN_TUPLE_EACH(tuple, i, v, {
     if (v == value) return i;
@@ -272,6 +276,7 @@ void potion_table_init(Potion *P) {
   potion_method(tbl_vt, "string", potion_table_string, 0);
   potion_type_call_is(tpl_vt, PN_FUNC(potion_tuple_at, "index=N"));
   potion_type_callset_is(tpl_vt, PN_FUNC(potion_tuple_put, "index=N,value=o"));
+  potion_method(tpl_vt, "append", potion_tuple_append, "value=o");
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "each", potion_tuple_each, "block=&");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
@@ -281,6 +286,7 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "length", potion_tuple_length, 0);
   potion_method(tpl_vt, "print", potion_tuple_print, 0);
   potion_method(tpl_vt, "pop", potion_tuple_pop, 0);
+  potion_method(tpl_vt, "push", potion_tuple_append, "value=o");
   potion_method(tpl_vt, "put", potion_tuple_put, "index=N,value=o");
   // TODO: add Tuple remove
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
