@@ -114,7 +114,7 @@ static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
   return PN_NUM(i);
 }
 
-static PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
+PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
   int i, s = 1, j = PN_INT(self), k = PN_INT(end);
   if (k < j) s = -1;
   for (i = j; i != k + s; i += s)

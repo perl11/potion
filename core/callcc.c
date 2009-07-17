@@ -35,7 +35,8 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
 #if __WORDSIZE == 64
   __asm__ ("mov 0x8(%3), %%rsp;"
            "mov 0x10(%3), %%rbp;"
-           "add $0x18, %3;"
+           "mov %3, %%rbx;"
+           "add $0x30, %3;"
         "loop:"
            "mov (%3), %%rax;"
            "add $0x8, %1;"
@@ -44,15 +45,19 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
            "cmp %1, %2;"
            "jne loop;"
            "mov %0, %%rax;"
+           "mov 0x20(%%rbx), %%r12;"
+           "mov 0x28(%%rbx), %%r13;"
+           "mov 0x18(%%rbx), %%rbx;"
            "leave; ret"
            :/* no output */
            :"r"(cl), "r"(start), "r"(end), "r"(cc->stack)
-           :"%rax", "%rsp"
+           :"%rax", "%rsp", "%rbp", "%rbx"
           );
 #else
   __asm__ ("mov 0x4(%3), %%esp;"
            "mov 0x8(%3), %%ebp;"
-           "add $0xc, %3;"
+           "mov %3, %%esi;"
+           "add $0x18, %3;"
         "loop:"
            "mov (%3), %%eax;"
            "add $0x4, %1;"
@@ -61,10 +66,13 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
            "cmp %1, %2;"
            "jne loop;"
            "mov %0, %%eax;"
+           "mov 0x10(%%esi), %%edi;"
+           "mov 0x14(%%esi), %%ebx;"
+           "mov 0xc(%%esi), %%esi;"
            "leave; ret"
            :/* no output */
            :"r"(cl), "r"(start), "r"(end), "r"(cc->stack)
-           :"%eax", "%esp"
+           :"%eax", "%esp", "%ebp", "%esi"
           );
 #endif
 #else
@@ -89,12 +97,23 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   end = sp1;
 #endif
 
-  cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 2));
+  cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 7));
   cc->len = n + 2;
   cc->stack[0] = (PN)sp1;
   cc->stack[1] = (PN)sp2;
   cc->stack[2] = (PN)sp3;
-  PN_MEMCPY_N((char *)(cc->stack + 3), start + 1, PN, n - 1);
+#ifdef POTION_X86
+#if __WORDSIZE == 64
+  __asm__ ("mov %%rbx, 0x18(%0);"
+           "mov %%r12, 0x20(%0);"
+           "mov %%r13, 0x28(%0)"::"r"(cc->stack));
+#else
+  __asm__ ("mov %%esi, 0xc(%0);"
+           "mov %%edi, 0x10(%0);"
+           "mov %%ebx, 0x14(%0)"::"r"(cc->stack));
+#endif
+#endif
+  PN_MEMCPY_N((char *)(cc->stack + 6), start + 1, PN, n - 1);
   return (PN)cc;
 }
 
