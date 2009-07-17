@@ -1,0 +1,9 @@
+names = ("Freddie", "Herbie", "Ron", "Max", "Ringo")
+goto = here
+name = names pop
+(name, "\n") join print
+if (name != "Ron"): goto ().
+# Ringo
+# Max
+# Ron
+# nil

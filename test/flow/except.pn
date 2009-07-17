@@ -1,0 +1,55 @@
+Exception =
+  class (msg, mark):
+    /message = msg
+    /mark = mark
+    /ignored = false.
+
+Exception resume = ():
+  /ignored = true
+  "RESUMING\n" print
+  m = /mark
+  m ().
+
+SCOPES = ()
+
+throw = (msg):
+  e = Exception (msg, here)
+  if (! e /ignored):
+    s = SCOPES last
+    c = s (0), s (0) = e
+    c ().
+  nil.
+
+try = (block, catch):
+  cc = ()
+  c = here
+  if (! cc (0)):
+    cc push (c)
+    SCOPES push (cc)
+    block ()
+  . else:
+    catch (SCOPES last (0)).
+  .
+
+1 to 2 (x):
+  try (:
+    "TRY\n" print
+    if (x == 1):
+      throw ("TRY ERROR!\n").
+    "SUCCESS\n" print.
+
+    (e):
+      e /message print
+      e resume.
+  )
+.
+
+nil
+
+# TRY
+# TRY ERROR!
+# RESUMING
+# SUCCESS
+# TRY
+# SUCCESS
+# nil

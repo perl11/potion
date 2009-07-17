@@ -24,7 +24,8 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
 #endif
 
   if ((PN)sp1 != cc->stack[0]) {
-    fprintf(stderr, "** TODO: continuations which switch stacks must be rewritten.\n");
+    fprintf(stderr, "** TODO: continuations which switch stacks must be rewritten. (%p != %p)\n",
+      sp1, (void *)(cc->stack[0]));
     return PN_NIL;
   }
 
@@ -50,9 +51,9 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
            "mov 0x30(%%rbx), %%r14;"
            "mov 0x38(%%rbx), %%r15;"
            "mov 0x18(%%rbx), %%rbx;"
-           "leave; ret"
+           "leaveq; retq"
            :/* no output */
-           :"r"(cl), "r"(start), "r"(end), "r"(cc->stack)
+           :"r"(cc), "r"(start), "r"(end), "r"(cc->stack)
            :"%rax", "%rsp", "%rbx"
           );
 #else
@@ -73,14 +74,14 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
            "mov 0xc(%%esi), %%esi;"
            "leave; ret"
            :/* no output */
-           :"r"(cl), "r"(start), "r"(end), "r"(cc->stack)
+           :"r"(cc), "r"(start), "r"(end), "r"(cc->stack)
            :"%eax", "%esp", "%ebp", "%esi"
           );
 #endif
 #else
   fprintf(stderr, "** TODO: callcc does not work outside of X86.\n");
 #endif
-  return cl;
+  return self;
 }
 
 PN potion_callcc(Potion *P, PN cl, PN self) {
