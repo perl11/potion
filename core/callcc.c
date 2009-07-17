@@ -36,7 +36,7 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   __asm__ ("mov 0x8(%3), %%rsp;"
            "mov 0x10(%3), %%rbp;"
            "mov %3, %%rbx;"
-           "add $0x30, %3;"
+           "add $0x40, %3;"
         "loop:"
            "mov (%3), %%rax;"
            "add $0x8, %1;"
@@ -47,11 +47,13 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
            "mov %0, %%rax;"
            "mov 0x20(%%rbx), %%r12;"
            "mov 0x28(%%rbx), %%r13;"
+           "mov 0x30(%%rbx), %%r14;"
+           "mov 0x38(%%rbx), %%r15;"
            "mov 0x18(%%rbx), %%rbx;"
            "leave; ret"
            :/* no output */
            :"r"(cl), "r"(start), "r"(end), "r"(cc->stack)
-           :"%rax", "%rsp", "%rbp", "%rbx"
+           :"%rax", "%rsp", "%rbx"
           );
 #else
   __asm__ ("mov 0x4(%3), %%esp;"
@@ -97,7 +99,7 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   end = sp1;
 #endif
 
-  cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 7));
+  cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 2 + PN_SAVED_REGS));
   cc->len = n + 2;
   cc->stack[0] = (PN)sp1;
   cc->stack[1] = (PN)sp2;
@@ -106,14 +108,16 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
 #if __WORDSIZE == 64
   __asm__ ("mov %%rbx, 0x18(%0);"
            "mov %%r12, 0x20(%0);"
-           "mov %%r13, 0x28(%0)"::"r"(cc->stack));
+           "mov %%r13, 0x28(%0);"
+           "mov %%r14, 0x30(%0);"
+           "mov %%r15, 0x38(%0);"::"r"(cc->stack));
 #else
   __asm__ ("mov %%esi, 0xc(%0);"
            "mov %%edi, 0x10(%0);"
            "mov %%ebx, 0x14(%0)"::"r"(cc->stack));
 #endif
 #endif
-  PN_MEMCPY_N((char *)(cc->stack + 6), start + 1, PN, n - 1);
+  PN_MEMCPY_N((char *)(cc->stack + 3 + PN_SAVED_REGS), start + 1, PN, n - 1);
   return (PN)cc;
 }
 

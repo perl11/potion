@@ -86,9 +86,11 @@ int potion_munmap(void *, size_t);
 //
 #ifdef POTION_X86
 #if __WORDSIZE == 64
+#define PN_SAVED_REGS 5
 #define POTION_ESP(p) __asm__("mov %%rsp, %0" : "=r" (*p))
 #define POTION_EBP(p) __asm__("mov %%rbp, %0" : "=r" (*p))
 #else
+#define PN_SAVED_REGS 3
 #define POTION_ESP(p) __asm__("mov %%esp, %0" : "=r" (*p))
 #define POTION_EBP(p) __asm__("mov %%ebp, %0" : "=r" (*p))
 #endif
