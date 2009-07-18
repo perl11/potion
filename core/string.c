@@ -78,7 +78,7 @@ static PN potion_str_length(Potion *P, PN closure, PN self) {
 }
 
 static PN potion_str_eval(Potion *P, PN closure, PN self) {
-  return potion_eval(P, PN_STR_PTR(self));
+  return potion_eval(P, self);
 }
 
 static PN potion_str_number(Potion *P, PN closure, PN self) {

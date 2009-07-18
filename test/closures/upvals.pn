@@ -24,4 +24,4 @@ z = ():
   z4.
 
 (cl (), cl2 (), cl3 (), cl4 (12), o, z1, z2, z3, z())
-# (Function(), 17, 45, 67, 23, true, 16, (nil, nil), (b=2))
+# (function(), 17, 45, 67, 23, true, 16, (nil, nil), (b=2))

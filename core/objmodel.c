@@ -34,7 +34,7 @@ PN potion_closure_code(Potion *P, PN cl, PN self) {
 
 PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   int x = 0;
-  PN out = potion_byte_str(P, "Function(");
+  PN out = potion_byte_str(P, "function(");
   if (PN_IS_TUPLE(PN_CLOSURE(self)->sig)) {
     PN_TUPLE_EACH(PN_CLOSURE(self)->sig, i, v, {
       if (PN_IS_STR(v)) {
@@ -44,7 +44,7 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
     });
   }
   pn_printf(P, out, ")");
-  return out;
+  return PN_STR_B(out);
 }
 
 PN potion_type_new(Potion *P, PNType t, PN self) {
@@ -268,11 +268,11 @@ PN potion_ref(Potion *P, PN data) {
 }
 
 PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
-  return potion_byte_str(P, "#<ref>");
+  return potion_str(P, "<ref>");
 }
 
 PN potion_object_string(Potion *P, PN cl, PN self, PN len) {
-  return potion_byte_str(P, "#<object>");
+  return potion_str(P, "<object>");
 }
 
 PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {

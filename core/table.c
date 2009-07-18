@@ -23,7 +23,7 @@ PN potion_table_string(Potion *P, PN cl, PN self) {
       potion_bytes_obj_string(P, out, kh_val(PN, t, k));
     }
   pn_printf(P, out, ")");
-  return out;
+  return PN_STR_B(out);
 }
 
 PN potion_table_empty(Potion *P) {
@@ -193,7 +193,7 @@ PN potion_tuple_string(Potion *P, PN cl, PN self) {
   licks = (licks > 0 && licks == PN_TUPLE_LEN(self));
   if (licks) PN_STR_PTR(out)[0] = '[';
   pn_printf(P, out, licks ? "]" : ")");
-  return out;
+  return PN_STR_B(out);
 }
 
 PN potion_tuple_pop(Potion *P, PN cl, PN self, PN key) {

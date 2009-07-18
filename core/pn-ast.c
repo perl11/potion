@@ -54,7 +54,7 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
     potion_bytes_obj_string(P, out, t->a[i]);
     if (i == n - 1 && n > 1) pn_printf(P, out, ")");
   }
-  return out;
+  return PN_STR_B(out);
 }
 
 void potion_source_init(Potion *P) {

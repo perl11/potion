@@ -7,4 +7,4 @@ func2 = (x, y):
 _ func2
 
 (func, func2)
-# (Function(x, y), Function(x, y))
+# (function(x, y), function(x, y))

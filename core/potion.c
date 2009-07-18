@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
   }
 
   Potion *P = potion_create(sp);
-  potion_eval(P,
+  potion_eval(P, potion_byte_str(P,
     "loop:\n" \
     "  '>> ' print\n" \
     "  code = read\n" \
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     "    if (obj kind == Error):\n" \
     "      obj string print." \
     "    else: ('=> ', obj, \"\\n\") join print.\n" \
-    "_ loop");
+    "_ loop"));
   potion_destroy(P);
   return 0;
 }

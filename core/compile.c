@@ -125,7 +125,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
     num++;
   }
   pn_printf(P, out, "; function end\n");
-  return out;
+  return PN_STR_B(out);
 }
 
 #define PN_REG(f, reg) \
@@ -831,8 +831,7 @@ PN potion_run(Potion *P, PN code) {
 #endif
 }
 
-PN potion_eval(Potion *P, const char *str) {
-  PN bytes = potion_byte_str(P, str);
+PN potion_eval(Potion *P, PN bytes) {
   PN code = potion_parse(P, bytes);
   if (PN_TYPE(code) != PN_TSOURCE) return code;
   code = potion_send(code, PN_compile, PN_NIL, PN_NIL);

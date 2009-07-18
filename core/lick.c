@@ -48,7 +48,7 @@ PN potion_lick_string(Potion *P, PN cl, PN self) {
     pn_printf(P, out, " ");
     potion_bytes_obj_string(P, out, ((struct PNLick *)self)->attr);
   }
-  return out;
+  return PN_STR_B(out);
 }
 
 void potion_lick_init(Potion *P) {
