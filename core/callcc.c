@@ -32,7 +32,7 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   //
   // move stack pointer, fill in stack, resume
   //
-#ifdef POTION_X86
+#if POTION_X86 == POTION_JIT_TARGET
 #if __WORDSIZE == 64
   __asm__ ("mov 0x8(%3), %%rsp;"
            "mov 0x10(%3), %%rbp;"
@@ -105,7 +105,7 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   cc->stack[0] = (PN)sp1;
   cc->stack[1] = (PN)sp2;
   cc->stack[2] = (PN)sp3;
-#ifdef POTION_X86
+#if POTION_X86 == POTION_JIT_TARGET
 #if __WORDSIZE == 64
   __asm__ ("mov %%rbx, 0x18(%0);"
            "mov %%r12, 0x20(%0);"

@@ -84,7 +84,7 @@ int potion_munmap(void *, size_t);
 //
 // stack manipulation routines
 //
-#ifdef POTION_X86
+#if POTION_X86 == POTION_JIT_TARGET
 #if __WORDSIZE == 64
 #define PN_SAVED_REGS 5
 #define POTION_ESP(p) __asm__("mov %%rsp, %0" : "=r" (*p))
@@ -95,8 +95,10 @@ int potion_munmap(void *, size_t);
 #define POTION_EBP(p) __asm__("mov %%ebp, %0" : "=r" (*p))
 #endif
 #else
+#define PN_SAVED_REGS 0
 __attribute__ ((noinline)) void potion_esp(void **);
-#define POTION_ESP(p) potion_esp(p)
+#define POTION_ESP(p) potion_esp((void **)p)
+#define POTION_EBP(p) potion_esp((void **)p)
 #endif
 
 #ifndef O_BINARY

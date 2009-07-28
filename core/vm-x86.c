@@ -94,6 +94,7 @@ void potion_x86_debug() {
   int n = 0;
   _PN rax, *rbp, *sp;
 
+#if POTION_X86 == POTION_JIT_TARGET
 #if __WORDSIZE != 64
   __asm__ ("mov %%eax, %0;"
 #else
@@ -110,6 +111,7 @@ void potion_x86_debug() {
 #endif
            :"=r"(sp)
           );
+#endif
 
   P = (Potion *)sp[2];
   printf("Potion: %p (%p)\n", P, &P);
