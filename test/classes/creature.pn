@@ -1,0 +1,21 @@
+Creature = class (l, s, c, w):
+  /life = l
+  /strength = s
+  /charisma = c
+  /weapon = w.
+
+Creature traits =:
+  (/life, /strength, /charisma, /weapon).
+
+Rabbit = Creature class (b):
+  /life = 10
+  /strength = 44
+  /charisma = 44
+  /weapon = 4
+  /bombs = b.
+
+c = Creature(45, 65, 27, 89)
+r = Rabbit(3)
+(c traits, r traits, r /bombs)
+
+# ((45, 65, 27, 89), (10, 44, 44, 4), 3)
