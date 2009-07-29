@@ -122,6 +122,8 @@ static int potion_gc_minor(Potion *P, int sz) {
     (long)((void *)M->birth_hi - (void *)M->birth_storeptr));
   potion_mark_stack(P, 1);
 
+  GC_MINOR_STRINGS();
+
   wb = (void **)M->birth_storeptr;
   for (storead = wb; storead < (void **)M->birth_hi; storead++) {
     PN v = (PN)*storead;
@@ -190,6 +192,8 @@ static int potion_gc_major(Potion *P, int siz) {
   while ((PN)scanptr < (PN)M->old_cur)
     scanptr = potion_mark_major(P, scanptr);
   scanptr = 0;
+
+  GC_MAJOR_STRINGS();
 
   pngc_page_delete((void *)prevoldlo, (char *)prevoldhi - (char *)prevoldlo);
   prevoldlo = 0;
@@ -412,9 +416,6 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_KEEP(ptr);
       pngc_mark_array(P, (_PN *)((struct PNCont *)ptr)->stack + 3, ((struct PNCont *)ptr)->len - 3, 1);
     break;
-    case PN_TSTRINGS:
-      GC_MINOR_UPDATE_TABLE(str, ((struct PNTable *)ptr), 0);
-    break;
   }
 
 done:
@@ -504,9 +505,6 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     case PN_TCONT:
       GC_KEEP(ptr);
       pngc_mark_array(P, (_PN *)((struct PNCont *)ptr)->stack + 3, ((struct PNCont *)ptr)->len - 3, 2);
-    break;
-    case PN_TSTRINGS:
-      GC_MAJOR_UPDATE_TABLE(str, ((struct PNTable *)ptr), 0);
     break;
   }
 

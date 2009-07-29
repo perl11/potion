@@ -16,7 +16,6 @@ void potion_add_str(Potion *P, PN s) {
   int ret;
   kh_put(str, P->strings, s, &ret);
   PN_QUICK_FWD(struct PNTable *, P->strings);
-  PN_TOUCH(P->strings);
 }
 
 PN potion_lookup_str(Potion *P, const char *str) {
@@ -28,7 +27,7 @@ PN potion_lookup_str(Potion *P, const char *str) {
 
 PN potion_str(Potion *P, const char *str) {
   PN val = potion_lookup_str(P, str);
-  if (!val) {
+  if (val == PN_NIL) {
     size_t len = strlen(str);
     vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
     s->len = (PN_SIZE)len;
@@ -49,7 +48,7 @@ PN potion_str2(Potion *P, char *str, size_t len) {
   s->chars[len] = '\0';
 
   exist = potion_lookup_str(P, s->chars);
-  if (!exist) {
+  if (exist == PN_NIL) {
     potion_add_str(P, (PN)s);
     exist = (PN)s;
   }
@@ -204,7 +203,7 @@ static PN potion_bytes_length(Potion *P, PN closure, PN self) {
 // TODO: ensure it's UTF-8 data
 PN potion_bytes_string(Potion *P, PN closure, PN self) {
   PN exist = potion_lookup_str(P, PN_STR_PTR(self = potion_fwd(self)));
-  if (!exist) {
+  if (exist == PN_NIL) {
     PN_SIZE len = PN_STR_LEN(self);
     vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
     s->len = len;

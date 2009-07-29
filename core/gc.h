@@ -113,6 +113,37 @@
     } \
 } while (0)
 
+#define GC_MINOR_STRINGS() do { \
+  unsigned k; \
+  GC_MINOR_UPDATE(P->strings); \
+  for (k = kh_begin(P->strings); k != kh_end(P->strings); ++k) \
+    if (kh_exist(str, P->strings, k)) { \
+      PN v = kh_key(str, P->strings, k); \
+      if (IN_BIRTH_REGION(v) && !IS_GC_PROTECTED(v)) { \
+        if (((struct PNFwd *)v)->fwd == POTION_COPIED) \
+          kh_key(str, P->strings, k) = ((struct PNFwd *)v)->ptr; \
+        else \
+          kh_del(str, P->strings, k); \
+      } \
+    } \
+} while (0)
+
+#define GC_MAJOR_STRINGS() do { \
+  unsigned k; \
+  GC_MAJOR_UPDATE(P->strings); \
+  for (k = kh_begin(P->strings); k != kh_end(P->strings); ++k) \
+    if (kh_exist(str, P->strings, k)) { \
+      PN v = kh_key(str, P->strings, k); \
+      if (!IS_GC_PROTECTED(v) && \
+          (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v))) { \
+        if (((struct PNFwd *)v)->fwd == POTION_COPIED) \
+          kh_key(str, P->strings, k) = ((struct PNFwd *)v)->ptr; \
+        else \
+          kh_del(str, P->strings, k); \
+      } \
+    } \
+} while (0)
+
 static inline int potion_birth_suggest(int need, volatile void *oldlo, volatile void *oldhi) {
   int suggest = ((char *)oldhi - (char *)oldlo) / 2;
   if (need * 2 > suggest) suggest = need * 2;
