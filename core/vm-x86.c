@@ -199,7 +199,7 @@ void potion_x86_stack(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
    * it expects to be able to use movdqa on things on the stack.
    * we factor in the offset from our saved ebp and return address, so that
    * adds 8 for x86 and 0 (mod 16) for x86_64.  */
-  int rsp = X86C(8,0)+((need-X86C(8,0)+15)&~(15));
+  int rsp = X86C(16,0)+((need-X86C(8,0)+15)&~(15));
   if (rsp >= 0x80) {
     X86_PRE(); ASM(0x81); ASM(0xEC); ASMI(rsp); /* sub rsp, %esp */
   } else {
