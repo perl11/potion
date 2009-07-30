@@ -827,7 +827,7 @@ PN potion_run(Potion *P, PN code) {
   PN_CLOSURE(cl)->data[0] = code;
   return PN_PROTO(code)->jit(P, cl, P->lobby);
 #else
-  return potion_vm(P, code, PN_NIL, 0, NULL);
+  return potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
 #endif
 }
 
