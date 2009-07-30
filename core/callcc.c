@@ -32,49 +32,51 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   //
   // move stack pointer, fill in stack, resume
   //
+  cc->stack[3] = (PN)cc;
 #if POTION_X86 == POTION_JIT_TARGET
 #if __WORDSIZE == 64
-  __asm__ ("mov 0x8(%3), %%rsp;"
-           "mov 0x10(%3), %%rbp;"
-           "mov %3, %%rbx;"
-           "add $0x40, %3;"
+  __asm__ ("mov 0x8(%2), %%rsp;"
+           "mov 0x10(%2), %%rbp;"
+           "mov %2, %%rbx;"
+           "add $0x48, %2;"
         "loop:"
-           "mov (%3), %%rax;"
-           "add $0x8, %1;"
-           "mov %%rax, (%1);"
-           "add $0x8, %3;"
-           "cmp %1, %2;"
+           "mov (%2), %%rax;"
+           "add $0x8, %0;"
+           "mov %%rax, (%0);"
+           "add $0x8, %2;"
+           "cmp %0, %1;"
            "jne loop;"
-           "mov %0, %%rax;"
-           "mov 0x20(%%rbx), %%r12;"
-           "mov 0x28(%%rbx), %%r13;"
-           "mov 0x30(%%rbx), %%r14;"
-           "mov 0x38(%%rbx), %%r15;"
-           "mov 0x18(%%rbx), %%rbx;"
-           "leaveq; retq"
+           "mov 0x18(%%rbx), %%rax;"
+           "movq $0x0, 0x18(%%rbx);"
+           "mov 0x28(%%rbx), %%r12;"
+           "mov 0x30(%%rbx), %%r13;"
+           "mov 0x38(%%rbx), %%r14;"
+           "mov 0x40(%%rbx), %%r15;"
+           "mov 0x20(%%rbx), %%rbx;"
+           "leave; ret"
            :/* no output */
-           :"r"(cc), "r"(start), "r"(end), "r"(cc->stack)
+           :"r"(start), "r"(end), "r"(cc->stack)
            :"%rax", "%rsp", "%rbx"
           );
 #else
-  __asm__ ("mov 0x4(%3), %%esp;"
-           "mov 0x8(%3), %%ebp;"
-           "mov %3, %%esi;"
-           "add $0x18, %3;"
+  __asm__ ("mov 0x4(%2), %%esp;"
+           "mov 0x8(%2), %%ebp;"
+           "mov %2, %%esi;"
+           "add $0x1c, %2;"
         "loop:"
-           "mov (%3), %%eax;"
-           "add $0x4, %1;"
-           "mov %%eax, (%1);"
-           "add $0x4, %3;"
-           "cmp %1, %2;"
+           "mov (%2), %%eax;"
+           "add $0x4, %0;"
+           "mov %%eax, (%0);"
+           "add $0x4, %2;"
+           "cmp %0, %1;"
            "jne loop;"
-           "mov %0, %%eax;"
-           "mov 0x10(%%esi), %%edi;"
-           "mov 0x14(%%esi), %%ebx;"
-           "mov 0xc(%%esi), %%esi;"
+           "mov 0xc(%%esi), %%eax;"
+           "mov 0x14(%%esi), %%edi;"
+           "mov 0x18(%%esi), %%ebx;"
+           "mov 0x10(%%esi), %%esi;"
            "leave; ret"
            :/* no output */
-           :"r"(cc), "r"(start), "r"(end), "r"(cc->stack)
+           :"r"(start), "r"(end), "r"(cc->stack)
            :"%eax", "%esp", "%ebp", "%esi"
           );
 #endif
@@ -100,25 +102,26 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   end = sp1;
 #endif
 
-  cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 2 + PN_SAVED_REGS));
-  cc->len = n + 2;
+  cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 3 + PN_SAVED_REGS));
+  cc->len = n + 3;
   cc->stack[0] = (PN)sp1;
   cc->stack[1] = (PN)sp2;
   cc->stack[2] = (PN)sp3;
+  cc->stack[3] = PN_NIL;
 #if POTION_X86 == POTION_JIT_TARGET
 #if __WORDSIZE == 64
-  __asm__ ("mov %%rbx, 0x18(%0);"
-           "mov %%r12, 0x20(%0);"
-           "mov %%r13, 0x28(%0);"
-           "mov %%r14, 0x30(%0);"
-           "mov %%r15, 0x38(%0);"::"r"(cc->stack));
+  __asm__ ("mov %%rbx, 0x20(%0);"
+           "mov %%r12, 0x28(%0);"
+           "mov %%r13, 0x30(%0);"
+           "mov %%r14, 0x38(%0);"
+           "mov %%r15, 0x40(%0);"::"r"(cc->stack));
 #else
-  __asm__ ("mov %%esi, 0xc(%0);"
-           "mov %%edi, 0x10(%0);"
-           "mov %%ebx, 0x14(%0)"::"r"(cc->stack));
+  __asm__ ("mov %%esi, 0x10(%0);"
+           "mov %%edi, 0x14(%0);"
+           "mov %%ebx, 0x18(%0)"::"r"(cc->stack));
 #endif
 #endif
-  PN_MEMCPY_N((char *)(cc->stack + 3 + PN_SAVED_REGS), start + 1, PN, n - 1);
+  PN_MEMCPY_N((char *)(cc->stack + 4 + PN_SAVED_REGS), start + 1, PN, n - 1);
   return (PN)cc;
 }
 
