@@ -33,7 +33,7 @@ try = (block, catch):
 
 1 to 2 (x):
   try (:
-    "TRY\n" print
+    ("TRY ", x, "\n") join print
     if (x == 1):
       throw ("TRY ERROR!\n").
     "SUCCESS\n" print.
@@ -46,10 +46,10 @@ try = (block, catch):
 
 nil
 
-# TRY
+# TRY 1
 # TRY ERROR!
 # RESUMING
 # SUCCESS
-# TRY
+# TRY 2
 # SUCCESS
 # nil
