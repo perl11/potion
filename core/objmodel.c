@@ -362,6 +362,7 @@ void potion_lobby_init(Potion *P) {
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
   potion_type_call_is(PN_VTABLE(PN_TVTABLE), PN_FUNC(potion_object_new, 0));
   potion_method(P->lobby, "about", potion_about, 0);
+  potion_method(P->lobby, "greg", potion_greg, "string=S");
   potion_method(P->lobby, "here", potion_callcc, 0);
   potion_method(P->lobby, "exit", potion_exit, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);

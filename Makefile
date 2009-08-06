@@ -1,4 +1,4 @@
-SRC = core/asm.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/pn-gram.c core/pn-scan.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
+SRC = core/asm.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/pn-gram.c core/pn-scan.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 OBJ = ${SRC:.c=.o}
 OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
@@ -12,6 +12,7 @@ CC = gcc
 CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type
 DEBUG ?= 0
 ECHO = /bin/echo
+GREG = greg
 INCS = -Icore
 JIT ?= 1
 LEMON = tools/lemon
@@ -114,6 +115,10 @@ core/pn-scan.c: core/pn-scan.rl
 	fi
 	@${ECHO} RAGEL core/pn-scan.rl
 	@${RAGEL} core/pn-scan.rl -C -o $@
+
+core/syntax.c: core/syntax.g
+	@${ECHO} GREG core/syntax.g
+	@${GREG} core/syntax.g > $@
 
 core/pn-gram.c: tools/lemon core/pn-gram.y
 	@${ECHO} LEMON core/pn-gram.y
