@@ -33,17 +33,89 @@ Potion *P = 0;
 
 %}
 
-potion = - e:exprs end-of-file { $$ = P->source = PN_AST(CODE, e); }
+potion = - s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
 
-exprs = e1:expr { $$ = PN_TUP(e1); }
-        (sep e2:expr { $$ = PN_PUSH($$, e2); })*
+statements = s1:stmt { s1 = PN_TUP(s1); }
+        (sep s2:stmt { $$ = PN_PUSH(s1, s2); })*
+     | ''            { $$ = PN_NIL; }
 
-expr = v:value - { $$ = PN_AST(EXPR, PN_TUP(v)); }
-     | t:table   { $$ = PN_AST(EXPR, PN_TUP(t)); }
+stmt = minus s:expr  { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), s); }
+     | plus s:expr   { $$ = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), s); }
+     | not s:expr    { $$ = PN_AST(NOT, PN_TUP(s)); }
+     | wavy s:expr   { $$ = PN_AST(WAVY, PN_TUP(s)); }
+     | ( e:name pplus  { e = PN_OP(AST_INC, e, PN_NUM(1)); }
+       | e:name mminus { e = PN_OP(AST_INC, e, PN_NUM(-1)); }
+       | pplus e:name  { e = PN_OP(AST_INC, e, PN_NUM(1) ^ 1); }
+       | mminus e:name { e = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1); }
+       | e:expr        { e = PN_AST(EXPR, e); })
+       ( assign s:stmt { $$ = PN_AST2(ASSIGN, e, s); }
+       | or assign s:stmt    { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
+       | or s:stmt     { $$ = PN_OP(AST_OR, e, s); }
+       | and assign s:stmt   { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
+       | and s:stmt          { $$ = PN_OP(AST_AND, e, s); }
+       | cmp s:stmt          { $$ = PN_OP(AST_CMP, e, s); }
+       | eq s:stmt           { $$ = PN_OP(AST_EQ, e, s); }
+       | neq s:stmt          { $$ = PN_OP(AST_NEQ, e, s); }
+       | gte s:stmt          { $$ = PN_OP(AST_GTE, e, s); }
+       | gt s:stmt           { $$ = PN_OP(AST_GT, e, s); }
+       | lte s:stmt          { $$ = PN_OP(AST_LTE, e, s); }
+       | lt s:stmt           { $$ = PN_OP(AST_LT, e, s); }
+       | pipe assign s:stmt  { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_PIPE, e, s)); }
+       | pipe s:stmt         { $$ = PN_OP(AST_PIPE, e, s); }
+       | caret assign s:stmt { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_CARET, e, s)); }
+       | caret s:stmt        { $$ = PN_OP(AST_CARET, e, s); }
+       | amp assign s:stmt   { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_AMP, e, s)); }
+       | amp s:stmt          { $$ = PN_OP(AST_AMP, e, s); }
+       | bitl assign s:stmt  { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_BITL, e, s)); }
+       | bitl s:stmt         { $$ = PN_OP(AST_BITL, e, s); }
+       | bitr assign s:stmt  { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_BITR, e, s)); }
+       | bitr s:stmt         { $$ = PN_OP(AST_BITR, e, s); }
+       | plus assign s:stmt  { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_PLUS, e, s)); }
+       | plus s:stmt         { $$ = PN_OP(AST_PLUS, e, s); }
+       | minus assign s:stmt { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_MINUS, e, s)); }
+       | minus s:stmt        { $$ = PN_OP(AST_MINUS, e, s); }
+       | times assign s:stmt { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_TIMES, e, s)); }
+       | times s:stmt        { $$ = PN_OP(AST_TIMES, e, s); }
+       | div assign s:stmt   { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_DIV, e, s)); }
+       | div s:stmt          { $$ = PN_OP(AST_DIV, e, s); }
+       | rem assign s:stmt   { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_REM, e, s)); }
+       | rem s:stmt          { $$ = PN_OP(AST_REM, e, s); }
+       | pow assign s:stmt   { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_POW, e, s)); }
+       | pow s:stmt          { $$ = PN_OP(AST_POW, e, s); }
+       | ''                  { $$ = e; })
 
-table = table-start table-end { $$ = PN_AST(TABLE, PN_NIL); }
+expr = (e:value - | e:table | e:call) { $$ = PN_TUP(e); }
+
+call = name
+
+name = m:message     { $$ = PN_AST(MESSAGE, m); }
+     | q:query       { $$ = PN_AST(QUERY, q); }
+     | p:path        { $$ = PN_AST(PATH, p); }
+     | pq:path-query { $$ = PN_AST(PATHQ, pq); }
+
+items = i1:item     { i1 = PN_TUP(i1); }
+       (sep i2:item { $$ = PN_PUSH(i1, i2); })*
+     | ''           { $$ = PN_NIL; }
+
+item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
+     | m:message t:table { $$ = PN_AST3(LICK, m, PN_NIL, t); }
+     | m:message v:loose t:table { $$ = PN_AST3(LICK, m, v, t); }
+     | m:message v:loose { $$ = PN_AST2(LICK, m, v); }
+     | m:message         { $$ = PN_AST(LICK, m); }
+
+loose = value
+
+table = table-start e:statements table-end { $$ = PN_AST(TABLE, e); }
+
+lick = lick-start i:items lick-end { $$ = PN_AST(TABLE, i); }
+
+message = < utfw+ > -        { $$ = potion_str2(P, yytext, yyleng); }
+query = quiz message         { $$ = potion_str2(P, yytext, yyleng); }
+path = < '/' ('/' | utfw)+ > { $$ = potion_str2(P, yytext, yyleng); }
+path-query = quiz path       { $$ = potion_str2(P, yytext, yyleng); }
 
 value = i:immed { $$ = PN_AST(VALUE, i); }
+      | lick
 
 immed = nil   { $$ = PN_NIL; }
       | true  { $$ = PN_TRUE; }
@@ -53,16 +125,15 @@ immed = nil   { $$ = PN_NIL; }
       | int   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10)); }
       | str1 | str2
 
-utfw = [A-Za-z0-9_$@{}]
+utfw = [A-Za-z0-9_$@;`{}]
      | '\304' [\250-\277]
      | [\305-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
-utf8 = [\t\n\r -~]
+utf8 = [\t\n\r\40-\176]
      | [\302-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
-message = < utfw+ >
 
 comma = ',' -
 block-start = ':' -
@@ -71,8 +142,33 @@ table-start = '(' -
 table-end = ')' -
 lick-start = '[' -
 lick-end = ']' -
-query = '?' -
-path = < '/' ('/' | utfw)+ >
+quiz = '?' -
+assign = '=' -
+pplus = "++" -
+mminus = "--" -
+minus = '-' -
+plus = '+' -
+wavy = '~' -
+times = '*' -
+div = '/' -
+rem = '%' -
+pow = "**" -
+bitl = "<<" -
+bitr = ">>" -
+amp = '&' -
+caret = '^' -
+pipe = '|' -
+lt = '<' -
+lte = "<=" -
+gt = '>' -
+gte = ">=" -
+neq = "!=" -
+eq = "==" -
+cmp = "<=>" -
+and = ("&&" | "and") -
+or = ("||" | "or") -
+not = ("!" | "not") -
+
 
 nil = "nil"
 true = "true"
