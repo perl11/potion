@@ -26,7 +26,6 @@ Potion *P = 0;
   } else { \
     result = 0; \
   } \
-  printf("YY_INPUT: %x, %d, %d, %d\n", PN_TYPE(input), max, PN_STR_LEN(input), result); \
 }
 
 #define YYSTYPE PN
@@ -39,11 +38,7 @@ statements = s1:stmt { s1 = PN_TUP(s1); }
         (sep s2:stmt { $$ = PN_PUSH(s1, s2); })*
      | ''            { $$ = PN_NIL; }
 
-stmt = minus s:expr  { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), s); }
-     | plus s:expr   { $$ = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), s); }
-     | not s:expr    { $$ = PN_AST(NOT, PN_TUP(s)); }
-     | wavy s:expr   { $$ = PN_AST(WAVY, PN_TUP(s)); }
-     | ( e:name pplus  { e = PN_OP(AST_INC, e, PN_NUM(1)); }
+stmt = ( e:name pplus  { e = PN_OP(AST_INC, e, PN_NUM(1)); }
        | e:name mminus { e = PN_OP(AST_INC, e, PN_NUM(-1)); }
        | pplus e:name  { e = PN_OP(AST_INC, e, PN_NUM(1) ^ 1); }
        | mminus e:name { e = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1); }
@@ -84,37 +79,48 @@ stmt = minus s:expr  { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), s); }
        | pow s:stmt          { $$ = PN_OP(AST_POW, e, s); }
        | ''                  { $$ = e; })
 
-expr = (e:value - | e:table | e:call) { $$ = PN_TUP(e); }
+expr = minus a:atom  { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), a); }
+     | plus a:atom   { $$ = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), a); }
+     | not a:atom    { $$ = PN_AST(NOT, PN_TUP(a)); }
+     | wavy a:atom   { $$ = PN_AST(WAVY, PN_TUP(a)); }
+     | atom
 
-call = name
+atom = (e:value | e:closure | e:table | e:call)   { e = PN_TUP(e); }
+       (c:call { $$ = PN_PUSH(e, c) })*
+
+call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? |
+       (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; })
+         b:block? { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
 name = m:message     { $$ = PN_AST(MESSAGE, m); }
      | q:query       { $$ = PN_AST(QUERY, q); }
      | p:path        { $$ = PN_AST(PATH, p); }
      | pq:path-query { $$ = PN_AST(PATHQ, pq); }
 
-items = i1:item     { i1 = PN_TUP(i1); }
-       (sep i2:item { $$ = PN_PUSH(i1, i2); })*
-     | ''           { $$ = PN_NIL; }
+lick-items = i1:lick-item     { i1 = PN_TUP(i1); }
+            (sep i2:lick-item { $$ = PN_PUSH(i1, i2); })*
+           | ''               { $$ = PN_NIL; }
 
-item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
-     | m:message t:table { $$ = PN_AST3(LICK, m, PN_NIL, t); }
-     | m:message v:loose t:table { $$ = PN_AST3(LICK, m, v, t); }
-     | m:message v:loose { $$ = PN_AST2(LICK, m, v); }
-     | m:message         { $$ = PN_AST(LICK, m); }
+lick-item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
+          | m:message t:table { $$ = PN_AST3(LICK, m, PN_NIL, t); }
+          | m:message v:loose t:table { $$ = PN_AST3(LICK, m, v, t); }
+          | m:message v:loose { $$ = PN_AST2(LICK, m, v); }
+          | m:message         { $$ = PN_AST(LICK, m); }
 
 loose = value
+      | unquoted
 
-table = table-start e:statements table-end { $$ = PN_AST(TABLE, e); }
-
-lick = lick-start i:items lick-end { $$ = PN_AST(TABLE, i); }
+closure = t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
+table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
+block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
+lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
 
 message = < utfw+ > -        { $$ = potion_str2(P, yytext, yyleng); }
 query = quiz message         { $$ = potion_str2(P, yytext, yyleng); }
 path = < '/' ('/' | utfw)+ > { $$ = potion_str2(P, yytext, yyleng); }
 path-query = quiz path       { $$ = potion_str2(P, yytext, yyleng); }
 
-value = i:immed { $$ = PN_AST(VALUE, i); }
+value = i:immed - { $$ = PN_AST(VALUE, i); }
       | lick
 
 immed = nil   { $$ = PN_NIL; }
@@ -197,6 +203,8 @@ e2 = '\\' ["]
 c2 = (!q2 utf8)+
 str2 = q2 < (e2 | escc | escn | escb | escf | escr | esct | escu | c2)+ >
        q2 { $$ = potion_str2(P, yytext, yyleng); }
+
+unquoted = < (!sep !lick-end utf8)+ > { $$ = potion_str2(P, yytext, yyleng); }
 
 - = (space | comment)*
 sep = (end-of-line | comma) (space | comment | end-of-line | comma)*
