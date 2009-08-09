@@ -4,6 +4,7 @@ OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
+OBJ_GREG = tools/greg.o tools/compile.o tools/tree.o
 DOC = doc/start.textile
 DOCHTML = ${DOC:.textile=.html}
 
@@ -12,7 +13,7 @@ CC = gcc
 CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type
 DEBUG ?= 0
 ECHO = /bin/echo
-GREG = greg
+GREG = tools/greg
 INCS = -Icore
 JIT ?= 1
 LEMON = tools/lemon
@@ -22,6 +23,7 @@ STRIP ?= `./tools/config.sh ${CC} strip`
 
 # TODO: -O2 doesn't include -fno-stack-protector
 DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
+GREGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O3 -DNDEBUG/; s/1/-g -Wall -DNDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
 
 VERSION = `./tools/config.sh ${CC} version`
@@ -116,9 +118,13 @@ core/pn-scan.c: core/pn-scan.rl
 	@${ECHO} RAGEL core/pn-scan.rl
 	@${RAGEL} core/pn-scan.rl -C -o $@
 
-core/syntax.c: core/syntax.g
+core/syntax.c: tools/greg core/syntax.g
 	@${ECHO} GREG core/syntax.g
 	@${GREG} core/syntax.g > $@
+
+tools/greg: ${OBJ_GREG}
+	@${ECHO} CC $@
+	@${CC} ${GREGFLAGS} -o $@ ${OBJ_GREG} -Itools
 
 core/pn-gram.c: tools/lemon core/pn-gram.y
 	@${ECHO} LEMON core/pn-gram.y

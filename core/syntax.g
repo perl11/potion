@@ -32,17 +32,13 @@ Potion *P = 0;
 
 %}
 
-potion = - s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
+potion = - s:statements sep? end-of-file { $$ = P->source = PN_AST(CODE, s); }
 
-statements = s1:stmt { s1 = PN_TUP(s1); }
-        (sep s2:stmt { $$ = PN_PUSH(s1, s2); })*
+statements = s1:stmt { $$ = s1 = PN_TUP(s1); }
+        (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })*
      | ''            { $$ = PN_NIL; }
 
-stmt = ( e:name pplus  { e = PN_OP(AST_INC, e, PN_NUM(1)); }
-       | e:name mminus { e = PN_OP(AST_INC, e, PN_NUM(-1)); }
-       | pplus e:name  { e = PN_OP(AST_INC, e, PN_NUM(1) ^ 1); }
-       | mminus e:name { e = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1); }
-       | e:expr        { e = PN_AST(EXPR, e); })
+stmt = e:expr        { e = PN_AST(EXPR, e); }
        ( assign s:stmt { $$ = PN_AST2(ASSIGN, e, s); }
        | or assign s:stmt    { $$ = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
        | or s:stmt     { $$ = PN_OP(AST_OR, e, s); }
@@ -79,14 +75,17 @@ stmt = ( e:name pplus  { e = PN_OP(AST_INC, e, PN_NUM(1)); }
        | pow s:stmt          { $$ = PN_OP(AST_POW, e, s); }
        | ''                  { $$ = e; })
 
-expr = minus a:atom  { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), a); }
-     | plus a:atom   { $$ = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), a); }
-     | not a:atom    { $$ = PN_AST(NOT, PN_TUP(a)); }
-     | wavy a:atom   { $$ = PN_AST(WAVY, PN_TUP(a)); }
-     | atom
+expr = mminus a:atom  { $$ = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
+     | pplus a:atom   { $$ = PN_OP(AST_INC, a, PN_NUM(1) ^ 1); }
+     | minus a:atom   { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), a); }
+     | plus a:atom    { $$ = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), a); }
+     | not a:atom     { $$ = PN_AST(NOT, PN_TUP(a)); }
+     | wavy a:atom    { $$ = PN_AST(WAVY, PN_TUP(a)); }
+     | a:atom (pplus  { $$ = PN_OP(AST_INC, a, PN_NUM(1)); }
+             | mminus { $$ = PN_OP(AST_INC, a, PN_NUM(-1)); })?
 
-atom = (e:value | e:closure | e:table | e:call)   { e = PN_TUP(e); }
-       (c:call { $$ = PN_PUSH(e, c) })*
+atom = (e:value | e:closure | e:table | e:call)   { $$ = e = PN_TUP(e); }
+       (c:call { $$ = e = PN_PUSH(e, c) })*
 
 call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? |
        (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; })
@@ -97,8 +96,8 @@ name = m:message     { $$ = PN_AST(MESSAGE, m); }
      | p:path        { $$ = PN_AST(PATH, p); }
      | pq:path-query { $$ = PN_AST(PATHQ, pq); }
 
-lick-items = i1:lick-item     { i1 = PN_TUP(i1); }
-            (sep i2:lick-item { $$ = PN_PUSH(i1, i2); })*
+lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1); }
+            (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2); })*
            | ''               { $$ = PN_NIL; }
 
 lick-item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
@@ -108,7 +107,7 @@ lick-item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
           | m:message         { $$ = PN_AST(LICK, m); }
 
 loose = value
-      | unquoted
+      | v:unquoted - { $$ = PN_AST(VALUE, v); }
 
 closure = t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
 table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
@@ -187,7 +186,7 @@ dec = < ('0' | [1-9][0-9]*)
 
 q1 = [']
 c1 = (!q1 utf8)+
-str1 = q1 < (q1 q1 | c1)+ >
+str1 = q1 < (q1 q1 | c1)* >
        q1 { $$ = potion_str2(P, yytext, yyleng); }
 
 escc        = '\\' q2 | '\\' '\\' | '\\' '/'
@@ -201,7 +200,7 @@ escu        = '\\' 'u' hexl hexl hexl hexl
 q2 = ["]
 e2 = '\\' ["]
 c2 = (!q2 utf8)+
-str2 = q2 < (e2 | escc | escn | escb | escf | escr | esct | escu | c2)+ >
+str2 = q2 < (e2 | escc | escn | escb | escf | escr | esct | escu | c2)* >
        q2 { $$ = potion_str2(P, yytext, yyleng); }
 
 unquoted = < (!sep !lick-end utf8)+ > { $$ = potion_str2(P, yytext, yyleng); }
@@ -215,7 +214,7 @@ end-of-file = !.
 
 %%
 
-PN potion_greg(Potion *PP, PN cl, PN self, PN code) {
+PN potion_greg_parse(Potion *PP, PN code) {
   P = PP;
   pos = 0;
   input = code;

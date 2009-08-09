@@ -16,6 +16,8 @@
 #include "khash.h"
 #include "table.h"
 
+static int greg = 0;
+
 const char potion_banner[] = "potion " POTION_VERSION
                              " (date='" POTION_DATE "', commit='" POTION_COMMIT
                              "', platform='" POTION_PLATFORM "', jit=%d)\n";
@@ -70,7 +72,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
     goto done;
   }
 
-  buf = potion_bytes(P, stats.st_size + 1);
+  buf = potion_bytes(P, stats.st_size);
   if (read(fd, PN_STR_PTR(buf), stats.st_size) == stats.st_size) {
     PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
@@ -79,7 +81,11 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
       if (verbose > 1)
         printf("\n\n-- loaded --\n");
     } else {
-      code = potion_parse(P, buf);
+      if (greg)
+        code = potion_greg_parse(P, buf);
+      else
+        code = potion_parse(P, buf);
+
       if (PN_TYPE(code) == PN_TERROR) {
         potion_send(potion_send(code, PN_string), PN_print);
         goto done;
@@ -190,6 +196,12 @@ int main(int argc, char *argv[]) {
 
       if (strcmp(argv[i], "-V") == 0 ||
           strcmp(argv[i], "--verbose") == 0) {
+        verbose = 2;
+        continue;
+      }
+
+      if (strcmp(argv[i], "-G") == 0) {
+        greg = 1;
         verbose = 2;
         continue;
       }
