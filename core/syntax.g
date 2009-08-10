@@ -13,10 +13,10 @@
 #include "asm.h"
 #include "pn-ast.h"
 
-int pos = 0;
-PN input = PN_NIL;
-PNAsm * volatile sbuf;
-Potion *P = 0;
+static int pos = 0;
+static PN input = PN_NIL;
+static PNAsm * volatile sbuf;
+static Potion *P = 0;
 
 #define YY_INPUT(buf, result, max) { \
   if (pos < PN_STR_LEN(input)) { \
@@ -33,6 +33,8 @@ Potion *P = 0;
 #define YYSTYPE PN
 #define YY_TNUM 3
 #define YY_TDEC 13
+#define YYPARSE potion_yyparse
+#define YYPARSEFROM potion_yyparse_from
 
 %}
 
@@ -272,13 +274,13 @@ end-of-file = !.
 
 %%
 
-PN potion_greg_parse(Potion *PP, PN code) {
+PN potion_parse(Potion *PP, PN code) {
   PN buf = (PN)potion_asm_new(PP);
   P = PP;
   pos = 0;
   input = code;
   sbuf = (PNAsm *)buf;
-  if (!yyparse())
+  if (!YYPARSE())
     printf("** Syntax error!\n");
   return P->source;
 }

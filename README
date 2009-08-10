@@ -283,9 +283,9 @@
   Many of my thoughts about language internals (object repr,
   GC, etc.) are informed by him.
 
-  Adrian Thurston for Ragel. D. Richard Hipp for Lemon. And
-  Zed Shaw for introducing me to both fine softwares. At
-  this point, I've overused them.
+  Ian Piumarta for peg/leg. I use a re-entrant custom version
+  of it, but the original library is sheer minimalist parsing
+  amazement.
 
   Final appreciations to Jonathan Wright and William Morgan
   who pitched in, back in the wee hours of Potion's history.

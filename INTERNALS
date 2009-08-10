@@ -93,10 +93,8 @@
   ~ the parts of potion ~
 
   1. the parser
-     - lexer written with Ragel
-       (see core/pn-scan.rl)
-     - parser written with Lemon
-       (see core/pn-scan.y)
+     - written in peg
+       (see core/syntax.g)
      - produces a syntax tree
      - the tree is a Potion object that can
        be traversed in the code

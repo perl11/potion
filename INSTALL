@@ -23,17 +23,9 @@
   To build the bleeding edge, you will need
   make, binutils and gcc.
 
-  Also, Ragel 6.2 or greater has to be around.
-  <http://www.complang.org/ragel/>
-
     $ git clone git://github.com/why/potion.git
     $ cd potion
     $ make
-
-  (NOTE: There appear to be some bugs using Ragel under
-  64-bit, though. The UTF-8 tests fail. Try building
-  the grammar on a 32-bit and copy over pn-scan.c
-  into core/.)
 
 
   ~ installing ~
