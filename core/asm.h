@@ -98,6 +98,7 @@ typedef struct {
 #define ASMN(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), sizeof(PN))
 
 PNAsm *potion_asm_new(Potion *);
+PNAsm *potion_asm_clear(Potion *, PNAsm *);
 PNAsm *potion_asm_put(Potion *, PNAsm *, PN, size_t);
 PNAsm *potion_asm_op(Potion *, PNAsm *, u8, int, int);
 PNAsm *potion_asm_write(Potion *, PNAsm *, char *, size_t);

@@ -10,10 +10,12 @@
 #include <stdlib.h>
 #include "potion.h"
 #include "internal.h"
+#include "asm.h"
 #include "pn-ast.h"
 
 int pos = 0;
 PN input = PN_NIL;
+PNAsm * volatile sbuf;
 Potion *P = 0;
 
 #define YY_INPUT(buf, result, max) { \
@@ -32,10 +34,11 @@ Potion *P = 0;
 
 %}
 
-potion = - s:statements sep? end-of-file { $$ = P->source = PN_AST(CODE, s); }
+potion = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
 
 statements = s1:stmt { $$ = s1 = PN_TUP(s1); }
         (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })*
+         sep?
      | ''            { $$ = PN_NIL; }
 
 stmt = e:expr        { e = PN_AST(EXPR, e); }
@@ -98,6 +101,7 @@ name = m:message     { $$ = PN_AST(MESSAGE, m); }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1); }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2); })*
+             sep?
            | ''               { $$ = PN_NIL; }
 
 lick-item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
@@ -107,7 +111,7 @@ lick-item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
           | m:message         { $$ = PN_AST(LICK, m); }
 
 loose = value
-      | v:unquoted - { $$ = PN_AST(VALUE, v); }
+      | v:unquoted { $$ = PN_AST(VALUE, v); }
 
 closure = t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
 table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
@@ -140,39 +144,39 @@ utf8 = [\t\n\r\40-\176]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 
-comma = ',' -
-block-start = ':' -
+comma = ','
+block-start = ':' --
 block-end = '.' -
-table-start = '(' -
+table-start = '(' --
 table-end = ')' -
-lick-start = '[' -
+lick-start = '[' --
 lick-end = ']' -
-quiz = '?' -
-assign = '=' -
+quiz = '?' --
+assign = '=' --
 pplus = "++" -
 mminus = "--" -
-minus = '-' -
-plus = '+' -
-wavy = '~' -
-times = '*' -
-div = '/' -
-rem = '%' -
-pow = "**" -
-bitl = "<<" -
-bitr = ">>" -
-amp = '&' -
-caret = '^' -
-pipe = '|' -
-lt = '<' -
-lte = "<=" -
-gt = '>' -
-gte = ">=" -
-neq = "!=" -
-eq = "==" -
-cmp = "<=>" -
-and = ("&&" | "and") -
-or = ("||" | "or") -
-not = ("!" | "not") -
+minus = '-' --
+plus = '+' --
+wavy = '~' --
+times = '*' --
+div = '/' --
+rem = '%' --
+pow = "**" --
+bitl = "<<" --
+bitr = ">>" --
+amp = '&' --
+caret = '^' --
+pipe = '|' --
+lt = '<' --
+lte = "<=" --
+gt = '>' --
+gte = ">=" --
+neq = "!=" --
+eq = "==" --
+cmp = "<=>" --
+and = ("&&" | "and") --
+or = ("||" | "or") --
+not = ("!" | "not") --
 
 
 nil = "nil"
@@ -185,27 +189,46 @@ dec = < ('0' | [1-9][0-9]*)
       '.' [0-9]+ ('e' [-+] [0-9]+)? >
 
 q1 = [']
-c1 = (!q1 utf8)+
-str1 = q1 < (q1 q1 | c1)* >
-       q1 { $$ = potion_str2(P, yytext, yyleng); }
+c1 = < (!q1 utf8)+ > { sbuf = potion_asm_write(P, sbuf, yytext, yyleng); }
+str1 = q1 { sbuf = potion_asm_clear(P, sbuf); }
+       < (q1 q1 { sbuf = potion_asm_write(P, sbuf, "'", 1); } | c1)* >
+       q1 { $$ = potion_bytes_string(P, PN_NIL, (PN)sbuf); }
 
-escc        = '\\' q2 | '\\' '\\' | '\\' '/'
-escn        = '\\' 'n'
-escb        = '\\' 'b'
-escf        = '\\' 'f'
-escr        = '\\' 'r'
-esct        = '\\' 't'
-escu        = '\\' 'u' hexl hexl hexl hexl
+esc         = '\\'
+escn        = esc 'n' { sbuf = potion_asm_write(P, sbuf, "\n", 1); }
+escb        = esc 'b' { sbuf = potion_asm_write(P, sbuf, "\b", 1); }
+escf        = esc 'f' { sbuf = potion_asm_write(P, sbuf, "\f", 1); }
+escr        = esc 'r' { sbuf = potion_asm_write(P, sbuf, "\r", 1); }
+esct        = esc 't' { sbuf = potion_asm_write(P, sbuf, "\t", 1); }
+escu        = esc 'u' < hexl hexl hexl hexl > {
+  int nbuf = 0;
+  char utfc[4] = {0, 0, 0, 0};
+  unsigned long code = PN_ATOI(yytext, yyleng, 16);
+  if (code < 0x80) {
+    utfc[nbuf++] = code;
+  } else if (code < 0x7ff) {
+    utfc[nbuf++] = (code >> 6) | 0xc0;
+    utfc[nbuf++] = (code & 0x3f) | 0x80;
+  } else {
+    utfc[nbuf++] = (code >> 12) | 0xe0;
+    utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
+    utfc[nbuf++] = (code & 0x3f) | 0x80;
+  }
+  sbuf = potion_asm_write(P, sbuf, utfc, nbuf);
+}
+escc = esc < utf8 > { sbuf = potion_asm_write(P, sbuf, yytext, yyleng); }
 
 q2 = ["]
-e2 = '\\' ["]
-c2 = (!q2 utf8)+
-str2 = q2 < (e2 | escc | escn | escb | escf | escr | esct | escu | c2)* >
-       q2 { $$ = potion_str2(P, yytext, yyleng); }
+e2 = '\\' ["] { sbuf = potion_asm_write(P, sbuf, "\"", 1); }
+c2 = < (!q2 !esc utf8)+ > { sbuf = potion_asm_write(P, sbuf, yytext, yyleng); }
+str2 = q2 { sbuf = potion_asm_clear(P, sbuf); }
+       < (e2 | escn | escb | escf | escr | esct | escu | escc | c2)* >
+       q2 { $$ = potion_bytes_string(P, PN_NIL, (PN)sbuf); }
 
 unquoted = < (!sep !lick-end utf8)+ > { $$ = potion_str2(P, yytext, yyleng); }
 
 - = (space | comment)*
+-- = (space | comment | end-of-line)*
 sep = (end-of-line | comma) (space | comment | end-of-line | comma)*
 comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t'
@@ -215,9 +238,11 @@ end-of-file = !.
 %%
 
 PN potion_greg_parse(Potion *PP, PN code) {
+  PN buf = (PN)potion_asm_new(PP);
   P = PP;
   pos = 0;
   input = code;
+  sbuf = (PNAsm *)buf;
   if (!yyparse())
     printf("** Syntax error!\n");
   return P->source;

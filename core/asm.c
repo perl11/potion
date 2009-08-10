@@ -18,6 +18,12 @@ PNAsm *potion_asm_new(Potion *P) {
   return asmb;
 }
 
+PNAsm *potion_asm_clear(Potion *P, PNAsm * volatile asmb) {
+  asmb->len = 0;
+  PN_MEMZERO_N(asmb->ptr, u8, asmb->siz);
+  return asmb;
+}
+
 PNAsm *potion_asm_put(Potion *P, PNAsm * volatile asmb, PN val, size_t len) {
   u8 *ptr;
   PN_FLEX_NEEDS(len, asmb, PN_TBYTES, PNAsm, ASM_UNIT);
