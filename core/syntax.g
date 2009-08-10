@@ -78,17 +78,17 @@ stmt = e:expr        { e = PN_AST(EXPR, e); }
        | pow s:stmt          { $$ = PN_OP(AST_POW, e, s); }
        | ''                  { $$ = e; })
 
-expr = mminus a:atom  { $$ = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
-     | pplus a:atom   { $$ = PN_OP(AST_INC, a, PN_NUM(1) ^ 1); }
-     | minus a:atom   { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), a); }
-     | plus a:atom    { $$ = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), a); }
-     | not a:atom     { $$ = PN_AST(NOT, PN_TUP(a)); }
-     | wavy a:atom    { $$ = PN_AST(WAVY, PN_TUP(a)); }
-     | a:atom (pplus  { $$ = PN_OP(AST_INC, a, PN_NUM(1)); }
-             | mminus { $$ = PN_OP(AST_INC, a, PN_NUM(-1)); })?
+expr = (mminus a:atom { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
+     | pplus a:atom   { a = PN_OP(AST_INC, a, PN_NUM(1) ^ 1); }
+     | minus a:atom   { a = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), PN_AST(EXPR, PN_TUP(a))); }
+     | plus a:atom    { a = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), PN_AST(EXPR, PN_TUP(a))); }
+     | not a:atom     { a = PN_AST(NOT, PN_AST(EXPR, PN_TUP(a))); }
+     | wavy a:atom    { a = PN_AST(WAVY, PN_AST(EXPR, PN_TUP(a))); }
+     | a:atom (pplus  { a = PN_OP(AST_INC, a, PN_NUM(1)); }
+             | mminus { a = PN_OP(AST_INC, a, PN_NUM(-1)); })?) { $$ = a = PN_TUP(a); }
+       (c:call { $$ = a = PN_PUSH(a, c) })*
 
-atom = (e:value | e:closure | e:table | e:call)   { $$ = e = PN_TUP(e); }
-       (c:call { $$ = e = PN_PUSH(e, c) })*
+atom = e:value | e:closure | e:table | e:call
 
 call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? |
        (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; })
@@ -130,8 +130,9 @@ immed = nil   { $$ = PN_NIL; }
       | true  { $$ = PN_TRUE; }
       | false { $$ = PN_FALSE; }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)); }
+      | int   { if (yyleng < 10) { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10)); }
+                else { $$ = potion_decimal(P, yytext, yyleng); } }
       | dec   { $$ = potion_decimal(P, yytext, yyleng); }
-      | int   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10)); }
       | str1 | str2
 
 utfw = [A-Za-z0-9_$@;`{}]
@@ -182,11 +183,11 @@ not = ("!" | "not") --
 nil = "nil"
 true = "true"
 false = "false"
-int = < [0-9]+ >
+int = < ('0' | [1-9][0-9]*) !'.' !'e' >
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
 dec = < ('0' | [1-9][0-9]*)
-      '.' [0-9]+ ('e' [-+] [0-9]+)? >
+        ('.' [0-9]+)? ('e' [-+] [0-9]+)? >
 
 q1 = [']
 c1 = < (!q1 utf8)+ > { sbuf = potion_asm_write(P, sbuf, yytext, yyleng); }
