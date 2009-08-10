@@ -262,7 +262,8 @@ unq-char = '{' unq-char+ '}'
          | '[' unq-char+ ']'
          | '(' unq-char+ ')'
          | !'{' !'[' !'(' !'}' !']' !')' utf8
-unquoted = < (!sep !lick-end unq-char)+ > { $$ = potion_str2(P, yytext, yyleng); }
+unq-sep = sep !'{' !'[' !'('
+unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = potion_str2(P, yytext, yyleng); }
 
 - = (space | comment)*
 -- = (space | comment | end-of-line)*
