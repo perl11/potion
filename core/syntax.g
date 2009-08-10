@@ -256,7 +256,11 @@ str2 = q2 { sbuf = potion_asm_clear(P, sbuf); }
        < (e2 | escn | escb | escf | escr | esct | escu | escc | c2)* >
        q2 { $$ = potion_bytes_string(P, PN_NIL, (PN)sbuf); }
 
-unquoted = < (!sep !lick-end utf8)+ > { $$ = potion_str2(P, yytext, yyleng); }
+unq-char = '{' unq-char+ '}'
+         | '[' unq-char+ ']'
+         | '(' unq-char+ ')'
+         | !'{' !'[' !'(' !'}' !']' !')' utf8
+unquoted = < (!sep !lick-end unq-char)+ > { $$ = potion_str2(P, yytext, yyleng); }
 
 - = (space | comment)*
 -- = (space | comment | end-of-line)*
