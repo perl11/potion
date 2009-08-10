@@ -515,7 +515,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           }
         }
 
-        if (num == PN_NONE) {
+        if (num == PN_NONE && t->a[0] != PN_NIL) {
           u8 oreg = ++breg;
           int jmp = 0;
           num = PN_PUT(f->values, t->a[0]);
@@ -546,7 +546,8 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
               PN_ASM2(OP_TEST, reg, breg);
             }
         } else {
-          PN_ASM2(opcode, reg, num);
+          if (num != PN_NONE)
+            PN_ASM2(opcode, reg, num);
           if (call) {
             PN_ASM1(OP_SELF, ++breg);
             PN_ARG_TABLE(t->a[1], breg, 1);

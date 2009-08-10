@@ -31,6 +31,8 @@ Potion *P = 0;
 }
 
 #define YYSTYPE PN
+#define YY_TNUM 3
+#define YY_TDEC 13
 
 %}
 
@@ -47,20 +49,20 @@ stmt = s:sets
        { $$ = s; }
 
 sets = e:eqs
-       ( assign x:eqs       { e = PN_AST2(ASSIGN, e, x); }
-       | or assign x:eqs    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, x)); }
-       | and assign x:eqs   { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, x)); }
-       | pipe assign x:eqs  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PIPE, e, x)); }
-       | caret assign x:eqs { e = PN_AST2(ASSIGN, e, PN_OP(AST_CARET, e, x)); }
-       | amp assign x:eqs   { e = PN_AST2(ASSIGN, e, PN_OP(AST_AMP, e, x)); }
-       | bitl assign x:eqs  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITL, e, x)); }
-       | bitr assign x:eqs  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITR, e, x)); }
-       | plus assign x:eqs  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PLUS, e, x)); }
-       | minus assign x:eqs { e = PN_AST2(ASSIGN, e, PN_OP(AST_MINUS, e, x)); }
-       | times assign x:eqs { e = PN_AST2(ASSIGN, e, PN_OP(AST_TIMES, e, x)); }
-       | div assign x:eqs   { e = PN_AST2(ASSIGN, e, PN_OP(AST_DIV, e, x)); }
-       | rem assign x:eqs   { e = PN_AST2(ASSIGN, e, PN_OP(AST_REM, e, x)); }
-       | pow assign x:eqs   { e = PN_AST2(ASSIGN, e, PN_OP(AST_POW, e, x)); })*
+       ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
+       | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
+       | and assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
+       | pipe assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PIPE, e, s)); }
+       | caret assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_CARET, e, s)); }
+       | amp assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_AMP, e, s)); }
+       | bitl assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITL, e, s)); }
+       | bitr assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITR, e, s)); }
+       | plus assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PLUS, e, s)); }
+       | minus assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_MINUS, e, s)); }
+       | times assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_TIMES, e, s)); }
+       | div assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_DIV, e, s)); }
+       | rem assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_REM, e, s)); }
+       | pow assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_POW, e, s)); })?
        { $$ = e; }
              
 eqs = c:cmps
@@ -95,23 +97,25 @@ sum = p:product
       | minus x:product     { p = PN_OP(AST_MINUS, p, x); })*
       { $$ = p; }
 
-product = e:expr
-          ( times x:expr           { e = PN_OP(AST_TIMES, e, x); }
-          | div x:expr             { e = PN_OP(AST_DIV, e, x); }
-          | rem x:expr             { e = PN_OP(AST_REM, e, x); }
-          | pow x:expr             { e = PN_OP(AST_POW, e, x); })*
-          { $$ = e; }
+product = s:sign
+          ( times x:sign           { s = PN_OP(AST_TIMES, s, x); }
+          | div x:sign             { s = PN_OP(AST_DIV, s, x); }
+          | rem x:sign             { s = PN_OP(AST_REM, s, x); }
+          | pow x:sign             { s = PN_OP(AST_POW, s, x); })*
+          { $$ = s; }
 
-expr = (mminus a:atom { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
-     | pplus a:atom   { a = PN_OP(AST_INC, a, PN_NUM(1) ^ 1); }
-     | minus a:atom   { a = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), PN_AST(EXPR, PN_TUP(a))); }
-     | plus a:atom    { a = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), PN_AST(EXPR, PN_TUP(a))); }
-     | not a:atom     { a = PN_AST(NOT, PN_AST(EXPR, PN_TUP(a))); }
-     | wavy a:atom    { a = PN_AST(WAVY, PN_AST(EXPR, PN_TUP(a))); }
-     | a:atom (pplus  { a = PN_OP(AST_INC, a, PN_NUM(1)); }
-             | mminus { a = PN_OP(AST_INC, a, PN_NUM(-1)); })?) { $$ = a = PN_TUP(a); }
-       (c:call { a = PN_PUSH(a, c) })*
-     { $$ = PN_AST(EXPR, a); }
+sign = minus !minus s:sign   { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), s); }
+     | plus !plus s:sign     { $$ = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), s); }
+     | not s:sign     { $$ = PN_AST(NOT, s); }
+     | wavy s:sign    { $$ = PN_AST(WAVY, s); }
+     | e:expr         { $$ = e; }
+
+expr = ( mminus a:atom { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
+       | pplus a:atom   { a = PN_OP(AST_INC, a, PN_NUM(1) ^ 1); }
+       | a:atom (pplus  { a = PN_OP(AST_INC, a, PN_NUM(1)); }
+               | mminus { a = PN_OP(AST_INC, a, PN_NUM(-1)); })?) { a = PN_TUP(a); }
+         (c:call { a = PN_PUSH(a, c) })*
+       { $$ = PN_AST(EXPR, a); }
 
 atom = e:value | e:closure | e:table | e:call
 
@@ -122,7 +126,8 @@ call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? |
 name = p:path           { $$ = PN_AST(PATH, p); }
      | quiz ( m:message { $$ = PN_AST(QUERY, m); }
             | p:path    { $$ = PN_AST(PATHQ, p); })
-     | m:message        { $$ = PN_AST(MESSAGE, m); }
+     | !keyword
+       m:message        { $$ = PN_AST(MESSAGE, m); }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1); }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2); })*
@@ -153,9 +158,11 @@ immed = nil   { $$ = PN_NIL; }
       | true  { $$ = PN_TRUE; }
       | false { $$ = PN_FALSE; }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)); }
-      | int   { if (yyleng < 10) { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10)); }
-                else { $$ = potion_decimal(P, yytext, yyleng); } }
-      | dec   { $$ = potion_decimal(P, yytext, yyleng); }
+      | dec   { if ($$ == YY_TNUM && yyleng < 10) { 
+                  $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10));
+                } else {
+                  $$ = potion_decimal(P, yytext, yyleng);
+              } }
       | str1 | str2
 
 utfw = [A-Za-z0-9_$@;`{}]
@@ -198,19 +205,19 @@ gte = ">=" --
 neq = "!=" --
 eq = "==" --
 cmp = "<=>" --
-and = ("&&" | "and") --
-or = ("||" | "or") --
-not = ("!" | "not") --
+and = ("&&" | "and" !utfw) --
+or = ("||" | "or" !utfw) --
+not = ("!" | "not" !utfw) --
+keyword = "and" | "or" | "not"
 
-
-nil = "nil"
-true = "true"
-false = "false"
-int = < ('0' | [1-9][0-9]*) !'.' !'e' >
+nil = "nil" !utfw
+true = "true" !utfw
+false = "false" !utfw
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
-dec = < ('0' | [1-9][0-9]*)
-        ('.' [0-9]+)? ('e' [-+] [0-9]+)? >
+dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM; }
+        ('.' [0-9]+ { $$ = YY_TDEC; })?
+        ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
 
 q1 = [']
 c1 = < (!q1 utf8)+ > { sbuf = potion_asm_write(P, sbuf, yytext, yyleng); }
