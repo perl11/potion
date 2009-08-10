@@ -73,9 +73,6 @@ struct PNBHeader {
   u8 proto[0];
 };
 
-void *LemonPotionAlloc();
-void LemonPotion(void *, int, PN, struct Potion_State *);
-
 size_t potion_cp_strlen_utf8(const char *);
 void *potion_mmap(size_t, const char);
 int potion_munmap(void *, size_t);

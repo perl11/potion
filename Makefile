@@ -1,3 +1,5 @@
+.SUFFIXES: .g .c .o
+
 SRC = core/asm.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/sig.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 OBJ = ${SRC:.c=.o}
 OBJ_POTION = core/potion.o
@@ -15,7 +17,6 @@ ECHO = /bin/echo
 GREG = tools/greg
 INCS = -Icore
 JIT ?= 1
-LEMON = tools/lemon
 LIBS = -lm
 STRIP ?= `./tools/config.sh ${CC} strip`
 
@@ -223,7 +224,8 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML} tools/lemon
+	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML}
+	@rm -f tools/greg tools/greg.o tools/compile.o tools/tree.o
 	@rm -f core/config.h core/version.h core/sig.c core/syntax.c
 	@rm -f potion potion.exe test/api/potion-test test/api/gc-test test/api/gc-bench
 
