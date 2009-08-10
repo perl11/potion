@@ -149,15 +149,15 @@ static PN potion_str_at(Potion *P, PN closure, PN self, PN index) {
 
 PN potion_byte_str(Potion *P, const char *str) {
   size_t len = strlen(str);
-  vPN(Bytes) s = (struct PNBytes *)potion_bytes(P, len + 1);
+  vPN(Bytes) s = (struct PNBytes *)potion_bytes(P, len);
   PN_MEMCPY_N(s->chars, str, char, len);
-  s->len = len;
   s->chars[len] = '\0';
   return (PN)s;
 }
 
 PN potion_bytes(Potion *P, size_t len) {
   vPN(Bytes) s = PN_ALLOC_N(PN_TBYTES, struct PNBytes, len + 1);
+  s->siz = len + 1;
   s->len = (PN_SIZE)len;
   return (PN)s;
 }
@@ -170,7 +170,11 @@ PN_SIZE pn_printf(Potion *P, PN bytes, const char *format, ...) {
   va_start(args, format);
   len = (PN_SIZE)vsnprintf(NULL, 0, format, args);
   va_end(args);
-  PN_REALLOC(s, PN_TBYTES, struct PNBytes, s->len + len + 1);
+
+  if (s->len + len + 1 > s->siz) {
+    PN_REALLOC(s, PN_TBYTES, struct PNBytes, s->len + len + 1);
+    s->siz = s->len + len + 1;
+  }
 
   va_start(args, format);
   vsnprintf(s->chars + s->len, len + 1, format, args);
@@ -188,7 +192,12 @@ PN potion_bytes_append(Potion *P, PN closure, PN self, PN str) {
   vPN(Bytes) s = (struct PNBytes *)potion_fwd(self);
   PN fstr = potion_fwd(str);
   PN_SIZE len = PN_STR_LEN(fstr);
-  PN_REALLOC(s, PN_TBYTES, struct PNBytes, s->len + len + 1);
+
+  if (s->len + len + 1 > s->siz) {
+    PN_REALLOC(s, PN_TBYTES, struct PNBytes, s->len + len + 1);
+    s->siz = s->len + len + 1;
+  }
+
   PN_MEMCPY_N(s->chars + s->len, PN_STR_PTR(fstr), char, len);
   s->len += len;
   s->chars[s->len] = '\0';

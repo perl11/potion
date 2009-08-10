@@ -291,7 +291,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNSource) + (3 * sizeof(PN));
     break;
     case PN_TBYTES:
-      sz = sizeof(struct PNBytes) + ((struct PNBytes *)ptr)->len + 1;
+      sz = sizeof(struct PNBytes) + ((struct PNBytes *)ptr)->siz;
     break;
     case PN_TPROTO:
       sz = sizeof(struct PNProto);
@@ -303,7 +303,6 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNTable) + kh_mem(str, ptr);
     break;
     case PN_TFLEX:
-    case PN_TFLEXB:
       sz = sizeof(PNFlex) + ((PNFlex *)ptr)->siz;
     break;
     case PN_TCONT:

@@ -14,13 +14,13 @@
 
 PNAsm *potion_asm_new(Potion *P) {
   int siz = ASM_UNIT - sizeof(PNAsm);
-  PNAsm * volatile asmb = PN_FLEX_NEW(asmb, PN_TFLEXB, PNAsm, siz);
+  PNAsm * volatile asmb = PN_FLEX_NEW(asmb, PN_TBYTES, PNAsm, siz);
   return asmb;
 }
 
 PNAsm *potion_asm_put(Potion *P, PNAsm * volatile asmb, PN val, size_t len) {
   u8 *ptr;
-  PN_FLEX_NEEDS(len, asmb, PN_TFLEXB, PNAsm, ASM_UNIT);
+  PN_FLEX_NEEDS(len, asmb, PN_TBYTES, PNAsm, ASM_UNIT);
   ptr = asmb->ptr + asmb->len;
 
   if (len == sizeof(u8))
@@ -36,7 +36,7 @@ PNAsm *potion_asm_put(Potion *P, PNAsm * volatile asmb, PN val, size_t len) {
 
 PNAsm *potion_asm_op(Potion *P, PNAsm * volatile asmb, u8 ins, int _a, int _b) {
   PN_OP *pos;
-  PN_FLEX_NEEDS(sizeof(PN_OP), asmb, PN_TFLEXB, PNAsm, ASM_UNIT);
+  PN_FLEX_NEEDS(sizeof(PN_OP), asmb, PN_TBYTES, PNAsm, ASM_UNIT);
   pos = (PN_OP *)(asmb->ptr + asmb->len);
 
   pos->code = ins;
@@ -44,5 +44,14 @@ PNAsm *potion_asm_op(Potion *P, PNAsm * volatile asmb, u8 ins, int _a, int _b) {
   pos->b    = _b;
 
   asmb->len += sizeof(PN_OP);
+  return asmb;
+}
+
+PNAsm *potion_asm_write(Potion *P, PNAsm * volatile asmb, char *str, size_t len) {
+  char *ptr;
+  PN_FLEX_NEEDS(len, asmb, PN_TBYTES, PNAsm, ASM_UNIT);
+  ptr = (char *)asmb->ptr + asmb->len;
+  PN_MEMCPY_N(ptr, str, char, len);
+  asmb->len += len;
   return asmb;
 }

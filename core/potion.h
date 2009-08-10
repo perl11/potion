@@ -61,11 +61,10 @@ struct PNVtable;
 #define PN_TTABLE       (15+PN_TNIL)
 #define PN_TLICK        (16+PN_TNIL)
 #define PN_TFLEX        (17+PN_TNIL)
-#define PN_TFLEXB       (18+PN_TNIL)
-#define PN_TSTRINGS     (19+PN_TNIL)
-#define PN_TERROR       (20+PN_TNIL)
-#define PN_TCONT        (21+PN_TNIL)
-#define PN_TUSER        (22+PN_TNIL)
+#define PN_TSTRINGS     (18+PN_TNIL)
+#define PN_TERROR       (19+PN_TNIL)
+#define PN_TCONT        (20+PN_TNIL)
+#define PN_TUSER        (21+PN_TNIL)
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -115,7 +114,7 @@ struct PNVtable;
 #define PN_TOUCH(x)     potion_gc_update(P, (PN)(x))
 
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
-#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER PN_SIZE siz; PN_SIZE len; T ptr[0]; } N;
+#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER PN_SIZE len; PN_SIZE siz; T ptr[0]; } N;
 #define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
 #define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
 
@@ -201,14 +200,11 @@ struct PNString {
 //
 // byte strings are raw character data,
 // volatile, may be appended/changed.
-// (although this struct is identical
-// to PNString, they have deviated
-// periodically, so it's handy to have
-// them separate.)
 //
 struct PNBytes {
   PN_OBJECT_HEADER
   PN_SIZE len;
+  PN_SIZE siz;
   char chars[0];
 };
 

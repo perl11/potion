@@ -100,5 +100,6 @@ typedef struct {
 PNAsm *potion_asm_new(Potion *);
 PNAsm *potion_asm_put(Potion *, PNAsm *, PN, size_t);
 PNAsm *potion_asm_op(Potion *, PNAsm *, u8, int, int);
+PNAsm *potion_asm_write(Potion *, PNAsm *, char *, size_t);
 
 #endif

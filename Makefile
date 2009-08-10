@@ -4,7 +4,6 @@ OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
-OBJ_GREG = tools/greg.o tools/compile.o tools/tree.o
 DOC = doc/start.textile
 DOCHTML = ${DOC:.textile=.html}
 
@@ -23,7 +22,6 @@ STRIP ?= `./tools/config.sh ${CC} strip`
 
 # TODO: -O2 doesn't include -fno-stack-protector
 DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
-GREGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O3 -DNDEBUG/; s/1/-g -Wall -DNDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
 
 VERSION = `./tools/config.sh ${CC} version`
@@ -122,9 +120,9 @@ core/syntax.c: tools/greg core/syntax.g
 	@${ECHO} GREG core/syntax.g
 	@${GREG} core/syntax.g > $@
 
-tools/greg: ${OBJ_GREG}
+tools/greg: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
-	@${CC} ${GREGFLAGS} -o $@ ${OBJ_GREG} -Itools
+	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
 core/pn-gram.c: tools/lemon core/pn-gram.y
 	@${ECHO} LEMON core/pn-gram.y
