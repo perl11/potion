@@ -12,6 +12,10 @@
 #include "khash.h"
 #include "table.h"
 
+#define BYTES_FACTOR 1 / 8 * 9
+#define BYTES_CHUNK  32
+#define BYTES_ALIGN(len) PN_ALIGN(len + sizeof(struct PNBytes), BYTES_CHUNK) - sizeof(struct PNBytes)
+
 void potion_add_str(Potion *P, PN s) {
   int ret;
   kh_put(str, P->strings, s, &ret);
@@ -156,8 +160,9 @@ PN potion_byte_str(Potion *P, const char *str) {
 }
 
 PN potion_bytes(Potion *P, size_t len) {
-  vPN(Bytes) s = PN_ALLOC_N(PN_TBYTES, struct PNBytes, len + 1);
-  s->siz = len + 1;
+  size_t siz = BYTES_ALIGN(len + 1);
+  vPN(Bytes) s = PN_ALLOC_N(PN_TBYTES, struct PNBytes, siz);
+  s->siz = (PN_SIZE)siz;
   s->len = (PN_SIZE)len;
   return (PN)s;
 }
@@ -172,8 +177,9 @@ PN_SIZE pn_printf(Potion *P, PN bytes, const char *format, ...) {
   va_end(args);
 
   if (s->len + len + 1 > s->siz) {
-    PN_REALLOC(s, PN_TBYTES, struct PNBytes, s->len + len + 1);
-    s->siz = s->len + len + 1;
+    size_t siz = BYTES_ALIGN(((s->len + len) * BYTES_FACTOR) + 1);
+    PN_REALLOC(s, PN_TBYTES, struct PNBytes, siz);
+    s->siz = (PN_SIZE)siz;
   }
 
   va_start(args, format);
@@ -194,8 +200,9 @@ PN potion_bytes_append(Potion *P, PN closure, PN self, PN str) {
   PN_SIZE len = PN_STR_LEN(fstr);
 
   if (s->len + len + 1 > s->siz) {
-    PN_REALLOC(s, PN_TBYTES, struct PNBytes, s->len + len + 1);
-    s->siz = s->len + len + 1;
+    size_t siz = BYTES_ALIGN(((s->len + len) * BYTES_FACTOR) + 1);
+    PN_REALLOC(s, PN_TBYTES, struct PNBytes, siz);
+    s->siz = (PN_SIZE)siz;
   }
 
   PN_MEMCPY_N(s->chars + s->len, PN_STR_PTR(fstr), char, len);
