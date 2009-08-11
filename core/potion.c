@@ -47,7 +47,6 @@ static void potion_cmd_stats(void *sp) {
   printf("GC (fixed=%ld, actual=%ld, reserved=%ld)\n",
       PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
       PN_INT(potion_gc_reserved(P, 0, 0)));
-  potion_send(potion_send(potion_sig(P, "|n=N"), PN_string), PN_print);
   potion_destroy(P);
 }
 

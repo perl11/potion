@@ -13,28 +13,38 @@
 #include "asm.h"
 #include "pn-ast.h"
 
-static int pos = 0;
-static PN input = PN_NIL;
-static PNAsm * volatile sbuf;
-static Potion *P = 0;
-
 #define YY_INPUT(buf, result, max) { \
-  if (pos < PN_STR_LEN(input)) { \
-    result = max; \
-    if (pos + max > PN_STR_LEN(input)) \
-      result = (PN_STR_LEN(input) - pos); \
-    PN_MEMCPY_N(buf, PN_STR_PTR(input) + pos, char, result + 1); \
-    pos += max; \
+  if (P->yytype == 0) { \
+    if (P->yypos < PN_STR_LEN(P->input)) { \
+      result = max; \
+      if (P->yypos + max > PN_STR_LEN(P->input)) \
+        result = (PN_STR_LEN(P->input) - P->yypos); \
+      PN_MEMCPY_N(buf, PN_STR_PTR(P->input) + P->yypos, char, result + 1); \
+      P->yypos += max; \
+    } else { \
+      result = 0; \
+    } \
   } else { \
-    result = 0; \
+    int len = strlen((char *)P->input); \
+    if (P->yypos < len) { \
+      result = max; \
+      if (P->yypos + max > len) \
+        result = (len - P->yypos); \
+      PN_MEMCPY_N(buf, P->input + P->yypos, char, result + 1); \
+      P->yypos += max; \
+    } else { \
+      result = 0; \
+    } \
   } \
 }
 
 #define YYSTYPE PN
+#define YY_XTYPE Potion *
+#define YY_XVAR P
+#define YY_NAME(N) potion_code_##N
+
 #define YY_TNUM 3
 #define YY_TDEC 13
-#define YYPARSE potion_yyparse
-#define YYPARSEFROM potion_yyparse_from
 
 %}
 
@@ -222,17 +232,17 @@ dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM; }
         ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
 
 q1 = [']
-c1 = < (!q1 utf8)+ > { sbuf = potion_asm_write(P, sbuf, yytext, yyleng); }
-str1 = q1 { sbuf = potion_asm_clear(P, sbuf); }
-       < (q1 q1 { sbuf = potion_asm_write(P, sbuf, "'", 1); } | c1)* >
-       q1 { $$ = potion_bytes_string(P, PN_NIL, (PN)sbuf); }
+c1 = < (!q1 utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng); }
+str1 = q1 { P->pbuf = potion_asm_clear(P, P->pbuf); }
+       < (q1 q1 { P->pbuf = potion_asm_write(P, P->pbuf, "'", 1); } | c1)* >
+       q1 { $$ = potion_bytes_string(P, PN_NIL, (PN)P->pbuf); }
 
 esc         = '\\'
-escn        = esc 'n' { sbuf = potion_asm_write(P, sbuf, "\n", 1); }
-escb        = esc 'b' { sbuf = potion_asm_write(P, sbuf, "\b", 1); }
-escf        = esc 'f' { sbuf = potion_asm_write(P, sbuf, "\f", 1); }
-escr        = esc 'r' { sbuf = potion_asm_write(P, sbuf, "\r", 1); }
-esct        = esc 't' { sbuf = potion_asm_write(P, sbuf, "\t", 1); }
+escn        = esc 'n' { P->pbuf = potion_asm_write(P, P->pbuf, "\n", 1); }
+escb        = esc 'b' { P->pbuf = potion_asm_write(P, P->pbuf, "\b", 1); }
+escf        = esc 'f' { P->pbuf = potion_asm_write(P, P->pbuf, "\f", 1); }
+escr        = esc 'r' { P->pbuf = potion_asm_write(P, P->pbuf, "\r", 1); }
+esct        = esc 't' { P->pbuf = potion_asm_write(P, P->pbuf, "\t", 1); }
 escu        = esc 'u' < hexl hexl hexl hexl > {
   int nbuf = 0;
   char utfc[4] = {0, 0, 0, 0};
@@ -247,16 +257,16 @@ escu        = esc 'u' < hexl hexl hexl hexl > {
     utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
   }
-  sbuf = potion_asm_write(P, sbuf, utfc, nbuf);
+  P->pbuf = potion_asm_write(P, P->pbuf, utfc, nbuf);
 }
-escc = esc < utf8 > { sbuf = potion_asm_write(P, sbuf, yytext, yyleng); }
+escc = esc < utf8 > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng); }
 
 q2 = ["]
-e2 = '\\' ["] { sbuf = potion_asm_write(P, sbuf, "\"", 1); }
-c2 = < (!q2 !esc utf8)+ > { sbuf = potion_asm_write(P, sbuf, yytext, yyleng); }
-str2 = q2 { sbuf = potion_asm_clear(P, sbuf); }
+e2 = '\\' ["] { P->pbuf = potion_asm_write(P, P->pbuf, "\"", 1); }
+c2 = < (!q2 !esc utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng); }
+str2 = q2 { P->pbuf = potion_asm_clear(P, P->pbuf); }
        < (e2 | escn | escb | escf | escr | esct | escu | escc | c2)* >
-       q2 { $$ = potion_bytes_string(P, PN_NIL, (PN)sbuf); }
+       q2 { $$ = potion_bytes_string(P, PN_NIL, (PN)P->pbuf); }
 
 unq-char = '{' unq-char+ '}'
          | '[' unq-char+ ']'
@@ -273,15 +283,79 @@ space = ' ' | '\f' | '\v' | '\t'
 end-of-line = '\r\n' | '\n' | '\r'
 end-of-file = !.
 
+sig = args+ end-of-file
+args = arg-list (arg-sep arg-list)*
+arg-list = arg-set (optional arg-set)?
+         | optional arg-set
+arg-set = arg (comma - arg)*
+
+arg-name = < utfw+ > - { $$ = potion_str2(P, yytext, yyleng); }
+arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
+       { $$ = PN_NUM(yytext[0]); }
+arg = n:arg-name assign t:arg-type
+                       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), t), PN_NIL); }
+    | t:arg-type       { P->source = PN_PUSH(P->source, t); }
+optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')); }
+arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
+
 %%
 
-PN potion_parse(Potion *PP, PN code) {
-  PN buf = (PN)potion_asm_new(PP);
-  P = PP;
-  pos = 0;
-  input = code;
-  sbuf = (PNAsm *)buf;
-  if (!YYPARSE())
+PN potion_parse(Potion *P, PN code) {
+  GREG *G = potion_code_parse_new(P);
+  P->yytype = 0;
+  P->yypos = 0;
+  P->input = code;
+  P->source = PN_NIL;
+  P->pbuf = potion_asm_new(P);
+
+  G->pos = G->limit = 0;
+  if (!potion_code_parse(G))
     printf("** Syntax error!\n");
+  potion_code_parse_free(G);
+
   return P->source;
+}
+
+PN potion_sig(Potion *P, char *fmt) {
+  if (fmt == NULL) return PN_NIL; // no signature, arg check off
+  if (fmt[0] == '\0') return PN_FALSE; // empty signature, no args
+
+  GREG *G = potion_code_parse_new(P);
+  P->yytype = 1;
+  P->yypos = 0;
+  P->input = (PN)fmt;
+  P->source = PN_TUP0();
+  P->pbuf = potion_asm_new(P);
+
+  G->pos = G->limit = 0;
+  if (!potion_code_parse_from(G, yy_sig))
+    printf("** Syntax error!\n");
+  potion_code_parse_free(G);
+
+  return P->source;
+}
+
+int potion_sig_find(Potion *P, PN cl, PN name)
+{
+  PN_SIZE idx = 0;
+  PN sig;
+  if (!PN_IS_CLOSURE(cl))
+    cl = potion_obj_get_call(P, cl);
+
+  if (!PN_IS_CLOSURE(cl))
+    return -1;
+
+  sig = PN_CLOSURE(cl)->sig;
+
+  if (!PN_IS_TUPLE(sig))
+    return -1;
+
+  PN_TUPLE_EACH(sig, i, v, {
+    if (v == PN_NUM(idx) || v == name)
+      return idx;
+    if (PN_IS_NUM(v))
+      idx++;
+  });
+
+  return -1;
 }

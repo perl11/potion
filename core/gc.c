@@ -372,6 +372,8 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((Potion *)ptr)->lobby);
       GC_MINOR_UPDATE(((Potion *)ptr)->vts);
       GC_MINOR_UPDATE(((Potion *)ptr)->source);
+      GC_MINOR_UPDATE(((Potion *)ptr)->input);
+      GC_MINOR_UPDATE(((Potion *)ptr)->pbuf);
       GC_MINOR_UPDATE(((Potion *)ptr)->unclosed);
       GC_MINOR_UPDATE(((Potion *)ptr)->call);
       GC_MINOR_UPDATE(((Potion *)ptr)->callset);
@@ -462,6 +464,8 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((Potion *)ptr)->lobby);
       GC_MAJOR_UPDATE(((Potion *)ptr)->vts);
       GC_MAJOR_UPDATE(((Potion *)ptr)->source);
+      GC_MAJOR_UPDATE(((Potion *)ptr)->input);
+      GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
       GC_MAJOR_UPDATE(((Potion *)ptr)->unclosed);
       GC_MAJOR_UPDATE(((Potion *)ptr)->call);
       GC_MAJOR_UPDATE(((Potion *)ptr)->callset);

@@ -1,6 +1,6 @@
 .SUFFIXES: .g .c .o
 
-SRC = core/asm.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/sig.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
+SRC = core/asm.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/pn-ast.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 OBJ = ${SRC:.c=.o}
 OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
@@ -189,13 +189,12 @@ test/api/gc-bench: ${OBJ_GC_BENCH} ${OBJ}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
-tarball: core/version.h core/sig.c core/syntax.c
+tarball: core/version.h core/syntax.c
 	mkdir -p pkg
 	rm -rf ${PKG}
 	git checkout-index --prefix=${PKG}/ -a
 	rm -f ${PKG}/.gitignore
 	cp core/version.h ${PKG}/core/
-	cp core/sig.c ${PKG}/core/
 	cp core/syntax.c ${PKG}/core/
 	tar czvf pkg/${PKG}.tar.gz ${PKG}
 	rm -rf ${PKG}
@@ -215,9 +214,8 @@ doc: ${DOCHTML}
 
 sloc: clean
 	@cp core/syntax.g core/syntax-g.c
-	@cp core/sig.g core/sig-g.c
 	@sloccount core
-	@rm -f core/syntax-g.c core/sig-g.c
+	@rm -f core/syntax-g.c
 
 todo:
 	@grep -rInso 'TODO: \(.\+\)' core
@@ -226,7 +224,7 @@ clean:
 	@${ECHO} cleaning
 	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML}
 	@rm -f tools/greg tools/greg.o tools/compile.o tools/tree.o
-	@rm -f core/config.h core/version.h core/sig.c core/syntax.c
+	@rm -f core/config.h core/version.h core/syntax.c
 	@rm -f potion potion.exe test/api/potion-test test/api/gc-test test/api/gc-bench
 
 .PHONY: all clean doc rebuild test
