@@ -14,27 +14,14 @@
 #include "pn-ast.h"
 
 #define YY_INPUT(buf, result, max) { \
-  if (P->yytype == 0) { \
-    if (P->yypos < PN_STR_LEN(P->input)) { \
-      result = max; \
-      if (P->yypos + max > PN_STR_LEN(P->input)) \
-        result = (PN_STR_LEN(P->input) - P->yypos); \
-      PN_MEMCPY_N(buf, PN_STR_PTR(P->input) + P->yypos, char, result + 1); \
-      P->yypos += max; \
-    } else { \
-      result = 0; \
-    } \
+  if (P->yypos < PN_STR_LEN(P->input)) { \
+    result = max; \
+    if (P->yypos + max > PN_STR_LEN(P->input)) \
+      result = (PN_STR_LEN(P->input) - P->yypos); \
+    PN_MEMCPY_N(buf, PN_STR_PTR(P->input) + P->yypos, char, result + 1); \
+    P->yypos += max; \
   } else { \
-    int len = strlen((char *)P->input); \
-    if (P->yypos < len) { \
-      result = max; \
-      if (P->yypos + max > len) \
-        result = (len - P->yypos); \
-      PN_MEMCPY_N(buf, P->input + P->yypos, char, result + 1); \
-      P->yypos += max; \
-    } else { \
-      result = 0; \
-    } \
+    result = 0; \
   } \
 }
 
@@ -302,7 +289,6 @@ arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
 PN potion_parse(Potion *P, PN code) {
   GREG *G = potion_code_parse_new(P);
-  P->yytype = 0;
   P->yypos = 0;
   P->input = code;
   P->source = PN_NIL;
@@ -321,11 +307,10 @@ PN potion_sig(Potion *P, char *fmt) {
   if (fmt[0] == '\0') return PN_FALSE; // empty signature, no args
 
   GREG *G = potion_code_parse_new(P);
-  P->yytype = 1;
   P->yypos = 0;
-  P->input = (PN)fmt;
+  P->input = potion_byte_str(P, fmt);
   P->source = PN_TUP0();
-  P->pbuf = potion_asm_new(P);
+  P->pbuf = NULL;
 
   G->pos = G->limit = 0;
   if (!potion_code_parse_from(G, yy_sig))
