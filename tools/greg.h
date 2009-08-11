@@ -19,7 +19,7 @@
 #include <stdio.h>
 
 #define GREG_MAJOR	0
-#define GREG_MINOR	2
+#define GREG_MINOR	3
 #define GREG_LEVEL	0
 
 enum { Unknown= 0, Rule, Variable, Name, Dot, Character, String, Class, Action, Predicate, Alternate, Sequence, PeekFor, PeekNot, Query, Star, Plus };
@@ -79,8 +79,8 @@ extern int   ruleCount;
 
 extern FILE *output;
 
-extern Node *makeRule(char *name);
-extern Node *findRule(char *name);
+extern Node *makeRule(char *name, int starts);
+extern Node *findRule(char *name, int starts);
 extern Node *beginRule(Node *rule);
 extern void  Rule_setExpression(Node *rule, Node *expression);
 extern Node *Rule_beToken(Node *rule);

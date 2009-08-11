@@ -270,7 +270,7 @@ space = ' ' | '\f' | '\v' | '\t'
 end-of-line = '\r\n' | '\n' | '\r'
 end-of-file = !.
 
-sig = args+ end-of-file
+$ sig = args+ end-of-file
 args = arg-list (arg-sep arg-list)*
 arg-list = arg-set (optional arg-set)?
          | optional arg-set

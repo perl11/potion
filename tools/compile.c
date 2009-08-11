@@ -401,7 +401,6 @@ static char *preamble= "\
 #endif\n\
 \n\
 #ifndef YY_PART\n\
-#define yydata G->data\n\
 #define yy G->ss\n\
 \n\
 typedef void (*yyaction)(struct _GREG *G, char *yytext, int yyleng, YY_XTYPE YY_XVAR);\n\

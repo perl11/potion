@@ -43,18 +43,18 @@ static inline Node *_newNode(int type, int size)
 
 #define newNode(T)	_newNode(T, sizeof(struct T))
 
-Node *makeRule(char *name)
+Node *makeRule(char *name, int starts)
 {
   Node *node= newNode(Rule);
   node->rule.name= strdup(name);
   node->rule.id= ++ruleCount;
-  node->rule.flags= 0;
+  node->rule.flags= starts ? RuleUsed : 0;
   node->rule.next= rules;
   rules= node;
   return node;
 }
 
-Node *findRule(char *name)
+Node *findRule(char *name, int starts)
 {
   Node *n;
   char *ptr;
@@ -65,7 +65,7 @@ Node *findRule(char *name)
       if (!strcmp(name, n->rule.name))
 	return n;
     }
-  return makeRule(name);
+  return makeRule(name, starts);
 }
 
 Node *beginRule(Node *rule)
