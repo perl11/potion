@@ -1,5 +1,5 @@
 //
-// pn-ast.c
+// ast.c
 // the ast for Potion code in-memory
 //
 // (c) 2008 why the lucky stiff, the freelance professor
@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "potion.h"
 #include "internal.h"
-#include "pn-ast.h"
+#include "ast.h"
 
 const char *potion_ast_names[] = {
   "code", "value", "assign", "not", "or", "and", "cmp", "eq", "neq",

@@ -1,5 +1,5 @@
 //
-// pn-ast.h
+// ast.h
 // the ast for Potion code in-memory
 //
 // (c) 2008 why the lucky stiff, the freelance professor

@@ -9,7 +9,7 @@
 #include <math.h>
 #include "potion.h"
 #include "internal.h"
-#include "pn-ast.h"
+#include "ast.h"
 #include "opcodes.h"
 #include "asm.h"
 

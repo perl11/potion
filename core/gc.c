@@ -287,7 +287,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNVtable);
     break;
     case PN_TSOURCE:
-    // TODO: look up ast size (see core/pn-ast.c)
+    // TODO: look up ast size (see core/ast.c)
       sz = sizeof(struct PNSource) + (3 * sizeof(PN));
     break;
     case PN_TBYTES:

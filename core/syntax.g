@@ -11,7 +11,7 @@
 #include "potion.h"
 #include "internal.h"
 #include "asm.h"
-#include "pn-ast.h"
+#include "ast.h"
 
 #define YY_INPUT(buf, result, max) { \
   if (P->yypos < PN_STR_LEN(P->input)) { \
