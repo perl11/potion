@@ -243,7 +243,8 @@ int main(int argc, char *argv[]) {
     "    if (obj kind == Error):\n" \
     "      obj string print." \
     "    else: ('=> ', obj, \"\\n\") join print.\n" \
-    "_ loop"));
+    "  .\n"
+    "."));
   potion_destroy(P);
   return 0;
 }

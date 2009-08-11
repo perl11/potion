@@ -208,11 +208,13 @@ PN potion_tuple_pop(Potion *P, PN cl, PN self, PN key) {
 PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
   if (PN_IS_NUM(key)) {
     long i = PN_INT(key), len = PN_TUPLE_LEN(self);
-    if (i <= len) {
+    if (i < 0) i += len;
+    if (i < len) {
       PN_TUPLE_AT(self, i) = value;
       PN_TOUCH(self);
       return self;
-    }
+    } else if (i == len)
+      return potion_tuple_push(P, self, value);
   }
   return potion_table_put(P, PN_NIL, potion_table_cast(P, self), key, value);
 }
