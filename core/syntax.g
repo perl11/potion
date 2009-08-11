@@ -299,17 +299,20 @@ PN potion_parse(Potion *P, PN code) {
     printf("** Syntax error!\n");
   potion_code_parse_free(G);
 
-  return P->source;
+  code = P->source;
+  P->source = PN_NIL;
+  return code;
 }
 
 PN potion_sig(Potion *P, char *fmt) {
+  PN out = PN_NIL;
   if (fmt == NULL) return PN_NIL; // no signature, arg check off
   if (fmt[0] == '\0') return PN_FALSE; // empty signature, no args
 
   GREG *G = potion_code_parse_new(P);
   P->yypos = 0;
   P->input = potion_byte_str(P, fmt);
-  P->source = PN_TUP0();
+  P->source = out = PN_TUP0();
   P->pbuf = NULL;
 
   G->pos = G->limit = 0;
@@ -317,7 +320,9 @@ PN potion_sig(Potion *P, char *fmt) {
     printf("** Syntax error!\n");
   potion_code_parse_free(G);
 
-  return P->source;
+  out = P->source;
+  P->source = PN_NIL;
+  return out;
 }
 
 int potion_sig_find(Potion *P, PN cl, PN name)
