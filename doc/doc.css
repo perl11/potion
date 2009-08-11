@@ -9,6 +9,9 @@ h1, h4 {
 h1 {
   color: #390;
 }
+h1.kana {
+  color: #9C6;
+}
 h2 {
   color: #F39;
 }

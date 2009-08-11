@@ -1,3 +1,5 @@
+h1(kana). ポーション
+
 h1. A Short Pamphlet
 
 h4. by why the lucky stiff
@@ -195,6 +197,10 @@ In order to get this to work, you need methods for @window@, @para@ and @button@
 
 By having a separate little data language, you can build tree structures of arbitrary elements (akin to HTML) which act as a kind of common structure between Potion libraries. (You can also think of it as code which has been parsed, but not executed.)
 
+h3. The Flexibility Of... 
+
+Licks generally follow the look of Potion. Strings can be quoted. Tables are curved on the edges.
+
 <pre>
 <code>
   [name (attr1='string', attr2=10) 'TEXT HERE']
@@ -202,6 +208,44 @@ By having a separate little data language, you can build tree structures of arbi
 </pre>
 
 Every lick can have a name, a table of attributes, and a list of children. The list of children can, instead, be a Potion data type, such as a number or string or something. (No, this isn't a new idea. It's very much like E4X[2], but without XML.)
+
+However, licks also allow unquoted strings, to give you some added flexibility.
+
+<pre>
+<code>
+  math = Grammar [
+    digit  <- n:[0-9] { n number }
+    value  <- d:digit+ | '(' e:expr ')' { d or e }
+    expr   <- l:value op:[*/] r:value
+    {
+      if (op == '*'): l * r. else: l / r.
+    }
+    main   <- expr
+  ]
+</code>
+</pre>
+
+Here we have four entries in a lick, getting passed to the @Grammar@ method. The entries are: @digit@, @value@, @expr@ and @main@. (So, for example, the @digit@ entry will be paired with the string @"<- n:[0-9] { n number }"@.
+
+The lick syntax keeps track of nested groups of parentheses, square brackets and curly braces. The unquoted mode merely needs to start with a letter, number or non-token character.
+
+Be careful of commas in unquoted strings. This won't work:
+
+<pre>
+<code>
+  [dollars $10,000]
+</code>
+</pre>
+
+You'll end up with two entries in the lick: a @dollars@ entry and a @000@ entry.
+
+Commas are okay inside of nested groups, though. So, this would be okay:
+
+<pre>
+<code>
+  [dollars $(10,000)]
+</code>
+</pre>
 
 h2. Pause For Effect
 
@@ -276,7 +320,7 @@ Lines preceded by the octothorpe are ignored by Potion.
 
 h3. Code Blocks
 
-Lines can be grouped together into blocks. Think of it a collection of code you've group together to run later. Blocks start with a colon and end with a dot.
+Lines can be grouped together into blocks. Think of it as a collection of code you've group together to run later. Blocks start with a colon and end with a dot.
 
 <pre>
 <code>
@@ -301,7 +345,7 @@ Anything which is not @nil@ or @false@ is considered a positive value. (Which me
 
 h3. Numbers
 
-Presently, Potion only supports small integers (32-bit or 64-bit, depending on your processor.) Decimal and bignum support is coming. It's pretty sloppy.
+Basic numbers take up no memory and are passed as plain (32-bit or 64-bit, depending on your processor) integers.
 
 <pre>
 <code>
@@ -311,6 +355,19 @@ Presently, Potion only supports small integers (32-bit or 64-bit, depending on y
   0xFF
 </code>
 </pre>
+
+Decimal numbers use a boxed double-precision floating point number.
+
+<pre>
+<code>
+  999.9
+  2.00001
+  2e+2
+  2.4e-8
+</code>
+</pre>
+
+Arbitrary-precision math is planned for 1.0 release.
 
 h3. Strings
 
@@ -334,7 +391,7 @@ Double-quoted strings allow a number of escape codes.
 
 h2. Expressions
 
-In my opinion, a language can be called "functional" if every expression returns a value. This is just how Potion is designed. Every expression is a function, since it takes arguments and returns results. There is no @void@.
+In my opinion, a language can be called "functional" if every statement and expression returns a value. Even @if@ statements or class definitions. This is just how Potion is designed. Every statement is a function, since it takes arguments and returns results. There is no @void@.
 
 h3. if, elsif, else
 
@@ -518,7 +575,7 @@ Yes, that's the important stuff for now. But a number of new features are coming
 * Coroutines, a technique for inprocess threading.
 * Continuations, for saving and resuming the stack.
 * Pattern matching, for expressing conditions on object layout.
-* And also: floats, bignums, marshalling.
+* And also: bignums, marshalling.
 
 Thankyou for reading along. I hope this was only a brief interruption to an otherwise lush and exotic life. I'm sorry to disappoint with so little. Perhaps one day I can make things right?
 
