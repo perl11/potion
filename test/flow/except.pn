@@ -31,7 +31,7 @@ try = (block, catch):
     catch (SCOPES last (0)).
   .
 
-1 to 2 (x):
+1 to (2, (x):
   try (:
     ("TRY ", x, "\n") join print
     if (x == 1):
@@ -42,7 +42,7 @@ try = (block, catch):
       e /message print
       e resume.
   )
-.
+.)
 
 nil
 
