@@ -4,22 +4,22 @@ layout: nil
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
  
- <title>USERNAME.github.com/REPONAME</title>
- <link href="http://USERNAME.github.com/REPONAME/atom.xml" rel="self"/>
- <link href="http://USERNAME.github.com/REPONAME/"/>
+ <title>whymirror.github.com/potion</title>
+ <link href="http://whymirror.github.com/potion/atom.xml" rel="self"/>
+ <link href="http://whymirror.github.com/potion/"/>
  <updated>{{ site.time | date_to_xmlschema }}</updated>
- <id>http://USERNAME.github.com/</id>
+ <id>http://whymirror.github.com/</id>
  <author>
-   <name>USERNAME.github.com</name>
-   <email>EMAIL</email>
+   <name>whymirror.github.com</name>
+   <email>message-whymirror@on.github.com</email>
  </author>
 
  {% for post in site.posts %}
  <entry>
    <title>{{ post.title }}</title>
-   <link href="http://USERNAME.github.com/REPONAME/{{ post.url }}"/>
+   <link href="http://whymirror.github.com/potion/{{ post.url }}"/>
    <updated>{{ post.date | date_to_xmlschema }}</updated>
-   <id>http://USERNAME.github.com/REPONAME/{{ post.id }}</id>
+   <id>http://whymirror.github.com/potion/{{ post.id }}</id>
    <content type="html">{{ post.content | xml_escape }}</content>
  </entry>
  {% endfor %}
