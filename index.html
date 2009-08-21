@@ -1,1 +1,25 @@
-Please help import _why's old docs into this github page
+---
+layout: default
+title: USERNAME.github.com/REPONAME
+---
+
+<div id="home">
+  <h1>REPONAME</h1>
+
+  <p>
+  
+  
+  <h1>News</h1>
+  <ul class="posts">
+    {% for post in site.posts %}
+      <li><span>{{ post.date | date_to_string }}</span> &raquo; <a href="{{ post.url }}">{{ post.title }}</a></li>
+    {% endfor %}
+  </ul>
+  
+  <h1>Sticky</h1>
+  <ul class="posts">
+    <!-- <li><span>30 Apr 2009</span> &raquo; <a href="http://link">link text</a></li> -->
+  </ul>
+ 
+</div>
+  

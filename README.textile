@@ -1,0 +1,7 @@
+h1. This is a placeholder. Please help revive _why's projects by importing documentation.
+
+This is a skeleton "Jekyll":http://github.com/mojombo/jekyll site. This is the best place to import old documentation from the github wikis and the code.whytheluckystiff.net/doc files.
+
+h1. License
+
+The skeleton here is borrowed from "Tom Preston-Werner":http://github.com/mojombo/jekyll under the MIT License.
