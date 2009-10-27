@@ -43,6 +43,16 @@ struct PNCont;
 struct PNMemory;
 struct PNVtable;
 
+/* patch for issue #1 supplied by joeatwork */
+#ifndef __WORDSIZE
+#ifdef __LP64__
+#define __WORDSIZE 64
+#else /* ! __LP64__ */
+#define __WORDSIZE 32
+#endif
+#endif
+/* end patch for issue #1 */
+
 #define PN_TNIL         0x250000
 #define PN_TNUMBER      (1+PN_TNIL)
 #define PN_TBOOLEAN     (2+PN_TNIL)
@@ -183,7 +193,7 @@ struct PNFwd {
 struct PNData {
   PN_OBJECT_HEADER
   PN_SIZE siz;
-  char data[0]; 
+  char data[0];
 };
 
 //
