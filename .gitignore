@@ -13,3 +13,4 @@ test/api/*.o
 greg
 syntax.c
 gc-test
+._*
