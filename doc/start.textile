@@ -157,7 +157,7 @@ h3. A Subclass
 <code>
   Policeman = Person class (rank): /rank = rank.
   Policeman print = ():
-    ('My name is ', /name, ' and I'm a ', /rank, '.') join print.
+    ('My name is ', /name, ' and I''m a ', /rank, '.') join print.
 
   Policeman ('Constable') print
 </code>
