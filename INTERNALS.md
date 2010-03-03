@@ -58,7 +58,7 @@ to machine code, to give me the speed of
 (un-optimized) C code and to use all the
 C function call conventions so that I
 can link to other C libs. I want to see
-if its still possible to enroach on C.
+if its still possible to encroach on C.
 
 I should say that O'Caml and Haskell
 already do a fine job as C competitors,
