@@ -68,7 +68,7 @@ h3. A Table
 Okay, this one looks similar to the list, but it's not. Here we have a *table*. The table pairs up things. The string @'language'@ is paired up with the string @'Potion'@.
 
 Notice the arguments are also a table. Lists and tables are sort of interchangeable. You can use a table or a list as arguments.
- 
+
 h2. The Functional Side
 
 Functions are throughout Potion. Whether it be anonymous lambdas, blocks or type functions.
