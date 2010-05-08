@@ -63,7 +63,7 @@ sets = e:eqs
        | rem assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_REM, e, s)); }
        | pow assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_POW, e, s)); })?
        { $$ = e; }
-             
+
 eqs = c:cmps
       ( cmp x:cmps          { c = PN_OP(AST_CMP, c, x); }
       | eq x:cmps           { c = PN_OP(AST_EQ, c, x); }
@@ -296,7 +296,7 @@ PN potion_parse(Potion *P, PN code) {
 
   G->pos = G->limit = 0;
   if (!potion_code_parse(G))
-    printf("** Syntax error!\n");
+    printf("** Syntax error!\n%s", PN_STR_PTR(code));
   potion_code_parse_free(G);
 
   code = P->source;
