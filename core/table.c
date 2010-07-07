@@ -235,7 +235,7 @@ long potion_tuple_binary_search(PN self, PN x) {
   PNUniq xu = PN_UNIQ(x);
   long i = 0, j = t->len - 1;
   while (i <= j) {
-    long m = (i + j) / 2;
+    long m = j + (i - j) / 2;
     PNUniq u = PN_UNIQ(t->set[m]);
     if (u == xu)
       return m;
