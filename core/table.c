@@ -78,7 +78,7 @@ PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
 PN potion_table_remove(Potion *P, PN cl, PN self, PN key) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   unsigned k = kh_get(PN, t, key);
-	if (k != kh_end(t)) kh_del(PN, t, k);
+        if (k != kh_end(t)) kh_del(PN, t, k);
   return self;
 }
 
@@ -235,7 +235,7 @@ long potion_tuple_binary_search(PN self, PN x) {
   PNUniq xu = PN_UNIQ(x);
   long i = 0, j = t->len - 1;
   while (i <= j) {
-    long m = j + (i - j) / 2;
+    long m = j + ((i - j) / 2);
     PNUniq u = PN_UNIQ(t->set[m]);
     if (u == xu)
       return m;
