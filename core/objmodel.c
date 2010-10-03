@@ -300,6 +300,11 @@ static PN potion_lobby_self(Potion *P, PN cl, PN self) {
   return self;
 }
 
+PN potion_lobby_string(Potion *P, PN cl, PN self) {
+  PN str = ((struct PNVtable *)self)->name;
+  return str != NULL ? str : potion_str(P, "<class>");
+}
+
 PN potion_lobby_kind(Potion *P, PN cl, PN self) {
   PNType t = PN_TYPE(self);
   if (!PN_TYPECHECK(t)) return PN_NIL; // TODO: error
@@ -375,5 +380,5 @@ void potion_lobby_init(Potion *P) {
   potion_method(P->lobby, "srand", potion_srand, "seed=N");
   potion_method(P->lobby, "rand", potion_rand, 0);
   potion_method(P->lobby, "self", potion_lobby_self, 0);
-  potion_send(P->lobby, PN_def, PN_string, potion_str(P, "Lobby"));
+  potion_method(P->lobby, "string", potion_lobby_string, 0);
 }
