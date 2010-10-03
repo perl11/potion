@@ -14,3 +14,5 @@ greg
 syntax.c
 gc-test
 ._*
+.DS_Store
+
