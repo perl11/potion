@@ -302,7 +302,7 @@ static PN potion_lobby_self(Potion *P, PN cl, PN self) {
 
 PN potion_lobby_string(Potion *P, PN cl, PN self) {
   PN str = ((struct PNVtable *)self)->name;
-  return str != NULL ? str : potion_str(P, "<class>");
+  return (void *)str != NULL ? str : potion_str(P, "<class>");
 }
 
 PN potion_lobby_kind(Potion *P, PN cl, PN self) {
@@ -351,25 +351,30 @@ void potion_object_init(Potion *P) {
   potion_method(obj_vt, "string", potion_object_string, 0);
 }
 
+static void potion_init_class_reference(Potion *P, PN name, PN vt) {
+  potion_send(P->lobby, PN_def, name, vt);
+  ((vPN(Vtable))vt)->name = name;
+}
+
 void potion_lobby_init(Potion *P) {
-  potion_send(P->lobby, PN_def, potion_str(P, "Lobby"),    P->lobby);
-  potion_send(P->lobby, PN_def, potion_str(P, "Mixin"),    PN_VTABLE(PN_TVTABLE));
-  potion_send(P->lobby, PN_def, potion_str(P, "Object"),   PN_VTABLE(PN_TOBJECT));
-  potion_send(P->lobby, PN_def, potion_str(P, "NilKind"),  PN_VTABLE(PN_TNIL));
-  potion_send(P->lobby, PN_def, potion_str(P, "Number"),   PN_VTABLE(PN_TNUMBER));
-  potion_send(P->lobby, PN_def, potion_str(P, "Boolean"),  PN_VTABLE(PN_TBOOLEAN));
-  potion_send(P->lobby, PN_def, potion_str(P, "String"),   PN_VTABLE(PN_TSTRING));
-  potion_send(P->lobby, PN_def, potion_str(P, "Table"),    PN_VTABLE(PN_TTABLE));
-  potion_send(P->lobby, PN_def, potion_str(P, "Function"), PN_VTABLE(PN_TCLOSURE));
-  potion_send(P->lobby, PN_def, potion_str(P, "Tuple"),    PN_VTABLE(PN_TTUPLE));
-  potion_send(P->lobby, PN_def, potion_str(P, "Potion"),   PN_VTABLE(PN_TSTATE));
-  potion_send(P->lobby, PN_def, potion_str(P, "Source"),   PN_VTABLE(PN_TSOURCE));
-  potion_send(P->lobby, PN_def, potion_str(P, "Bytes"),    PN_VTABLE(PN_TBYTES));
-  potion_send(P->lobby, PN_def, potion_str(P, "Compiled"), PN_VTABLE(PN_TPROTO));
-  potion_send(P->lobby, PN_def, potion_str(P, "Ref"),      PN_VTABLE(PN_TWEAK));
-  potion_send(P->lobby, PN_def, potion_str(P, "Lick"),     PN_VTABLE(PN_TLICK));
-  potion_send(P->lobby, PN_def, potion_str(P, "Error"),    PN_VTABLE(PN_TERROR));
-  potion_send(P->lobby, PN_def, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
+  potion_init_class_reference(P, potion_str(P, "Lobby"),        P->lobby);
+  potion_init_class_reference(P, potion_str(P, "Mixin"),        PN_VTABLE(PN_TVTABLE));
+  potion_init_class_reference(P, potion_str(P, "Object"),       PN_VTABLE(PN_TOBJECT));
+  potion_init_class_reference(P, potion_str(P, "NilKind"),      PN_VTABLE(PN_TNIL));
+  potion_init_class_reference(P, potion_str(P, "Number"),       PN_VTABLE(PN_TNUMBER));
+  potion_init_class_reference(P, potion_str(P, "Boolean"),      PN_VTABLE(PN_TBOOLEAN));
+  potion_init_class_reference(P, potion_str(P, "String"),       PN_VTABLE(PN_TSTRING));
+  potion_init_class_reference(P, potion_str(P, "Table"),        PN_VTABLE(PN_TTABLE));
+  potion_init_class_reference(P, potion_str(P, "Function"),     PN_VTABLE(PN_TCLOSURE));
+  potion_init_class_reference(P, potion_str(P, "Tuple"),        PN_VTABLE(PN_TTUPLE));
+  potion_init_class_reference(P, potion_str(P, "Potion"),       PN_VTABLE(PN_TSTATE));
+  potion_init_class_reference(P, potion_str(P, "Source"),       PN_VTABLE(PN_TSOURCE));
+  potion_init_class_reference(P, potion_str(P, "Bytes"),        PN_VTABLE(PN_TBYTES));
+  potion_init_class_reference(P, potion_str(P, "Compiled"),     PN_VTABLE(PN_TPROTO));
+  potion_init_class_reference(P, potion_str(P, "Ref"),          PN_VTABLE(PN_TWEAK));
+  potion_init_class_reference(P, potion_str(P, "Lick"),         PN_VTABLE(PN_TLICK));
+  potion_init_class_reference(P, potion_str(P, "Error"),        PN_VTABLE(PN_TERROR));
+  potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
   potion_type_call_is(PN_VTABLE(PN_TVTABLE), PN_FUNC(potion_object_new, 0));
