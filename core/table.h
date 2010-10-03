@@ -15,6 +15,7 @@ struct PNVtable {
   PN_OBJECT_HEADER
   PN parent;
   PNType type;
+  PN name;
   int ivlen;
   PN ivars;
   vPN(Table) methods;
