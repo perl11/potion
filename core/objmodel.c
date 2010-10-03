@@ -50,9 +50,16 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
 PN potion_type_new(Potion *P, PNType t, PN self) {
   vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, 0);
   vt->type = t;
+  vt->name = (PN)NULL;
   vt->parent = self;
   vt->methods = (struct PNTable *)potion_table_empty(P);
   PN_VTABLE(t) = (PN)vt;
+  return (PN)vt;
+}
+
+PN potion_type_new2(Potion *P, PNType t, PN self, PN name) {
+  vPN(Vtable) vt = (vPN(Vtable))potion_type_new(P, t, self);
+  vt->name = name;
   return (PN)vt;
 }
 
