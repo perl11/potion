@@ -47,12 +47,17 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   return PN_STR_B(out);
 }
 
+PN potion_no_call(Potion *P, PN cl, PN self) {
+  return self;
+}
+
 PN potion_type_new(Potion *P, PNType t, PN self) {
   vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, 0);
   vt->type = t;
   vt->name = (PN)NULL;
   vt->parent = self;
   vt->methods = (struct PNTable *)potion_table_empty(P);
+  vt->ctor = PN_FUNC(potion_no_call, 0);
   PN_VTABLE(t) = (PN)vt;
   return (PN)vt;
 }
@@ -81,10 +86,6 @@ PN potion_obj_get_callset(Potion *P, PN obj) {
   PN cl = ((struct PNVtable *)PN_VTABLE(PN_TYPE(obj)))->callset;
   if (cl == PN_NIL) cl = P->callset;
   return cl;
-}
-
-PN potion_no_call(Potion *P, PN cl, PN self) {
-  return self;
 }
 
 PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
