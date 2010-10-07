@@ -60,5 +60,5 @@ void potion_file_init(Potion *P) {
   potion_send(P->lobby, PN_def, potion_str(P, "Env"), pe);
   potion_method(P->lobby, "read", potion_lobby_read, 0);
   
-  ((struct PNVtable *)file_vt)->ctor = PN_FUNC(potion_file_new, "path=S,mode=S");
+  potion_type_constructor_is(file_vt, PN_FUNC(potion_file_new, "path=S,mode=S"));
 }
