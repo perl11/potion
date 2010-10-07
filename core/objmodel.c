@@ -88,6 +88,10 @@ PN potion_obj_get_callset(Potion *P, PN obj) {
   return cl;
 }
 
+void potion_type_constructor_is(PN vt, PN cl) {
+  ((struct PNVtable *)vt)->ctor = cl;
+}
+
 PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   PN parent = (self == P->lobby ? PN_VTABLE(PN_TOBJECT) : self);
   PN pvars = ((struct PNVtable *)parent)->ivars;

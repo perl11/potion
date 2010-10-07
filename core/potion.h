@@ -548,6 +548,7 @@ PN potion_type_new(Potion *, PNType, PN);
 PN potion_type_new2(Potion *, PNType, PN, PN);
 void potion_type_call_is(PN, PN);
 void potion_type_callset_is(PN, PN);
+void potion_type_constructor_is(PN, PN);
 PN potion_class(Potion *, PN, PN, PN);
 PN potion_ivars(Potion *, PN, PN, PN);
 PN potion_obj_get_call(Potion *, PN);
