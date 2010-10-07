@@ -6,6 +6,7 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include "potion.h"
 #include "internal.h"
@@ -37,6 +38,12 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   ((struct PNFile *)self)->path = path;
   ((struct PNFile *)self)->mode = mode;
   return self;
+}
+
+PN potion_file_close(Potion *P, PN cl, PN self) {
+  close(((struct PNFile *)self)->fd);
+  ((struct PNFile *)self)->fd = -1;
+  return PN_NIL;
 }
 
 PN potion_file_string(Potion *P, PN cl, PN self) {
@@ -75,4 +82,5 @@ void potion_file_init(Potion *P) {
   
   potion_type_constructor_is(file_vt, PN_FUNC(potion_file_new, "path=S,mode=S"));
   potion_method(file_vt, "string", potion_file_string, 0);
+  potion_method(file_vt, "close", potion_file_close, 0);
 }
