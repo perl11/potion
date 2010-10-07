@@ -64,11 +64,18 @@ PN potion_file_read(Potion *P, PN cl, PN self, PN n) {
   return potion_str2(P, buf, r);
 }
 
-PN potion_file_string(Potion *P, PN cl, PN self) {
-  int fd = ((struct PNFile *)self)->fd;
+PN potion_file_string(Potion *P, PN cl, vPN(File) self) {
+  int fd = ((struct PNFile *)self)->fd, rv;
   char *buf;
   PN str;
-  if (asprintf(&buf, "<file fd: %d>", fd) == -1) {
+  if (((struct PNFile *)self)->path != PN_NIL && fd != -1) {
+    rv = asprintf(&buf, "<file %s fd: %d>", PN_STR_PTR(((struct PNFile *)self)->path), fd);
+  } else if (fd != -1) {
+    rv = asprintf(&buf, "<file fd: %d>", fd);
+  } else {
+    rv = asprintf(&buf, "<closed file>");
+  }
+  if (rv == -1) {
     fprintf(stderr, "** Couldn't allocate memory.\n");
     exit(1);
   }
