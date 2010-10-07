@@ -39,6 +39,19 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   return self;
 }
 
+PN potion_file_string(Potion *P, PN cl, PN self) {
+  int fd = ((struct PNFile *)self)->fd;
+  char *buf;
+  PN str;
+  if (asprintf(&buf, "<file fd: %d>", fd) == -1) {
+    fprintf(stderr, "** Couldn't allocate memory.\n");
+    exit(1);
+  }
+  str = potion_str(P, buf);
+  free(buf);
+  return str;
+}
+
 PN potion_lobby_read(Potion *P, PN cl, PN self) {
   const int linemax = 1024;
   char line[linemax];
@@ -61,4 +74,5 @@ void potion_file_init(Potion *P) {
   potion_method(P->lobby, "read", potion_lobby_read, 0);
   
   potion_type_constructor_is(file_vt, PN_FUNC(potion_file_new, "path=S,mode=S"));
+  potion_method(file_vt, "string", potion_file_string, 0);
 }
