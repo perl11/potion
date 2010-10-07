@@ -298,7 +298,8 @@ PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
 
 PN potion_object_new(Potion *P, PN cl, PN self) {
   vPN(Vtable) vt = (struct PNVtable *)self;
-  return (PN)PN_ALLOC_N(vt->type, struct PNObject, vt->ivlen * sizeof(PN));
+  return (PN)PN_ALLOC_N(vt->type, struct PNObject,
+    potion_type_size(P, (struct PNObject *)self) - sizeof(struct PNObject) + vt->ivlen * sizeof(PN));
 }
 
 static PN potion_lobby_self(Potion *P, PN cl, PN self) {
