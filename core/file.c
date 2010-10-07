@@ -25,6 +25,10 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
     mode = O_WRONLY | O_TRUNC | O_CREAT;
   } else if (strcmp(PN_STR_PTR(modestr), "w+") == 0) {
     mode = O_RDWR | O_TRUNC | O_CREAT;
+  } else if (strcmp(PN_STR_PTR(modestr), "a") == 0) {
+    mode = O_WRONLY | O_CREAT | O_APPEND;
+  } else if (strcmp(PN_STR_PTR(modestr), "a+") == 0) {
+    mode = O_RDWR | O_CREAT | O_APPEND;
   } else {
     // invalid mode
     return PN_NIL;
