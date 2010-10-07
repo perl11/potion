@@ -46,6 +46,20 @@ PN potion_file_close(Potion *P, PN cl, PN self) {
   return PN_NIL;
 }
 
+PN potion_file_read(Potion *P, PN cl, PN self, PN n) {
+  n = PN_INT(n);
+  char buf[n];
+  int r = read(((struct PNFile *)self)->fd, buf, n);
+  if (r == -1) {
+    perror("read");
+    // TODO: error
+    return PN_NUM(-1);
+  } else if (r == 0) {
+    return PN_NIL;
+  }
+  return potion_str2(P, buf, r);
+}
+
 PN potion_file_string(Potion *P, PN cl, PN self) {
   int fd = ((struct PNFile *)self)->fd;
   char *buf;
@@ -83,4 +97,5 @@ void potion_file_init(Potion *P) {
   potion_type_constructor_is(file_vt, PN_FUNC(potion_file_new, "path=S,mode=S"));
   potion_method(file_vt, "string", potion_file_string, 0);
   potion_method(file_vt, "close", potion_file_close, 0);
+  potion_method(file_vt, "read", potion_file_read, "n=N");
 }
