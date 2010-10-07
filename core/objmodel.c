@@ -368,6 +368,7 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Table"),        PN_VTABLE(PN_TTABLE));
   potion_init_class_reference(P, potion_str(P, "Function"),     PN_VTABLE(PN_TCLOSURE));
   potion_init_class_reference(P, potion_str(P, "Tuple"),        PN_VTABLE(PN_TTUPLE));
+  potion_init_class_reference(P, potion_str(P, "File"),         PN_VTABLE(PN_TFILE));
   potion_init_class_reference(P, potion_str(P, "Potion"),       PN_VTABLE(PN_TSTATE));
   potion_init_class_reference(P, potion_str(P, "Source"),       PN_VTABLE(PN_TSOURCE));
   potion_init_class_reference(P, potion_str(P, "Bytes"),        PN_VTABLE(PN_TBYTES));

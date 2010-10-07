@@ -7,6 +7,10 @@
 #ifndef POTION_TABLE_H
 #define POTION_TABLE_H
 
+#include "potion.h"
+#include "internal.h"
+#include "khash.h"
+
 typedef PN (*PN_MCACHE_FUNC)(unsigned int hash);
 // TODO: ensure the random PNUniq is truly unique for strings
 typedef PN (*PN_IVAR_FUNC)(PNUniq hash);

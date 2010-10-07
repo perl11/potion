@@ -6,13 +6,37 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include "potion.h"
 #include "internal.h"
+#include "table.h"
 
 extern char **environ;
 
-PN potion_file_with(Potion *P, PN cl, PN self, PN path) {
-  return PN_NIL;
+PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
+  int fd;
+  mode_t mode;
+  if (strcmp(PN_STR_PTR(modestr), "r") == 0) {
+    mode = O_RDONLY;
+  } else if (strcmp(PN_STR_PTR(modestr), "r+") == 0) {
+    mode = O_RDWR;
+  } else if (strcmp(PN_STR_PTR(modestr), "w") == 0) {
+    mode = O_WRONLY | O_TRUNC | O_CREAT;
+  } else if (strcmp(PN_STR_PTR(modestr), "w+") == 0) {
+    mode = O_RDWR | O_TRUNC | O_CREAT;
+  } else {
+    // invalid mode
+    return PN_NIL;
+  }
+  if ((fd = open(PN_STR_PTR(path), mode)) == -1) {
+    perror("open");
+    // TODO: error
+    return PN_NIL;
+  }
+  ((struct PNFile *)self)->fd = fd;
+  ((struct PNFile *)self)->path = path;
+  ((struct PNFile *)self)->mode = mode;
+  return self;
 }
 
 PN potion_lobby_read(Potion *P, PN cl, PN self) {
@@ -24,7 +48,7 @@ PN potion_lobby_read(Potion *P, PN cl, PN self) {
 }
 
 void potion_file_init(Potion *P) {
-  // PN file_vt = PN_VTABLE(PN_TFILE);
+  PN file_vt = PN_VTABLE(PN_TFILE);
   char **env = environ, *key;
   PN pe = potion_table_empty(P);
   while (*env != NULL) {
@@ -35,4 +59,6 @@ void potion_file_init(Potion *P) {
   }
   potion_send(P->lobby, PN_def, potion_str(P, "Env"), pe);
   potion_method(P->lobby, "read", potion_lobby_read, 0);
+  
+  ((struct PNVtable *)file_vt)->ctor = PN_FUNC(potion_file_new, "path=S,mode=S");
 }

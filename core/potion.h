@@ -18,6 +18,7 @@
 
 #include <limits.h>
 #include <string.h>
+#include <fcntl.h>
 #include "config.h"
 
 //
@@ -237,7 +238,7 @@ struct PNFile {
   PN_OBJECT_HEADER
   int fd;
   PN path;
-  PN mode;
+  mode_t mode;
 };
 
 typedef PN (*PN_F)(Potion *, PN, PN, ...);
