@@ -245,8 +245,8 @@ PN potion_bytes_string(Potion *P, PN closure, PN self) {
 }
 
 static PN potion_bytes_print(Potion *P, PN closure, PN self) {
-  PN str = potion_fwd(self);
-  printf("%s", PN_STR_PTR(str));
+  self = potion_fwd(self);
+  fwrite(PN_STR_PTR(self), 1, PN_STR_LEN(self), stdout);
   return PN_NIL;
 }
 
