@@ -154,6 +154,10 @@ static PN potion_str_slice(Potion *P, PN closure, PN self, PN start, PN end) {
   return potion_str2(P, str + startoffset, endoffset - startoffset);
 }
 
+static PN potion_str_bytes(Potion *P, PN closure, PN self) {
+  return potion_byte_str2(P, PN_STR_PTR(self), PN_STR_LEN(self));
+}
+
 static PN potion_str_at(Potion *P, PN closure, PN self, PN index) {
   return potion_str_slice(P, closure, self, index, PN_NUM(PN_INT(index) + 1));
 }
@@ -260,6 +264,8 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "print", potion_str_print, 0);
   potion_method(str_vt, "string", potion_str_string, 0);
   potion_method(str_vt, "slice", potion_str_slice, "start=N,end=N");
+  potion_method(str_vt, "bytes", potion_str_bytes, 0);
+  
   potion_method(byt_vt, "append", potion_bytes_append, 0);
   potion_method(byt_vt, "length", potion_bytes_length, 0);
   potion_method(byt_vt, "print", potion_bytes_print, 0);
