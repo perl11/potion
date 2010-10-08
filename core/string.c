@@ -250,6 +250,15 @@ static PN potion_bytes_print(Potion *P, PN closure, PN self) {
   return PN_NIL;
 }
 
+static PN potion_bytes_at(Potion *P, PN closure, PN self, PN index) {
+  char c;
+  index = PN_INT(index);
+  if (index >= PN_STR_LEN(self) || index < 0)
+    return PN_NIL;
+  c = PN_STR_PTR(potion_fwd(self))[index];
+  return potion_byte_str2(P, &c, 1);
+}
+
 void potion_str_hash_init(Potion *P) {
   P->strings = PN_CALLOC_N(PN_TSTRINGS, struct PNTable, 0);
 }
@@ -266,6 +275,7 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "slice", potion_str_slice, "start=N,end=N");
   potion_method(str_vt, "bytes", potion_str_bytes, 0);
   
+  potion_type_call_is(byt_vt, PN_FUNC(potion_bytes_at, 0));
   potion_method(byt_vt, "append", potion_bytes_append, 0);
   potion_method(byt_vt, "length", potion_bytes_length, 0);
   potion_method(byt_vt, "print", potion_bytes_print, 0);
