@@ -61,7 +61,7 @@ PN potion_file_read(Potion *P, PN cl, PN self, PN n) {
   } else if (r == 0) {
     return PN_NIL;
   }
-  return potion_str2(P, buf, r);
+  return potion_byte_str2(P, buf, r);
 }
 
 PN potion_file_write(Potion *P, PN cl, PN self, PN str) {  
