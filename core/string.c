@@ -159,7 +159,10 @@ static PN potion_str_at(Potion *P, PN closure, PN self, PN index) {
 }
 
 PN potion_byte_str(Potion *P, const char *str) {
-  size_t len = strlen(str);
+  return potion_byte_str2(P, str, strlen(str));
+}
+
+PN potion_byte_str2(Potion *P, const char *str, size_t len) {
   vPN(Bytes) s = (struct PNBytes *)potion_bytes(P, len);
   PN_MEMCPY_N(s->chars, str, char, len);
   s->chars[len] = '\0';
