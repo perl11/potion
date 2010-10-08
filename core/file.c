@@ -33,7 +33,7 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
     // invalid mode
     return PN_NIL;
   }
-  if ((fd = open(PN_STR_PTR(path), mode)) == -1) {
+  if ((fd = open(PN_STR_PTR(path), mode, 0755)) == -1) {
     perror("open");
     // TODO: error
     return PN_NIL;
