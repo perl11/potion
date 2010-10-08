@@ -158,6 +158,20 @@ static PN potion_str_bytes(Potion *P, PN cl, PN self) {
   return potion_byte_str2(P, PN_STR_PTR(self), PN_STR_LEN(self));
 }
 
+static PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
+  char *s = malloc(PN_STR_LEN(self) + PN_STR_LEN(x));
+  PN str;
+  if (s == NULL) {
+    fprintf(stderr, "** Failed to allocate memory.\n");
+    exit(1);
+  }
+  PN_MEMCPY_N(s, PN_STR_PTR(self), char, PN_STR_LEN(self));
+  PN_MEMCPY_N(s + PN_STR_LEN(self), PN_STR_PTR(x), char, PN_STR_LEN(x));
+  str = potion_str2(P, s, PN_STR_LEN(self) + PN_STR_LEN(x));
+  free(s);
+  return str;
+}
+
 static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
   return potion_str_slice(P, cl, self, index, PN_NUM(PN_INT(index) + 1));
 }
@@ -274,6 +288,7 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "string", potion_str_string, 0);
   potion_method(str_vt, "slice", potion_str_slice, "start=N,end=N");
   potion_method(str_vt, "bytes", potion_str_bytes, 0);
+  potion_method(str_vt, "+", potion_str_add, "str=S");
   
   potion_type_call_is(byt_vt, PN_FUNC(potion_bytes_at, 0));
   potion_method(byt_vt, "append", potion_bytes_append, 0);
