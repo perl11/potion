@@ -458,6 +458,8 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
           PN_ASM1(OP_SELF, reg);
         if (t->a[2] != PN_NIL) {
           // TODO: a hack to make sure constructors always return self
+          if (PN_S(t->a[2], 0) == PN_NIL)
+            PN_S(t->a[2], 0) = PN_AST(CODE, PN_NIL);
           PN ctor = PN_S(t->a[2], 0);
           PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MESSAGE, potion_str(P, "self")))));
           breg++;
