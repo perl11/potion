@@ -300,7 +300,7 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "ord", potion_str_ord, 0);
   
   potion_type_call_is(byt_vt, PN_FUNC(potion_bytes_at, 0));
-  potion_method(byt_vt, "append", potion_bytes_append, 0);
+  potion_method(byt_vt, "append", potion_bytes_append, "str=S");
   potion_method(byt_vt, "length", potion_bytes_length, 0);
   potion_method(byt_vt, "print", potion_bytes_print, 0);
   potion_method(byt_vt, "string", potion_bytes_string, 0);
