@@ -122,6 +122,11 @@ PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
   return PN_NUM(abs(i - j));
 }
 
+static PN potion_num_chr(Potion *P, PN cl, PN self) {
+  char c = PN_INT(self);
+  return potion_str2(P, &c, 1);
+}
+
 void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
   potion_method(num_vt, "+", potion_add, "value=N");
@@ -139,4 +144,5 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "string", potion_num_string, 0);
   potion_method(num_vt, "times", potion_num_times, "block=&");
   potion_method(num_vt, "to", potion_num_to, "end=N");
+  potion_method(num_vt, "chr", potion_num_chr, 0);
 }
