@@ -207,7 +207,7 @@ cmp = "<=>" --
 and = ("&&" | "and" !utfw) --
 or = ("||" | "or" !utfw) --
 not = ("!" | "not" !utfw) --
-keyword = "and" | "or" | "not"
+keyword = ("and" | "or" | "not") !utfw
 
 nil = "nil" !utfw
 true = "true" !utfw
