@@ -116,7 +116,7 @@ expr = ( mminus a:atom { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
          (c:call { a = PN_PUSH(a, c) })*
        { $$ = PN_AST(EXPR, a); }
 
-atom = e:value | e:closure | e:table | e:call
+atom = e:value | e:closure | e:table | e:call | e:group
 
 call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? |
        (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; })
@@ -146,6 +146,7 @@ closure = t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
 table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
+group = group-start s:statements group-end { $$ = PN_AST(CODE, s); }
 
 path = '/' message      { $$ = potion_str2(P, yytext, yyleng); }
 message = < utfw+ > -   { $$ = potion_str2(P, yytext, yyleng); }
@@ -181,6 +182,8 @@ table-start = '(' --
 table-end = ')' -
 lick-start = '[' --
 lick-end = ']' -
+group-start = '|' --
+group-end = '.' -
 quiz = '?' --
 assign = '=' --
 pplus = "++" -
