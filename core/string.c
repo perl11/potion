@@ -172,6 +172,13 @@ static PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
   return str;
 }
 
+static PN potion_str_ord(Potion *P, PN cl, PN self) {
+  self = potion_fwd(self);
+  if (PN_STR_LEN(self) != 1)
+    return PN_NIL;
+  return PN_NUM(PN_STR_PTR(self)[0]);
+}
+
 static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
   return potion_str_slice(P, cl, self, index, PN_NUM(PN_INT(index) + 1));
 }
@@ -290,10 +297,12 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "slice", potion_str_slice, "start=N,end=N");
   potion_method(str_vt, "bytes", potion_str_bytes, 0);
   potion_method(str_vt, "+", potion_str_add, "str=S");
+  potion_method(str_vt, "ord", potion_str_ord, 0);
   
   potion_type_call_is(byt_vt, PN_FUNC(potion_bytes_at, 0));
   potion_method(byt_vt, "append", potion_bytes_append, 0);
   potion_method(byt_vt, "length", potion_bytes_length, 0);
   potion_method(byt_vt, "print", potion_bytes_print, 0);
   potion_method(byt_vt, "string", potion_bytes_string, 0);
+  potion_method(byt_vt, "ord", potion_str_ord, 0);
 }
