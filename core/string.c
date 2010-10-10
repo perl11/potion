@@ -271,6 +271,16 @@ static PN potion_bytes_print(Potion *P, PN cl, PN self) {
   return PN_NIL;
 }
 
+static PN potion_bytes_each(Potion *P, PN cl, PN self, PN block) {
+  self = potion_fwd(self);
+  char *s = PN_STR_PTR(self);
+  int i;
+  for (i = 0; i < PN_STR_LEN(self); i++) {
+    PN_CLOSURE(block)->method(P, block, self, potion_byte_str2(P, &s[i], 1));
+  }
+  return PN_NIL;
+}
+
 static PN potion_bytes_at(Potion *P, PN cl, PN self, PN index) {
   char c;
   self = potion_fwd(self);
@@ -305,4 +315,5 @@ void potion_str_init(Potion *P) {
   potion_method(byt_vt, "print", potion_bytes_print, 0);
   potion_method(byt_vt, "string", potion_bytes_string, 0);
   potion_method(byt_vt, "ord", potion_str_ord, 0);
+  potion_method(byt_vt, "each", potion_bytes_each, "block=&");
 }
