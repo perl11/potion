@@ -155,8 +155,12 @@ PN potion_tuple_clone(Potion *P, PN cl, PN self) {
 }
 
 PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
+  int with_index = potion_arity(P, block) >= 2;
   PN_TUPLE_EACH(self, i, v, {
-    PN_CLOSURE(block)->method(P, block, self, v);
+    if (with_index)
+      PN_CLOSURE(block)->method(P, block, self, v, PN_NUM(i));
+    else
+      PN_CLOSURE(block)->method(P, block, self, v);
   });
   return self;
 }
