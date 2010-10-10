@@ -47,6 +47,16 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   return PN_STR_B(out);
 }
 
+long potion_arity(Potion *P, PN closure) {
+  if (PN_IS_TUPLE(PN_CLOSURE(closure)->sig))
+    return PN_TUPLE_LEN(PN_CLOSURE(closure)->sig) / 2;
+  return 0;
+}
+
+PN potion_closure_arity(Potion *P, PN cl, PN self) {
+  return PN_NUM(potion_arity(P, self));
+}
+
 PN potion_no_call(Potion *P, PN cl, PN self) {
   return self;
 }
@@ -351,6 +361,7 @@ void potion_object_init(Potion *P) {
   PN obj_vt = PN_VTABLE(PN_TOBJECT);
   potion_method(clo_vt, "code", potion_closure_code, 0);
   potion_method(clo_vt, "string", potion_closure_string, 0);
+  potion_method(clo_vt, "arity", potion_closure_arity, 0);
   potion_method(ref_vt, "string", potion_ref_string, 0);
   potion_method(obj_vt, "forward", potion_object_forward, 0);
   potion_method(obj_vt, "send", potion_object_send, 0);

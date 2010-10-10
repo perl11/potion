@@ -571,6 +571,7 @@ PN potion_decimal(Potion *, char *, int);
 PN potion_pow(Potion *, PN, PN, PN);
 PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);
+long potion_arity(Potion *, PN);
 
 PN potion_obj_add(Potion *, PN, PN);
 PN potion_obj_sub(Potion *, PN, PN);
