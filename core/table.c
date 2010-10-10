@@ -230,6 +230,16 @@ PN potion_tuple_length(Potion *P, PN cl, PN self) {
   return PN_NUM(PN_TUPLE_LEN(self));
 }
 
+PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
+  unsigned long len = PN_TUPLE_LEN(self);
+  PN tuple = potion_tuple_with_size(P, len);
+  len--;
+  PN_TUPLE_EACH(self, i, x, {
+    PN_TUPLE_AT(tuple, len - i) = x;
+  });
+  return tuple;
+}
+
 long potion_tuple_binary_search(PN self, PN x) {
   struct PNTuple *t = PN_GET_TUPLE(self);
   PNUniq xu = PN_UNIQ(x);
@@ -290,6 +300,7 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "pop", potion_tuple_pop, 0);
   potion_method(tpl_vt, "push", potion_tuple_append, "value=o");
   potion_method(tpl_vt, "put", potion_tuple_put, "index=N,value=o");
+  potion_method(tpl_vt, "reverse", potion_tuple_reverse, 0);
   // TODO: add Tuple remove
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
   potion_method(P->lobby, "list", potion_lobby_list, "length=N");
