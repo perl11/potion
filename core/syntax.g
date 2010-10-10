@@ -151,8 +151,8 @@ block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
 group = group-start s:statements group-end { $$ = PN_AST(CODE, s); }
 
-path = '/' message      { $$ = potion_str2(P, yytext, yyleng); }
-message = < utfw+ > -   { $$ = potion_str2(P, yytext, yyleng); }
+path = '/' < utfw+ > -      { $$ = potion_str2(P, yytext, yyleng); }
+message = < utfw+ '?'? > -   { $$ = potion_str2(P, yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
       | lick
