@@ -96,12 +96,15 @@ sum = p:product
       | minus x:product     { p = PN_OP(AST_MINUS, p, x); })*
       { $$ = p; }
 
-product = s:sign
-          ( times x:sign           { s = PN_OP(AST_TIMES, s, x); }
-          | div x:sign             { s = PN_OP(AST_DIV, s, x); }
-          | rem x:sign             { s = PN_OP(AST_REM, s, x); }
-          | pow x:sign             { s = PN_OP(AST_POW, s, x); })*
-          { $$ = s; }
+product = p:power
+          ( times x:power           { p = PN_OP(AST_TIMES, p, x); }
+          | div x:power             { p = PN_OP(AST_DIV, p, x); }
+          | rem x:power             { p = PN_OP(AST_REM, p, x); })*
+          { $$ = p; }
+
+power = s:sign
+        ( pow x:sign { s = PN_OP(AST_POW, s, x); })*
+        { $$ = s; }
 
 sign = minus !minus s:sign   { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), s); }
      | plus !plus s:sign     { $$ = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), s); }
