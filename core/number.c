@@ -127,6 +127,10 @@ static PN potion_num_chr(Potion *P, PN cl, PN self) {
   return potion_str2(P, &c, 1);
 }
 
+static PN potion_num_is_integer(Potion *P, PN cl, PN self) {
+  return PN_IS_NUM(self) ? PN_TRUE : PN_FALSE;
+}
+
 void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
   potion_method(num_vt, "+", potion_add, "value=N");
@@ -145,4 +149,5 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "times", potion_num_times, "block=&");
   potion_method(num_vt, "to", potion_num_to, "end=N");
   potion_method(num_vt, "chr", potion_num_chr, 0);
+  potion_method(num_vt, "integer?", potion_num_is_integer, 0);
 }
