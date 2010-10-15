@@ -102,20 +102,18 @@ product = p:power
           | rem x:power             { p = PN_OP(AST_REM, p, x); })*
           { $$ = p; }
 
-power = s:sign
-        ( pow x:sign { s = PN_OP(AST_POW, s, x); })*
-        { $$ = s; }
+power = e:expr
+        ( pow x:expr { e = PN_OP(AST_POW, e, x); })*
+        { $$ = e; }
 
-sign = minus !minus s:sign   { $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), s); }
-     | plus !plus s:sign     { $$ = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), s); }
-     | not s:sign     { $$ = PN_AST(NOT, s); }
-     | wavy s:sign    { $$ = PN_AST(WAVY, s); }
-     | e:expr         { $$ = e; }
-
-expr = ( mminus a:atom { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
-       | pplus a:atom   { a = PN_OP(AST_INC, a, PN_NUM(1) ^ 1); }
-       | a:atom (pplus  { a = PN_OP(AST_INC, a, PN_NUM(1)); }
-               | mminus { a = PN_OP(AST_INC, a, PN_NUM(-1)); })?) { a = PN_TUP(a); }
+expr = ( not a:expr           { a = PN_AST(NOT, a); }
+       | wavy a:expr          { a = PN_AST(WAVY, a); }
+       | minus !minus a:atom  { a = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), a); }
+       | plus !plus a:atom    { a = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), a); }
+       | mminus a:atom        { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
+       | pplus a:atom         { a = PN_OP(AST_INC, a, PN_NUM(1) ^ 1); }
+       | a:atom (pplus          { a = PN_OP(AST_INC, a, PN_NUM(1)); }
+               | mminus         { a = PN_OP(AST_INC, a, PN_NUM(-1)); })?) { a = PN_TUP(a); }
          (c:call { a = PN_PUSH(a, c) })*
        { $$ = PN_AST(EXPR, a); }
 
