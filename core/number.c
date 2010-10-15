@@ -151,7 +151,7 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
     else
       return self;
   }
-  return PN_NUM(abs(PN_INT(self)));
+  return PN_NUM(labs(PN_INT(self)));
 }
 
 void potion_num_init(Potion *P) {
