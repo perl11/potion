@@ -135,6 +135,13 @@ static PN potion_num_is_float(Potion *P, PN cl, PN self) {
   return PN_IS_DECIMAL(self) ? PN_TRUE : PN_FALSE;
 }
 
+static PN potion_num_integer(Potion *P, PN cl, PN self) {
+  if (PN_IS_NUM(self))
+    return self;
+  else
+    return PN_NUM(floor(((struct PNDecimal *)self)->value));
+}
+
 void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
   potion_method(num_vt, "+", potion_add, "value=N");
@@ -155,4 +162,5 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "chr", potion_num_chr, 0);
   potion_method(num_vt, "integer?", potion_num_is_integer, 0);
   potion_method(num_vt, "float?", potion_num_is_float, 0);
+  potion_method(num_vt, "integer", potion_num_integer, 0);
 }
