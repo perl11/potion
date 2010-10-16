@@ -90,7 +90,7 @@ static PN potion_num_number(Potion *P, PN closure, PN self) {
 static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) {
   long i, j = PN_INT(end), k = PN_INT(step);
   for (i = PN_INT(self); i <= j; i += k) {
-    PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
+    PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   }
 }
 
@@ -110,7 +110,7 @@ PN potion_num_string(Potion *P, PN closure, PN self) {
 static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
   long i, j = PN_INT(self);
   for (i = 0; i < j; i++)
-    PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
+    PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(i);
 }
 
@@ -118,7 +118,7 @@ PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
   long i, s = 1, j = PN_INT(self), k = PN_INT(end);
   if (k < j) s = -1;
   for (i = j; i != k + s; i += s)
-    PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
+    PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(abs(i - j));
 }
 
