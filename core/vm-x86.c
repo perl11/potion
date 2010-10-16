@@ -60,7 +60,7 @@
 #define X86_CMP(ops) \
         X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /* mov -A(%rbp) %edx */ \
         X86_MOV_RBP(0x8B, op.b); /* mov -B(%rbp) %eax */ \
-        ASM(0x39); ASM(0xC2); /*  cmp %eax %edx */ \
+        X86_PRE(); ASM(0x39); ASM(0xC2); /*  cmp %eax %edx */ \
         ASM(ops); ASM(0x9 + X86_PRE_T); /*  jle +10 */ \
         X86_MOVQ(op.a, PN_TRUE); /*  -A(%rbp) = TRUE */ \
         ASM(0xEB); ASM(0x7 + X86_PRE_T); /*  jmp +7 */ \
