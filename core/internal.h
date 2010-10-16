@@ -49,7 +49,7 @@ typedef unsigned char u8;
 
 #define PN_ATOI(X,N,B) ({ \
   char *Ap = X; \
-  int Ai = 0; \
+  long Ai = 0; \
   size_t Al = N; \
   while (Al--) { \
     if ((*Ap >= '0') && (*Ap <= '9')) \

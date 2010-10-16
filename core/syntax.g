@@ -159,7 +159,7 @@ immed = nil   { $$ = PN_NIL; }
       | true  { $$ = PN_TRUE; }
       | false { $$ = PN_FALSE; }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)); }
-      | dec   { if ($$ == YY_TNUM && yyleng < 10) { 
+      | dec   { if ($$ == YY_TNUM) {
                   $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10));
                 } else {
                   $$ = potion_decimal(P, yytext, yyleng);
