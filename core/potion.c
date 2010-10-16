@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
     "  '>> ' print\n" \
     "  code = read\n" \
     "  if (not code): break.\n" \
-    "  if (code != ''):\n" \
+    "  if (code != \"\\n\"):\n" \
     "    obj = code eval\n" \
     "    if (obj kind == Error):\n" \
     "      obj string print." \
