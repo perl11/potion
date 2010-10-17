@@ -57,9 +57,9 @@ h2 {
   height: 100%;
   margin-top: -132px;
   float: left;
-  background: rgb(204, 229, 179);
+  /* background: rgb(204, 229, 179); */
   background: -webkit-gradient(linear, 0 top, 0 bottom, from(rgb(204, 229, 179)), to(#fff));
-  /**/background: -moz-linear-gradient(top, rgb(204, 229, 179), #fff);
+  background: -moz-linear-gradient(top, rgb(204, 229, 179), #fff);
 }
 #sidebar-border-inner {
   width: 1px;
