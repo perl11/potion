@@ -1,0 +1,55 @@
+/* This file has been edited since _why created it. Please do not replace this with the original file. */
+
+body {
+  font: normal 14px arial, sans-serif;
+  line-height: 140%;
+  margin: 0; padding: 40px 5px 0 5px;
+}
+h1, h4 {
+  text-align: center;
+}
+h1 {
+  color: #390;
+}
+h1.kana {
+  color: #9C6;
+}
+h2 {
+  color: #F39;
+}
+h4 {
+  color: #777;
+}
+h3 {
+  margin-top: 30px;
+  color: #390;
+}
+h2 {
+  margin-top: 40px;
+}
+#potion {
+  text-align: center;
+  margin-bottom: 1px;
+}
+
+hr {
+  height: 3px;
+  border: none;
+  border-top: solid 1px #EEE;
+  border-bottom: solid 1px #F39;
+}
+#central {
+  max-width: 740px;
+  margin: 40px auto;
+}
+#central p, #central h1, #central h2, #central h3,
+#central pre {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+pre {
+  font: normal 16px Monaco, Liberation Mono, monospace;
+  background: #CE6;
+  color: #500;
+  font-weight: bold;
+}

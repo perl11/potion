@@ -1,0 +1,100 @@
+@import 'reset.css';
+@import '../fonts/lacuna/stylesheet.css';
+@import 'http://fonts.googleapis.com/css?family=Droid+Sans&subset=latin';
+
+html { height: 100%; }
+body {
+  background-color: #fff;
+  height: 100%;
+  /* padding: 0 5px 0 5px; */
+}
+h1 {
+  height: 130px;
+  padding-left: 5px;
+  border-bottom: 2px solid rgb(204, 229, 179);
+  font-family: LacunaRegular, Georgia, sans-serif;
+  font-size: 75px;
+  text-align: center;
+  overflow: hidden;
+}
+h2 {
+  margin: 10px 0 10px 0;
+  color: #390;
+  font-size: 20px;
+}
+#logo {
+  width: 215px;
+  height: 130px;
+  vertical-align: middle;
+}
+#forkme {
+  position: fixed;
+  top: 0;
+  right: 0;
+}
+#sidebar {
+  width: 150px;
+  float: left;
+}
+#sidebar-links {
+  margin-top: 5px;
+  font-family: LacunaRegular, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 24px;
+}
+#sidebar-links li {
+  margin-bottom: 2px;
+  padding-left: 5px;
+  vertical-align: middle;
+  height: 24px;
+}
+#sidebar-links li:hover {
+  /* background: #ffd9ec; */
+  background: url(../images/arrow.png) no-repeat right center;
+}
+#sidebar-border {
+  width: 1px;
+  height: 100%;
+  margin-top: -132px;
+  float: left;
+  background: rgb(204, 229, 179);
+  background: -webkit-gradient(linear, 0 top, 0 bottom, from(rgb(204, 229, 179)), to(#fff));
+  /**/background: -moz-linear-gradient(top, rgb(204, 229, 179), #fff);
+}
+#sidebar-border-inner {
+  width: 1px;
+  height: 130px;
+  background-color: #fff;
+}
+#content {
+  margin-left: 151px;
+  padding: 10px;
+  font-family: 'Droid Sans';
+  font-size: 14px;
+  line-height: 1.4;
+}
+a {
+  text-decoration: none;
+  color: rgb(242, 121, 182);
+}
+code {
+  display: block;
+  padding: 5px;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  background-color: rgba(242, 121, 182, 0.1);
+  border: 1px solid rgba(242, 121, 182, 0.2); /* #f2c2e9 */
+  font-family: Menlo, Courier, monospace;
+}
+p {
+  margin: 5px 0 5px 0;
+}
+#content ul, #content ol {
+  margin: 10px 0 10px 0;
+}
+#content li {
+  margin-left: 1em;
+}
+
+/* rgba(153, 204, 102, 0.5) */
+/* rgb(204, 229, 179) */
