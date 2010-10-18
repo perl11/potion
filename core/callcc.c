@@ -126,7 +126,7 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
 }
 
 PN potion_continuation_string(Potion *P, PN cl, PN self) {
-  return potion_str(P, "Continuation");
+  return potion_str(P, "<continuation>");
 }
 
 void potion_cont_init(Potion *P) {
