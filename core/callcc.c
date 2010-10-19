@@ -77,7 +77,7 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
            "leave; ret"
            :/* no output */
            :"r"(start), "r"(end), "r"(cc->stack)
-           :"%eax", "%esp", "%ebp", "%esi"
+           :"%eax", "%esp", /*"%ebp",*/ "%esi"
           );
 #endif
 #else
