@@ -119,9 +119,9 @@ expr = ( not a:expr           { a = PN_AST(NOT, a); }
 
 atom = e:value | e:closure | e:table | e:call | e:group
 
-call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? |
-       (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; })
-         b:block? { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
+call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? (b:block | b:closure)? |
+       (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
+         { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
 name = p:path           { $$ = PN_AST(PATH, p); }
      | quiz ( m:message { $$ = PN_AST(QUERY, m); }
