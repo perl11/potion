@@ -532,12 +532,20 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
             jmp = PN_OP_LEN(f->asmb);
             PN_ASM2(OP_NOTJMP, reg, 0);
           }
-          if (t->a[2] == PN_NIL) {
-            PN_ARG_TABLE(t->a[1], breg, 1);
-          } else {
+#define LOAD_ARG() PN_ARG_TABLE(t->a[1], breg, 1)
+          if (arg) {
+            u8 part1 = ((struct PNSource *)(t->a[1]))->part;
+            if (part1 == AST_VALUE || (part1 == AST_TABLE && t->a[2] == PN_NIL)) {
+              LOAD_ARG();
+            }
+          }
+          if (t->a[1] == PN_NIL && t->a[2] == PN_NIL)
+            LOAD_ARG();
+          if (t->a[2] != PN_NIL && ((struct PNSource *)(t->a[2]))->part == AST_BLOCK) {
             breg++;
             PN_BLOCK(breg, t->a[2], t->a[1]);
           }
+#undef LOAD_ARG()
           if (t->part == AST_MESSAGE) {
             PN_ASM2(OP_CALL, reg, breg);
           } else
