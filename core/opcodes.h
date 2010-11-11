@@ -7,7 +7,11 @@
 #ifndef POTION_OPCODES_H
 #define POTION_OPCODES_H
 
+#if defined(__GNUC__)
+#pragma pack(1)
+#else
 #pragma pack(push, 1)
+#endif
 
 typedef struct {
   u8 code:8;
@@ -15,7 +19,11 @@ typedef struct {
   int b:12;
 } PN_OP;
 
+#if defined(__GNUC__)
+#pragma pack()
+#else
 #pragma pack(pop)
+#endif
 
 #define PN_OP_AT(asmb, n) ((PN_OP *)((PNFlex *)asmb)->ptr)[n]
 #define PN_OP_LEN(asmb)   (PN_FLEX_SIZE(asmb) / sizeof(PN_OP))
