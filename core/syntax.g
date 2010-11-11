@@ -147,7 +147,7 @@ closure = t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
 table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
-group = group-start s:statements group-end { $$ = PN_AST(CODE, s); }
+group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 
 path = '/' < utfw+ > -      { $$ = potion_str2(P, yytext, yyleng); }
 message = < utfw+ '?'? > -   { $$ = potion_str2(P, yytext, yyleng); }
