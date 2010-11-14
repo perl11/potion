@@ -125,13 +125,8 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   return (PN)cc;
 }
 
-PN potion_continuation_string(Potion *P, PN cl, PN self) {
-  return potion_str(P, "<continuation>");
-}
-
 void potion_cont_init(Potion *P) {
   PN cnt_vt = PN_VTABLE(PN_TCONT);
   potion_type_call_is(cnt_vt, PN_FUNC(potion_continuation_yield, 0));
-  potion_method(cnt_vt, "string", potion_continuation_string, 0);
 }
 

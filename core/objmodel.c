@@ -64,7 +64,7 @@ PN potion_no_call(Potion *P, PN cl, PN self) {
 PN potion_type_new(Potion *P, PNType t, PN self) {
   vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, 0);
   vt->type = t;
-  vt->name = (PN)NULL;
+  vt->name = PN_NIL;
   vt->parent = self;
   vt->methods = (struct PNTable *)potion_table_empty(P);
   vt->ctor = PN_FUNC(potion_no_call, 0);
@@ -293,7 +293,14 @@ PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
   return potion_str(P, "<ref>");
 }
 
-PN potion_object_string(Potion *P, PN cl, PN self, PN len) {
+PN potion_object_string(Potion *P, PN cl, vPN(Object) self) {
+  struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(self->vt);
+  if (vt->name != PN_NIL) {
+    PN str = potion_byte_str2(P, NULL, 0);
+    pn_printf(P, str, "<%s %x>", PN_STR_PTR(vt->name), (PN)self);
+    return potion_send(str, PN_string);
+  }
+  
   return potion_str(P, "<object>");
 }
 
