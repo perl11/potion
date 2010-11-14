@@ -117,7 +117,7 @@ expr = ( not a:expr           { a = PN_AST(NOT, a); }
          (c:call { a = PN_PUSH(a, c) })*
        { $$ = PN_AST(EXPR, a); }
 
-atom = e:value | e:closure | e:table | e:call | e:group
+atom = e:value | e:closure | e:table | e:call
 
 call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? (b:block | b:closure)? |
        (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
@@ -154,6 +154,7 @@ message = < utfw+ '?'? > -   { $$ = potion_str2(P, yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
       | lick
+      | group
 
 immed = nil   { $$ = PN_NIL; }
       | true  { $$ = PN_TRUE; }
