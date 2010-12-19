@@ -1,6 +1,6 @@
 //
 // file.c
-// loading code and data from files
+// working with file descriptors
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -13,6 +13,8 @@
 #include "table.h"
 
 extern char **environ;
+
+typedef vPN(File) pn_file;
 
 PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   int fd;
@@ -52,16 +54,16 @@ PN potion_file_with_fd(Potion *P, PN cl, PN self, PN fd) {
   return (PN)file;
 }
 
-PN potion_file_close(Potion *P, PN cl, PN self) {
-  close(((struct PNFile *)self)->fd);
-  ((struct PNFile *)self)->fd = -1;
+PN potion_file_close(Potion *P, PN cl, pn_file self) {
+  close(self->fd);
+  self->fd = -1;
   return PN_NIL;
 }
 
-PN potion_file_read(Potion *P, PN cl, PN self, PN n) {
+PN potion_file_read(Potion *P, PN cl, pn_file self, PN n) {
   n = PN_INT(n);
   char buf[n];
-  int r = read(((struct PNFile *)self)->fd, buf, n);
+  int r = read(self->fd, buf, n);
   if (r == -1) {
     perror("read");
     // TODO: error
@@ -72,8 +74,8 @@ PN potion_file_read(Potion *P, PN cl, PN self, PN n) {
   return potion_byte_str2(P, buf, r);
 }
 
-PN potion_file_write(Potion *P, PN cl, PN self, PN str) {  
-  int r = write(((struct PNFile *)self)->fd, PN_STR_PTR(str), PN_STR_LEN(str));
+PN potion_file_write(Potion *P, PN cl, pn_file self, PN str) {
+  int r = write(self->fd, PN_STR_PTR(str), PN_STR_LEN(str));
   if (r == -1) {
     perror("write");
     // TODO: error
@@ -82,12 +84,12 @@ PN potion_file_write(Potion *P, PN cl, PN self, PN str) {
   return PN_NUM(r);
 }
 
-PN potion_file_string(Potion *P, PN cl, vPN(File) self) {
-  int fd = ((struct PNFile *)self)->fd, rv;
+PN potion_file_string(Potion *P, PN cl, pn_file self) {
+  int fd = self->fd, rv;
   char *buf;
   PN str;
-  if (((struct PNFile *)self)->path != PN_NIL && fd != -1) {
-    rv = asprintf(&buf, "<file %s fd: %d>", PN_STR_PTR(((struct PNFile *)self)->path), fd);
+  if (self->path != PN_NIL && fd != -1) {
+    rv = asprintf(&buf, "<file %s fd: %d>", PN_STR_PTR(self->path), fd);
   } else if (fd != -1) {
     rv = asprintf(&buf, "<file fd: %d>", fd);
   } else {
