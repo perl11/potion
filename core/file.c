@@ -44,6 +44,14 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   return self;
 }
 
+PN potion_file_with_fd(Potion *P, PN cl, PN self, PN fd) {
+  struct PNFile *file = (struct PNFile *)potion_object_new(P, PN_NIL, PN_VTABLE(PN_TFILE));
+  file->fd = PN_INT(fd);
+  file->path = PN_NIL;
+  file->mode = fcntl(file->fd, F_GETFL) | O_ACCMODE;
+  return (PN)file;
+}
+
 PN potion_file_close(Potion *P, PN cl, PN self) {
   close(((struct PNFile *)self)->fd);
   ((struct PNFile *)self)->fd = -1;
@@ -116,6 +124,7 @@ void potion_file_init(Potion *P) {
   potion_method(P->lobby, "read", potion_lobby_read, 0);
   
   potion_type_constructor_is(file_vt, PN_FUNC(potion_file_new, "path=S,mode=S"));
+  potion_class_method(file_vt, "fd", potion_file_with_fd, "fd=N");
   potion_method(file_vt, "string", potion_file_string, 0);
   potion_method(file_vt, "close", potion_file_close, 0);
   potion_method(file_vt, "read", potion_file_read, "n=N");

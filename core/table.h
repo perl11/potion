@@ -17,12 +17,12 @@ typedef PN (*PN_IVAR_FUNC)(PNUniq hash);
 
 struct PNVtable {
   PN_OBJECT_HEADER
-  PN parent;
-  PNType type;
+  PNType parent, type;
   PN name;
   int ivlen;
   PN ivars;
   vPN(Table) methods;
+  vPN(Vtable) meta;
   PN ctor, call, callset;
   PN_MCACHE_FUNC mcache;
   PN_IVAR_FUNC ivfunc;

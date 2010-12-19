@@ -109,6 +109,7 @@ struct PNVtable;
 #define PN_IS_DECIMAL(v) (PN_IS_PTR(v) && PN_TYPE(v) == PN_TNUMBER)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
 #define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
+#define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
 
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       ((long)((long)(x))>>1)
@@ -518,6 +519,8 @@ static inline struct PNData *potion_data_alloc(Potion *P, int siz) {
 
 #define potion_method(RCV, MSG, FN, SIG) \
   potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
+#define potion_class_method(RCV, MSG, FN, SIG) \
+  potion_send(((struct PNVtable *)(RCV))->meta, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
 
 extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
    PN_continue, PN_def, PN_delegated, PN_else, PN_elsif, PN_if,

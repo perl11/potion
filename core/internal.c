@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "potion.h"
 #include "internal.h"
+#include "table.h"
 #include "gc.h"
 
 PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,

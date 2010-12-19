@@ -61,14 +61,29 @@ PN potion_no_call(Potion *P, PN cl, PN self) {
   return self;
 }
 
+void potion_add_metaclass(Potion *P, vPN(Vtable) vt) {
+  struct PNVtable *meta = vt->meta = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, 0);
+  meta->type = PN_FLEX_SIZE(P->vts) + PN_TNIL;
+  PN_FLEX_NEEDS(1, P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
+  PN_FLEX_SIZE(P->vts)++;
+  meta->name = PN_NIL;
+  meta->parent = PN_TVTABLE;
+  meta->methods = (struct PNTable *)potion_table_empty(P);
+  meta->ctor = PN_FUNC(potion_no_call, 0);
+  PN_VTABLE(meta->type) = (PN)meta;
+  meta->meta = PN_NIL;
+  PN_TOUCH(P->vts);
+}
+
 PN potion_type_new(Potion *P, PNType t, PN self) {
   vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, 0);
   vt->type = t;
   vt->name = PN_NIL;
-  vt->parent = self;
+  vt->parent = self ? ((struct PNVtable *)self)->type : 0;
   vt->methods = (struct PNTable *)potion_table_empty(P);
   vt->ctor = PN_FUNC(potion_no_call, 0);
   PN_VTABLE(t) = (PN)vt;
+  potion_add_metaclass(P, vt);
   return (PN)vt;
 }
 
@@ -107,6 +122,7 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   PN pvars = ((struct PNVtable *)parent)->ivars;
   PNType t = PN_FLEX_SIZE(P->vts) + PN_TNIL;
   PN_FLEX_NEEDS(1, P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
+  PN_FLEX_SIZE(P->vts)++;
   self = potion_type_new(P, t, parent);
   if (PN_IS_TUPLE(pvars)) {
     if (!PN_IS_TUPLE(ivars)) ivars = PN_TUP0();
@@ -119,7 +135,6 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
     cl = ((struct PNVtable *)parent)->ctor;
   ((struct PNVtable *)self)->ctor = cl;
 
-  PN_FLEX_SIZE(P->vts)++;
   PN_TOUCH(P->vts);
   return self;
 }
@@ -232,13 +247,17 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
   PN vt = PN_NIL;
   PNType t = PN_TYPE(rcv);
   if (!PN_TYPECHECK(t)) return PN_NIL;
-  vt = PN_VTABLE(t);
-  while (PN_IS_PTR(vt)) {
+  if (t == PN_TVTABLE && !PN_IS_METACLASS(rcv)) {
+    vt = (PN)((struct PNVtable *)rcv)->meta;
+  } else {
+    vt = PN_VTABLE(t);
+  }
+  while (1) {
     closure = ((msg == PN_lookup) && (t == PN_TVTABLE))
       ? potion_lookup(P, 0, vt, msg)
       : potion_send(vt, PN_lookup, msg);
-    if (closure) break;
-    vt = ((struct PNVtable *)vt)->parent; 
+    if (closure || !((struct PNVtable *)vt)->parent) break;
+    vt = PN_VTABLE(((struct PNVtable *)vt)->parent);
   }
   return closure;
 }
@@ -315,8 +334,16 @@ PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
 
 PN potion_object_new(Potion *P, PN cl, PN self) {
   vPN(Vtable) vt = (struct PNVtable *)self;
+  if (PN_IS_METACLASS(vt)) // TODO: error
+    return PN_NIL;
+  if (vt->type == PN_TVTABLE) // TODO: error
+    return PN_NIL;
   return (PN)PN_ALLOC_N(vt->type, struct PNObject,
     potion_type_size(P, (struct PNObject *)self) - sizeof(struct PNObject) + vt->ivlen * sizeof(PN));
+}
+
+PN potion_get_metaclass(Potion *P, PN cl, vPN(Vtable) self) {
+  return (PN)self->meta;
 }
 
 static PN potion_lobby_self(Potion *P, PN cl, PN self) {
@@ -325,7 +352,8 @@ static PN potion_lobby_self(Potion *P, PN cl, PN self) {
 
 PN potion_lobby_string(Potion *P, PN cl, PN self) {
   PN str = ((struct PNVtable *)self)->name;
-  return (void *)str != NULL ? str : potion_str(P, "<class>");
+  return (void *)str != PN_NIL ? str :
+    PN_IS_METACLASS(self) ? potion_str(P, "<metaclass>") : potion_str(P, "<class>");
 }
 
 PN potion_lobby_kind(Potion *P, PN cl, PN self) {
@@ -377,7 +405,10 @@ void potion_object_init(Potion *P) {
 
 static void potion_init_class_reference(Potion *P, PN name, PN vt) {
   potion_send(P->lobby, PN_def, name, vt);
-  ((vPN(Vtable))vt)->name = name;
+  ((struct PNVtable *)vt)->name = name;
+  char meta_str[strlen("<metaclass: >") + PN_STR_LEN(name) + 1];
+  sprintf(meta_str, "<metaclass: %s>", PN_STR_PTR(name));
+  ((struct PNVtable *)vt)->meta->name = potion_str(P, meta_str);
 }
 
 void potion_lobby_init(Potion *P) {
@@ -402,7 +433,11 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
-  potion_type_call_is(PN_VTABLE(PN_TVTABLE), PN_FUNC(potion_object_new, 0));
+  
+  PN mixin_vt = PN_VTABLE(PN_TVTABLE);
+  potion_type_call_is(mixin_vt, PN_FUNC(potion_object_new, 0));
+  potion_method(mixin_vt, "meta", potion_get_metaclass, 0);
+  
   potion_method(P->lobby, "about", potion_about, 0);
   potion_method(P->lobby, "here", potion_callcc, 0);
   potion_method(P->lobby, "exit", potion_exit, 0);
