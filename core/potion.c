@@ -178,73 +178,82 @@ done:
 
 int main(int argc, char *argv[]) {
   POTION_INIT_STACK(sp);
-  int i, verbose = 0, exec = 1 + POTION_JIT;
-
-  if (argc > 1) {
-    for (i = 0; i < argc; i++) {
-      if (strcmp(argv[i], "-I") == 0 ||
-          strcmp(argv[i], "--inspect") == 0) {
-        verbose = 1;
-        continue;
-      }
-
-      if (strcmp(argv[i], "-V") == 0 ||
-          strcmp(argv[i], "--verbose") == 0) {
-        verbose = 2;
-        continue;
-      }
-
-      if (strcmp(argv[i], "-v") == 0 ||
-          strcmp(argv[i], "--version") == 0) {
-        potion_cmd_version();
-        return 0;
-      }
-
-      if (strcmp(argv[i], "-h") == 0 ||
-          strcmp(argv[i], "--help") == 0) {
-        potion_cmd_usage();
-        return 0;
-      }
-
-      if (strcmp(argv[i], "-s") == 0 ||
-          strcmp(argv[i], "--stats") == 0) {
-        potion_cmd_stats(sp);
-        return 0;
-      }
-
-      if (strcmp(argv[i], "-c") == 0 ||
-          strcmp(argv[i], "--compile") == 0) {
-        exec = 0;
-      }
-
-      if (strcmp(argv[i], "-B") == 0 ||
-          strcmp(argv[i], "--bytecode") == 0) {
-        exec = 1;
-      }
-
-      if (strcmp(argv[i], "-X") == 0 ||
-          strcmp(argv[i], "--x86") == 0) {
-        exec = 2;
-      }
+  int i, verbose = 0, exec = 1 + POTION_JIT, interactive = 1;
+  
+  for (i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "-I") == 0 ||
+        strcmp(argv[i], "--inspect") == 0) {
+      verbose = 1;
+      continue;
     }
 
-    potion_cmd_compile(argv[argc-1], exec, verbose, sp);
-    return 0;
-  }
+    if (strcmp(argv[i], "-V") == 0 ||
+        strcmp(argv[i], "--verbose") == 0) {
+      verbose = 2;
+      continue;
+    }
 
-  Potion *P = potion_create(sp);
-  potion_eval(P, potion_byte_str(P,
-    "loop:\n" \
-    "  '>> ' print\n" \
-    "  code = read\n" \
-    "  if (not code): break.\n" \
-    "  if (code != \"\\n\"):\n" \
-    "    obj = code eval\n" \
-    "    if (obj kind == Error):\n" \
-    "      obj string print." \
-    "    else: ('=> ', obj, \"\\n\") join print.\n" \
-    "  .\n"
-    "."));
-  potion_destroy(P);
+    if (strcmp(argv[i], "-v") == 0 ||
+        strcmp(argv[i], "--version") == 0) {
+      potion_cmd_version();
+      return 0;
+    }
+
+    if (strcmp(argv[i], "-h") == 0 ||
+        strcmp(argv[i], "--help") == 0) {
+      potion_cmd_usage();
+      return 0;
+    }
+
+    if (strcmp(argv[i], "-s") == 0 ||
+        strcmp(argv[i], "--stats") == 0) {
+      potion_cmd_stats(sp);
+      return 0;
+    }
+
+    if (strcmp(argv[i], "-c") == 0 ||
+        strcmp(argv[i], "--compile") == 0) {
+      exec = 0;
+      continue;
+    }
+
+    if (strcmp(argv[i], "-B") == 0 ||
+        strcmp(argv[i], "--bytecode") == 0) {
+      exec = 1;
+      continue;
+    }
+
+    if (strcmp(argv[i], "-X") == 0 ||
+        strcmp(argv[i], "--x86") == 0) {
+      exec = 2;
+      continue;
+    }
+    
+    if (i == argc - 1) {
+      interactive = 0;
+      continue;
+    }
+    
+    fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
+  }
+  
+  if (!interactive) {
+    potion_cmd_compile(argv[argc-1], exec, verbose, sp);
+  } else {
+    Potion *P = potion_create(sp);
+    potion_eval(P, potion_byte_str(P,
+      "loop:\n" \
+      "  '>> ' print\n" \
+      "  code = read\n" \
+      "  if (not code): break.\n" \
+      "  if (code != \"\\n\"):\n" \
+      "    obj = code eval\n" \
+      "    if (obj kind == Error):\n" \
+      "      obj string print." \
+      "    else: ('=> ', obj, \"\\n\") join print.\n" \
+      "  .\n"
+      "."));
+    potion_destroy(P);
+  }
   return 0;
 }
