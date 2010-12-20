@@ -44,23 +44,19 @@ done:
     close(fd);
 }
 
-static PN potion_initializer_name(Potion *P, const char *filename, PN_SIZE len) {
+static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE len) {
   PN_SIZE ext_name_len = 0;
-  char *allocated_str, *ext_name;
-  PN func_name = potion_byte_str(P, "Potion_Init_");
+  char *allocated_str, *ext_name, *func_name;
   while (*(filename + ++ext_name_len) != '.' && ext_name_len <= len);
   allocated_str = ext_name = malloc(ext_name_len + 1);
-  if (allocated_str == NULL) {
-    // TODO: fatal error
-    fprintf(stderr, "** Couldn't allocate memory.\n");
-    exit(1);
-  }
+  if (allocated_str == NULL) potion_allocation_error();
   strncpy(ext_name, filename, ext_name_len);
   ext_name[ext_name_len] = '\0';
   ext_name += ext_name_len;
   while (*--ext_name != '/' && ext_name >= allocated_str);
   ext_name++;
-  pn_printf(P, func_name, "%s", ext_name);
+  if (asprintf(&func_name, "Potion_Init_%s", ext_name) == -1)
+    potion_allocation_error();
   free(allocated_str);
   return func_name;
 }
@@ -68,15 +64,16 @@ static PN potion_initializer_name(Potion *P, const char *filename, PN_SIZE len) 
 void potion_load_dylib(Potion *P, const char *filename) {
   void *handle = dlopen(filename, RTLD_LAZY);
   void (*func)(Potion *);
-  char *err;
+  char *err, *init_func_name;
   if (handle == NULL) {
     // TODO: error
     fprintf(stderr, "** error loading %s: %s\n", filename, dlerror());
     return;
   }
-  func = dlsym(handle, PN_STR_PTR(
-    potion_initializer_name(P, filename, strlen(filename))));
+  init_func_name = potion_initializer_name(P, filename, strlen(filename));
+  func = dlsym(handle, init_func_name);
   err = dlerror();
+  free(init_func_name);
   if (err != NULL) {
     fprintf(stderr, "** error loading %s: %s\n", filename, err);
     dlclose(handle);
@@ -97,9 +94,9 @@ PN potion_load(Potion *P, PN cl, PN self, PN file) {
             )
       potion_load_dylib(P, filename);
     else
-      ; // TODO: error
+      fprintf(stderr, "** unrecognized file extension: %s\n", file_ext);
   } else {
-    // ...
+    fprintf(stderr, "** no file extension: %s\n", filename);
   }
   
   return PN_NIL;

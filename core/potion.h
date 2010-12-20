@@ -535,6 +535,8 @@ extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 Potion *potion_create(void *);
 void potion_destroy(Potion *);
 PN potion_error(Potion *, PN, long, long, PN);
+void potion_fatal(char *);
+void potion_allocation_error(void);
 PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);

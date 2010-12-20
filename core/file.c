@@ -101,10 +101,7 @@ PN potion_file_string(Potion *P, PN cl, pn_file self) {
   } else {
     rv = asprintf(&buf, "<closed file>");
   }
-  if (rv == -1) {
-    fprintf(stderr, "** Couldn't allocate memory.\n");
-    exit(1);
-  }
+  if (rv == -1) potion_allocation_error();
   str = potion_str(P, buf);
   free(buf);
   return str;

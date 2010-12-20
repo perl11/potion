@@ -197,6 +197,18 @@ void potion_error_init(Potion *P) {
   potion_method(err_vt, "string", potion_error_string, 0);
 }
 
+#define PN_EXIT_ERROR 1
+#define PN_EXIT_FATAL 2
+
+void potion_fatal(char *message) {
+  fprintf(stderr, "** %s\n", message);
+  exit(PN_EXIT_FATAL);
+}
+
+void potion_allocation_error(void) {
+  potion_fatal("Couldn't allocate memory.");
+}
+
 void potion_p(Potion *P, PN x) {
   potion_send(potion_send(x, PN_string), PN_print);
   printf("\n");
