@@ -113,6 +113,7 @@ struct PNVtable;
 
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       ((long)((long)(x))>>1)
+#define PN_DBL(num)     (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDecimal *)num)->value)
 #define PN_PREC 16
 #define PN_RAND()       PN_NUM(potion_rand_int())
 #define PN_STR_PTR(x)   potion_str_ptr(x)
@@ -619,6 +620,7 @@ void potion_lick_init(Potion *);
 void potion_compiler_init(Potion *);
 void potion_vm_init(Potion *);
 void potion_file_init(Potion *);
+void potion_loader_init(Potion *);
 void potion_cont_init(Potion *);
 void potion_dump_stack(Potion *);
 

@@ -11,8 +11,6 @@
 #include "potion.h"
 #include "internal.h"
 
-#define PN_DBL(num) (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDecimal *)num)->value)
-
 PN potion_real(Potion *P, double v) {
   vPN(Decimal) d = PN_ALLOC_N(PN_TNUMBER, struct PNDecimal, 0);
   d->value = v;
