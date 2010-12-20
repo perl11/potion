@@ -79,6 +79,7 @@ void potion_load_dylib(Potion *P, const char *filename) {
   err = dlerror();
   if (err != NULL) {
     fprintf(stderr, "** error loading %s: %s\n", filename, err);
+    dlclose(handle);
     return;
   }
   func(P);
