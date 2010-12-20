@@ -46,19 +46,22 @@ done:
 
 static PN potion_initializer_name(Potion *P, const char *filename, PN_SIZE len) {
   PN_SIZE ext_name_len = 0;
-  char *ext_name;
+  char *allocated_str, *ext_name;
   PN func_name = potion_byte_str(P, "Potion_Init_");
   while (*(filename + ++ext_name_len) != '.' && ext_name_len <= len);
-  ext_name = malloc(ext_name_len + 1);
-  if (ext_name == NULL) {
+  allocated_str = ext_name = malloc(ext_name_len + 1);
+  if (allocated_str == NULL) {
     // TODO: fatal error
     fprintf(stderr, "** Couldn't allocate memory.\n");
     exit(1);
   }
   strncpy(ext_name, filename, ext_name_len);
   ext_name[ext_name_len] = '\0';
+  ext_name += ext_name_len;
+  while (*--ext_name != '/' && ext_name >= allocated_str);
+  ext_name++;
   pn_printf(P, func_name, "%s", ext_name);
-  free(ext_name);
+  free(allocated_str);
   return func_name;
 }
 
