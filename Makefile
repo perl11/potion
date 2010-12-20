@@ -11,7 +11,7 @@ DOCHTML = ${DOC:.textile=.html}
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -fpic -rdynamic
+CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE -fpic -rdynamic
 DEBUG ?= 0
 ECHO = /bin/echo
 GREG = tools/greg

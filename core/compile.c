@@ -551,7 +551,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
               PN_BLOCK(breg, t->a[2], t->a[1]);
             }
           }
-#undef LOAD_ARG()
+#undef LOAD_ARG
           if (t->part == AST_MESSAGE) {
             PN_ASM2(OP_CALL, reg, breg);
           } else
