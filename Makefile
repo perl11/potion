@@ -17,7 +17,7 @@ ECHO = /bin/echo
 GREG = tools/greg
 INCS = -Icore
 JIT ?= 1
-LIBS = -lm
+LIBS = -lm -ldl
 STRIP ?= `./tools/config.sh ${CC} strip`
 
 # TODO: -O2 doesn't include -fno-stack-protector
