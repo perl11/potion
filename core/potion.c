@@ -240,6 +240,7 @@ int main(int argc, char *argv[]) {
   if (!interactive) {
     potion_cmd_compile(argv[argc-1], exec, verbose, sp);
   } else {
+    if (!exec || verbose) potion_fatal("no filename given");
     Potion *P = potion_create(sp);
     potion_eval(P, potion_byte_str(P,
       "loop:\n" \
@@ -252,7 +253,7 @@ int main(int argc, char *argv[]) {
       "      obj string print." \
       "    else: ('=> ', obj, \"\\n\") join print.\n" \
       "  .\n"
-      "."));
+      "."), exec - 1);
     potion_destroy(P);
   }
   return 0;

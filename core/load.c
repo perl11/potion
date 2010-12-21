@@ -33,7 +33,7 @@ void potion_load_code(Potion *P, const char *filename) {
     code = potion_source_load(P, PN_NIL, buf);
     if (!PN_IS_PROTO(code)) {
       potion_run(P, potion_send(
-        potion_parse(P, buf), PN_compile, potion_str(P, filename), PN_NIL));
+        potion_parse(P, buf), PN_compile, potion_str(P, filename), PN_NIL), POTION_JIT);
     }
   } else {
     fprintf(stderr, "** could not read entire file: %s.", filename);

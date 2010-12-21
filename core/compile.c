@@ -845,21 +845,22 @@ PN potion_source_dump(Potion *P, PN cl, PN proto) {
   return pnb;
 }
 
-PN potion_run(Potion *P, PN code) {
-#if POTION_JIT == 1
-  PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, POTION_JIT_TARGET), PN_NIL, 1);
-  PN_CLOSURE(cl)->data[0] = code;
-  return PN_PROTO(code)->jit(P, cl, P->lobby);
-#else
-  return potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-#endif
+PN potion_run(Potion *P, PN code, int jit) {
+  if (jit) {
+    if (!POTION_JIT) potion_fatal("potion not compiled with JIT");
+    PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, POTION_JIT_TARGET), PN_NIL, 1);
+    PN_CLOSURE(cl)->data[0] = code;
+    return PN_PROTO(code)->jit(P, cl, P->lobby);
+  } else {
+    return potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
+  }
 }
 
-PN potion_eval(Potion *P, PN bytes) {
+PN potion_eval(Potion *P, PN bytes, int jit) {
   PN code = potion_parse(P, bytes);
   if (PN_TYPE(code) != PN_TSOURCE) return code;
   code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
-  return potion_run(P, code);
+  return potion_run(P, code, jit);
 }
 
 void potion_compiler_init(Potion *P) {
