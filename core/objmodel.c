@@ -362,6 +362,22 @@ PN potion_lobby_kind(Potion *P, PN cl, PN self) {
   return PN_VTABLE(t);
 }
 
+static void potion_init_class_reference(Potion *P, PN name, PN vt) {
+  potion_send(P->lobby, PN_def, name, vt);
+  ((struct PNVtable *)vt)->name = name;
+  char meta_str[strlen("<metaclass: >") + PN_STR_LEN(name) + 1];
+  sprintf(meta_str, "<metaclass: %s>", PN_STR_PTR(name));
+  ((struct PNVtable *)vt)->meta->name = potion_str(P, meta_str);
+}
+
+void potion_define_global(Potion *P, PN name, PN val) {
+  if (PN_TYPE(val) == PN_TVTABLE && !PN_IS_METACLASS(val)) {
+    potion_init_class_reference(P, name, val);
+  } else {
+    potion_send(P->lobby, PN_def, name, val);
+  }
+}
+
 PN potion_about(Potion *P, PN cl, PN self) {
   PN about = potion_table_empty(P);
   potion_table_put(P, PN_NIL, about, potion_str(P, "_why"),
@@ -401,14 +417,6 @@ void potion_object_init(Potion *P) {
   potion_method(obj_vt, "forward", potion_object_forward, 0);
   potion_method(obj_vt, "send", potion_object_send, 0);
   potion_method(obj_vt, "string", potion_object_string, 0);
-}
-
-static void potion_init_class_reference(Potion *P, PN name, PN vt) {
-  potion_send(P->lobby, PN_def, name, vt);
-  ((struct PNVtable *)vt)->name = name;
-  char meta_str[strlen("<metaclass: >") + PN_STR_LEN(name) + 1];
-  sprintf(meta_str, "<metaclass: %s>", PN_STR_PTR(name));
-  ((struct PNVtable *)vt)->meta->name = potion_str(P, meta_str);
 }
 
 void potion_lobby_init(Potion *P) {

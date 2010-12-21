@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ctype.h>
 #include "potion.h"
 #include "internal.h"
 #include "ast.h"
@@ -22,14 +23,14 @@ const struct {
 } potion_ops[] = {
   {"noop", 0}, {"move", 2}, {"loadk", 2}, {"loadpn", 2}, {"self", 1},
   {"newtuple", 2}, {"settuple", 2}, {"getlocal", 2}, {"setlocal", 2},
-  {"getupval", 2}, {"setupval", 2}, {"gettable", 2}, {"settable", 2},
-  {"newlick", 2}, {"getpath", 2}, {"setpath", 2}, {"add", 2}, {"sub", 2},
-  {"mult", 2}, {"div", 2}, {"mod", 2}, {"pow", 2}, {"not", 1}, {"cmp", 2},
-  {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2}, {"gt", 2}, {"gte", 2},
-  {"bitn", 2}, {"bitl", 2}, {"bitr", 2}, {"def", 2}, {"bind", 2}, {"message", 2},
-  {"jump", 1}, {"test", 2}, {"testjmp", 2}, {"notjmp", 2}, {"named", 2},
-  {"call", 2}, {"callset", 2}, {"tailcall", 2}, {"return", 1},
-  {"proto", 2}, {"class", 2}
+  {"getupval", 2}, {"setupval", 2}, {"global", 2}, {"gettable", 2},
+  {"settable", 2}, {"newlick", 2}, {"getpath", 2}, {"setpath", 2},
+  {"add", 2}, {"sub", 2}, {"mult", 2}, {"div", 2}, {"mod", 2}, {"pow", 2},
+  {"not", 1}, {"cmp", 2}, {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2},
+  {"gt", 2}, {"gte", 2}, {"bitn", 2}, {"bitl", 2}, {"bitr", 2}, {"def", 2},
+  {"bind", 2}, {"message", 2}, {"jump", 1}, {"test", 2}, {"testjmp", 2},
+  {"notjmp", 2}, {"named", 2}, {"call", 2}, {"callset", 2}, {"tailcall", 2},
+  {"return", 1}, {"proto", 2}, {"class", 2}
 };
 
 PN potion_proto_tree(Potion *P, PN cl, PN self) {
@@ -300,7 +301,13 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
       }
 
       if (lhs->part == AST_MESSAGE || lhs->part == AST_QUERY) {
-        if (c == 0) {
+        char first_letter = PN_STR_PTR(lhs->a[0])[0];
+        if ((first_letter & 0x80) == 0 && isupper((unsigned char)first_letter)) {
+          num = PN_PUT(f->values, lhs->a[0]);
+          PN_ASM2(OP_LOADK, breg, num);
+          opcode = OP_GLOBAL;
+          num = ++breg;
+        } else if (c == 0) {
           num = PN_UPVAL(lhs->a[0]);
           if (num == PN_NONE) {
             num = PN_PUT(f->locals, lhs->a[0]);

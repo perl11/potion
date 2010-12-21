@@ -155,6 +155,9 @@ void potion_ppc_getupval(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 void potion_ppc_setupval(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long lregs) {
 }
 
+void potion_ppc_global(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_ppc_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 

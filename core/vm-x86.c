@@ -326,6 +326,17 @@ void potion_x86_setupval(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
 }
 
+void potion_x86_global(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(start - 3, 0);
+  X86_ARGO(op.a, 1);
+  X86_ARGO(op.b, 2);
+  X86_PRE(); ASM(0xB8); ASMN(potion_define_global);
+  ASM(0xFF); ASM(0xD0);
+  X86_MOV_RBP(0x8B, op.b); // mov -B(%rbp) %eax
+  X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op.a)); // mov %eax -A(%rbp)
+}
+
 void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_ARGO(start - 3, 0);

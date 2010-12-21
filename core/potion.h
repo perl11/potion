@@ -579,6 +579,7 @@ PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);
 PN potion_real(Potion *, double);
 long potion_arity(Potion *, PN);
+void potion_define_global(Potion *, PN, PN);
 
 PN potion_obj_add(Potion *, PN, PN);
 PN potion_obj_sub(Potion *, PN, PN);
