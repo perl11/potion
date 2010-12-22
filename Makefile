@@ -12,6 +12,7 @@ DOCHTML = ${DOC:.textile=.html}
 PREFIX = /usr/local
 CC = gcc
 CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE -fpic -rdynamic
+AR ?= ar
 DEBUG ?= 0
 ECHO = /bin/echo
 GREG = tools/greg
@@ -113,13 +114,18 @@ tools/greg: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
-potion: ${OBJ_POTION} ${OBJ}
+potion: ${OBJ_POTION} ${OBJ} libpotion.a
 	@${ECHO} LINK potion
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP potion; \
 	  ${STRIP} potion; \
 	fi
+
+libpotion.a: ${OBJ_POTION} ${OBJ}
+	@${ECHO} AR $@
+	@if [ -e $@ ]; then rm -f $@; fi
+	@${AR} rcs $@ core/*.o > /dev/null
 
 bench: potion test/api/gc-bench
 	@${ECHO}; \
