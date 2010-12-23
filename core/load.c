@@ -31,8 +31,8 @@ void potion_load_code(Potion *P, const char *filename) {
     }
   } else {
     fprintf(stderr, "** could not read entire file: %s.", filename);
-    close(fd);
   }
+  close(fd);
 }
 
 static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE len) {
