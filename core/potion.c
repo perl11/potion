@@ -243,11 +243,11 @@ int main(int argc, char *argv[]) {
     if (!exec || verbose) potion_fatal("no filename given");
     Potion *P = potion_create(sp);
     potion_eval(P, potion_byte_str(P,
+      "load 'readline'\n" \
       "loop:\n" \
-      "  '>> ' print\n" \
-      "  code = read\n" \
-      "  if (not code): break.\n" \
-      "  if (code != \"\\n\"):\n" \
+      "  code = readline('>> ')\n" \
+      "  if (not code): \"\\n\" print, break.\n" \
+      "  if (code != ''):\n" \
       "    obj = code eval\n" \
       "    if (obj kind == Error):\n" \
       "      obj string print." \

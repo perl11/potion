@@ -5,5 +5,5 @@ CFLAGS = $(INCS) $(LIBS) -Wall -fno-strict-aliasing -Wno-return-type -fpic -Wl,-
 
 all: readline.so
 
-readline.so:
-	@$(CC) -shared $(CFLAGS) -o $@ readline.c
+%.so: %.c
+	@$(CC) -shared $(CFLAGS) -o $@ $<

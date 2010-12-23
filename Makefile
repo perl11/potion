@@ -33,8 +33,10 @@ COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
 RELEASE ?= ${VERSION}.${REVISION}
 PKG := "potion-${RELEASE}"
 
-all: potion
+all: pn
 	+${MAKE} -s usage
+
+pn: potion libpotion.a lib/readline/readline.so
 
 rebuild: clean potion test
 
@@ -114,7 +116,7 @@ tools/greg: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
-potion: ${OBJ_POTION} ${OBJ} libpotion.a
+potion: ${OBJ_POTION} ${OBJ}
 	@${ECHO} LINK potion
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
 	@if [ "${DEBUG}" != "1" ]; then \
@@ -126,6 +128,12 @@ libpotion.a: ${OBJ_POTION} ${OBJ}
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ core/*.o > /dev/null
+
+lib/readline/readline.so:
+	@${ECHO} MAKE $@
+	@cd lib/readline; \
+	${MAKE} readline.so; \
+	cd ../..
 
 bench: potion test/api/gc-bench
 	@${ECHO}; \
