@@ -16,7 +16,13 @@
 
 void potion_load_code(Potion *P, const char *filename) {
   PN buf, code;
-  int fd = open(filename, O_RDONLY | O_BINARY);
+  struct stat stats;
+  int fd = -1;
+  if (stat(filename, &stats) == -1) {
+    fprintf(stderr, "** %s does not exist.", filename);
+    return;
+  }
+  fd = open(filename, O_RDONLY | O_BINARY);
   if (fd == -1) {
     fprintf(stderr, "** could not open %s. check permissions.", filename);
     return;
@@ -27,7 +33,7 @@ void potion_load_code(Potion *P, const char *filename) {
     code = potion_source_load(P, PN_NIL, buf);
     if (!PN_IS_PROTO(code)) {
       potion_run(P, potion_send(
-                                potion_parse(P, buf), PN_compile, potion_str(P, filename), PN_NIL), POTION_JIT);
+        potion_parse(P, buf), PN_compile, potion_str(P, filename), PN_NIL), POTION_JIT);
     }
   } else {
     fprintf(stderr, "** could not read entire file: %s.", filename);
