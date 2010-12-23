@@ -96,7 +96,7 @@ void potion_test_sig(CuTest *T) {
 }
 
 void potion_test_eval(CuTest *T) {
-  PN add = potion_eval(P, potion_str(P, "(x, y): x + y."));
+  PN add = potion_eval(P, potion_str(P, "(x, y): x + y."), POTION_JIT);
   PN_F addfn = PN_CLOSURE_F(add);
   PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func failed",
