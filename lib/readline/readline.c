@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <potion.h>
 #include <readline/readline.h>
+#include <readline/history.h>
 
 PN pn_readline(Potion *P, PN cl, PN self, PN start) {
   char *line = readline(PN_STR_PTR(start));
