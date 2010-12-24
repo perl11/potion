@@ -239,6 +239,6 @@ clean:
 	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML}
 	@rm -f tools/greg tools/greg.o tools/compile.o tools/tree.o
 	@rm -f core/config.h core/version.h core/syntax.c
-	@rm -f potion potion.exe test/api/potion-test test/api/gc-test test/api/gc-bench
+	@rm -f potion potion.exe libpotion.a test/api/potion-test test/api/gc-test test/api/gc-bench
 
 .PHONY: all clean doc rebuild test
