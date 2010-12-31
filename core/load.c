@@ -80,11 +80,11 @@ void potion_load_dylib(Potion *P, const char *filename) {
 }
 
 static PN pn_loader_path;
-static char *pn_loader_extensions[] = {
+static const char *pn_loader_extensions[] = {
   ".pn", ".so", ".dylib"
 };
 
-static char *find_extension(char *str) {
+static const char *find_extension(char *str) {
   int i;
   PN_SIZE str_len = strlen(str);
   struct stat st;
@@ -110,21 +110,31 @@ char *potion_find_file(char *str, PN_SIZE str_len) {
     char dirname[prefix_len + 1 + str_len + 1];
     char *str_pos = dirname + prefix_len + 1;
     char *dot;
+    const char *ext;
     memcpy(str_pos, str, str_len);
-    for (dot = str_pos; dot < str_pos + str_len; dot++)
-      if (*dot == '.') { *dot = '\0'; break; }
-    if (dot == str_pos + str_len)
-      dirname[prefix_len + 1 + str_len] = '\0';
+    dot = memchr(str, '.', str_len);
+    if (dot == NULL)
+      dirname[sizeof(dirname) - 1] = '\0';
+    else
+      *dot = '\0';
     memcpy(dirname, PN_STR_PTR(prefix), prefix_len);
     dirname[prefix_len] = '/';
     if (stat(dirname, &st) == 0 && S_ISREG(st.st_mode)) {
-      if (asprintf(&r, "%s", str) == -1) potion_allocation_error();
+      if (asprintf(&r, "%s", dirname) == -1) potion_allocation_error();
+      break;
+    } else if ((ext = find_extension(dirname)) != NULL) {
+      if (asprintf(&r, "%s%s", dirname, ext) == -1) potion_allocation_error();
+      break;
     } else {
-      if (asprintf(&r, "%s/%s", dirname, str) == -1) potion_allocation_error();
+      char *file;
+      if ((file = strrchr(str, '/')) == NULL)
+        file = str;
+      else
+        file++;
+      if (asprintf(&r, "%s/%s", dirname, file) == -1) potion_allocation_error();
       if (stat(r, &st) != 0 || !S_ISREG(st.st_mode)) {
-        char *ext = find_extension(r);
         int r_len = prefix_len + 1 + str_len * 2 + 1;
-        if (ext == NULL) { free(r); r = NULL; continue; }
+        if ((ext = find_extension(r)) == NULL) { free(r); r = NULL; continue; }
         r = realloc(r, r_len + strlen(ext));
         if (r == NULL) potion_allocation_error();
         strcpy(r + r_len, ext);
