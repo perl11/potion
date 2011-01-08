@@ -7,13 +7,11 @@
 PN pn_readline(Potion *P, PN cl, PN self, PN start) {
   char *line = readline(PN_STR_PTR(start));
   PN r;
-  if (line) {
-    add_history(line);
-    r = potion_str(P, line);
-    free(line);
-    return r;
-  }
-  return PN_NIL;
+  if (line == NULL) return PN_NIL;
+  add_history(line);
+  r = potion_str(P, line);
+  free(line);
+  return r;
 }
 
 void Potion_Init_readline(Potion *P) {

@@ -1,4 +1,4 @@
-## ~ building potion ~
+# ~ building potion ~
 
 Normally,
 

@@ -11,7 +11,7 @@ DOCHTML = ${DOC:.textile=.html}
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE -rdynamic
+CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
 AR ?= ar
 DEBUG ?= 0
 ECHO = /bin/echo
@@ -29,9 +29,13 @@ VERSION = `./tools/config.sh ${CC} version`
 DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l | sed "s/ //g"`
 COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
-
 RELEASE ?= ${VERSION}.${REVISION}
 PKG := "potion-${RELEASE}"
+
+MINGW = `./tools/config.sh ${CC} mingw`
+CFLAGS += ${if ${seq ${MINGW},0},-rdynamic}
+INCS += ${if ${seq ${MINGW},1},-Itools/dlfcn-win32/include}
+LIBS += ${if ${seq ${MINGW},1},-Ltools/dlfcn-win32/lib}
 
 all: pn
 	+${MAKE} -s usage
