@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include "potion.h"
 #include "internal.h"
 #include "table.h"
@@ -56,7 +57,13 @@ PN potion_file_with_fd(Potion *P, PN cl, PN self, PN fd) {
   struct PNFile *file = (struct PNFile *)potion_object_new(P, PN_NIL, PN_VTABLE(PN_TFILE));
   file->fd = PN_INT(fd);
   file->path = PN_NIL;
+#ifdef F_GETFL
   file->mode = fcntl(file->fd, F_GETFL) | O_ACCMODE;
+#else
+  struct stat st;
+  if (fstat(file->fd, &st) == -1) perror("fstat");
+  file->mode = st.st_mode;
+#endif
   return (PN)file;
 }
 
