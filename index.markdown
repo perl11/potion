@@ -1,3 +1,25 @@
+---
+layout: default
+title: The Potion language
+---
+<div>
+<pre><code style="margin: 0 auto; width: 224px;">      .ooo
+     'OOOo
+ ~ p ooOOOo tion ~
+     .OOO
+      oO      %% a little
+        Oo    fast language.
+       'O
+        `
+       (o)
+   ___/ /          
+  /`    \ 
+ /v^  `  ,
+(...v/v^/
+ \../::/
+  \/::/</code></pre>
+</div>
+## ~ Potion! ~
 Potion is an object- and mixin-oriented (traits)
 language.
 
@@ -64,7 +86,6 @@ However, some warnings:
    in exceptions and feeling rather uninspired
    on the matter. Let's hear from you.
 
-
 ## ~ a whiff of potion ~
 
     5 times: "Odelay!" print.
@@ -79,14 +100,6 @@ Or,
     hello =
       "(x): ('hello ', x) print." eval
     hello ('world')
-
-
-## ~ building and installing ~
-
-    $ make
-
-Look inside the file called INSTALL for options.
-
 
 ## ~ how it transpired ~
 
@@ -104,14 +117,12 @@ lines, then it's no sweat.
 To be fair, I'd been tinkering with the parser
 for years, though.
 
-
 ## ~ the potion pledge ~
 
 EVERYTHING IS AN OBJECT.
 However, OBJECTS AREN'T EVERYTHING.
 
 (And, incidentally, everything is a function.)
-
 
 ## ~ items to understand ~
 
@@ -155,91 +166,6 @@ AND, OF COURSE, CLOSURES ARE OBJECTS.
 However, OBJECTS AREN'T EVERYTHING.
 THEY ARE USELESS WITHOUT MIXINS.
 
-
-## ~ unique ideas (to be implemented) ~
-
-Potion does have a few unique features
-underway.
-
-* It is two languages in one.
-  
-  The language itself is objects and closures.
-  
-      Number add = (x): self + x.
-  
-  But it also includes a data language.
-  
-      app = [window (width=200, height=400)
-        [button "OK", button "Cancel"]]
-  
-  The code and data languages can be interleaved
-  over and over again. In a way, I'm trying to find
-  a middle ground between s-expressions and stuff like
-  E4X. I like that s-expressions are a very light data
-  syntax, but I like that E4X clearly looks like data.
-  
-  When s-expressions appear in Lisp code, they look
-  like code. I think it is nice to distinguish the two.
-  
-* Deeply nested blocks can be closed quickly.
-  I don't like significant whitespace, personally.
-  But I don't like end end end end.
-  
-      say = (phrase):
-        10 times (i):
-          20 times (j):
-            phrase print
-      _say
-  
-  The closing "_ say" ends the block saved to "say" var.
-  
-  Normally, blocks are closed with a period. In this case
-  we'd need three periods, which looks strange.
-  
-      say = ():
-        10 times:
-          20 times:
-            "Odelay!" print
-      ...
-  
-  If you prefer, you can give it some space. Or you can
-  use a variable name introduced by the block,
-  
-      say = (phrase):
-        10 times (i):
-          20 times (j):
-            phrase print
-      _ phrase
-  
-      say = (phrase):
-        10 times (i):
-          20 times (j):
-            phrase print
-        _ i
-      .
-  
-  Maybe it all looks strange. I don't know. I'm just trying
-  things out, okay?
-  
-* Elimination of line noise.
-  
-  I avoid @, #, $, %, {}.
-  Stick with ., |, (), [], =, !, ?. Easier on the eyes.
-  These are common punctuations in English.
-  
-* I try to defer to English when it comes to punctuation rules.
-  
-  Period means "end". (In other langs it means "method call".)
-  Comma breaks up statements.
-  Space between messages gives a noun-verb feeling.
-  
-      window open (width=400, height=500)
-  
-* Named block args.
-  
-      (1, 2, 3) map (item=x, index=i): i display, x + 1.
-
-
 ## ~ feverish and fond thankyous ~
 
 I am gravely indebted to Basile Starynkevitch, who fielded my
@@ -270,7 +196,6 @@ amazement.
 Final appreciations to Jonathan Wright and William Morgan
 who pitched in, back in the wee hours of Potion's history.
 Tanks.
-
 
 ## ~ license ~
 
