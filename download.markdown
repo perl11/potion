@@ -1,6 +1,6 @@
 ---
 layout: default
-title: A pamphlet about Potion
+title: Download Potion
 ---
 Download potion from [here](http://github.com/fogus/potion) by clicking on the 'Download' button.
 Then unzip potion, cd to that directory, and run:
