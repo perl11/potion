@@ -32,10 +32,12 @@ COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
 RELEASE ?= ${VERSION}.${REVISION}
 PKG := "potion-${RELEASE}"
 
-MINGW = `./tools/config.sh ${CC} mingw`
-CFLAGS += ${if ${seq ${MINGW},0},-rdynamic}
-INCS += ${if ${seq ${MINGW},1},-Itools/dlfcn-win32/include}
-LIBS += ${if ${seq ${MINGW},1},-Ltools/dlfcn-win32/lib}
+ifeq "`./tools/config.sh ${CC} mingw`" "0"
+	CFLAGS += -rdynamic
+else
+	INCS += -Itools/dlfcn-win32/include
+	LIBS += -Ltools/dlfcn-win32/lib
+endif
 
 all: pn
 	+${MAKE} -s usage
