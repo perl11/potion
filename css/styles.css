@@ -34,10 +34,13 @@ h2 {
 }
 #sidebar {
   width: 150px;
+	height: 100%;
   float: left;
 }
 #sidebar-links {
+	width: 150px;
   margin-top: 5px;
+	position: absolute;
   font-family: LacunaRegular, Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 24px;
@@ -55,19 +58,14 @@ h2 {
 #sidebar-border {
   width: 1px;
   height: 100%;
-  margin-top: -132px;
-  float: left;
+	position: relative;
+  float: right;
   /* background: rgb(204, 229, 179); */
   background: -webkit-gradient(linear, 0 top, 0 bottom, from(rgb(204, 229, 179)), to(#fff));
   background: -moz-linear-gradient(top, rgb(204, 229, 179), #fff);
 }
-#sidebar-border-inner {
-  width: 1px;
-  height: 130px;
-  background-color: #fff;
-}
 #content {
-  margin-left: 151px;
+  margin-left: 150px;
   padding: 10px;
   font-family: 'Droid Sans';
   font-size: 14px;
