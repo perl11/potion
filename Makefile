@@ -32,7 +32,7 @@ COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
 RELEASE ?= ${VERSION}.${REVISION}
 PKG := "potion-${RELEASE}"
 
-ifeq "`./tools/config.sh ${CC} mingw`" "0"
+ifeq ($(shell ./tools/config.sh ${CC} mingw),0)
 	CFLAGS += -rdynamic
 else
 	INCS += -Itools/dlfcn-win32/include
