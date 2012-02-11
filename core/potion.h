@@ -109,9 +109,11 @@ struct PNVtable;
 #define PN_IS_DECIMAL(v) (PN_IS_PTR(v) && PN_TYPE(v) == PN_TNUMBER)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
 #define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
+#define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
 
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
-#define PN_INT(x)       (((long)(x))>>1)
+#define PN_INT(x)       ((long)((long)(x))>>1)
+#define PN_DBL(num)     (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDecimal *)num)->value)
 #define PN_PREC 16
 #define PN_RAND()       PN_NUM(potion_rand_int())
 #define PN_STR_PTR(x)   potion_str_ptr(x)
@@ -339,16 +341,12 @@ struct PNCont {
 };
 
 // the potion type is the 't' in the vtable tuple (m,t)
+static inline PN potion_fwd(PN);
 static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
-  while (1) {
-    struct PNFwd *o = (struct PNFwd *)obj;
-    if (o->fwd != POTION_FWD)
-      return ((struct PNObject *)o)->vt;
-    obj = o->ptr;
-  }
+  return ((struct PNObject *)potion_fwd(obj))->vt;
 }
 
 // macro for doing a single fwd check after a possible realloc
@@ -518,6 +516,8 @@ static inline struct PNData *potion_data_alloc(Potion *P, int siz) {
 
 #define potion_method(RCV, MSG, FN, SIG) \
   potion_send(RCV, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
+#define potion_class_method(RCV, MSG, FN, SIG) \
+  potion_send(((struct PNVtable *)(RCV))->meta, PN_def, potion_str(P, MSG), PN_FUNC(FN, SIG))
 
 extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
    PN_continue, PN_def, PN_delegated, PN_else, PN_elsif, PN_if,
@@ -531,6 +531,8 @@ extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 Potion *potion_create(void *);
 void potion_destroy(Potion *);
 PN potion_error(Potion *, PN, long, long, PN);
+void potion_fatal(char *);
+void potion_allocation_error(void);
 PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
@@ -571,7 +573,9 @@ PN potion_decimal(Potion *, char *, int);
 PN potion_pow(Potion *, PN, PN, PN);
 PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);
+PN potion_real(Potion *, double);
 long potion_arity(Potion *, PN);
+void potion_define_global(Potion *, PN, PN);
 
 PN potion_obj_add(Potion *, PN, PN);
 PN potion_obj_sub(Potion *, PN, PN);
@@ -615,6 +619,7 @@ void potion_lick_init(Potion *);
 void potion_compiler_init(Potion *);
 void potion_vm_init(Potion *);
 void potion_file_init(Potion *);
+void potion_loader_init(Potion *);
 void potion_cont_init(Potion *);
 void potion_dump_stack(Potion *);
 
@@ -628,8 +633,8 @@ PN potion_parse(Potion *, PN);
 PN potion_vm_proto(Potion *, PN, PN, ...);
 PN potion_vm_class(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
-PN potion_eval(Potion *, PN);
-PN potion_run(Potion *, PN);
+PN potion_eval(Potion *, PN, int);
+PN potion_run(Potion *, PN, int);
 PN_F potion_jit_proto(Potion *, PN, PN);
 
 #endif

@@ -127,6 +127,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))
       CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))
       CASE_OP(SETUPVAL, (P, f, &asmb, pos, lregs))
+      CASE_OP(GLOBAL, (P, f, &asmb, pos, need))
       CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))
       CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))
       CASE_OP(SETTABLE, (P, f, &asmb, pos, need))
@@ -267,6 +268,10 @@ reentry:
       case OP_SETUPVAL:
         PN_DEREF(upvals[op.b]) = reg[op.a];
         PN_TOUCH(upvals[op.b]);
+      break;
+      case OP_GLOBAL:
+        potion_define_global(P, reg[op.a], reg[op.b]);
+        reg[op.a] = reg[op.b];
       break;
       case OP_NEWTUPLE:
         reg[op.a] = PN_TUP0();

@@ -11,8 +11,6 @@
 #include "potion.h"
 #include "internal.h"
 
-#define PN_DBL(num) (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDecimal *)num)->value)
-
 PN potion_real(Potion *P, double v) {
   vPN(Decimal) d = PN_ALLOC_N(PN_TNUMBER, struct PNDecimal, 0);
   d->value = v;
@@ -88,9 +86,9 @@ static PN potion_num_number(Potion *P, PN closure, PN self) {
 }
 
 static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) {
-  int i, j = PN_INT(end), k = PN_INT(step);
+  long i, j = PN_INT(end), k = PN_INT(step);
   for (i = PN_INT(self); i <= j; i += k) {
-    PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
+    PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   }
 }
 
@@ -108,17 +106,17 @@ PN potion_num_string(Potion *P, PN closure, PN self) {
 }
 
 static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
-  int i, j = PN_INT(self);
+  long i, j = PN_INT(self);
   for (i = 0; i < j; i++)
-    PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
+    PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(i);
 }
 
 PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
-  int i, s = 1, j = PN_INT(self), k = PN_INT(end);
+  long i, s = 1, j = PN_INT(self), k = PN_INT(end);
   if (k < j) s = -1;
   for (i = j; i != k + s; i += s)
-    PN_CLOSURE(block)->method(P, block, self, PN_NUM(i));
+    PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(abs(i - j));
 }
 
@@ -135,6 +133,13 @@ static PN potion_num_is_float(Potion *P, PN cl, PN self) {
   return PN_IS_DECIMAL(self) ? PN_TRUE : PN_FALSE;
 }
 
+static PN potion_num_integer(Potion *P, PN cl, PN self) {
+  if (PN_IS_NUM(self))
+    return self;
+  else
+    return PN_NUM(floor(((struct PNDecimal *)self)->value));
+}
+
 static PN potion_abs(Potion *P, PN cl, PN self) {
   if (PN_IS_DECIMAL(self)) {
     double d = PN_DBL(self);
@@ -144,12 +149,11 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
     else
       return self;
   }
-  return PN_NUM(abs(PN_INT(self)));
+  return PN_NUM(labs(PN_INT(self)));
 }
 
 void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
-  potion_method(num_vt, "abs", potion_abs, 0);
   potion_method(num_vt, "+", potion_add, "value=N");
   potion_method(num_vt, "-", potion_sub, "value=N");
   potion_method(num_vt, "*", potion_mult, "value=N");
@@ -168,4 +172,6 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "chr", potion_num_chr, 0);
   potion_method(num_vt, "integer?", potion_num_is_integer, 0);
   potion_method(num_vt, "float?", potion_num_is_float, 0);
+  potion_method(num_vt, "integer", potion_num_integer, 0);
+  potion_method(num_vt, "abs", potion_abs, 0);
 }

@@ -81,7 +81,7 @@ static PN potion_str_length(Potion *P, PN cl, PN self) {
 }
 
 static PN potion_str_eval(Potion *P, PN cl, PN self) {
-  return potion_eval(P, self);
+  return potion_eval(P, self, POTION_JIT);
 }
 
 static PN potion_str_number(Potion *P, PN cl, PN self) {
@@ -161,10 +161,7 @@ static PN potion_str_bytes(Potion *P, PN cl, PN self) {
 static PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
   char *s = malloc(PN_STR_LEN(self) + PN_STR_LEN(x));
   PN str;
-  if (s == NULL) {
-    fprintf(stderr, "** Failed to allocate memory.\n");
-    exit(1);
-  }
+  if (s == NULL) potion_allocation_error();
   PN_MEMCPY_N(s, PN_STR_PTR(self), char, PN_STR_LEN(self));
   PN_MEMCPY_N(s + PN_STR_LEN(self), PN_STR_PTR(x), char, PN_STR_LEN(x));
   str = potion_str2(P, s, PN_STR_LEN(self) + PN_STR_LEN(x));
@@ -276,7 +273,7 @@ static PN potion_bytes_each(Potion *P, PN cl, PN self, PN block) {
   char *s = PN_STR_PTR(self);
   int i;
   for (i = 0; i < PN_STR_LEN(self); i++) {
-    PN_CLOSURE(block)->method(P, block, self, potion_byte_str2(P, &s[i], 1));
+    PN_CLOSURE(block)->method(P, block, P->lobby, potion_byte_str2(P, &s[i], 1));
   }
   return PN_NIL;
 }

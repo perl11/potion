@@ -117,11 +117,11 @@ expr = ( not a:expr           { a = PN_AST(NOT, a); }
          (c:call { a = PN_PUSH(a, c) })*
        { $$ = PN_AST(EXPR, a); }
 
-atom = e:value | e:closure | e:table | e:call | e:group
+atom = e:value | e:closure | e:table | e:call
 
-call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? |
-       (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; })
-         b:block? { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
+call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? (b:block | b:closure)? |
+       (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
+         { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
 name = p:path           { $$ = PN_AST(PATH, p); }
      | quiz ( m:message { $$ = PN_AST(QUERY, m); }
@@ -147,19 +147,20 @@ closure = t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
 table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
-group = group-start s:statements group-end { $$ = PN_AST(CODE, s); }
+group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 
 path = '/' < utfw+ > -      { $$ = potion_str2(P, yytext, yyleng); }
 message = < utfw+ '?'? > -   { $$ = potion_str2(P, yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
       | lick
+      | group
 
 immed = nil   { $$ = PN_NIL; }
       | true  { $$ = PN_TRUE; }
       | false { $$ = PN_FALSE; }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)); }
-      | dec   { if ($$ == YY_TNUM && yyleng < 10) { 
+      | dec   { if ($$ == YY_TNUM) {
                   $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10));
                 } else {
                   $$ = potion_decimal(P, yytext, yyleng);

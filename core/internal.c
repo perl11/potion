@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "potion.h"
 #include "internal.h"
+#include "table.h"
 #include "gc.h"
 
 PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
@@ -91,6 +92,7 @@ static void potion_init(Potion *P) {
   potion_lick_init(P);
   potion_compiler_init(P);
   potion_file_init(P);
+  potion_loader_init(P);
 
   GC_PROTECT(P);
 }
@@ -193,6 +195,18 @@ PN potion_error_string(Potion *P, PN cl, PN self) {
 void potion_error_init(Potion *P) {
   PN err_vt = PN_VTABLE(PN_TERROR);
   potion_method(err_vt, "string", potion_error_string, 0);
+}
+
+#define PN_EXIT_ERROR 1
+#define PN_EXIT_FATAL 2
+
+void potion_fatal(char *message) {
+  fprintf(stderr, "** %s\n", message);
+  exit(PN_EXIT_FATAL);
+}
+
+void potion_allocation_error(void) {
+  potion_fatal("Couldn't allocate memory.");
 }
 
 void potion_p(Potion *P, PN x) {

@@ -1,6 +1,6 @@
 .SUFFIXES: .g .c .o
 
-SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
+SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 OBJ = ${SRC:.c=.o}
 OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
@@ -11,13 +11,14 @@ DOCHTML = ${DOC:.textile=.html}
 
 PREFIX = /usr/local
 CC = gcc
-CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type
+CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
+AR ?= ar
 DEBUG ?= 0
 ECHO = /bin/echo
 GREG = tools/greg
 INCS = -Icore
 JIT ?= 1
-LIBS = -lm
+LIBS = -lm -ldl
 STRIP ?= `./tools/config.sh ${CC} strip`
 
 # TODO: -O2 doesn't include -fno-stack-protector
@@ -28,12 +29,20 @@ VERSION = `./tools/config.sh ${CC} version`
 DATE = `date +%Y-%m-%d`
 REVISION = `git rev-list HEAD | wc -l | sed "s/ //g"`
 COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
-
 RELEASE ?= ${VERSION}.${REVISION}
 PKG := "potion-${RELEASE}"
 
-all: potion
+ifeq ($(shell ./tools/config.sh ${CC} mingw),0)
+	CFLAGS += -rdynamic
+else
+	INCS += -Itools/dlfcn-win32/include
+	LIBS += -Ltools/dlfcn-win32/lib
+endif
+
+all: pn
 	+${MAKE} -s usage
+
+pn: potion libpotion.a lib/readline/readline.so
 
 rebuild: clean potion test
 
@@ -120,6 +129,17 @@ potion: ${OBJ_POTION} ${OBJ}
 		${ECHO} STRIP potion; \
 	  ${STRIP} potion; \
 	fi
+
+libpotion.a: ${OBJ_POTION} ${OBJ}
+	@${ECHO} AR $@
+	@if [ -e $@ ]; then rm -f $@; fi
+	@${AR} rcs $@ core/*.o > /dev/null
+
+lib/readline/readline.so:
+	@${ECHO} MAKE $@
+	@cd lib/readline; \
+	${MAKE} readline.so; \
+	cd ../..
 
 bench: potion test/api/gc-bench
 	@${ECHO}; \
@@ -225,6 +245,6 @@ clean:
 	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML}
 	@rm -f tools/greg tools/greg.o tools/compile.o tools/tree.o
 	@rm -f core/config.h core/version.h core/syntax.c
-	@rm -f potion potion.exe test/api/potion-test test/api/gc-test test/api/gc-bench
+	@rm -f potion potion.exe libpotion.a test/api/potion-test test/api/gc-test test/api/gc-bench
 
 .PHONY: all clean doc rebuild test

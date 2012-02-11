@@ -1,0 +1,5 @@
+(1, 1.0) each (x): x integer? string print.
+
+(1, 1.0) each (x): x float? string print.
+
+# truefalsefalsetrue(1, 1.0)

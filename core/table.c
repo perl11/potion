@@ -60,7 +60,7 @@ PN potion_table_each(Potion *P, PN cl, PN self, PN block) {
   unsigned k;
   for (k = kh_begin(t); k != kh_end(t); ++k)
     if (kh_exist(PN, t, k)) {
-      PN_CLOSURE(block)->method(P, block, self, kh_key(PN, t, k), kh_val(PN, t, k));
+      PN_CLOSURE(block)->method(P, block, P->lobby, kh_key(PN, t, k), kh_val(PN, t, k));
     }
   return self;
 }
@@ -158,9 +158,9 @@ PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
   int with_index = potion_arity(P, block) >= 2;
   PN_TUPLE_EACH(self, i, v, {
     if (with_index)
-      PN_CLOSURE(block)->method(P, block, self, v, PN_NUM(i));
+      PN_CLOSURE(block)->method(P, block, P->lobby, v, PN_NUM(i));
     else
-      PN_CLOSURE(block)->method(P, block, self, v);
+      PN_CLOSURE(block)->method(P, block, P->lobby, v);
   });
   return self;
 }

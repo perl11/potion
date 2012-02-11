@@ -15,6 +15,7 @@ fi
 JIT_X86=`echo "$TARGET" | sed "/86/!d"`
 JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
 JIT_I686=`echo "$TARGET" | sed "/i686/!d"`
+JIT_AMD64=`echo "$TARGET" | sed "/amd64/!d"`
 
 if [ $MINGW -eq 0 ]; then
   LONG=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(long)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
@@ -56,7 +57,7 @@ elif [ "$2" = "strip" ]; then
     echo "ls"
   fi
 else
-  if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" ]; then
+  if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
     echo "#define POTION_JIT_TARGET POTION_X86"
   elif [ "$JIT_PPC" != "" ]; then
     echo "#define POTION_JIT_TARGET POTION_PPC"

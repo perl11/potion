@@ -31,10 +31,17 @@
 
 #define X86_MOV_RBP(reg, x) \
         X86_PRE(); ASM(reg); ASM(0x45); ASM(RBP(x))
-#define X86_MOVQ(reg, x) \
-        X86_PRE(); ASM(0xC7); /* movl */ \
+#if __WORDSIZE != 64
+# define X86_MOVQ(reg, x) \
+        ASM(0xC7); /* movl */ \
         ASM(0x45); ASM(RBP(reg)); /* -A(%rbp) */ \
         ASMI((PN)(x))
+#else
+# define X86_MOVQ(reg, x) \
+        X86_PRE(); ASM(0xb8); ASMN((PN)(x)); /* movq x, %rax */ \
+        X86_PRE(); ASM(0x89); /* movq */ \
+        ASM(0x45); ASM(RBP(reg)); /* %rax, -A(%rbp) */
+#endif
 #define X86_MATH(two, func, ops) ({ \
         int asmpos = 0; \
         X86_MOV_RBP(0x8B, op.a); /* mov -A(%rbp) %eax */ \
@@ -60,10 +67,10 @@
 #define X86_CMP(ops) \
         X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a)); /* mov -A(%rbp) %edx */ \
         X86_MOV_RBP(0x8B, op.b); /* mov -B(%rbp) %eax */ \
-        ASM(0x39); ASM(0xC2); /*  cmp %eax %edx */ \
-        ASM(ops); ASM(0x9 + X86_PRE_T); /*  jle +10 */ \
+        X86_PRE(); ASM(0x39); ASM(0xC2); /*  cmp %rax %rdx */ \
+        ASM(ops); ASM(X86C(9, 16)); /*  jle +10 */ \
         X86_MOVQ(op.a, PN_TRUE); /*  -A(%rbp) = TRUE */ \
-        ASM(0xEB); ASM(0x7 + X86_PRE_T); /*  jmp +7 */ \
+        ASM(0xEB); ASM(X86C(7, 14)); /*  jmp +7 */ \
         X86_MOVQ(op.a, PN_FALSE) /*  -A(%rbp) = FALSE */
 #define X86_ARGO(regn, argn) potion_x86_c_arg(P, asmp, 1, regn, argn)
 #define X86_ARGI(regn, argn) potion_x86_c_arg(P, asmp, 0, regn, argn)
@@ -319,6 +326,17 @@ void potion_x86_setupval(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_PRE(); ASM(0x89); ASM(0x50); ASM(sizeof(struct PNObject)); // mov %rdx %rax.data
 }
 
+void potion_x86_global(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(start - 3, 0);
+  X86_ARGO(op.a, 1);
+  X86_ARGO(op.b, 2);
+  X86_PRE(); ASM(0xB8); ASMN(potion_define_global);
+  ASM(0xFF); ASM(0xD0);
+  X86_MOV_RBP(0x8B, op.b); // mov -B(%rbp) %eax
+  X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op.a)); // mov %eax -A(%rbp)
+}
+
 void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_ARGO(start - 3, 0);
@@ -554,11 +572,11 @@ void potion_x86_test_asm(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MOV_RBP(0x8B, op.a); // mov -A(%rbp) %rax
   X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); // cmp FALSE %rax
-  ASM(0x74); ASM(X86C(13, 15)); // je +10
+  ASM(0x74); ASM(X86C(13, 21)); // je +10
   X86_PRE(); ASM(0x85); ASM(0xC0); // test %rax %rax
-  ASM(0x74); ASM(X86C(9, 10)); // je +5
+  ASM(0x74); ASM(X86C(9, 16)); // je +5
   X86_MOVQ(op.a, test ? PN_FALSE : PN_TRUE); // -A(%rbp) = TRUE
-  ASM(0xEB); ASM(X86C(7, 8)); // jmp +7
+  ASM(0xEB); ASM(X86C(7, 14)); // jmp +7
   X86_MOVQ(op.a, test ? PN_TRUE : PN_FALSE); // -A(%rbp) = FALSE
 }
 
@@ -697,6 +715,7 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   X86_PRE(); ASM(0xB8); ASMN(potion_f_protos); // mov &potion_f_values %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
   X86_MOV_RBP(0x89, op.a);
+  X86_MOVQ(start - 3, P);
   PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
     (*pos)++;
     PN_OP opp = PN_OP_AT(f->asmb, *pos);
