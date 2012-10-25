@@ -1,0 +1,100 @@
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+add(2, 4) string print
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+add(2, 4) string print
+add(2,4).
+add(2,4)
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+add(2, 4) string print
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+add(2, 4) string print
+add(2,4).
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+add(2, 4) string print
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+42
+42
+5 times: "Odelay!" print.
+42
+42
+5 times: "Odelay!" print.
+add = (x, y): x + y.
+add(2, 4) string print
+add(2,4).
+add(2,4)
+1 + 2.
+1 + 2
+add(2,4) string
+quit
+exit

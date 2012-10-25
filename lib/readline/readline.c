@@ -1,14 +1,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <potion.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include "linenoise.h"
 
 PN pn_readline(Potion *P, PN cl, PN self, PN start) {
-  char *line = readline(PN_STR_PTR(start));
+  char *line = linenoise(PN_STR_PTR(start));
   PN r;
   if (line == NULL) return PN_NIL;
-  add_history(line);
+
+  linenoiseHistoryLoad("history.txt");
+  linenoiseHistoryAdd(line);
+  linenoiseHistorySave("history.txt");
   r = potion_str(P, line);
   free(line);
   return r;
