@@ -1,9 +1,6 @@
 42
 42
 5 times: "Odelay!" print.
-42
-42
-5 times: "Odelay!" print.
 add = (x, y): x + y.
 42
 42
@@ -97,4 +94,7 @@ add(2,4)
 1 + 2
 add(2,4) string
 quit
+exit
+32
+32 + 111
 exit
