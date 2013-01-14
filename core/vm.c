@@ -15,6 +15,10 @@
 #include "khash.h"
 #include "table.h"
 
+#if defined(HAVE_LIBDISASM) && defined(JIT_DEBUG)
+#include <libdis.h>
+#endif
+
 extern PNTarget potion_target_x86, potion_target_ppc;
 
 PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
@@ -170,13 +174,43 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   target->finish(P, f, &asmb);
 
   fn = PN_ALLOC_FUNC(asmb->len);
-#ifdef JIT_DEBUG
+#if defined(JIT_DEBUG)
   printf("JIT(%p): ", fn);
+#  if defined(HAVE_LIBDISASM)
+#    define LINE_SIZE 255
+  {
+    char line[LINE_SIZE];
+    int pos = 0;
+    int size = asmb->len;
+    int insnsize;            /* size of instruction */
+    x86_insn_t insn;         /* one instruction */
+
+    x86_init(opt_none, NULL, NULL);
+    while ( pos < size ) {
+      insnsize = x86_disasm(asmb->ptr, size, 0, pos, &insn);
+      if ( insnsize ) {
+        x86_format_insn(&insn, line, LINE_SIZE, att_syntax);
+        printf("#(code+%3x): ", pos);
+	for ( i = 0; i < 10; i++ ) {
+          if ( i < insn.size ) printf(" %02x", insn.bytes[i]);
+	  else printf("   ");
+        }
+        printf("%s\n", line);
+        pos += insnsize;
+      } else {
+        printf("# Invalid instruction at 0x%x. size=0x%x\n", pos, size);
+        pos++;
+      }
+    }
+    x86_cleanup();
+  }
+#  else
   long ai = 0;
   for (ai = 0; ai < asmb->len; ai++) {
     printf("%x ", asmb->ptr[ai]);
   }
   printf("\n");
+#  endif
 #endif
   PN_MEMCPY_N(fn, asmb->ptr, u8, asmb->len);
 

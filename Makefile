@@ -19,6 +19,10 @@ GREG = tools/greg
 INCS = -Icore
 JIT ?= 1
 LIBS = -lm -ldl
+# http://bastard.sourceforge.net/libdisasm.html
+if HAVE_LIBDISASM
+LIBS += -ldisasm
+endif
 STRIP ?= `./tools/config.sh ${CC} strip`
 
 # TODO: -O2 doesn't include -fno-stack-protector
