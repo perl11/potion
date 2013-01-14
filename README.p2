@@ -17,20 +17,21 @@
        \/::/ 
 
 
-  p2 is a she. She is a perl5 and possible perl6/nqp backend, based
-  on why the luck stiff's potion. See README why potion is exciting.
+  p2 is a she. She is a perl5 and possible perl6/nqp backend, based on
+  why the luck stiff's potion. See README why potion is exciting.
 
   Its exciting points for perl folks are:
 
-   * Should parse most of perl5, just some XS and B tricks not. Since the
-     original perl5 testsuite is not usable for other implementations and compilers
-     it needs to be adjusted. The perl6 testsuite is in a better shape.
+   * Should parse most of perl5, just some XS and B tricks not. Since
+     the original perl5 testsuite is not usable for other
+     implementations and compilers it needs to be adjusted. The perl6
+     testsuite is in a better shape.
 
    * signatures, types, native threads for perl5
 
    * Using most of Damian Conway's p5i recommendations:
      i.e. classes are immutable and final by default.
-     See http://web.archive.org/web/20040207072905/http://www.yetanother.org/damian/Perl5+i/
+     See <http://web.archive.org/web/20040207072905/http://www.yetanother.org/damian/Perl5+i/>
 
    * libp2 should be usable as a fast backend for nqp/perl6.
 
@@ -67,56 +68,48 @@
 
    * smartmatch works because all data are typed objects
 
-   * Just-in-time compilation for x86 and x86-64
+   * Just-in-time compilation for x86, x86-64 and ppc done.
 
-   * Intermediate bytecode format and VM. Load and dump code. 
-     Decent speed and cross-architecture. Heavily based on Lua's VM.
+   * Intermediate bytecode format and VM. Load and dump code.  Decent
+     speed and cross-architecture. Heavily based on Lua's VM.
 
-   * A lightweight generational GC, based on
-     Basile Starynkevitch's work on Qish.
-     <http://starynkevitch.net/Basile/qishintro.html>
-     The compiler will add hooks for objects leaving scope and add DESTROY method calls
-     if they are visible at compile-time. Run-time created DESTROY method will not be
+   * A lightweight generational GC, based on Basile Starynkevitch's
+     work on Qish.  <http://starynkevitch.net/Basile/qishintro.html>
+     The compiler will add hooks for objects leaving scope and add
+     DESTROY method calls if they are visible at
+     compile-time. Run-time created DESTROY method will not be
      automatically called.
 
-   * Bootstrapped "id" object model, based on
-     Ian Piumarta's soda languages. This means
-     everything in the language, including
-     object allocation and interpreter state
-     are part of the object model.
-     (See COPYING for citations.)
+   * Bootstrapped "id" object model, based on Ian Piumarta's soda
+     languages.  This means everything in the language, including
+     object allocation and interpreter state are part of the object
+     model.  (See COPYING for citations.)
 
-   * Interpreter is thread-safe and reentrant.
-     I hope this will facilitate coroutines,
-     parallel interpreters and sandboxing.
+   * Interpreter is thread-safe and reentrant.  I hope this will
+     facilitate coroutines, parallel interpreters and sandboxing.
 
-   * Small. Under 10kloc. Right now we're like
-     6,000 or something. Install sloccount
-     and run: make sloc.
+   * Small. Under 10kloc. Right now we're like 6,000 or
+     something. Install sloccount and run: make sloc.
 
-   * Reified AST and bytecode structures. This
-     is very important to me. By giving access
-     to the parser and compiler, it allows people
-     to target other platforms, write code analysis
-     tools and even fully bootstrapped VMs. I'm
-     not as concerned about the Potion VM being
-     fully bootstrapped, especially as it is tied
-     into the JIT so closely.
+   * Reified AST and bytecode structures. This is very important to
+     me. By giving access to the parser and compiler, it allows people
+     to target other platforms, write code analysis tools and even
+     fully bootstrapped VMs. I'm not as concerned about the Potion VM
+     being fully bootstrapped, especially as it is tied into the JIT
+     so closely.
 
-   * Memory-efficient classes. Stored like C
-     structs. (Although the method lookup table
-     can be used like a hash for storing arbitrary
+   * Memory-efficient classes. Stored like C structs. (Although the
+     method lookup table can be used like a hash for storing arbitrary
      data.)
 
-   * The JIT is also used to speed up some other
-     bottlenecks. For example, instance variable
-     and method lookup tables are compiled into
-     machine code.
+   * The JIT is also used to speed up some other bottlenecks. For
+     example, instance variable and method lookup tables are compiled
+     into machine code.
 
   However, some warnings:
 
-   * Strings are immutable (like Lua) and byte
-     arrays are used for I/O buffers.
+   * Strings are immutable (like Lua) and byte arrays are used for I/O
+     buffers.
 
    * No floating point support yet.
 
