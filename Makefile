@@ -2,6 +2,7 @@
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 OBJ = ${SRC:.c=.o}
+PIC_OBJ = ${SRC:.c=.opic}
 OBJ_POTION = core/potion.o
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
@@ -110,6 +111,11 @@ core/callcc.o: core/callcc.c
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
+%.opic: %.c core/config.h
+	@${ECHO} CC -fPIC $<
+	@${CC} -c ${CFLAGS} ${INCS} -fPIC -o $@ $<
+
+
 .c.o: core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
@@ -139,10 +145,15 @@ libpotion.a: ${OBJ_POTION} ${OBJ}
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ core/*.o > /dev/null
 
+libpotion.so: core/potion.opic ${PIC_OBJ}
+	@${ECHO} LD $@ -fpic
+	@if [ -e $@ ]; then rm -f $@; fi
+	@${CC} -O3 -DNDEBUG -shared -fpic -o $@ core/*.opic > /dev/null
+
 lib/readline/readline.so:
 	@${ECHO} MAKE $@
 	@cd lib/readline; \
-	${MAKE} readline.so; \
+	${MAKE} -s readline.so; \
 	cd ../..
 
 bench: potion test/api/gc-bench
