@@ -2,15 +2,22 @@
 .SUFFIXES: .g .c .o .opic
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
-SRC_POTION = core/potion.c core/syntax.c
-SRC_P2 = core/p2.c core/syntax-p5.c
+SRC_SYN = core/syntax.c
+SRC_P2_SYN = core/syntax-p5.c
+SRC_POTION = core/potion.c ${SRC_SYN}
+SRC_P2 = core/p2.c ${SRC_P2_SYN}
 OBJ = ${SRC:.c=.o}
+OBJ_SYN = ${SRC_SYN:.c=.o}
 OBJ_POTION = ${SRC_POTION:.c=.o}
 OBJ_P2 = ${SRC_P2:.c=.o}
+OBJ_P2_SYN = ${SRC_P2_SYN:.c=.o}
 PIC_OBJ = ${SRC:.c=.opic}
+PIC_OBJ_SYN = ${SRC_SYN:.c=.opic}
 PIC_OBJ_POTION = ${SRC_POTION:.c=.opic}
 PIC_OBJ_P2 = ${SRC_P2:.c=.opic}
+PIC_OBJ_P2_SYN = ${SRC_P2_SYN:.c=.opic}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
+OBJ_P2_TEST = test/api/p2-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
 DOC = doc/start.textile
@@ -164,22 +171,22 @@ p2: ${OBJ_P2} ${OBJ}
 	  ${STRIP} $@; \
 	fi
 
-libpotion.a: ${OBJ_POTION} ${OBJ}
+libpotion.a: ${OBJ_SYN} ${OBJ}
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_POTION} ${OBJ} > /dev/null
 
-libpotion.so: ${PIC_OBJ_POTION} ${PIC_OBJ}
+libpotion.so: ${PIC_OBJ_SYN} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_POTION} ${PIC_OBJ} > /dev/null
 
-libp2.a: ${OBJ_P2} ${OBJ}
+libp2.a: ${OBJ_P2_SYN} ${OBJ}
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_P2} ${OBJ} > /dev/null
 
-libp2.so: ${PIC_OBJ_P2} ${PIC_OBJ}
+libp2.so: ${PIC_OBJ_P2_SYN} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_P2} ${PIC_OBJ} > /dev/null
@@ -195,10 +202,12 @@ bench: potion test/api/gc-bench
 	${ECHO} running GC benchmark; \
 	time test/api/gc-bench
 
-test: potion test/api/potion-test test/api/gc-test
+test: potion test/api/potion-test p2 test/api/p2-test test/api/gc-test
 	@${ECHO}; \
-	${ECHO} running API tests; \
+	${ECHO} running potion API tests; \
 	test/api/potion-test; \
+	${ECHO} running p2 API tests; \
+	test/api/p2-test; \
 	${ECHO} running GC tests; \
 	test/api/gc-test; \
 	count=0; failed=0; pass=0; \
@@ -210,7 +219,7 @@ test: potion test/api/potion-test test/api/gc-test
 		   ${ECHO} running compiler tests; \
 		else \
 		   ${ECHO} running JIT tests; \
-			 jit=`./potion -v | sed "/jit=1/!d"`; \
+			 jit=`./p2 -v | sed "/jit=1/!d"`; \
 			 if [ "$$jit" = "" ]; then \
 			   ${ECHO} skipping; \
 			   break; \
@@ -219,14 +228,14 @@ test: potion test/api/potion-test test/api/gc-test
 		for f in test/**/*.pn; do \
 			look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
 			if [ $$pass -eq 0 ]; then \
-				for=`./potion -I -B $$f | sed "s/\n$$//"`; \
+				for=`./p2 -I -B $$f | sed "s/\n$$//"`; \
 			elif [ $$pass -eq 1 ]; then \
-				./potion -c $$f > /dev/null; \
+				./p2 -c $$f > /dev/null; \
 				fb="$$f"b; \
-				for=`./potion -I -B $$fb | sed "s/\n$$//"`; \
+				for=`./p2 -I -B $$fb | sed "s/\n$$//"`; \
 				rm -rf $$fb; \
 			else \
-				for=`./potion -I -X $$f | sed "s/\n$$//"`; \
+				for=`./p2 -I -X $$f | sed "s/\n$$//"`; \
 			fi; \
 			if [ "$$look" != "$$for" ]; then \
 				${ECHO}; \
@@ -246,17 +255,21 @@ test: potion test/api/potion-test test/api/gc-test
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test: ${OBJ_TEST} ${OBJ}
+test/api/potion-test: ${OBJ_TEST} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK potion-test
-	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
+	${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
-test/api/gc-test: ${OBJ_GC_TEST} ${OBJ}
+test/api/p2-test: ${OBJ_P2_TEST} ${OBJ_P2} ${OBJ_P2_SYN}
+	@${ECHO} LINK p2-test
+	${CC} ${CFLAGS} ${OBJ_P2_TEST} ${OBJ} ${OBJ_P2_SYN} ${LIBS} -o $@
+
+test/api/gc-test: ${OBJ_GC_TEST} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK gc-test
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
-test/api/gc-bench: ${OBJ_GC_BENCH} ${OBJ}
+test/api/gc-bench: ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK gc-bench
-	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
 dist:
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
