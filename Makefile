@@ -25,12 +25,12 @@ STRIP ?= `./tools/config.sh ${CC} strip`
 DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
 CFLAGS += ${DEBUGFLAGS}
 
-VERSION = `./tools/config.sh ${CC} version`
-DATE = `date +%Y-%m-%d`
-REVISION = `git rev-list HEAD | wc -l | sed "s/ //g"`
-COMMIT = `git rev-list HEAD -1 --abbrev=7 --abbrev-commit`
+VERSION = $(shell ./tools/config.sh ${CC} version)
+DATE = $(shell date +%Y-%m-%d)
+REVISION = $(shell git rev-list HEAD | wc -l | sed "s/ //g")
+COMMIT = $(shell git rev-list HEAD -1 --abbrev=7 --abbrev-commit)
 RELEASE ?= ${VERSION}.${REVISION}
-PKG := "potion-${RELEASE}"
+PKG = potion-${RELEASE}
 
 ifeq ($(shell ./tools/config.sh ${CC} mingw),0)
 	CFLAGS += -rdynamic
@@ -209,14 +209,39 @@ test/api/gc-bench: ${OBJ_GC_BENCH} ${OBJ}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
+dist: bin-dist src-dist
+
+install: bin-dist
+	sudo tar xfz pkg/${PKG}.tar.gz -C $(PREFIX)/
+
+bin-dist: pkg/${PKG}.tar.gz
+
+pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax.c potion libpotion.a lib/readline/readline.so
+	rm -rf dist
+	mkdir -p dist dist/bin dist/include/potion dist/lib/readline dist/share/${PKG}/doc \
+	  dist/share/${PKG}/example
+	cp core/*.h dist/include/potion/
+	cp potion dist/bin/
+	cp libpotion.a dist/lib/
+	cp lib/readline/readline.so dist/lib/readline/
+	cp doc/* dist/share/${PKG}/doc/
+	cp example/* dist/share/${PKG}/example/
+	-mkdir -p pkg
+	cd dist && tar czvf pkg/${PKG}.tar.gz dist/* -C dist
+	rm -rf dist
+
+src-dist: pkg/${PKG}-src.tar.gz
+
+pkg/${PKG}-src.tar.gz: tarball
+
 tarball: core/version.h core/syntax.c
-	mkdir -p pkg
+	-mkdir -p pkg
 	rm -rf ${PKG}
 	git checkout-index --prefix=${PKG}/ -a
 	rm -f ${PKG}/.gitignore
 	cp core/version.h ${PKG}/core/
 	cp core/syntax.c ${PKG}/core/
-	tar czvf pkg/${PKG}.tar.gz ${PKG}
+	tar czvf pkg/${PKG}-src.tar.gz ${PKG}
 	rm -rf ${PKG}
 
 %.html: %.textile
