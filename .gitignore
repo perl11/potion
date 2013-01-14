@@ -1,4 +1,5 @@
 /potion
+/p2
 /tools/lemon
 /tools/config.c
 /core/config.h
@@ -19,6 +20,7 @@ gc-test
 .DS_Store
 *.so
 /libpotion.a
+/libp2.a
 /history.txt
 /TAGS
 /pkg
