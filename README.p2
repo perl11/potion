@@ -42,7 +42,7 @@
    * int, str, num are objects, you can optionally type all args and lexical variables.
      In fact everything is an object as in parrot, even the compiler, the parser, the vm.
 
-   * Sized arrays are non-autovivifying and initialized with undef, resp. if typed 0, 0,0, "".
+   * Sized arrays are non-autovivifying and initialized with undef, resp. if typed 0, 0.0, "".
      my $a[3]; print $a[3] => compile-time error: array out of bounds
      my int $i[3]; print $a[2] => 0
      my num $n[3]; print $n[2] => 0.0
