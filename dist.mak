@@ -1,10 +1,13 @@
 PREFIX ?= /usr/local
 ECHO = /bin/echo
 
-VERSION = $(shell ./tools/config.sh ${CC} version)
-REVISION = $(shell git rev-list --abbrev-commit HEAD | wc -l | sed "s/ //g")
-RELEASE ?= ${VERSION}.${REVISION}
-PKG = potion-${RELEASE}
+VERSION   = $(shell ./tools/config.sh ${CC} version)
+P2VERSION = $(shell ./tools/config.sh ${CC} p2version)
+REVISION  = $(shell git rev-list --abbrev-commit HEAD | wc -l | sed "s/ //g")
+RELEASE   ?= ${VERSION}.${REVISION}
+P2RELEASE ?= ${P2VERSION}.${REVISION}
+PKG       = potion-${RELEASE}
+P2PKG     = p2-${P2RELEASE}
 
 dist: bin-dist src-dist
 

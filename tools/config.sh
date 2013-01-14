@@ -50,6 +50,8 @@ if [ "$2" = "mingw" ]; then
   fi
 elif [ "$2" = "version" ]; then
   cat core/potion.h | sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//"
+elif [ "$2" = "p2version" ]; then
+  cat core/p2.h | sed "/P2_VERSION/!d; s/\\\"$//; s/.*\\\"//"
 elif [ "$2" = "strip" ]; then
   if [ $MINGW -eq 0 ]; then
     echo "strip -x"

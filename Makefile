@@ -167,22 +167,22 @@ p2: ${OBJ_P2} ${OBJ}
 libpotion.a: ${OBJ_POTION} ${OBJ}
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${AR} rcs $@ core/*.o > /dev/null
+	@${AR} rcs $@ ${OBJ_POTION} ${OBJ} > /dev/null
 
 libpotion.so: ${PIC_OBJ_POTION} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ core/*.opic > /dev/null
+	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_POTION} ${PIC_OBJ} > /dev/null
 
-libp2.a: ${PIC_OBJ_P2} ${OBJ}
+libp2.a: ${OBJ_P2} ${OBJ}
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${AR} rcs $@ core/*.o > /dev/null
+	@${AR} rcs $@ ${OBJ_P2} ${OBJ} > /dev/null
 
 libp2.so: ${PIC_OBJ_P2} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ core/*.opic > /dev/null
+	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_P2} ${PIC_OBJ} > /dev/null
 
 lib/readline/readline.so:
 	@${ECHO} MAKE $@
