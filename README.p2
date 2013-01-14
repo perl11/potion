@@ -17,8 +17,16 @@
        \/::/ 
 
 
-  p2 is a she. She is a perl5 and possible perl6/nqp backend, based on
-  why the luck stiff's potion. See README why potion is exciting.
+  p2 is a she. She is a perl5 and possible perl6/nqp backend, based
+  on why the luck stiff's potion. See README why potion is exciting.
+
+  parrot examples/benchmarks/fib.pir 28  1.746s
+  perl   examples/benchmarks/fib.pl  28  0.439s
+  potion examples/benchmarks/fib.pn  28  0.013s
+
+  parrot examples/benchmarks/fib.pir 40  3m36.447s
+  perl   examples/benchmarks/fib.pl  40  2m19.752s
+  potion examples/benchmarks/fib.pn  40  0m3.512s
 
   Its exciting points for perl folks are:
 
