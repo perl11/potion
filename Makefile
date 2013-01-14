@@ -21,7 +21,7 @@ INCS = -Icore
 JIT ?= 1
 LIBS = -lm -ldl
 # http://bastard.sourceforge.net/libdisasm.html
-if HAVE_LIBDISASM
+ifdef HAVE_LIBDISASM
 LIBS += -ldisasm
 endif
 STRIP ?= `./tools/config.sh ${CC} strip`
@@ -148,7 +148,7 @@ libpotion.a: ${OBJ_POTION} ${OBJ}
 libpotion.so: core/potion.opic ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} -O3 -DNDEBUG -shared -fpic -o $@ core/*.opic > /dev/null
+	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ core/*.opic > /dev/null
 
 lib/readline/readline.so:
 	@${ECHO} MAKE $@
