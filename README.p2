@@ -134,11 +134,11 @@
   would have had added autothreads and channels, float support and
   exception handling.
 
-  rob pike for go, and the parrot community for parrot.
+  Rob Pike for go, and the parrot community for parrot.
 
-  larry wall for perl5. we miss his leadership and technical excellence.
-  without him nothing got done, asnd if something was done it was wrong.
-  besides defined-or, which left tom christiansen behind.
+  Larry Wall for perl5. We miss his leadership and technical excellence.
+  Without him nothing got done, and if something was done it was wrong.
+  Besides defined-or, which left Tom Christiansen behind.
 
   why the lucky stiff thanks:
   I am gravely indebted to Basile Starynkevitch, who fielded my
