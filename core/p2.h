@@ -13,6 +13,8 @@
 #define P2_SIG      "p\02\10n"
 #define P2_VMID     0x79
 
+#include "potion.h"
+
 //
 // additional p2 functions
 //
