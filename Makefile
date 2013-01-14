@@ -1,9 +1,15 @@
+# posix (linux, bsd, osx, solaris) + mingw with gcc only
 .SUFFIXES: .g .c .o .opic
 
-SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
+SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
+SRC_POTION = core/potion.c core/syntax.c
+SRC_P2 = core/p2.c core/syntax-p5.c
 OBJ = ${SRC:.c=.o}
+OBJ_POTION = ${SRC_POTION:.c=.o}
+OBJ_P2 = ${SRC_P2:.c=.o}
 PIC_OBJ = ${SRC:.c=.opic}
-OBJ_POTION = core/potion.o
+PIC_OBJ_POTION = ${SRC_POTION:.c=.opic}
+PIC_OBJ_P2 = ${SRC_P2:.c=.opic}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
@@ -44,10 +50,10 @@ else
 	LIBS += -Ltools/dlfcn-win32/lib
 endif
 
-all: pn
+all: pn p2
 	+${MAKE} -s usage
 
-pn: potion libpotion.a libpotion.so lib/readline/readline.so
+pn: potion libpotion.a lib/readline/readline.so
 
 rebuild: clean potion test
 
@@ -143,11 +149,19 @@ tools/greg: tools/greg.c tools/compile.c tools/tree.c
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
 potion: ${OBJ_POTION} ${OBJ}
-	@${ECHO} LINK potion
-	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
+	@${ECHO} LINK $@
+	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o $@
 	@if [ "${DEBUG}" != "1" ]; then \
-		${ECHO} STRIP potion; \
-	  ${STRIP} potion; \
+		${ECHO} STRIP $@; \
+	  ${STRIP} $@; \
+	fi
+
+p2: ${OBJ_P2} ${OBJ}
+	@${ECHO} LINK $@
+	@${CC} ${CFLAGS} ${OBJ_P2} ${OBJ} ${LIBS} -o $@
+	@if [ "${DEBUG}" != "1" ]; then \
+		${ECHO} STRIP $@; \
+	  ${STRIP} $@; \
 	fi
 
 libpotion.a: ${OBJ_POTION} ${OBJ}
@@ -155,7 +169,17 @@ libpotion.a: ${OBJ_POTION} ${OBJ}
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ core/*.o > /dev/null
 
-libpotion.so: core/potion.opic ${PIC_OBJ}
+libpotion.so: ${PIC_OBJ_POTION} ${PIC_OBJ}
+	@${ECHO} LD $@ -fpic
+	@if [ -e $@ ]; then rm -f $@; fi
+	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ core/*.opic > /dev/null
+
+libp2.a: ${PIC_OBJ_P2} ${OBJ}
+	@${ECHO} AR $@
+	@if [ -e $@ ]; then rm -f $@; fi
+	@${AR} rcs $@ core/*.o > /dev/null
+
+libp2.so: ${PIC_OBJ_P2} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ core/*.opic > /dev/null
@@ -275,4 +299,4 @@ clean:
 	@rm -f core/config.h core/version.h core/syntax.c
 	@rm -f potion potion.exe libpotion.a test/api/potion-test test/api/gc-test test/api/gc-bench
 
-.PHONY: all config clean doc rebuild test bench tarball src-dist bin-dist dist
+.PHONY: all config clean doc rebuild test bench tarball todo
