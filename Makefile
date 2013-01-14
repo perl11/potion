@@ -1,4 +1,4 @@
-.SUFFIXES: .g .c .o
+.SUFFIXES: .g .c .o .opic
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 OBJ = ${SRC:.c=.o}
@@ -271,6 +271,10 @@ tarball: core/version.h core/syntax.c
 	@${ECHO} "</div></body></html>" >> $@
 
 doc: ${DOCHTML}
+
+TAGS: ${SRC} core/*.h
+	@mv -f TAGS TAGS~
+	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
 	@cp core/syntax.g core/syntax-g.c
