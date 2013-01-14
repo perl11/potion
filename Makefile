@@ -11,7 +11,7 @@ DOC = doc/start.textile
 DOCHTML = ${DOC:.textile=.html}
 
 PREFIX = /usr/local
-CC = gcc
+CC ?= gcc
 CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
 AR ?= ar
 DEBUG ?= 0
@@ -21,7 +21,8 @@ INCS = -Icore
 JIT ?= 1
 LIBS = -lm -ldl
 # http://bastard.sourceforge.net/libdisasm.html
-ifdef HAVE_LIBDISASM
+ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
+CFLAGS += DHAVE_LIBDISASM
 LIBS += -ldisasm
 endif
 STRIP ?= `./tools/config.sh ${CC} strip`
@@ -38,7 +39,9 @@ RELEASE ?= ${VERSION}.${REVISION}
 PKG = potion-${RELEASE}
 
 ifeq ($(shell ./tools/config.sh ${CC} mingw),0)
+ifeq (CC,gcc)
 	CFLAGS += -rdynamic
+endif
 else
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
