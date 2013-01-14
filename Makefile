@@ -1,4 +1,4 @@
-# posix (linux, bsd, osx, solaris) + mingw with gcc only
+# posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .g .c .o .opic
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
@@ -93,7 +93,7 @@ usage:
 	@${ECHO} "   $$ make test"
 	@${ECHO} " "
 	@${ECHO} " Written by _why <why@whytheluckystiff.net>"
-	@${ECHO} " Maintained at https://github.com/fogus/potion"
+	@${ECHO} " Maintained at https://github.com/perl11/potion, branch p2"
 
 config:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
@@ -271,10 +271,10 @@ test/api/gc-bench: ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
-dist:
+dist: libp2.a libpotion.so libp2.so
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
-install:
+install: dist
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 tarball:

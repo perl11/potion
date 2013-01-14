@@ -10,6 +10,7 @@
 /core/*.o
 /core/*.opic
 /test/api/potion-test
+/test/api/p2-test
 /test/api/*.o
 /test/api/*.opic
 *.pnb
