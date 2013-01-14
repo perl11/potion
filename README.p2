@@ -119,7 +119,7 @@
    * Strings are immutable (like Lua) and byte arrays are used for I/O
      buffers.
 
-   * No floating point support yet.
+   * Limited floating point support yet.
 
    * No error handling yet.
 

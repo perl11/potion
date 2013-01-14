@@ -10,13 +10,19 @@
 #define P2_VERSION  "0.0"
 #define P2_MINOR    0
 #define P2_MAJOR    0
-#define P2_SIG      "p\07\10n"
+#define P2_SIG      "p\02\10n"
 #define P2_VMID     0x79
 
 //
 // additional p2 functions
 //
 
-// none yet
+PN p2_parse(Potion *, PN);
+PN p2_vm_proto(Potion *, PN, PN, ...);
+PN p2_vm_class(Potion *, PN, PN);
+PN p2_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
+PN p2_eval(Potion *, PN, int);
+PN p2_run(Potion *, PN, int);
+PN_F p2_jit_proto(Potion *, PN, PN);
 
 #endif
