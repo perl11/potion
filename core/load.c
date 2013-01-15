@@ -3,6 +3,7 @@
 // loading of external code
 //
 // (c) 2008 why the lucky stiff, the freelance professor
+// (c) 2013 cPanel (rurban)
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -81,7 +82,9 @@ void potion_load_dylib(Potion *P, const char *filename) {
 
 static PN pn_loader_path;
 static const char *pn_loader_extensions[] = {
-  ".pn", ".so", ".dylib"
+  ".pnb"
+  , ".pn"
+  , POTION_LOADEXT
 };
 
 static const char *find_extension(char *str) {
@@ -156,9 +159,9 @@ PN potion_load(Potion *P, PN cl, PN self, PN file) {
   if (file_ext++ != filename) {
     if (strcmp(file_ext, "pn") == 0)
       potion_load_code(P, filename);
-    else if (strcmp(file_ext, "so") == 0 ||
-             strcmp(file_ext, "dylib") == 0
-             )
+    else if (strcmp(file_ext, "pnb") == 0)
+      potion_load_code(P, filename);
+    else if (strcmp(file_ext, POTION_LOADEXT+1) == 0)
       potion_load_dylib(P, filename);
     else
       fprintf(stderr, "** unrecognized file extension: %s\n", file_ext);
@@ -171,8 +174,9 @@ PN potion_load(Potion *P, PN cl, PN self, PN file) {
 
 void potion_loader_init(Potion *P) {
   pn_loader_path = PN_TUP0();
+  PN_PUSH(pn_loader_path, potion_str(P, "lib"));
+  PN_PUSH(pn_loader_path, potion_str(P, POTION_PREFIX"/lib/potion"));
   PN_PUSH(pn_loader_path, potion_str(P, "."));
-  PN_PUSH(pn_loader_path, potion_str(P, "./lib"));
   
   potion_define_global(P, potion_str(P, "LOADER_PATH"), pn_loader_path);
   potion_method(P->lobby, "load", potion_load, "file=S");

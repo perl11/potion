@@ -1,4 +1,4 @@
-.SUFFIXES: .g .c .o .opic
+.SUFFIXES: .g .c .o .opic .textile .html
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 OBJ = ${SRC:.c=.o}
@@ -20,6 +20,8 @@ GREG = tools/greg
 INCS = -Icore
 JIT ?= 1
 LIBS = -lm -ldl
+EXEEXT  =
+LIBEXT  = .a
 # http://bastard.sourceforge.net/libdisasm.html
 ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
 	DEFINES += -DHAVE_LIBDISASM
@@ -35,21 +37,34 @@ else
 endif
 CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 
-ifneq ($(shell ./tools/config.sh ${CC} mingw),1)
-ifeq (CC,gcc)
-	CFLAGS += -rdynamic
-endif
-else
+ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
+	EXEEXT  = .exe
+	LOADEXT = .dll
+	DLLEXT  = .dll
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
+else
+  ifeq ($(shell ./tools/config.sh ${CC} apple),1)
+	LOADEXT = .dylib
+	DLLEXT  = .bundle
+  else
+	DLLEXT  = .so
+	LOADEXT = .so
+    ifeq (CC,gcc)
+	CFLAGS += -rdynamic
+    endif
+  endif
 endif
 
 all: pn
 	+${MAKE} -s usage
 
-pn: potion libpotion.a libpotion.so lib/readline/readline.so
+# EXEEXT .exe
+# DLLEXT  so/bundle/dll
+# LOADEXT so/dylib/dll
+pn: potion${EXEEXT} libpotion.a lib/readline${LOADEXT}
 
-rebuild: clean potion test
+rebuild: clean potion${EXEEXT} test
 
 usage:
 	@${ECHO} " "
@@ -121,6 +136,10 @@ core/callcc.opic: core/callcc.c
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
+%.i: %.c core/config.h
+	@${ECHO} CC -E $@
+	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
+
 %.opic: %.c core/config.h
 	@${ECHO} CC -fPIC $<
 	@${CC} -c ${CFLAGS} ${INCS} -fPIC -o $@ $<
@@ -138,16 +157,16 @@ core/callcc.opic: core/callcc.c
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
 
-tools/greg: tools/greg.c tools/compile.c tools/tree.c
+tools/greg${EXEEXT}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
-potion: ${OBJ_POTION} ${OBJ}
+potion${EXEEXT}: ${OBJ_POTION} ${OBJ}
 	@${ECHO} LINK potion
-	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o potion
+	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o $@
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP potion; \
-	  ${STRIP} potion; \
+	  ${STRIP} potion${EXEEXT}; \
 	fi
 
 libpotion.a: ${OBJ_POTION} ${OBJ}
@@ -155,23 +174,24 @@ libpotion.a: ${OBJ_POTION} ${OBJ}
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ core/*.o > /dev/null
 
-libpotion.so: core/potion.opic ${PIC_OBJ}
+libpotion${DLLEXT}: core/potion.opic ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ core/*.opic > /dev/null
 
-lib/readline/readline.so:
-	@${ECHO} MAKE $@
+lib/readline${LOADEXT}: libpotion${DLLEXT}
+	@${ECHO} MAKE $@ -fpic
 	@cd lib/readline; \
-	${MAKE} -s readline.so; \
+	${MAKE} -s readline${LOADEXT} CC=${CC} LOADEXT=${LOADEXT}; \
+	cp readline${LOADEXT} ../; \
 	cd ../..
 
-bench: potion test/api/gc-bench
+bench: potion${EXEEXT} test/api/gc-bench${EXEEXT}
 	@${ECHO}; \
 	${ECHO} running GC benchmark; \
 	time test/api/gc-bench
 
-test: potion test/api/potion-test test/api/gc-test
+test: potion${EXEEXT} test/api/potion-test${EXEEXT} test/api/gc-test${EXEEXT}
 	@${ECHO}; \
 	${ECHO} running API tests; \
 	test/api/potion-test; \
@@ -222,22 +242,22 @@ test: potion test/api/potion-test test/api/gc-test
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test: ${OBJ_TEST} ${OBJ}
+test/api/potion-test${EXEEXT}: ${OBJ_TEST} ${OBJ}
 	@${ECHO} LINK potion-test
 	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
 
-test/api/gc-test: ${OBJ_GC_TEST} ${OBJ}
+test/api/gc-test${EXEEXT}: ${OBJ_GC_TEST} ${OBJ}
 	@${ECHO} LINK gc-test
 	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${LIBS} -o $@
 
-test/api/gc-bench: ${OBJ_GC_BENCH} ${OBJ}
+test/api/gc-bench${EXEEXT}: ${OBJ_GC_BENCH} ${OBJ}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
-dist:
+dist: libpotion${DLLEXT}
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
-install:
+install: dist
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 tarball:
@@ -273,6 +293,7 @@ clean:
 	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML}
 	@rm -f tools/greg tools/greg.o tools/compile.o tools/tree.o
 	@rm -f core/config.h core/version.h core/syntax.c
-	@rm -f potion potion.exe libpotion.a test/api/potion-test test/api/gc-test test/api/gc-bench
+	@rm -f potion potion.exe libpotion.* \
+	  test/api/potion-test test/api/gc-test test/api/gc-bench
 
 .PHONY: all config clean doc rebuild test bench tarball src-dist bin-dist dist
