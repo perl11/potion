@@ -27,19 +27,14 @@ ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
 endif
 STRIP ?= `./tools/config.sh ${CC} strip`
 
-# TODO: -O2 doesn't include -fno-stack-protector
-
 ifeq (DEBUG,0)
-	DEBUGFLAGS += -O2
+	DEBUGFLAGS += -O2 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
-	DEBUGFLAGS += -g
+	DEBUGFLAGS += -g -fstack-protector
 endif
 CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 
-VERSION = $(shell ./tools/config.sh ${CC} version)
-REVISION = $(shell git rev-list --abbrev-commit HEAD | wc -l | sed "s/ //g")
-RELEASE ?= ${VERSION}.${REVISION}
 PKG = potion-${RELEASE}
 
 ifneq ($(shell ./tools/config.sh ${CC} mingw),1)
@@ -107,7 +102,8 @@ core/version.h: .git/HEAD .git/refs/heads/master
 	@${ECHO} -n "#define POTION_COMMIT \"" >> core/version.h
 	@${ECHO} -n $(shell git rev-list HEAD -1 --abbrev=7 --abbrev-commit) >> core/version.h
 	@${ECHO} "\"" >> core/version.h
-	@${ECHO} "#define POTION_REV    ${REVISION}" >> core/version.h
+	@${ECHO} -n "#define POTION_REV    " >> core/version.h
+	@${ECHO} $(shell git rev-list --abbrev-commit HEAD | wc -l | sed "s/ //g") >> core/version.h
 	@${ECHO} >> core/version.h
 
 core/config.h: core/version.h
@@ -236,40 +232,14 @@ test/api/gc-bench: ${OBJ_GC_BENCH} ${OBJ}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
-dist: bin-dist src-dist
+dist:
+	+${MAKE} -f dist.mak $@
 
-install: bin-dist
-	sudo tar xfz pkg/${PKG}.tar.gz -C $(PREFIX)/
+install:
+	+${MAKE} -f dist.mak $@
 
-bin-dist: pkg/${PKG}.tar.gz
-
-pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax.c potion libpotion.a lib/readline/readline.so
-	rm -rf dist
-	mkdir -p dist dist/bin dist/include/potion dist/lib/readline dist/share/${PKG}/doc \
-	  dist/share/${PKG}/example
-	cp core/*.h dist/include/potion/
-	cp potion dist/bin/
-	cp libpotion.a dist/lib/
-	cp lib/readline/readline.so dist/lib/readline/
-	cp doc/* dist/share/${PKG}/doc/
-	cp example/* dist/share/${PKG}/example/
-	-mkdir -p pkg
-	cd dist && tar czvf pkg/${PKG}.tar.gz dist/* -C dist
-	rm -rf dist
-
-src-dist: pkg/${PKG}-src.tar.gz
-
-pkg/${PKG}-src.tar.gz: tarball
-
-tarball: core/version.h core/syntax.c
-	-mkdir -p pkg
-	rm -rf ${PKG}
-	git checkout-index --prefix=${PKG}/ -a
-	rm -f ${PKG}/.gitignore
-	cp core/version.h ${PKG}/core/
-	cp core/syntax.c ${PKG}/core/
-	tar czvf pkg/${PKG}-src.tar.gz ${PKG}
-	rm -rf ${PKG}
+tarball:
+	+${MAKE} -f dist.mak $@
 
 %.html: %.textile
 	@${ECHO} DOC $<
