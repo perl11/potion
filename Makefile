@@ -1,5 +1,5 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
-.SUFFIXES: .g .c .o .opic
+.SUFFIXES: .g .c .i .o .opic .textile .html
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 SRC_SYN = core/syntax.c
@@ -29,10 +29,12 @@ CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
 AR ?= ar
 DEBUG ?= 0
 ECHO = /bin/echo
-GREG = tools/greg
+GREG = tools/greg${EXEEXT}
 INCS = -Icore
 JIT ?= 1
 LIBS = -lm -ldl
+EXEEXT  =
+LIBEXT  = .a
 # http://bastard.sourceforge.net/libdisasm.html
 ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
 	DEFINES += -DHAVE_LIBDISASM
@@ -48,21 +50,34 @@ else
 endif
 CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 
-ifneq ($(shell ./tools/config.sh ${CC} mingw),1)
-ifeq (CC,gcc)
-	CFLAGS += -rdynamic
-endif
-else
+ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
+	EXEEXT  = .exe
+	LOADEXT = .dll
+	DLLEXT  = .dll
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
+else
+  ifeq ($(shell ./tools/config.sh ${CC} apple),1)
+	LOADEXT = .dylib
+	DLLEXT  = .bundle
+  else
+	DLLEXT  = .so
+	LOADEXT = .so
+    ifeq (CC,gcc)
+	CFLAGS += -rdynamic
+    endif
+  endif
 endif
 
-all: pn p2
+all: pn p2${EXEEXT}
 	+${MAKE} -s usage
 
-pn: potion libpotion.a lib/readline/readline.so
+# EXEEXT .exe
+# DLLEXT  so/bundle/dll
+# LOADEXT so/dylib/dll
+pn: potion${EXEEXT} libpotion.a lib/readline${LOADEXT}
 
-rebuild: clean potion test
+rebuild: clean potion${EXEEXT} test
 
 usage:
 	@${ECHO} " "
@@ -134,6 +149,10 @@ core/callcc.opic: core/callcc.c
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
+%.i: %.c core/config.h
+	@${ECHO} CPP $@
+	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
+
 %.opic: %.c core/config.h
 	@${ECHO} CC -fPIC $<
 	@${CC} -c ${CFLAGS} ${INCS} -fPIC -o $@ $<
@@ -143,19 +162,19 @@ core/callcc.opic: core/callcc.c
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
-%.c: %.g tools/greg
+%.c: %.g ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
 
-.g.c: tools/greg
+.g.c: ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
 
-tools/greg: tools/greg.c tools/compile.c tools/tree.c
+${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
-potion: ${OBJ_POTION} ${OBJ}
+potion${EXEEXT}: ${OBJ_POTION} ${OBJ}
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o $@
 	@if [ "${DEBUG}" != "1" ]; then \
@@ -163,7 +182,7 @@ potion: ${OBJ_POTION} ${OBJ}
 	  ${STRIP} $@; \
 	fi
 
-p2: ${OBJ_P2} ${OBJ}
+p2${EXEEXT}: ${OBJ_P2} ${OBJ}
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_P2} ${OBJ} ${LIBS} -o $@
 	@if [ "${DEBUG}" != "1" ]; then \
@@ -176,7 +195,7 @@ libpotion.a: ${OBJ_SYN} ${OBJ}
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_POTION} ${OBJ} > /dev/null
 
-libpotion.so: ${PIC_OBJ_SYN} ${PIC_OBJ}
+libpotion${DLLEXT}: core/potion.opic ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_POTION} ${PIC_OBJ} > /dev/null
@@ -186,23 +205,27 @@ libp2.a: ${OBJ_P2_SYN} ${OBJ}
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_P2} ${OBJ} > /dev/null
 
-libp2.so: ${PIC_OBJ_P2_SYN} ${PIC_OBJ}
+libp2${DLLEXT}: ${PIC_OBJ_P2_SYN} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_P2} ${PIC_OBJ} > /dev/null
 
-lib/readline/readline.so:
-	@${ECHO} MAKE $@
+
+lib/readline${LOADEXT}: libpotion${DLLEXT}
+	@${ECHO} MAKE $@ -fpic
 	@cd lib/readline; \
-	${MAKE} -s readline.so; \
+	${MAKE} -s readline${LOADEXT} CC=${CC} LOADEXT=${LOADEXT}; \
+	cp readline${LOADEXT} ../; \
 	cd ../..
 
-bench: potion test/api/gc-bench
+bench: potion${EXEEXT} test/api/gc-bench${EXEEXT}
 	@${ECHO}; \
 	${ECHO} running GC benchmark; \
 	time test/api/gc-bench
 
-test: potion test/api/potion-test p2 test/api/p2-test test/api/gc-test
+test: potion${EXEEXT} p2${EXEEXT} \
+  test/api/p2-test${EXEEXT} test/api/potion-test${EXEEXT} \
+  test/api/gc-test${EXEEXT}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
 	test/api/potion-test; \
@@ -272,7 +295,7 @@ test: potion test/api/potion-test p2 test/api/p2-test test/api/gc-test
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test: ${OBJ_TEST} ${OBJ} ${OBJ_SYN}
+test/api/potion-test${EXEEXT}: ${OBJ_TEST} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK potion-test
 	${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
@@ -280,15 +303,15 @@ test/api/p2-test: ${OBJ_P2_TEST} ${OBJ_P2} ${OBJ_P2_SYN}
 	@${ECHO} LINK p2-test
 	${CC} ${CFLAGS} ${OBJ_P2_TEST} ${OBJ} ${OBJ_P2_SYN} ${LIBS} -o $@
 
-test/api/gc-test: ${OBJ_GC_TEST} ${OBJ} ${OBJ_SYN}
+test/api/gc-test${EXEEXT}: ${OBJ_GC_TEST} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK gc-test
 	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
-test/api/gc-bench: ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN}
+test/api/gc-bench${EXEEXT}: ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
-dist: libp2.a libpotion.so libp2.so
+dist: libp2.a libpotion${DLLEXT} libp2${DLLEXT}
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 install: dist
@@ -324,9 +347,11 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML}
-	@rm -f tools/greg tools/greg.o tools/compile.o tools/tree.o
+	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML} core/*.opic
+	@rm -f tools/greg${EXEEXT} tools/greg.o tools/compile.o tools/tree.o
 	@rm -f core/config.h core/version.h core/syntax.c
-	@rm -f potion potion.exe libpotion.a test/api/potion-test test/api/gc-test test/api/gc-bench
+	@rm -f potion${EXEEXT} p2${EXEEXT} libpotion.* libp2.* \
+	  test/api/potion-test${EXEEXT} test/api/potion-test${EXEEXT} \
+	  test/api/gc-test${EXEEXT} test/api/gc-bench${EXEEXT}
 
-.PHONY: all config clean doc rebuild test bench tarball todo
+.PHONY: all config clean doc rebuild test bench tarball sloc todo

@@ -28,6 +28,18 @@ if [ $MINGW -eq 0 ]; then
   PAGESIZE=`echo "#include <stdio.h>#include <unistd.h>int main() { printf(\\"%d\\", (int)sysconf(_SC_PAGE_SIZE)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   STACKDIR=`echo "#include <stdlib.h>#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)((&b - a) / abs(&b - a))); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+  EXEEXT=""
+  LIBEXT=".a"
+  LOADEXT=".so"
+  DLLEXT=".so"
+  OSX=`echo "$TARGET" | sed "/apple/!d"`
+  if [ "$OSX" != "" ]; then
+    OSX=1
+    LOADEXT=".dylib"
+    DLLEXT=".bundle"
+  else
+    OSX=0
+  fi
 else
   # hard coded win32 values
   CHAR="1"
@@ -40,10 +52,20 @@ else
   PAGESIZE="4096"
   STACKDIR="-1"
   ARGDIR="1"
+  EXEEXT=".exe"
+  LOADEXT=".dll"
+  DLLEXT=".dll"
+  LIBEXT=".a"
 fi
 
 if [ "$2" = "mingw" ]; then
   if [ $MINGW -eq 0 ]; then
+    echo "0"
+  else
+    echo "1"
+  fi
+elif [ "$2" = "apple" ]; then
+  if [ $OSX -eq 0 ]; then
     echo "0"
   else
     echo "1"
@@ -66,15 +88,19 @@ else
   elif [ "$JIT_PPC" != "" ]; then
     echo "#define POTION_JIT_TARGET POTION_PPC"
   fi
-  echo "#define POTION_PLATFORM \"$TARGET\""
-  echo "#define POTION_WIN32    $MINGW"
+  echo "#define POTION_PLATFORM   \"$TARGET\""
+  echo "#define POTION_WIN32      $MINGW"
+  echo "#define POTION_EXEEXT     \"$EXEEXT\""
+  echo "#define POTION_LOADEXT    \"$LOADEXT\""
+  echo "#define POTION_DLLEXT     \"$DLLEXT\""
+  echo "#define POTION_LIBEXT     \"$LIBEXT\""
   echo
-  echo "#define PN_SIZE_T     $LONG"
-  echo "#define LONG_SIZE_T   $LONG"
-  echo "#define DOUBLE_SIZE_T $DOUBLE"
-  echo "#define INT_SIZE_T    $INT"
-  echo "#define SHORT_SIZE_T  $SHORT"
-  echo "#define CHAR_SIZE_T   $CHAR"
+  echo "#define PN_SIZE_T         $LONG"
+  echo "#define LONG_SIZE_T       $LONG"
+  echo "#define DOUBLE_SIZE_T     $DOUBLE"
+  echo "#define INT_SIZE_T        $INT"
+  echo "#define SHORT_SIZE_T      $SHORT"
+  echo "#define CHAR_SIZE_T       $CHAR"
   echo "#define LONGLONG_SIZE_T   $LLONG"
   echo "#define PN_LITTLE_ENDIAN  $LILEND"
   echo "#define POTION_PAGESIZE   $PAGESIZE"

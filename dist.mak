@@ -19,13 +19,13 @@ bin-dist: pkg/${PKG}.tar.gz
 pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax.c potion libpotion.a libpotion.so \
   lib/readline/readline.so
 	rm -rf dist
-	mkdir -p dist dist/bin dist/include/potion dist/lib/readline dist/share/potion/doc \
+	mkdir -p dist dist/bin dist/include/potion dist/lib/potion dist/share/potion/doc \
 	  dist/share/potion/example
 	cp core/*.h dist/include/potion/
 	cp potion dist/bin/
 	cp libpotion.a dist/lib/
 	cp libpotion.so dist/lib/
-	cp lib/readline/readline.so dist/lib/readline/
+	cp lib/readline/readline.so dist/lib/potion/
 	cp doc/* dist/share/potion/doc/
 	cp example/* dist/share/potion/example/
 	-mkdir -p pkg
