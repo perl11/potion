@@ -49,7 +49,7 @@ endif
 all: pn
 	+${MAKE} -s usage
 
-pn: potion libpotion.a lib/readline/readline.so
+pn: potion libpotion.a libpotion.so lib/readline/readline.so
 
 rebuild: clean potion test
 
@@ -114,6 +114,10 @@ core/config.h: core/version.h
 core/callcc.o: core/callcc.c
 	@${ECHO} CC $< +frame-pointer
 	@${CC} -c -fno-omit-frame-pointer ${INCS} -o $@ $<
+
+core/callcc.opic: core/callcc.c
+	@${ECHO} CC $< +frame-pointer
+	@${CC} -c -fno-omit-frame-pointer ${INCS} -fPIC -o $@ $<
 
 %.o: %.c core/config.h
 	@${ECHO} CC $<
@@ -233,13 +237,13 @@ test/api/gc-bench: ${OBJ_GC_BENCH} ${OBJ}
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
 dist:
-	+${MAKE} -f dist.mak $@
+	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 install:
-	+${MAKE} -f dist.mak $@
+	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 tarball:
-	+${MAKE} -f dist.mak $@
+	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 %.html: %.textile
 	@${ECHO} DOC $<

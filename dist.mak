@@ -1,5 +1,4 @@
-PREFIX = /usr/local
-DEBUG ?= 0
+PREFIX ?= /usr/local
 ECHO = /bin/echo
 
 VERSION = $(shell ./tools/config.sh ${CC} version)
@@ -14,16 +13,18 @@ install: bin-dist
 
 bin-dist: pkg/${PKG}.tar.gz
 
-pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax.c potion libpotion.a lib/readline/readline.so
+pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax.c potion libpotion.a libpotion.so \
+  lib/readline/readline.so
 	rm -rf dist
-	mkdir -p dist dist/bin dist/include/potion dist/lib/readline dist/share/${PKG}/doc \
-	  dist/share/${PKG}/example
+	mkdir -p dist dist/bin dist/include/potion dist/lib/readline dist/share/potion/doc \
+	  dist/share/potion/example
 	cp core/*.h dist/include/potion/
 	cp potion dist/bin/
 	cp libpotion.a dist/lib/
+	cp libpotion.so dist/lib/
 	cp lib/readline/readline.so dist/lib/readline/
-	cp doc/* dist/share/${PKG}/doc/
-	cp example/* dist/share/${PKG}/example/
+	cp doc/* dist/share/potion/doc/
+	cp example/* dist/share/potion/example/
 	-mkdir -p pkg
 	(cd dist && tar czvf ../pkg/${PKG}.tar.gz * && cd ..)
 	rm -rf dist
