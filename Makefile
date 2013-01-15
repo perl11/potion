@@ -210,43 +210,60 @@ test: potion test/api/potion-test p2 test/api/p2-test test/api/gc-test
 	test/api/p2-test; \
 	${ECHO} running GC tests; \
 	test/api/gc-test; \
-	count=0; failed=0; pass=0; \
-	while [ $$pass -lt 3 ]; do \
+	count=0; failed=0; pass=0; cmd="potion"; \
+	while [ $$pass -lt 6 ]; do \
 	  ${ECHO}; \
 	  if [ $$pass -eq 0 ]; then \
-		   ${ECHO} running VM tests; \
+		t=0; \
+		${ECHO} running $$cmd VM tests; \
 	  elif [ $$pass -eq 1 ]; then \
-		   ${ECHO} running compiler tests; \
-		else \
-		   ${ECHO} running JIT tests; \
-			 jit=`./p2 -v | sed "/jit=1/!d"`; \
-			 if [ "$$jit" = "" ]; then \
-			   ${ECHO} skipping; \
-			   break; \
-			 fi; \
+                t=1; \
+		${ECHO} running $$cmd compiler tests; \
+	  elif [ $$pass -eq 2 ]; then \
+                t=2; \
+		${ECHO} running $$cmd JIT tests; \
+		jit=`./$$cmd -v | sed "/jit=1/!d"`; \
+		if [ "$$jit" = "" ]; then \
+		    ${ECHO} skipping; \
+		    break; \
 		fi; \
-		for f in test/**/*.pn; do \
-			look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
-			if [ $$pass -eq 0 ]; then \
-				for=`./p2 -I -B $$f | sed "s/\n$$//"`; \
-			elif [ $$pass -eq 1 ]; then \
-				./p2 -c $$f > /dev/null; \
-				fb="$$f"b; \
-				for=`./p2 -I -B $$fb | sed "s/\n$$//"`; \
-				rm -rf $$fb; \
-			else \
-				for=`./p2 -I -X $$f | sed "s/\n$$//"`; \
-			fi; \
-			if [ "$$look" != "$$for" ]; then \
-				${ECHO}; \
-				${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
-				failed=`expr $$failed + 1`; \
-			else \
-				${ECHO} -n .; \
-			fi; \
-			count=`expr $$count + 1`; \
-		done; \
-		pass=`expr $$pass + 1`; \
+	  elif [ $$pass -eq 3 ]; then \
+                cmd=p2; t=0; \
+		${ECHO} running $$cmd VM tests; \
+	  elif [ $$pass -eq 4 ]; then \
+                t=1; \
+		${ECHO} running $$cmd compiler tests; \
+	  elif [ $$pass -eq 5 ]; then \
+                t=2; \
+		${ECHO} running $$cmd JIT tests; \
+		jit=`./$$cmd -v | sed "/jit=1/!d"`; \
+		if [ "$$jit" = "" ]; then \
+		    ${ECHO} skipping; \
+		    break; \
+		fi; \
+	  fi; \
+	  for f in test/**/*.pn; do \
+		look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
+		if [ $$t -eq 0 ]; then \
+			for=`./$$cmd -I -B $$f | sed "s/\n$$//"`; \
+		elif [ $$t -eq 1 ]; then \
+			./$$cmd -c $$f > /dev/null; \
+			fb="$$f"b; \
+			for=`./$$cmd -I -B $$fb | sed "s/\n$$//"`; \
+			rm -rf $$fb; \
+		else \
+			for=`./$$cmd -I -X $$f | sed "s/\n$$//"`; \
+		fi; \
+		if [ "$$look" != "$$for" ]; then \
+			${ECHO}; \
+			${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
+			failed=`expr $$failed + 1`; \
+		else \
+			${ECHO} -n .; \
+		fi; \
+		count=`expr $$count + 1`; \
+	  done; \
+	  pass=`expr $$pass + 1`; \
 	done; \
 	${ECHO}; \
 	if [ $$failed -gt 0 ]; then \
