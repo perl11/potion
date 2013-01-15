@@ -346,7 +346,13 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
-  return ((struct PNObject *)potion_fwd(obj))->vt;
+  while (1) {
+    struct PNFwd *o = (struct PNFwd *)obj;
+    if (o->fwd != POTION_FWD)
+      return ((struct PNObject *)o)->vt;
+    obj = o->ptr;
+  }
+  //return ((struct PNObject *)potion_fwd(obj))->vt;
 }
 
 // macro for doing a single fwd check after a possible realloc

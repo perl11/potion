@@ -22,23 +22,27 @@ JIT ?= 1
 LIBS = -lm -ldl
 # http://bastard.sourceforge.net/libdisasm.html
 ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
-CFLAGS += DHAVE_LIBDISASM
-LIBS += -ldisasm
+	DEFINES += -DHAVE_LIBDISASM
+	LIBS += -ldisasm
 endif
 STRIP ?= `./tools/config.sh ${CC} strip`
 
 # TODO: -O2 doesn't include -fno-stack-protector
-DEBUGFLAGS = `${ECHO} "${DEBUG}" | sed "s/0/-O2/; s/1/-g -DDEBUG/"`
-CFLAGS += ${DEBUGFLAGS}
+
+ifeq (DEBUG,0)
+	DEBUGFLAGS += -O2
+else
+	DEFINES += -DDEBUG
+	DEBUGFLAGS += -g
+endif
+CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 
 VERSION = $(shell ./tools/config.sh ${CC} version)
-DATE = $(shell date +%Y-%m-%d)
-REVISION = $(shell git rev-list HEAD | wc -l | sed "s/ //g")
-COMMIT = $(shell git rev-list HEAD -1 --abbrev=7 --abbrev-commit)
+REVISION = $(shell git rev-list --abbrev-commit HEAD | wc -l | sed "s/ //g")
 RELEASE ?= ${VERSION}.${REVISION}
 PKG = potion-${RELEASE}
 
-ifeq ($(shell ./tools/config.sh ${CC} mingw),0)
+ifneq ($(shell ./tools/config.sh ${CC} mingw),1)
 ifeq (CC,gcc)
 	CFLAGS += -rdynamic
 endif
@@ -82,8 +86,8 @@ usage:
 	@${ECHO} " "
 	@${ECHO} "   $$ make test"
 	@${ECHO} " "
-	@${ECHO} " Kindly email your respects and thoughtful queries"
-	@${ECHO} " to _why <why@whytheluckystiff.net>. Thankyou."
+	@${ECHO} " Written by _why <why@whytheluckystiff.net>"
+	@${ECHO} " Maintained at https://github.com/fogus/potion"
 
 config:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
@@ -92,12 +96,17 @@ config:
 	@${ECHO} "#define POTION_JIT    ${JIT}"
 	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
 	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
+	@${ECHO} ${DEFINES} | sed "s,-D\(\w*\),\n#define \1 1,g"
 	@${ECHO}
 	@./tools/config.sh ${CC}
 
-core/version.h:
-	@${ECHO} "#define POTION_DATE   \"${DATE}\"" > core/version.h
-	@${ECHO} "#define POTION_COMMIT \"${COMMIT}\"" >> core/version.h
+core/version.h: .git/HEAD .git/refs/heads/master
+	@${ECHO} -n "#define POTION_DATE   \"" > core/version.h
+	@${ECHO} -n $(shell date +%Y-%m-%d) >> core/version.h
+	@${ECHO} "\"" >> core/version.h
+	@${ECHO} -n "#define POTION_COMMIT \"" >> core/version.h
+	@${ECHO} -n $(shell git rev-list HEAD -1 --abbrev=7 --abbrev-commit) >> core/version.h
+	@${ECHO} "\"" >> core/version.h
 	@${ECHO} "#define POTION_REV    ${REVISION}" >> core/version.h
 	@${ECHO} >> core/version.h
 
@@ -276,7 +285,7 @@ tarball: core/version.h core/syntax.c
 doc: ${DOCHTML}
 
 TAGS: ${SRC} core/*.h
-	@mv -f TAGS TAGS~
+	@rm -f TAGS
 	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
@@ -294,4 +303,4 @@ clean:
 	@rm -f core/config.h core/version.h core/syntax.c
 	@rm -f potion potion.exe libpotion.a test/api/potion-test test/api/gc-test test/api/gc-bench
 
-.PHONY: all clean doc rebuild test
+.PHONY: all config clean doc rebuild test bench tarball src-dist bin-dist dist
