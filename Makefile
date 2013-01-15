@@ -35,8 +35,6 @@ else
 endif
 CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 
-PKG = potion-${RELEASE}
-
 ifneq ($(shell ./tools/config.sh ${CC} mingw),1)
 ifeq (CC,gcc)
 	CFLAGS += -rdynamic
