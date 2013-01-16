@@ -293,10 +293,13 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML}
+	@rm -f core/*.o ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML} \
+	       core/*.i core/*.opic
 	@rm -f tools/greg tools/greg.o tools/compile.o tools/tree.o
 	@rm -f core/config.h core/version.h core/syntax.c
-	@rm -f potion potion.exe libpotion.* \
-	  test/api/potion-test test/api/gc-test test/api/gc-bench
+	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
+	@rm -f potion${EXEEXT} p2${EXEEXT} libpotion.* libp2.*
+	@rm -f test/api/potion-test${EXEEXT} test/api/gc-test${EXEEXT} \
+               test/api/gc-bench${EXEEXT}
 
 .PHONY: all config clean doc rebuild test bench tarball src-dist bin-dist dist
