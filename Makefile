@@ -48,6 +48,9 @@ else
 	DEFINES += -DDEBUG
 	DEBUGFLAGS += -g -fstack-protector
 endif
+ifneq ($(shell ./tools/config.sh ${CC} clang),0)
+	CFLAGS += -Wno-unused-value
+endif
 CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 
 ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
