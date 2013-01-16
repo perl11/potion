@@ -1,14 +1,16 @@
 # -*- makefile -*-
 include config.inc
 
+ifeq (${PREFIX},)
+	$(error need to make config first)
+endif
+ifeq (${DLLEXT},)
+	$(error need to make config first)
+endif
+
 VERSION   = $(shell ./tools/config.sh ${CC} version)
 RELEASE   ?= ${VERSION}.${REVISION}
 PKG       = potion-${RELEASE}
-
-ifeq (${PREFIX},)
-	@echo "rebuilding config.inc, please run make dist again"
-	@${MAKE} -s config.inc
-endif
 
 dist: bin-dist src-dist
 
@@ -47,4 +49,4 @@ tarball: core/version.h core/syntax.c
 	tar czvf pkg/${PKG}-src.tar.gz ${PKG}
 	rm -rf ${PKG}
 
-.PHONY: all config clean doc rebuild test bench tarball src-dist bin-dist dist
+.PHONY: dist install tarball src-dist bin-dist
