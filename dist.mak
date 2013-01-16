@@ -4,7 +4,7 @@ include config.inc
 ifeq (${PREFIX},)
 	$(error need to make config first)
 endif
-ifeq (${DLLEXT},)
+ifeq (${DLL},)
 	$(error need to make config first)
 endif
 
@@ -19,15 +19,15 @@ install: bin-dist
 
 bin-dist: pkg/${PKG}.tar.gz
 
-pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax.c potion${EXEEXT} \
-  libpotion.a libpotion${DLLEXT} lib/readline${LOADEXT}
+pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax.c potion${EXE} \
+  libpotion.a libpotion${DLL} lib/readline${LOADEXT}
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion dist/share/potion/doc \
 	  dist/share/potion/example
 	cp core/*.h dist/include/potion/
-	cp potion${EXEEXT} dist/bin/
+	cp potion${EXE} dist/bin/
 	cp libpotion.a dist/lib/
-	cp libpotion${DLLEXT} dist/lib/
+	cp libpotion${DLL} dist/lib/
 	cp lib/readline${LOADEXT} dist/lib/potion/
 	cp doc/* *.md README COPYING dist/share/potion/doc/
 	cp example/* dist/share/potion/example/

@@ -24,7 +24,7 @@ CAT  = /bin/cat
 SED  = sed
 EXPR = expr
 GREG = tools/greg
-EXEEXT  =
+EXE  =
 LIBEXT  = .a
 # http://bastard.sourceforge.net/libdisasm.html
 ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
@@ -48,9 +48,9 @@ CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
         # cygwin is NOT win32
         WIN32   = 1
-	EXEEXT  = .exe
+	EXE  = .exe
 	LOADEXT = .dll
-	DLLEXT  = .dll
+	DLL  = .dll
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
 	RUNPOTION = potion.exe
@@ -58,11 +58,11 @@ else
   ifeq ($(shell ./tools/config.sh ${CC} apple),1)
         APPLE   = 1
 	LOADEXT = .dylib
-	DLLEXT  = .bundle
+	DLL  = .bundle
 	RUNPOTION = DYLD_LIBRARY_PATH=`pwd` ./potion
   else
 	RUNPOTION = ./potion
-	DLLEXT  = .so
+	DLL  = .so
 	LOADEXT = .so
     ifeq (${CC},gcc)
 	CFLAGS += -rdynamic
@@ -74,12 +74,12 @@ endif
 all: pn
 	+${MAKE} -s usage
 
-# EXEEXT .exe
-# DLLEXT  so/bundle/dll
+# EXE .exe
+# DLL  so/bundle/dll
 # LOADEXT so/dylib/dll
-pn: potion${EXEEXT} libpotion.a lib/readline${LOADEXT}
+pn: potion${EXE} libpotion${DLL} lib/readline${LOADEXT}
 
-rebuild: clean potion${EXEEXT} test
+rebuild: clean potion${EXE} test
 
 usage:
 	@${ECHO} " "
@@ -131,8 +131,8 @@ config:
 
 config.inc.echo:
 	@${ECHO} "PREFIX  = ${PREFIX}"
-	@${ECHO} "EXEEXT  = ${EXEEXT}"
-	@${ECHO} "DLLEXT  = ${DLLEXT}"
+	@${ECHO} "EXE  = ${EXE}"
+	@${ECHO} "DLL  = ${DLL}"
 	@${ECHO} "LOADEXT = ${LOADEXT}"
 	@${ECHO} "ECHO    = ${ECHO}"
 	@${ECHO} "CC      = ${CC}"
@@ -207,16 +207,16 @@ core/callcc.opic: core/callcc.c
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
 
-tools/greg${EXEEXT}: tools/greg.c tools/compile.c tools/tree.c
+tools/greg${EXE}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
-potion${EXEEXT}: ${OBJ_POTION} ${OBJ}
+potion${EXE}: ${OBJ_POTION} ${OBJ}
 	@${ECHO} LINK potion
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o $@
 	@if [ "${DEBUG}" != "1" ]; then \
 	  ${ECHO} STRIP potion; \
-	  ${STRIP} potion${EXEEXT}; \
+	  ${STRIP} potion${EXE}; \
 	fi
 
 libpotion.a: ${OBJ_POTION} ${OBJ}
@@ -224,7 +224,7 @@ libpotion.a: ${OBJ_POTION} ${OBJ}
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ core/*.o > /dev/null
 
-libpotion${DLLEXT}: ${PIC_OBJ}
+libpotion${DLL}: ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ} > /dev/null
@@ -237,12 +237,12 @@ lib/readline${LOADEXT}: config.inc lib/readline/Makefile lib/readline/linenoise.
 	  cd ../..; \
 	  cp lib/readline/readline${LOADEXT} $@
 
-bench: potion${EXEEXT} test/api/gc-bench${EXEEXT}
+bench: potion${EXE} test/api/gc-bench${EXE}
 	@${ECHO}; \
 	${ECHO} running GC benchmark; \
 	time test/api/gc-bench
 
-test: potion${EXEEXT} test/api/potion-test${EXEEXT} test/api/gc-test${EXEEXT}
+test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running API tests; \
 	test/api/potion-test; \
@@ -293,19 +293,19 @@ test: potion${EXEEXT} test/api/potion-test${EXEEXT} test/api/gc-test${EXEEXT}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test${EXEEXT}: ${OBJ_TEST} ${OBJ}
+test/api/potion-test${EXE}: ${OBJ_TEST} ${OBJ}
 	@${ECHO} LINK potion-test
 	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
 
-test/api/gc-test${EXEEXT}: ${OBJ_GC_TEST} ${OBJ}
+test/api/gc-test${EXE}: ${OBJ_GC_TEST} ${OBJ}
 	@${ECHO} LINK gc-test
 	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${LIBS} -o $@
 
-test/api/gc-bench${EXEEXT}: ${OBJ_GC_BENCH} ${OBJ}
+test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
-dist: libpotion${DLLEXT}
+dist: libpotion${DLL}
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 install: dist
@@ -342,9 +342,9 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o core/*.opic core/*.i test/api/*.o ${DOCHTML}
-	@rm -f tools/greg${EXEEXT} tools/*.o
+	@rm -f tools/greg${EXE} tools/*.o
 	@rm -f core/config.h core/version.h core/syntax.c config.inc
-	@rm -f potion${EXEEXT} libpotion.* \
-	  test/api/potion-test${EXEEXT} test/api/gc-test${EXEEXT} test/api/gc-bench${EXEEXT}
+	@rm -f potion${EXE} libpotion.* \
+	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 
 .PHONY: all config config.inc.echo config.h.echo clean doc rebuild test bench tarball dist install

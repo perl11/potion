@@ -27,15 +27,15 @@ if [ $MINGW -eq 0 ]; then
   PAGESIZE=`echo "#include <stdio.h>#include <unistd.h>int main() { printf(\\"%d\\", (int)sysconf(_SC_PAGE_SIZE)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   STACKDIR=`echo "#include <stdlib.h>#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)((&b - a) / abs(&b - a))); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  EXEEXT=""
+  EXE=""
   LIBEXT=".a"
   LOADEXT=".so"
-  DLLEXT=".so"
+  DLL=".so"
   OSX=`echo "$TARGET" | sed "/apple/!d"`
   if [ "$OSX" != "" ]; then
     OSX=1
     LOADEXT=".dylib"
-    DLLEXT=".bundle"
+    DLL=".bundle"
   else
     OSX=0
   fi
@@ -51,9 +51,9 @@ else
   PAGESIZE="4096"
   STACKDIR="-1"
   ARGDIR="1"
-  EXEEXT=".exe"
+  EXE=".exe"
   LOADEXT=".dll"
-  DLLEXT=".dll"
+  DLL=".dll"
   LIBEXT=".a"
 fi
 
@@ -84,9 +84,9 @@ else
   fi
   echo "#define POTION_PLATFORM   \"$TARGET\""
   echo "#define POTION_WIN32      $MINGW"
-  echo "#define POTION_EXEEXT     \"$EXEEXT\""
+  echo "#define POTION_EXE     \"$EXE\""
   echo "#define POTION_LOADEXT    \"$LOADEXT\""
-  echo "#define POTION_DLLEXT     \"$DLLEXT\""
+  echo "#define POTION_DLL     \"$DLL\""
   echo "#define POTION_LIBEXT     \"$LIBEXT\""
   echo
   echo "#define PN_SIZE_T         $LONG"
