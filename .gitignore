@@ -16,6 +16,7 @@
 /test/api/gc-test
 /test/api/gc-test.exe
 /test/api/*.o
+/config.inc
 syntax.c
 *.pnb
 ._*

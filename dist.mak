@@ -1,13 +1,14 @@
-PREFIX ?= /usr/local
-EXEEXT  ?=
-DLLEXT  ?= .so
-LOADEXT ?= .so
+# -*- makefile -*-
+include config.inc
 
-ECHO      = /bin/echo
 VERSION   = $(shell ./tools/config.sh ${CC} version)
-REVISION  = $(shell git rev-list --abbrev-commit HEAD | wc -l | sed "s/ //g")
 RELEASE   ?= ${VERSION}.${REVISION}
 PKG       = potion-${RELEASE}
+
+ifeq (${PREFIX},)
+	@echo "rebuilding config.inc, please run make dist again"
+	@${MAKE} -s config.inc
+endif
 
 dist: bin-dist src-dist
 

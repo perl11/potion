@@ -13,13 +13,17 @@ DOCHTML = ${DOC:.textile=.html}
 PREFIX = /usr/local
 CC ?= gcc
 CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
+LDFLAGS ?=
+INCS = -Icore
+LIBS = -lm -ldl
 AR ?= ar
+JIT ?= 1
 DEBUG ?= 0
 ECHO = /bin/echo
+CAT  = /bin/cat
+SED  = sed
+EXPR = expr
 GREG = tools/greg
-INCS = -Icore
-JIT ?= 1
-LIBS = -lm -ldl
 EXEEXT  =
 LIBEXT  = .a
 # http://bastard.sourceforge.net/libdisasm.html
@@ -29,35 +33,43 @@ ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
 endif
 STRIP ?= `./tools/config.sh ${CC} strip`
 
-ifeq (DEBUG,0)
+ifeq (${DEBUG},0)
 	DEBUGFLAGS += -O2 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
 	DEBUGFLAGS += -g -fstack-protector
 endif
 ifneq ($(shell ./tools/config.sh ${CC} clang),0)
+	CLANG = 1
 	CFLAGS += -Wno-unused-value
 endif
 CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 
 ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
+        # cygwin is NOT win32
+        WIN32   = 1
 	EXEEXT  = .exe
 	LOADEXT = .dll
 	DLLEXT  = .dll
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
+	RUNPOTION = potion.exe
 else
   ifeq ($(shell ./tools/config.sh ${CC} apple),1)
+        APPLE   = 1
 	LOADEXT = .dylib
 	DLLEXT  = .bundle
+	RUNPOTION = DYLD_LIBRARY_PATH=`pwd` ./potion
   else
+	RUNPOTION = ./potion
 	DLLEXT  = .so
 	LOADEXT = .so
-    ifeq (CC,gcc)
+    ifeq (${CC},gcc)
 	CFLAGS += -rdynamic
     endif
   endif
 endif
+
 
 all: pn
 	+${MAKE} -s usage
@@ -74,6 +86,7 @@ usage:
 	@${ECHO} " ~ using potion ~"
 	@${ECHO} " "
 	@${ECHO} " Running a script."
+
 	@${ECHO} " "
 	@${ECHO} "   $$ ./potion example/fib.pn"
 	@${ECHO} " "
@@ -100,18 +113,9 @@ usage:
 	@${ECHO} " Written by _why <why@whytheluckystiff.net>"
 	@${ECHO} " Maintained at https://github.com/fogus/potion"
 
-config:
-	@${ECHO} "#define POTION_CC     \"${CC}\""
-	@${ECHO} "#define POTION_CFLAGS \"${CFLAGS}\""
-	@${ECHO} "#define POTION_DEBUG  ${DEBUG}"
-	@${ECHO} "#define POTION_JIT    ${JIT}"
-	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
-	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
-	@${ECHO} ${DEFINES} | sed "s,-D\(\w*\),\n#define \1 1,g"
-	@${ECHO}
-	@./tools/config.sh ${CC}
-
 core/version.h: .git/HEAD .git/refs/heads/master
+	@${ECHO} MAKE $@
+	@${ECHO} "# -*- makefile -*-" > config.inc
 	@${ECHO} -n "#define POTION_DATE   \"" > core/version.h
 	@${ECHO} -n $(shell date +%Y-%m-%d) >> core/version.h
 	@${ECHO} "\"" >> core/version.h
@@ -119,21 +123,61 @@ core/version.h: .git/HEAD .git/refs/heads/master
 	@${ECHO} -n $(shell git rev-list HEAD -1 --abbrev=7 --abbrev-commit) >> core/version.h
 	@${ECHO} "\"" >> core/version.h
 	@${ECHO} -n "#define POTION_REV    " >> core/version.h
-	@${ECHO} $(shell git rev-list --abbrev-commit HEAD | wc -l | sed "s/ //g") >> core/version.h
+	@${ECHO} -n $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g") >> core/version.h
 	@${ECHO} >> core/version.h
 
-core/config.h: core/version.h
+config:
+	@${MAKE} -s -B core/config.h
+
+config.inc.echo:
+	@${ECHO} "PREFIX  = ${PREFIX}"
+	@${ECHO} "EXEEXT  = ${EXEEXT}"
+	@${ECHO} "DLLEXT  = ${DLLEXT}"
+	@${ECHO} "LOADEXT = ${LOADEXT}"
+	@${ECHO} "ECHO    = ${ECHO}"
+	@${ECHO} "CC      = ${CC}"
+	@${ECHO} "CFLAGS  = ${CFLAGS}"
+	@${ECHO} "JIT     = ${JIT}"
+	@${ECHO} "LIBS    = ${LIBS}"
+	@${ECHO} "DEFINES = ${DEFINES}"
+	@${ECHO} "DEBUGFLAGS = ${DEBUGFLAGS}"
+	@${ECHO} "STRIP   = ${STRIP}"
+	@${ECHO} "APPLE   = ${APPLE}"
+	@${ECHO} "WIN32   = ${WIN32}"
+	@${ECHO} "CLANG   = ${CLANG}"
+	@${ECHO} "DEBUG   = ${DEBUG}"
+	@${ECHO} -n "REVISION = "
+	@${ECHO} $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
+
+config.h.echo:
+	@${ECHO} "#define POTION_CC     \"${CC}\""
+	@${ECHO} "#define POTION_CFLAGS \"${CFLAGS}\""
+	@${ECHO} "#define POTION_DEBUG  ${DEBUG}"
+	@${ECHO} "#define POTION_JIT    ${JIT}"
+	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
+	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
+	@${ECHO} ${DEFINES} | ${SED} "s,-D\(\w*\),\n#define \1 1,g"
+	@${ECHO}
+	@./tools/config.sh ${CC}
+
+# Force sync with config.inc
+core/config.h: core/version.h tools/config.sh #Makefile
 	@${ECHO} MAKE $@
-	@cat core/version.h > core/config.h
-	@${MAKE} -s config >> core/config.h
+	@${MAKE} -s -B config.inc
+	@${CAT} core/version.h > core/config.h
+	@${MAKE} -s config.h.echo >> core/config.h
+
+config.inc: tools/config.sh #Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s config.inc.echo > $@
 
 core/callcc.o: core/callcc.c
 	@${ECHO} CC $< +frame-pointer
 	@${CC} -c -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/callcc.opic: core/callcc.c
-	@${ECHO} CC $< +frame-pointer
-	@${CC} -c -fno-omit-frame-pointer ${INCS} -fPIC -o $@ $<
+	@${ECHO} CC -fPIC $< +frame-pointer
+	@${CC} -c -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 %.o: %.c core/config.h
 	@${ECHO} CC $<
@@ -145,12 +189,15 @@ core/callcc.opic: core/callcc.c
 
 %.opic: %.c core/config.h
 	@${ECHO} CC -fPIC $<
-	@${CC} -c ${CFLAGS} ${INCS} -fPIC -o $@ $<
-
+	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
 
 .c.o: core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
+
+.c.opic: core/config.h
+	@${ECHO} CC -fPIC $<
+	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
 
 %.c: %.g tools/greg
 	@${ECHO} GREG $<
@@ -168,7 +215,7 @@ potion${EXEEXT}: ${OBJ_POTION} ${OBJ}
 	@${ECHO} LINK potion
 	@${CC} ${CFLAGS} ${OBJ_POTION} ${OBJ} ${LIBS} -o $@
 	@if [ "${DEBUG}" != "1" ]; then \
-		${ECHO} STRIP potion; \
+	  ${ECHO} STRIP potion; \
 	  ${STRIP} potion${EXEEXT}; \
 	fi
 
@@ -177,17 +224,18 @@ libpotion.a: ${OBJ_POTION} ${OBJ}
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ core/*.o > /dev/null
 
-libpotion${DLLEXT}: core/potion.opic ${PIC_OBJ}
+libpotion${DLLEXT}: ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ core/*.opic > /dev/null
+	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ} > /dev/null
 
-lib/readline${LOADEXT}: libpotion${DLLEXT}
+lib/readline${LOADEXT}: config.inc lib/readline/Makefile lib/readline/linenoise.c \
+  lib/readline/linenoise.h
 	@${ECHO} MAKE $@ -fpic
 	@cd lib/readline; \
-	${MAKE} -s readline${LOADEXT} CC=${CC} LOADEXT=${LOADEXT}; \
-	cp readline${LOADEXT} ../; \
-	cd ../..
+	  ${MAKE} -s; \
+	  cd ../..; \
+	  cp lib/readline/readline${LOADEXT} $@
 
 bench: potion${EXEEXT} test/api/gc-bench${EXEEXT}
 	@${ECHO}; \
@@ -209,34 +257,34 @@ test: potion${EXEEXT} test/api/potion-test${EXEEXT} test/api/gc-test${EXEEXT}
 		   ${ECHO} running compiler tests; \
 		else \
 		   ${ECHO} running JIT tests; \
-			 jit=`./potion -v | sed "/jit=1/!d"`; \
+			 jit=`${RUNPOTION} -v | ${SED} "/jit=1/!d"`; \
 			 if [ "$$jit" = "" ]; then \
 			   ${ECHO} skipping; \
 			   break; \
 			 fi; \
 		fi; \
 		for f in test/**/*.pn; do \
-			look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
+			look=`${CAT} $$f | ${SED} "/\#/!d; s/.*\# //"`; \
 			if [ $$pass -eq 0 ]; then \
-				for=`./potion -I -B $$f | sed "s/\n$$//"`; \
+				for=`${RUNPOTION} -I -B $$f | ${SED} "s/\n$$//"`; \
 			elif [ $$pass -eq 1 ]; then \
-				./potion -c $$f > /dev/null; \
+				${RUNPOTION} -c $$f > /dev/null; \
 				fb="$$f"b; \
-				for=`./potion -I -B $$fb | sed "s/\n$$//"`; \
+				for=`${RUNPOTION} -I -B $$fb | ${SED} "s/\n$$//"`; \
 				rm -rf $$fb; \
 			else \
-				for=`./potion -I -X $$f | sed "s/\n$$//"`; \
+				for=`${RUNPOTION} -I -X $$f | ${SED} "s/\n$$//"`; \
 			fi; \
 			if [ "$$look" != "$$for" ]; then \
 				${ECHO}; \
 				${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
-				failed=`expr $$failed + 1`; \
+				failed=`${EXPR} $$failed + 1`; \
 			else \
 				${ECHO} -n .; \
 			fi; \
-			count=`expr $$count + 1`; \
+			count=`${EXPR} $$count + 1`; \
 		done; \
-		pass=`expr $$pass + 1`; \
+		pass=`${EXPR} $$pass + 1`; \
 	done; \
 	${ECHO}; \
 	if [ $$failed -gt 0 ]; then \
@@ -258,7 +306,7 @@ test/api/gc-bench${EXEEXT}: ${OBJ_GC_BENCH} ${OBJ}
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
 dist: libpotion${DLLEXT}
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXEEXT=${EXEEXT} DLLEXT=${DLLEXT} LOADEXT=${LOADEXT}
+	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 install: dist
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
@@ -293,13 +341,10 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f core/*.o ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML} \
-	       core/*.i core/*.opic
-	@rm -f tools/greg tools/greg.o tools/compile.o tools/tree.o
-	@rm -f core/config.h core/version.h core/syntax.c
-	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
-	@rm -f potion${EXEEXT} p2${EXEEXT} libpotion.* libp2.*
-	@rm -f test/api/potion-test${EXEEXT} test/api/gc-test${EXEEXT} \
-               test/api/gc-bench${EXEEXT}
+	@rm -f core/*.o core/*.opic core/*.i test/api/*.o ${DOCHTML}
+	@rm -f tools/greg${EXEEXT} tools/*.o
+	@rm -f core/config.h core/version.h core/syntax.c config.inc
+	@rm -f potion${EXEEXT} libpotion.* \
+	  test/api/potion-test${EXEEXT} test/api/gc-test${EXEEXT} test/api/gc-bench${EXEEXT}
 
-.PHONY: all config clean doc rebuild test bench tarball src-dist bin-dist dist
+.PHONY: all config config.inc.echo config.h.echo clean doc rebuild test bench tarball dist install
