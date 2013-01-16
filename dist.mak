@@ -1,12 +1,16 @@
-PREFIX ?= /usr/local
-ECHO = /bin/echo
+PREFIX  ?= /usr/local
+EXEEXT  ?=
+DLLEXT  ?= .so
+LOADEXT ?= .so
 
+ECHO      = /bin/echo
 VERSION   = $(shell ./tools/config.sh ${CC} version)
-P2VERSION = $(shell ./tools/config.sh ${CC} p2version)
 REVISION  = $(shell git rev-list --abbrev-commit HEAD | wc -l | sed "s/ //g")
 RELEASE   ?= ${VERSION}.${REVISION}
-P2RELEASE ?= ${P2VERSION}.${REVISION}
 PKG       = potion-${RELEASE}
+
+P2RELEASE ?= ${P2VERSION}.${REVISION}
+P2VERSION = $(shell ./tools/config.sh ${CC} p2version)
 P2PKG     = p2-${P2RELEASE}
 
 dist: bin-dist src-dist
@@ -16,17 +20,17 @@ install: bin-dist
 
 bin-dist: pkg/${PKG}.tar.gz
 
-pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax.c potion libpotion.a libpotion.so \
-  lib/readline/readline.so
+pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax.c potion${EXEEXT} \
+  libpotion.a libpotion${DLLEXT} lib/readline${LOADEXT}
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion dist/share/potion/doc \
 	  dist/share/potion/example
 	cp core/*.h dist/include/potion/
-	cp potion dist/bin/
+	cp potion${EXEEXT} dist/bin/
 	cp libpotion.a dist/lib/
-	cp libpotion.so dist/lib/
-	cp lib/readline/readline.so dist/lib/potion/
-	cp doc/* dist/share/potion/doc/
+	cp libpotion${DLLEXT} dist/lib/
+	cp lib/readline${LOADEXT} dist/lib/potion/
+	cp doc/* *.md README COPYING dist/share/potion/doc/
 	cp example/* dist/share/potion/example/
 	-mkdir -p pkg
 	(cd dist && tar czvf ../pkg/${PKG}.tar.gz * && cd ..)

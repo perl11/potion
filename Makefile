@@ -196,22 +196,22 @@ p2${EXEEXT}: ${OBJ_P2} ${OBJ}
 libpotion.a: ${OBJ_SYN} ${OBJ}
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${AR} rcs $@ ${OBJ_POTION} ${OBJ} > /dev/null
+	@${AR} rcs $@ ${OBJ_SYN} ${OBJ} > /dev/null
 
-libpotion${DLLEXT}: core/potion.opic ${PIC_OBJ}
+libpotion${DLLEXT}: ${PIC_OBJ_SYN} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_POTION} ${PIC_OBJ} > /dev/null
+	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_SYN} ${PIC_OBJ} > /dev/null
 
 libp2.a: ${OBJ_P2_SYN} ${OBJ}
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${AR} rcs $@ ${OBJ_P2} ${OBJ} > /dev/null
+	@${AR} rcs $@ ${OBJ_P2_SYN} ${OBJ} > /dev/null
 
 libp2${DLLEXT}: ${PIC_OBJ_P2_SYN} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_P2} ${PIC_OBJ} > /dev/null
+	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${PIC_OBJ_P2_SYN} ${PIC_OBJ} > /dev/null
 
 
 lib/readline${LOADEXT}: libpotion${DLLEXT}
@@ -315,7 +315,7 @@ test/api/gc-bench${EXEEXT}: ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN}
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
 dist: libp2.a libpotion${DLLEXT} libp2${DLLEXT}
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXEEXT=${EXEEXT} DLLEXT=${DLLEXT} LOADEXT=${LOADEXT}
 
 install: dist
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
