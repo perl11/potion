@@ -350,11 +350,14 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f ${OBJ} ${OBJ_POTION} ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML} core/*.opic
-	@rm -f tools/greg${EXEEXT} tools/greg.o tools/compile.o tools/tree.o
+	@rm -f core/*.o ${OBJ_TEST} ${OBJ_GC_TEST} ${OBJ_GC_BENCH} ${DOCHTML} \
+	       core/*.i core/*.opic
+	@rm -f tools/greg tools/greg.o tools/compile.o tools/tree.o
 	@rm -f core/config.h core/version.h core/syntax.c
-	@rm -f potion${EXEEXT} p2${EXEEXT} libpotion.* libp2.* \
-	  test/api/potion-test${EXEEXT} test/api/potion-test${EXEEXT} \
-	  test/api/gc-test${EXEEXT} test/api/gc-bench${EXEEXT}
+	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
+	@rm -f potion${EXEEXT} libpotion.*
+	@rm -f test/api/potion-test${EXEEXT} test/api/gc-test${EXEEXT} \
+               test/api/gc-bench${EXEEXT}
+	@rm -f p2${EXEEXT} libp2.* core/syntax-p5.c
 
 .PHONY: all config clean doc rebuild test bench tarball sloc todo
