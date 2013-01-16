@@ -11,6 +11,9 @@ TARGET=`echo "$CCv" | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --t
 MINGW_GCC=`echo "$TARGET" | sed "/mingw/!d"`
 if [ "$MINGW_GCC" = "" ]; then MINGW=0
 else MINGW=1; fi
+CYGWIN=`echo "$TARGET" | sed "/cygwin/!d"`
+if [ "$CYGWIN" = "" ]; then CYGWIN=0
+else CYGWIN=1; fi
 JIT_X86=`echo "$TARGET" | sed "/86/!d"`
 JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
 JIT_I686=`echo "$TARGET" | sed "/i686/!d"`
@@ -29,8 +32,14 @@ if [ $MINGW -eq 0 ]; then
   ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   EXE=""
   LIBEXT=".a"
-  LOADEXT=".so"
-  DLL=".so"
+  if [ "$CYGWIN" != "1" ]; then
+    LOADEXT=".so"
+    DLL=".so"
+  else
+    EXE=".exe"
+    LOADEXT=".dll"
+    DLL=".dll"
+  fi
   OSX=`echo "$TARGET" | sed "/apple/!d"`
   if [ "$OSX" != "" ]; then
     OSX=1
@@ -70,7 +79,11 @@ elif [ "$2" = "version" ]; then
   cat core/potion.h | sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//"
 elif [ "$2" = "strip" ]; then
   if [ $MINGW -eq 0 ]; then
-    echo "strip -x"
+    if [ $CYGWIN -eq 0 ]; then
+      echo "strip -x"
+    else
+      echo "strip"
+    fi
   else
     echo "ls"
   fi
@@ -84,9 +97,9 @@ else
   fi
   echo "#define POTION_PLATFORM   \"$TARGET\""
   echo "#define POTION_WIN32      $MINGW"
-  echo "#define POTION_EXE     \"$EXE\""
+  echo "#define POTION_EXE        \"$EXE\""
+  echo "#define POTION_DLL        \"$DLL\""
   echo "#define POTION_LOADEXT    \"$LOADEXT\""
-  echo "#define POTION_DLL     \"$DLL\""
   echo "#define POTION_LIBEXT     \"$LIBEXT\""
   echo
   echo "#define PN_SIZE_T         $LONG"
