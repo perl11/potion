@@ -258,7 +258,7 @@ test/api/gc-bench${EXEEXT}: ${OBJ_GC_BENCH} ${OBJ}
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
 dist: libpotion${DLLEXT}
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXEEXT=${EXEEXT} DLLEXT=${DLLEXT} LOADEXT=${LOADEXT}
 
 install: dist
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
