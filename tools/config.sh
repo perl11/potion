@@ -5,13 +5,12 @@ AC="tools/config.c"
 AOUT="tools/config.out"
 CCEX="$CC $AC -o $AOUT"
 
-TARGET=`$CC -v 2>&1 | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
+CCv=`$CC -v 2>&1`
+CLANG=`echo "$CCv" | sed "/clang/!d"`
+TARGET=`echo "$CCv" | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
 MINGW_GCC=`echo "$TARGET" | sed "/mingw/!d"`
-if [ "$MINGW_GCC" = "" ]; then
-  MINGW=0
-else
-  MINGW=1
-fi
+if [ "$MINGW_GCC" = "" ]; then MINGW=0
+else MINGW=1; fi
 JIT_X86=`echo "$TARGET" | sed "/86/!d"`
 JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
 JIT_I686=`echo "$TARGET" | sed "/i686/!d"`
@@ -59,17 +58,14 @@ else
 fi
 
 if [ "$2" = "mingw" ]; then
-  if [ $MINGW -eq 0 ]; then
-    echo "0"
-  else
-    echo "1"
-  fi
+  if [ $MINGW -eq 0 ]; then echo "0"
+  else echo "1"; fi
 elif [ "$2" = "apple" ]; then
-  if [ $OSX -eq 0 ]; then
-    echo "0"
-  else
-    echo "1"
-  fi
+  if [ $OSX -eq 0 ]; then echo "0"
+  else echo "1"; fi
+elif [ "$2" = "clang" ]; then
+  if [ "$CLANG" = "" ]; then echo "0"
+  else echo "1"; fi
 elif [ "$2" = "version" ]; then
   cat core/potion.h | sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//"
 elif [ "$2" = "strip" ]; then
