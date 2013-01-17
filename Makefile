@@ -47,15 +47,19 @@ ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
 endif
 STRIP ?= `./tools/config.sh ${CC} strip`
 
+ifneq ($(shell ./tools/config.sh ${CC} clang),0)
+	CLANG = 1
+	CFLAGS += -Wno-unused-value
+endif
 ifeq (${DEBUG},0)
 	DEBUGFLAGS += -O2 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
+  ifneq (${CLANG},1)
+	DEBUGFLAGS += -g3 -fstack-protector
+  else
 	DEBUGFLAGS += -g -fstack-protector
-endif
-ifneq ($(shell ./tools/config.sh ${CC} clang),0)
-	CLANG = 1
-	CFLAGS += -Wno-unused-value
+  endif
 endif
 CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 
