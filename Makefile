@@ -72,8 +72,8 @@ ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
 else
   ifeq ($(shell ./tools/config.sh ${CC} apple),1)
         APPLE   = 1
-	LOADEXT = .dylib
-	DLL  = .bundle
+	DLL      = .dylib
+	LOADEXT  = .bundle
 	RUNPOTION = DYLD_LIBRARY_PATH=`pwd` ./potion
 	RUNP2 = DYLD_LIBRARY_PATH=`pwd` ./p2
 	LDDLLFLAGS = -shared -fpic -install_name "@executable_path/../lib/libpotion${DLL}"
@@ -92,10 +92,7 @@ endif
 all: pn p2${EXE}
 	+${MAKE} -s usage
 
-# EXE .exe
-# DLL  so/bundle/dll
-# LOADEXT so/dylib/dll
-pn: potion${EXE} lib/readline${LOADEXT}
+pn: potion${EXE} libpotion.a lib/readline${LOADEXT}
 
 rebuild: clean potion${EXE} test
 
@@ -274,10 +271,8 @@ libp2${DLL}: ${PIC_OBJ_P2_SYN} ${PIC_OBJ}
 lib/readline${LOADEXT}: config.inc lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
 	@${ECHO} MAKE $@ -fpic
-	@cd lib/readline; \
-	  ${MAKE} -s; \
-	  cd ../..; \
-	  cp lib/readline/readline${LOADEXT} $@
+	@${MAKE} -s -C lib/readline
+	@cp lib/readline/readline${LOADEXT} $@
 
 bench: potion${EXE} test/api/gc-bench${EXE}
 	@${ECHO}; \
@@ -443,4 +438,4 @@ clean:
 	@rm -f potion${EXE} libpotion.*
 	@rm -f p2${EXE} libp2.* core/syntax-p5.c
 
-.PHONY: all config clean doc rebuild test bench tarball sloc todo
+.PHONY: all config config.inc.echo config.h.echo clean doc rebuild test bench tarball dist install

@@ -5,13 +5,7 @@ CFLAGS += $(INCS) $(LIBS) -fpic -Wl,-flat_namespace
 
 all: readline${LOADEXT}
 
-%.so: %.c
-	@$(CC) -shared $(CFLAGS) -o $@ linenoise.c $<
-
-%.dylib: %.c
-	@$(CC) -shared $(CFLAGS) -o $@ linenoise.c $<
-
-%.dll: %.c
+%${LOADEXT}: %.c
 	@$(CC) -shared $(CFLAGS) -o $@ linenoise.c $<
 
 test:
