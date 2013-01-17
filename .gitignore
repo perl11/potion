@@ -23,11 +23,11 @@ syntax.c
 .DS_Store
 readline.so
 readline.dll
-readline.dylib
+readline.bundle
 /libpotion.a
 /libpotion.so
 /libpotion.dll
-/libpotion.bundle
+/libpotion.dylib
 /history.txt
 /TAGS
 /pkg

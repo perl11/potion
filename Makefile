@@ -235,14 +235,14 @@ libpotion.a: ${OBJ}
 libpotion${DLL}: ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
-	${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${LDDLLFLAGS} \
+	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${LDDLLFLAGS} \
 	  ${PIC_OBJ} > /dev/null
 
 lib/readline${LOADEXT}: config.inc lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
 	@${ECHO} MAKE $@ -fpic
 	@${MAKE} -s -C lib/readline
-	cp lib/readline/readline${LOADEXT} $@
+	@cp lib/readline/readline${LOADEXT} $@
 
 bench: potion${EXE} test/api/gc-bench${EXE}
 	@${ECHO}; \
