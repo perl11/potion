@@ -19,6 +19,7 @@
 
   p2 is a she. She is a perl5 and possible perl6/nqp backend, based
   on why the luck stiff's potion. See README why potion is exciting.
+  Homepage: http://perl11.org/p2/
 
   parrot examples/benchmarks/fib.pir 28  1.746s
   perl   examples/benchmarks/fib.pl  28  0.439s
