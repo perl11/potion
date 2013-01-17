@@ -71,6 +71,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
   }
 
   buf = potion_bytes(P, stats.st_size);
+  // TODO: mmap instead of read all
   if (read(fd, PN_STR_PTR(buf), stats.st_size) == stats.st_size) {
     PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
