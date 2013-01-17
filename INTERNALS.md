@@ -103,7 +103,8 @@ represented by a word (32-bit on x86 and
 
 2. the compiler
    - compiles a syntax tree into
-     bytecode (see core/compile.c)
+     bytecode (see core/compile.c
+     or ./potion -c -V code.pn)
    - has its own file format
      (save to .pnb files)
    - interception of keywords
