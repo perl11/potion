@@ -62,6 +62,7 @@ else
 	DLL      = .dylib
 	LOADEXT  = .bundle
 	RUNPOTION = DYLD_LIBRARY_PATH=`pwd` ./potion
+# in builddir: mkdir ../lib; ln -s `pwd`/libpotion.dylib ../lib/
 	LDDLLFLAGS = -shared -fpic -install_name "@executable_path/../lib/libpotion${DLL}"
 	LDEXEFLAGS = -L.
   else
@@ -78,9 +79,6 @@ endif
 all: pn
 	+${MAKE} -s usage
 
-# EXE .exe
-# DLL  so/bundle/dll
-# LOADEXT so/dylib/dll
 pn: potion${EXE} libpotion.a lib/readline${LOADEXT}
 
 rebuild: clean potion${EXE} test
@@ -183,13 +181,13 @@ core/callcc.opic: core/callcc.c
 	@${ECHO} CC -fPIC $< +frame-pointer
 	@${CC} -c -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
 
-%.o: %.c core/config.h
-	@${ECHO} CC $<
-	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
+
+%.o: %.c core/config.h
+	@${ECHO} CC $<
+	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
 %.opic: %.c core/config.h
 	@${ECHO} CC -fPIC $<
