@@ -338,35 +338,11 @@ test: potion${EXE} p2${EXE} \
 			${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
 			failed=`expr $$failed + 1`; \
 		else \
-		   ${ECHO} running JIT tests; \
-			 jit=`${RUNPOTION} -v | ${SED} "/jit=1/!d"`; \
-			 if [ "$$jit" = "" ]; then \
-			   ${ECHO} skipping; \
-			   break; \
-			 fi; \
+		   ${ECHO} -n .; \
 		fi; \
-		for f in test/**/*.pn; do \
-			look=`${CAT} $$f | ${SED} "/\#/!d; s/.*\# //"`; \
-			if [ $$pass -eq 0 ]; then \
-				for=`${RUNPOTION} -I -B $$f | ${SED} "s/\n$$//"`; \
-			elif [ $$pass -eq 1 ]; then \
-				${RUNPOTION} -c $$f > /dev/null; \
-				fb="$$f"b; \
-				for=`${RUNPOTION} -I -B $$fb | ${SED} "s/\n$$//"`; \
-				rm -rf $$fb; \
-			else \
-				for=`${RUNPOTION} -I -X $$f | ${SED} "s/\n$$//"`; \
-			fi; \
-			if [ "$$look" != "$$for" ]; then \
-				${ECHO}; \
-				${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
-				failed=`${EXPR} $$failed + 1`; \
-			else \
-				${ECHO} -n .; \
-			fi; \
-			count=`${EXPR} $$count + 1`; \
-		done; \
-		pass=`${EXPR} $$pass + 1`; \
+		count=`expr $$count + 1`; \
+	  done; \
+	  pass=`${EXPR} $$pass + 1`; \
 	done; \
 	${ECHO}; \
 	if [ $$failed -gt 0 ]; then \
