@@ -40,12 +40,13 @@ EXPR = expr
 GREG = tools/greg${EXE}
 EXE  =
 
+# TODO: bootstrap config.inc to avoid all these shell calls
+STRIP ?= `./tools/config.sh ${CC} strip`
 # http://bastard.sourceforge.net/libdisasm.html
 ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
 	DEFINES += -DHAVE_LIBDISASM
 	LIBS += -ldisasm
 endif
-STRIP ?= `./tools/config.sh ${CC} strip`
 
 ifneq ($(shell ./tools/config.sh ${CC} clang),0)
 	CLANG = 1
@@ -66,6 +67,7 @@ CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
         # cygwin is NOT win32
         WIN32   = 1
+	LDDLLFLAGS = -shared
 	EXE  = .exe
 	LOADEXT = .dll
 	DLL  = .dll
@@ -74,7 +76,14 @@ ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
 	RUNPOTION = potion.exe
 	RUNP2 = p2.exe
 else
-  ifeq ($(shell ./tools/config.sh ${CC} apple),1)
+ifeq ($(shell ./tools/config.sh ${CC} cygwin),1)
+	LDDLLFLAGS = -shared
+	EXE  = .exe
+	LOADEXT = .dll
+	DLL  = .dll
+	RUNPOTION = ./potion
+else
+ifeq ($(shell ./tools/config.sh ${CC} apple),1)
         APPLE   = 1
 	DLL      = .dylib
 	LOADEXT  = .bundle
@@ -83,7 +92,7 @@ else
 # in builddir: mkdir ../lib; ln -s `pwd`/libpotion.dylib ../lib/
 	LDDLLFLAGS = -shared -fpic -install_name "@executable_path/../lib/libpotion${DLL}"
 	LDEXEFLAGS = -L.
-  else
+else
 	RUNPOTION = ./potion
 	RUNP2 = ./p2
 	DLL  = .so
@@ -91,7 +100,8 @@ else
     ifeq (${CC},gcc)
 	CFLAGS += -rdynamic
     endif
-  endif
+endif
+endif
 endif
 
 all: pn p2${EXE} libp2.a
@@ -259,7 +269,7 @@ libpotion.a: ${OBJ_SYN} ${OBJ}
 libpotion${DLL}: ${PIC_OBJ_SYN} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -shared -fpic -o $@ ${LDDLLFLAGS} \
+	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
 	  ${PIC_OBJ_SYN} ${PIC_OBJ} > /dev/null
 
 libp2.a: ${OBJ_P2_SYN} ${OBJ}
