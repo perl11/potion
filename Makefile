@@ -74,7 +74,8 @@ ifeq ($(shell ./tools/config.sh ${CC} apple),1)
         APPLE   = 1
 	DLL      = .dylib
 	LOADEXT  = .bundle
-	RUNPOTION = DYLD_LIBRARY_PATH=`pwd` ./potion
+	#RUNPOTION = DYLD_LIBRARY_PATH=`pwd` ./potion
+	RUNPOTION = ./potion
 # in builddir: mkdir ../lib; ln -s `pwd`/libpotion.dylib ../lib/
 	LDDLLFLAGS = -shared -fpic -install_name "@executable_path/../lib/libpotion${DLL}"
 	LDEXEFLAGS = -L.
