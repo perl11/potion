@@ -268,8 +268,8 @@ libp2${DLL}: ${PIC_OBJ_P2_SYN} ${PIC_OBJ}
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
 	  ${PIC_OBJ_P2_SYN} ${PIC_OBJ} > /dev/null
 
-lib/readline${LOADEXT}: config.inc lib/readline/Makefile lib/readline/linenoise.c \
-  lib/readline/linenoise.h
+lib/readline${LOADEXT}: config.inc lib/readline/Makefile \
+  lib/readline/linenoise.c lib/readline/linenoise.h
 	@${ECHO} MAKE $@ -fpic
 	@${MAKE} -s -C lib/readline
 	@cp lib/readline/readline${LOADEXT} $@
@@ -307,7 +307,7 @@ test: potion${EXE} p2${EXE} \
 		    break; \
 		fi; \
 	  elif [ $$pass -eq 3 ]; then \
-                cmd=p2; t=0; \
+                cmd="p2"; t=0; \
 		${ECHO} running $$cmd VM tests; \
 	  elif [ $$pass -eq 4 ]; then \
                 t=1; \
@@ -336,11 +336,11 @@ test: potion${EXE} p2${EXE} \
 		if [ "$$look" != "$$for" ]; then \
 			${ECHO}; \
 			${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
-			failed=`expr $$failed + 1`; \
+			failed=`${EXPR} $$failed + 1`; \
 		else \
 		   ${ECHO} -n .; \
 		fi; \
-		count=`expr $$count + 1`; \
+		count=`${EXPR} $$count + 1`; \
 	  done; \
 	  pass=`${EXPR} $$pass + 1`; \
 	done; \
