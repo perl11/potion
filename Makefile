@@ -375,19 +375,19 @@ test: potion${EXE} p2${EXE} \
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test${EXE}: ${OBJ_TEST} ${OBJ}
+test/api/potion-test${EXE}: ${OBJ_TEST} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK potion-test
 	${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
-test/api/p2-test${EXE}: ${OBJ_P2_TEST} ${OBJ_P2} ${OBJ_P2_SYN}
+test/api/p2-test${EXE}: ${OBJ_P2_TEST} ${OBJ} ${OBJ_P2_SYN}
 	@${ECHO} LINK p2-test
-	${CC} ${CFLAGS} ${OBJ_P2_TEST} ${OBJ} ${OBJ_P2_SYN} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_P2_TEST} ${OBJ} ${OBJ_P2_SYN} ${LIBS} -o $@
 
-test/api/gc-test${EXE}: ${OBJ_GC_TEST} ${OBJ}
+test/api/gc-test${EXE}: ${OBJ_GC_TEST} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK gc-test
 	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
-test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ}
+test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
 
