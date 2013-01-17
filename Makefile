@@ -76,6 +76,7 @@ else
 	LOADEXT  = .bundle
 	RUNPOTION = DYLD_LIBRARY_PATH=`pwd` ./potion
 	RUNP2 = DYLD_LIBRARY_PATH=`pwd` ./p2
+# in builddir: mkdir ../lib; ln -s `pwd`/libpotion.dylib ../lib/
 	LDDLLFLAGS = -shared -fpic -install_name "@executable_path/../lib/libpotion${DLL}"
 	LDEXEFLAGS = -L.
   else
@@ -89,7 +90,7 @@ else
   endif
 endif
 
-all: pn p2${EXE}
+all: pn p2${EXE} libp2.a
 	+${MAKE} -s usage
 
 pn: potion${EXE} libpotion.a lib/readline${LOADEXT}
@@ -194,13 +195,13 @@ core/callcc.opic: core/callcc.c
 	@${ECHO} CC -fPIC $< +frame-pointer
 	@${CC} -c -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
 
-%.o: %.c core/config.h
-	@${ECHO} CC $<
-	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
+
+%.o: %.c core/config.h
+	@${ECHO} CC $<
+	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 
 %.opic: %.c core/config.h
 	@${ECHO} CC -fPIC $<
@@ -279,7 +280,7 @@ bench: potion${EXE} test/api/gc-bench${EXE}
 	  ${ECHO} running GC benchmark; \
 	  time test/api/gc-bench
 
-test: potion${EXE} p2${EXE} \
+test: potion${EXE} p2${EXE} libpotion.a libp2.a \
   test/api/p2-test${EXE} test/api/potion-test${EXE} \
   test/api/gc-test${EXE}
 	@${ECHO}; \
