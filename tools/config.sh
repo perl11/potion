@@ -72,6 +72,9 @@ if [ "$2" = "mingw" ]; then
 elif [ "$2" = "apple" ]; then
   if [ $OSX -eq 0 ]; then echo "0"
   else echo "1"; fi
+elif [ "$2" = "cygwin" ]; then
+  if [ $CYGWIN -eq 0 ]; then echo "0"
+  else echo "1"; fi
 elif [ "$2" = "clang" ]; then
   if [ "$CLANG" = "" ]; then echo "0"
   else echo "1"; fi
