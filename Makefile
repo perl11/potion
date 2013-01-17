@@ -64,6 +64,8 @@ else
 endif
 CFLAGS += ${DEFINES} ${DEBUGFLAGS}
 
+RUNPOTION = ./potion
+RUNP2 = ./p2
 ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
         # cygwin is NOT win32
         WIN32   = 1
@@ -81,20 +83,15 @@ ifeq ($(shell ./tools/config.sh ${CC} cygwin),1)
 	EXE  = .exe
 	LOADEXT = .dll
 	DLL  = .dll
-	RUNPOTION = ./potion
 else
 ifeq ($(shell ./tools/config.sh ${CC} apple),1)
         APPLE   = 1
 	DLL      = .dylib
 	LOADEXT  = .bundle
-	RUNPOTION = DYLD_LIBRARY_PATH=`pwd` ./potion
-	RUNP2 = DYLD_LIBRARY_PATH=`pwd` ./p2
 # in builddir: mkdir ../lib; ln -s `pwd`/libpotion.dylib ../lib/
 	LDDLLFLAGS = -shared -fpic -install_name "@executable_path/../lib/libpotion${DLL}"
 	LDEXEFLAGS = -L.
 else
-	RUNPOTION = ./potion
-	RUNP2 = ./p2
 	DLL  = .so
 	LOADEXT = .so
     ifeq (${CC},gcc)
