@@ -13,6 +13,8 @@
 /core/*.i
 /core/*.o
 /core/*.opic
+/core/*.o2
+/core/*.opic2
 /test/api/potion-test
 /test/api/potion-test.exe
 /test/api/p2-test
