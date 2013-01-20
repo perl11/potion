@@ -8,7 +8,7 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #include <stdio.h>
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 
 PN potion_continuation_yield(Potion *P, PN cl, PN self) {

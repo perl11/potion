@@ -1,5 +1,5 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
-.SUFFIXES: .g .c .i .o .opic .o2 .opic2 .textile .html
+.SUFFIXES: .g .c .i .i2 .o .opic .o2 .opic2 .textile .html
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 SRC_SYN = core/syntax.c
@@ -212,30 +212,40 @@ core/callcc.opic core/callcc.opic2: core/callcc.c
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
-
+%.i2: %.c core/config.h
+	@${ECHO} CPP $@
+	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
 %.o: %.c core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-
 %.opic: %.c core/config.h
 	@${ECHO} CC -fPIC $<
 	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
+%.o2: %.c core/config.h
+	@${ECHO} CC -DP2 $<
+	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
+%.opic2: %.c core/config.h
+	@${ECHO} CC -DP2 -fPIC $<
+	@${CC} -c -DP2 -fPIC ${CFLAGS} ${INCS} -o $@ $<
 
 .c.i: core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
+.c.i2: core/config.h
+	@${ECHO} CPP $@
+	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
 .c.o: core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 .c.o2: core/config.h
-	@${ECHO} CC $<
+	@${ECHO} CC -DP2 $<
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 .c.opic: core/config.h
 	@${ECHO} CC -fPIC $<
 	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
 .c.opic2: core/config.h
-	@${ECHO} CC -fPIC $<
-	@${CC} -c -fPIC -DP2 ${CFLAGS} ${INCS} -o $@ $<
+	@${ECHO} CC -DP2 -fPIC $<
+	@${CC} -c -DP2 -fPIC ${CFLAGS} ${INCS} -o $@ $<
 
 %.c: %.g ${GREG}
 	@${ECHO} GREG $<
@@ -425,7 +435,7 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o test/api/*.o ${DOCHTML} \
-	       core/*.i core/*.opic
+	       core/*.i core/*.opic core/*.opic2 core/*.o2
 	@rm -f ${GREG} tools/*.o core/config.h core/version.h core/syntax.c
 	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
 	@rm -f test/api/potion-test${EXE} test/api/gc-test${EXE} \

@@ -21,10 +21,6 @@
 #include <fcntl.h>
 #include "config.h"
 
-#ifdef P2
-#define potion_parse p2_parse
-#endif
-
 //
 // types
 //

@@ -10,7 +10,7 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 #include "gc.h"
 #include "khash.h"

@@ -12,7 +12,7 @@
 #include <unistd.h>
 
 #include "p2.h"
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 #include "opcodes.h"
 #include "khash.h"
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
   } else {
     if (!exec || verbose) potion_fatal("no filename given");
     Potion *P = potion_create(sp);
-    potion_eval(P, potion_byte_str(P,
+    p2_eval(P, potion_byte_str(P,
       "load 'readline'\n" \
       "loop:\n" \
       "  code = readline('>> ')\n" \

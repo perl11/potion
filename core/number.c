@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <math.h>
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 
 PN potion_real(Potion *P, double v) {

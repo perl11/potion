@@ -21,11 +21,24 @@
 
 PN p2_source_load(Potion *P, PN cl, PN buf);
 PN p2_parse(Potion *, PN);
-PN p2_vm_proto(Potion *, PN, PN, ...);
-PN p2_vm_class(Potion *, PN, PN);
-PN p2_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
-PN p2_eval(Potion *, PN, int);
 PN p2_run(Potion *, PN, int);
-PN_F p2_jit_proto(Potion *, PN, PN);
+PN p2_eval(Potion *, PN, int);
+// not yet:
+//PN p2_vm_proto(Potion *, PN, PN, ...);
+//PN p2_vm_class(Potion *, PN, PN);
+//PN p2_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
+//PN_F p2_jit_proto(Potion *, PN, PN);
+
+#ifdef P2
+#define potion_load_code   p2_load_code
+#define potion_load        p2_load
+#define potion_source_load p2_source_load
+#define potion_parse       p2_parse
+#define potion_run         p2_run
+#define potion_eval        p2_eval
+//#define potion_vm_proto    p2_vm_proto
+//#define potion_vm_class    p2_vm_class
+//#define potion_vm          p2_vm
+#endif
 
 #endif

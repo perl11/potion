@@ -6,7 +6,7 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 
 PN potion_lick(Potion *P, PN name, PN inner, PN attr) {

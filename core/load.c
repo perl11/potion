@@ -11,7 +11,7 @@
 #include <string.h>
 #include <dlfcn.h>
 #include <sys/stat.h>
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 #include "table.h"
 
@@ -82,8 +82,13 @@ void potion_load_dylib(Potion *P, const char *filename) {
 
 static PN pn_loader_path;
 static const char *pn_loader_extensions[] = {
+#ifdef P2
   ".pnb"
   , ".pn"
+#else
+  ".plc"
+  , ".pl"
+#endif
   , POTION_LOADEXT
 };
 
@@ -148,6 +153,7 @@ char *potion_find_file(char *str, PN_SIZE str_len) {
   return r;
 }
 
+#ifndef P2
 PN potion_load(Potion *P, PN cl, PN self, PN file) {
   char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
   if (filename == NULL) {
@@ -171,6 +177,31 @@ PN potion_load(Potion *P, PN cl, PN self, PN file) {
   free(filename);
   return PN_NIL;
 }
+#else
+PN p2_load(Potion *P, PN cl, PN self, PN file) {
+  char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
+  if (filename == NULL) {
+    fprintf(stderr, "** can't find %s\n", PN_STR_PTR(file));
+    return PN_NIL;
+  }
+  file_ext = filename + strlen(filename);
+  while (*--file_ext != '.' && file_ext >= filename);
+  if (file_ext++ != filename) {
+    if (strcmp(file_ext, "pl") == 0)
+      p2_load_code(P, filename);
+    else if (strcmp(file_ext, "plc") == 0)
+      p2_load_code(P, filename);
+    else if (strcmp(file_ext, POTION_LOADEXT+1) == 0)
+      potion_load_dylib(P, filename);
+    else
+      fprintf(stderr, "** unrecognized file extension: %s\n", file_ext);
+  } else {
+    fprintf(stderr, "** no file extension: %s\n", filename);
+  }
+  free(filename);
+  return PN_NIL;
+}
+#endif
 
 void potion_loader_init(Potion *P) {
   pn_loader_path = PN_TUP0();

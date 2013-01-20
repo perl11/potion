@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 #include "khash.h"
 #include "table.h"

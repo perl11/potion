@@ -6,7 +6,7 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 
 static PN potion_nil_is_nil(Potion *P, PN closure, PN self) {

@@ -9,7 +9,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 #include "table.h"
 
