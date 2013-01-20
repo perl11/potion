@@ -77,12 +77,12 @@ static void p2_cmd_compile(char *filename, int exec, int verbose, void *sp) {
   if (read(fd, PN_STR_PTR(buf), stats.st_size) == stats.st_size) {
     PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
-    code = potion_source_load(P, PN_NIL, buf);
+    code = p2_source_load(P, PN_NIL, buf);
     if (PN_IS_PROTO(code)) {
       if (verbose > 1)
         printf("\n\n-- loaded --\n");
     } else {
-      code = potion_parse(P, buf);
+      code = p2_parse(P, buf);
       if (PN_TYPE(code) == PN_TERROR) {
         potion_send(potion_send(code, PN_string), PN_print);
         goto done;

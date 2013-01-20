@@ -1,5 +1,5 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
-.SUFFIXES: .g .c .i .o .opic .textile .html
+.SUFFIXES: .g .c .i .o .opic .o2 .opic2 .textile .html
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
 SRC_SYN = core/syntax.c
@@ -104,10 +104,10 @@ endif
 endif
 endif
 
-all: pn p2${EXE} libp2.a
+all: pn p2${EXE}
 	+${MAKE} -s usage
 
-pn: potion${EXE} libpotion.a lib/readline${LOADEXT}
+pn: potion${EXE} lib/readline${LOADEXT}
 
 rebuild: clean potion${EXE} test
 
@@ -201,11 +201,11 @@ config.inc: tools/config.sh #Makefile
 	@${ECHO} MAKE $@
 	@${MAKE} -s config.inc.echo > $@
 
-core/callcc.o: core/callcc.c
+core/callcc.o core/callcc.o2: core/callcc.c
 	@${ECHO} CC $< +frame-pointer
 	@${CC} -c -fno-omit-frame-pointer ${INCS} -o $@ $<
 
-core/callcc.opic: core/callcc.c
+core/callcc.opic core/callcc.opic2: core/callcc.c
 	@${ECHO} CC -fPIC $< +frame-pointer
 	@${CC} -c -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
 
@@ -224,14 +224,18 @@ core/callcc.opic: core/callcc.c
 .c.i: core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
-
 .c.o: core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-
+.c.o2: core/config.h
+	@${ECHO} CC $<
+	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 .c.opic: core/config.h
 	@${ECHO} CC -fPIC $<
 	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
+.c.opic2: core/config.h
+	@${ECHO} CC -fPIC $<
+	@${CC} -c -fPIC -DP2 ${CFLAGS} ${INCS} -o $@ $<
 
 %.c: %.g ${GREG}
 	@${ECHO} GREG $<
@@ -255,7 +259,7 @@ potion${EXE}: ${OBJ_POTION} libpotion${DLL}
 
 p2${EXE}: ${OBJ_P2} libp2${DLL}
 	@${ECHO} LINK $@
-	${CC} ${CFLAGS} ${OBJ_P2} -o $@ $(subst potion,p2,${LDEXEFLAGS}) -lp2 ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ $(subst potion,p2,${LDEXEFLAGS}) -lp2 ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
@@ -272,16 +276,16 @@ libpotion${DLL}: ${PIC_OBJ_SYN} ${PIC_OBJ}
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
 	  ${PIC_OBJ_SYN} ${PIC_OBJ} > /dev/null
 
-libp2.a: ${OBJ_P2_SYN} ${OBJ}
+libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ})
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${AR} rcs $@ ${OBJ_P2_SYN} ${OBJ} > /dev/null
+	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
 
-libp2${DLL}: ${PIC_OBJ_P2_SYN} ${PIC_OBJ}
+libp2${DLL}: ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ})
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
-	  ${PIC_OBJ_P2_SYN} ${PIC_OBJ} > /dev/null
+	@${CC} ${DEBUGFLAGS} -o $@ $(subst potion,p2,${LDDLLFLAGS}) \
+	  ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ}) > /dev/null
 
 lib/readline${LOADEXT}: config.inc lib/readline/Makefile \
   lib/readline/linenoise.c lib/readline/linenoise.h
@@ -294,7 +298,7 @@ bench: potion${EXE} test/api/gc-bench${EXE}
 	  ${ECHO} running GC benchmark; \
 	  time test/api/gc-bench
 
-test: potion${EXE} p2${EXE} libpotion.a libp2.a \
+test: potion${EXE} p2${EXE} \
   test/api/p2-test${EXE} test/api/potion-test${EXE} \
   test/api/gc-test${EXE}
 	@${ECHO}; \
@@ -366,21 +370,21 @@ test: potion${EXE} p2${EXE} libpotion.a libp2.a \
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test${EXE}: ${OBJ_TEST} ${OBJ} ${OBJ_SYN}
+test/api/potion-test${EXE}: ${OBJ_TEST} libpotion${DLL}
 	@${ECHO} LINK potion-test
-	${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_TEST} ${LIBS} -o $@ -L. -lpotion
 
-test/api/p2-test${EXE}: ${OBJ_P2_TEST} ${OBJ} ${OBJ_P2_SYN}
+test/api/p2-test${EXE}: ${OBJ_P2_TEST} libp2${DLL}
 	@${ECHO} LINK p2-test
-	@${CC} ${CFLAGS} ${OBJ_P2_TEST} ${OBJ} ${OBJ_P2_SYN} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_P2_TEST} ${LIBS} -o $@ -L. -lp2
 
-test/api/gc-test${EXE}: ${OBJ_GC_TEST} ${OBJ} ${OBJ_SYN}
+test/api/gc-test${EXE}: ${OBJ_GC_TEST} libp2${DLL}
 	@${ECHO} LINK gc-test
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${LIBS} -o $@ -L. -lp2
 
-test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN}
+test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} libp2${DLL}
 	@${ECHO} LINK gc-bench
-	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${OBJ_SYN} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${LIBS} -o $@ -L. -lp2
 
 dist: core/config.h core/version.h core/syntax.c core/syntax-p5.c \
   potion${EXE} p2${EXE} \

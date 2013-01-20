@@ -780,7 +780,7 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
   ptr = h->proto;
   return potion_proto_load(P, PN_NIL, h->pn, &ptr);
 }
-
+#ifdef P2
 PN p2_source_load(Potion *P, PN cl, PN buf) {
   u8 *ptr;
   vPN(BHeader) h = (struct PNBHeader *)PN_STR_PTR(buf);
@@ -791,6 +791,7 @@ PN p2_source_load(Potion *P, PN cl, PN buf) {
   ptr = h->proto;
   return potion_proto_load(P, PN_NIL, h->pn, &ptr);
 }
+#endif
 
 #define WRITE_U8(un, ptr) ({*ptr = (u8)un; ptr += sizeof(u8);})
 #define WRITE_PN(pn, ptr) ({*(PN *)ptr = pn; ptr += sizeof(PN);})

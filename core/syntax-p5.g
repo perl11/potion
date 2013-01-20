@@ -294,7 +294,7 @@ arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
 %%
 
-PN potion_parse(Potion *P, PN code) {
+PN p2_parse(Potion *P, PN code) {
   GREG *G = YY_NAME(parse_new)(P);
   P->yypos = 0;
   P->input = code;

@@ -19,6 +19,7 @@
 // additional p2 functions
 //
 
+PN p2_source_load(Potion *P, PN cl, PN buf);
 PN p2_parse(Potion *, PN);
 PN p2_vm_proto(Potion *, PN, PN, ...);
 PN p2_vm_class(Potion *, PN, PN);
