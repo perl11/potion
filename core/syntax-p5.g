@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "p2.h"
-#include "potion.h"
 #include "internal.h"
 #include "asm.h"
 #include "ast.h"
