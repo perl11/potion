@@ -223,7 +223,7 @@ dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM; }
         ('.' [0-9]+ { $$ = YY_TDEC; })?
         ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
 
-q1 = [']
+q1 = [']   # ' emacs highlight problems
 c1 = < (!q1 utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng); }
 str1 = q1 { P->pbuf = potion_asm_clear(P, P->pbuf); }
        < (q1 q1 { P->pbuf = potion_asm_write(P, P->pbuf, "'", 1); } | c1)* >
