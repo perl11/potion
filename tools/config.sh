@@ -43,8 +43,8 @@ if [ $MINGW -eq 0 ]; then
   OSX=`echo "$TARGET" | sed "/apple/!d"`
   if [ "$OSX" != "" ]; then
     OSX=1
-    LOADEXT=".dylib"
-    DLL=".bundle"
+    LOADEXT=".bundle"
+    DLL=".dylib"
   else
     OSX=0
   fi
