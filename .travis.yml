@@ -1,0 +1,29 @@
+# language: "C"
+install: "echo"
+before_script:
+    - sudo apt-get install clang gcc-multilib
+    - gcc --version
+    - g++ --version
+    - clang --version
+
+script: "make test CC=\"$CC\""
+
+#branches:
+#   only:
+#     - master
+#     - p2
+notifications:
+#  recipients:
+#    - parrot-ci@lists.parrot.org
+#  email:
+#    on_success: change
+#    on_failure: always
+  irc:
+    channels:
+      - "irc.perl.org#perl11"
+    on_success: change
+    on_failure: change
+env:
+    - CC=clang
+    - CC=gcc
+    - CC=g++
