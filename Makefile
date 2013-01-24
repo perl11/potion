@@ -305,18 +305,18 @@ bench: potion${EXE} test/api/gc-bench${EXE}
 	  ${ECHO} running GC benchmark; \
 	  time test/api/gc-bench
 
-test: potion${EXE} p2${EXE} \
-  test/api/p2-test${EXE} test/api/potion-test${EXE} \
+test: test.pn test.p2
+
+test.pn: potion${EXE} \
+  test/api/potion-test${EXE} \
   test/api/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
 	test/api/potion-test; \
-	${ECHO} running p2 API tests; \
-	test/api/p2-test; \
 	${ECHO} running GC tests; \
 	test/api/gc-test; \
 	count=0; failed=0; pass=0; cmd="potion"; \
-	while [ $$pass -lt 6 ]; do \
+	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
 	  if [ $$pass -eq 0 ]; then \
 		t=0; \
@@ -332,13 +332,55 @@ test: potion${EXE} p2${EXE} \
 		    ${ECHO} skipping; \
 		    break; \
 		fi; \
-	  elif [ $$pass -eq 3 ]; then \
-                cmd="p2"; t=0; \
+	  fi; \
+	  for f in test/**/*.pn; do \
+		look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
+		if [ $$t -eq 0 ]; then \
+			for=`./$$cmd -I -B $$f | sed "s/\n$$//"`; \
+		elif [ $$t -eq 1 ]; then \
+			./$$cmd -c $$f > /dev/null; \
+			fb="$$f"b; \
+			for=`./$$cmd -I -B $$fb | sed "s/\n$$//"`; \
+			rm -rf $$fb; \
+		else \
+			for=`./$$cmd -I -X $$f | sed "s/\n$$//"`; \
+		fi; \
+		if [ "$$look" != "$$for" ]; then \
+			${ECHO}; \
+			${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
+			failed=`${EXPR} $$failed + 1`; \
+		else \
+		   ${ECHO} -n .; \
+		fi; \
+		count=`${EXPR} $$count + 1`; \
+	  done; \
+	  pass=`${EXPR} $$pass + 1`; \
+	done; \
+	${ECHO}; \
+	if [ $$failed -gt 0 ]; then \
+		${ECHO} "$$failed FAILS ($$count tests)"; \
+	else \
+		${ECHO} "OK ($$count tests)"; \
+	fi
+
+test.p2: p2${EXE} \
+  test/api/p2-test${EXE} \
+  test/api/gc-test${EXE}
+	@${ECHO}; \
+	${ECHO} running p2 API tests; \
+	test/api/p2-test; \
+	${ECHO} running GC tests; \
+	test/api/gc-test; \
+	count=0; failed=0; pass=0; cmd="p2"; \
+	while [ $$pass -lt 3 ]; do \
+	  ${ECHO}; \
+	  if [ $$pass -eq 0 ]; then \
+		t=0; \
 		${ECHO} running $$cmd VM tests; \
-	  elif [ $$pass -eq 4 ]; then \
+	  elif [ $$pass -eq 1 ]; then \
                 t=1; \
 		${ECHO} running $$cmd compiler tests; \
-	  elif [ $$pass -eq 5 ]; then \
+	  elif [ $$pass -eq 2 ]; then \
                 t=2; \
 		${ECHO} running $$cmd JIT tests; \
 		jit=`./$$cmd -v | sed "/jit=1/!d"`; \
@@ -347,7 +389,7 @@ test: potion${EXE} p2${EXE} \
 		    break; \
 		fi; \
 	  fi; \
-	  for f in test/**/*.pn; do \
+	  for f in test/**/*.pl; do \
 		look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
 		if [ $$t -eq 0 ]; then \
 			for=`./$$cmd -I -B $$f | sed "s/\n$$//"`; \
@@ -440,4 +482,5 @@ clean:
 	@rm -f potion${EXE} libpotion.*
 	@rm -f p2${EXE} libp2.* core/syntax-p5.c
 
-.PHONY: all config config.inc.echo config.h.echo clean doc rebuild test bench tarball dist install
+.PHONY: all config config.inc.echo config.h.echo clean doc rebuild test \
+  test.pn test.p2 bench tarball dist install
