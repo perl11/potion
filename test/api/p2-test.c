@@ -3,7 +3,7 @@
 // tests of the p2 C api (perl5)
 //
 // (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2012 cPanel
+// (c) 2012-2013 cPanel
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,10 +14,11 @@
 #include "internal.h"
 #include "CuTest.h"
 
-PN num = PN_NUM(490);
+PN num = PN_NUM(483);
 Potion *P;
 
 // TODO p2 perl5 api
+#if 0
 void p2_test_nil(CuTest *T) {
   CuAssert(T, "nil isn't a nil type", PN_TYPE(PN_NIL) == PN_TNIL);
   CuAssert(T, "nil is a ref", !PN_IS_PTR(PN_NIL));
@@ -31,6 +32,7 @@ void p2_test_bool(CuTest *T) {
   CuAssert(T, "false isn't a bool type", PN_TYPE(PN_FALSE) == PN_TBOOLEAN);
   CuAssert(T, "false is a ref", !PN_IS_PTR(PN_FALSE));
 }
+#endif
 
 void p2_test_int1(CuTest *T) {
   PN zero = PN_NUM(0);
@@ -99,7 +101,7 @@ void p2_test_sig(CuTest *T) {
 }
 
 void p2_test_eval(CuTest *T) {
-  PN add = p2_eval(P, potion_str(P, "(x, y): x + y."), POTION_JIT);
+  PN add = p2_eval(P, potion_str(P, "sub(x,y){x+y}"), POTION_JIT);
   PN_F addfn = PN_CLOSURE_F(add);
   PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func failed",
@@ -119,8 +121,9 @@ void p2_test_allocated(CuTest *T) {
 
 CuSuite *p2_suite() {
   CuSuite *S = CuSuiteNew();
-  SUITE_ADD_TEST(S, p2_test_nil);
-  SUITE_ADD_TEST(S, p2_test_bool);
+  SUITE_ADD_TEST(S, p2_test_eval);
+  //SUITE_ADD_TEST(S, p2_test_nil);
+  //SUITE_ADD_TEST(S, p2_test_bool);
   SUITE_ADD_TEST(S, p2_test_int1);
   SUITE_ADD_TEST(S, p2_test_int2);
   SUITE_ADD_TEST(S, p2_test_int3);
@@ -129,7 +132,6 @@ CuSuite *p2_suite() {
   SUITE_ADD_TEST(S, p2_test_empty);
   SUITE_ADD_TEST(S, p2_test_tuple);
   SUITE_ADD_TEST(S, p2_test_sig);
-  SUITE_ADD_TEST(S, p2_test_eval);
   SUITE_ADD_TEST(S, p2_test_allocated);
   return S;
 }

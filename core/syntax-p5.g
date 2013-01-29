@@ -42,10 +42,11 @@ statements = s1:stmt { $$ = s1 = PN_TUP(s1); }
         (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })*
          sep?
      | ''            { $$ = PN_NIL; }
+     | sub
 
-stmt = s:sets
-       ( or x:sets          { s = PN_OP(AST_OR, s, x); }
-       | and x:sets         { s = PN_OP(AST_AND, s, x); })*
+stmt = s:sets ';'
+       ( or x:sets ';'      { s = PN_OP(AST_OR, s, x); }
+       | and x:sets ';'     { s = PN_OP(AST_AND, s, x); })*
        { $$ = s; }
 
 sets = e:eqs
@@ -118,15 +119,15 @@ expr = ( not a:expr           { a = PN_AST(NOT, a); }
          (c:call { a = PN_PUSH(a, c) })*
        { $$ = PN_AST(EXPR, a); }
 
-atom = e:value | e:closure | e:table | e:call
+atom = e:value | e:anonsub | e:table | e:call
 
-call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? (b:block | b:closure)? |
+call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? (b:block | b:anonsub)? |
        (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
          { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
 name = p:path           { $$ = PN_AST(PATH, p); }
-     | quiz ( m:message { $$ = PN_AST(QUERY, m); }
-            | p:path    { $$ = PN_AST(PATHQ, p); })
+#     | quiz ( m:message { $$ = PN_AST(QUERY, m); }
+#            | p:path    { $$ = PN_AST(PATHQ, p); })
      | !keyword
        m:message        { $$ = PN_AST(MESSAGE, m); }
 
@@ -144,7 +145,9 @@ lick-item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
 loose = value
       | v:unquoted { $$ = PN_AST(VALUE, v); }
 
-closure = t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
+# anonymous sub, w or w/o proto (aka table)
+anonsub = 'sub' - t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
+sub = 'sub' - n:arg-name - t:table? b:block { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)); }
 table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
@@ -179,15 +182,15 @@ utf8 = [\t\n\r\40-\176]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 
 comma = ','
-block-start = ':' --
-block-end = '.' -
+block-start = '{'
+block-end = ';'? space '}'
 table-start = '(' --
 table-end = ')' -
 lick-start = '[' --
 lick-end = ']' -
-group-start = '|' --
-group-end = '.' -
-quiz = '?' --
+group-start = '{'
+group-end = '}'
+#quiz = '?' --
 assign = '=' --
 pplus = "++" -
 mminus = "--" -
@@ -269,10 +272,10 @@ unq-sep = sep !'{' !'[' !'('
 unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = potion_str2(P, yytext, yyleng); }
 
 - = (space | comment)*
--- = (space | comment | end-of-line)*
-sep = (end-of-line | comma) (space | comment | end-of-line | comma)*
+-- = (space | comment | ';')*
+sep = ';' (space | comment | ';')*
 comment	= '#' (!end-of-line utf8)*
-space = ' ' | '\f' | '\v' | '\t'
+space = ' ' | '\f' | '\v' | '\t' | end-of-line
 end-of-line = '\r\n' | '\n' | '\r'
 end-of-file = !.
 
