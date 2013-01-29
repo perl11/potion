@@ -29,7 +29,7 @@ ifneq ($(shell ./tools/config.sh ${CC} clang),0)
 	CLANG = 1
 	CFLAGS += -Wno-unused-value
 endif
-ifneq (${DEBUG},0)
+ifeq (${DEBUG},0)
 	DEBUGFLAGS += -O2 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
@@ -108,7 +108,6 @@ config.inc.echo:
 config.h.echo:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
 	@${ECHO} "#define POTION_CFLAGS \"${CFLAGS}\""
-	@${ECHO} "#define POTION_DEBUG  ${DEBUG}"
 	@${ECHO} "#define POTION_JIT    ${JIT}"
 	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
 	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
