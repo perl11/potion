@@ -197,6 +197,7 @@ test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 	${ECHO}; \
 	if [ $$failed -gt 0 ]; then \
 		${ECHO} "$$failed FAILS ($$count tests)"; \
+		false; \
 	else \
 		${ECHO} "OK ($$count tests)"; \
 	fi
