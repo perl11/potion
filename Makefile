@@ -206,35 +206,35 @@ test.pn: potion${EXE} \
 	test/api/potion-test; \
 	${ECHO} running GC tests; \
 	test/api/gc-test; \
-	count=0; failed=0; pass=0; cmd="potion"; \
+	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
 	  if [ $$pass -eq 0 ]; then \
 		t=0; \
-		${ECHO} running $$cmd VM tests; \
+		${ECHO} running potion VM tests; \
 	  elif [ $$pass -eq 1 ]; then \
                 t=1; \
-		${ECHO} running $$cmd compiler tests; \
+		${ECHO} running potion compiler tests; \
 	  elif [ $$pass -eq 2 ]; then \
                 t=2; \
-		${ECHO} running $$cmd JIT tests; \
-		jit=`./$$cmd -v | sed "/jit=1/!d"`; \
+		${ECHO} running potion JIT tests; \
+		jit=`${RUNPOTION} -v | ${SED} "/jit=1/!d"`; \
 		if [ "$$jit" = "" ]; then \
 		    ${ECHO} skipping; \
 		    break; \
 		fi; \
 	  fi; \
 	  for f in test/**/*.pn; do \
-		look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
+		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
 		if [ $$t -eq 0 ]; then \
-			for=`./$$cmd -I -B $$f | sed "s/\n$$//"`; \
+			for=`${RUNPOTION} -I -B $$f | ${SED} "s/\n$$//"`; \
 		elif [ $$t -eq 1 ]; then \
-			./$$cmd -c $$f > /dev/null; \
+			${RUNPOTION} -c $$f > /dev/null; \
 			fb="$$f"b; \
-			for=`./$$cmd -I -B $$fb | sed "s/\n$$//"`; \
+			for=`${RUNPOTION} -I -B $$fb | ${SED} "s/\n$$//"`; \
 			rm -rf $$fb; \
 		else \
-			for=`./$$cmd -I -X $$f | sed "s/\n$$//"`; \
+			for=`${RUNPOTION} -I -X $$f | ${SED} "s/\n$$//"`; \
 		fi; \
 		if [ "$$look" != "$$for" ]; then \
 			${ECHO}; \
@@ -262,35 +262,35 @@ test.p2: p2${EXE} \
 	test/api/p2-test; \
 	${ECHO} running GC tests; \
 	test/api/gc-test; \
-	count=0; failed=0; pass=0; cmd="p2"; \
+	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
 	  if [ $$pass -eq 0 ]; then \
 		t=0; \
-		${ECHO} running $$cmd VM tests; \
+		${ECHO} running p2 VM tests; \
 	  elif [ $$pass -eq 1 ]; then \
                 t=1; \
-		${ECHO} running $$cmd compiler tests; \
+		${ECHO} running p2 compiler tests; \
 	  elif [ $$pass -eq 2 ]; then \
                 t=2; \
-		${ECHO} running $$cmd JIT tests; \
-		jit=`./$$cmd -v | sed "/jit=1/!d"`; \
+		${ECHO} running p2 JIT tests; \
+		jit=`${RUNP2} -v | ${SED} "/jit=1/!d"`; \
 		if [ "$$jit" = "" ]; then \
 		    ${ECHO} skipping; \
 		    break; \
 		fi; \
 	  fi; \
 	  for f in test/**/*.pl; do \
-		look=`cat $$f | sed "/\#/!d; s/.*\# //"`; \
+		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
 		if [ $$t -eq 0 ]; then \
-			for=`./$$cmd -I -B $$f | sed "s/\n$$//"`; \
+			for=`${RUNP2} -I -B $$f | ${SED} "s/\n$$//"`; \
 		elif [ $$t -eq 1 ]; then \
-			./$$cmd -c $$f > /dev/null; \
+			${RUNP2} -c $$f > /dev/null; \
 			fb="$$f"b; \
-			for=`./$$cmd -I -B $$fb | sed "s/\n$$//"`; \
+			for=`${RUNP2} -I -B $$fb | ${SED} "s/\n$$//"`; \
 			rm -rf $$fb; \
 		else \
-			for=`./$$cmd -I -X $$f | sed "s/\n$$//"`; \
+			for=`${RUNP2} -I -X $$f | ${SED} "s/\n$$//"`; \
 		fi; \
 		if [ "$$look" != "$$for" ]; then \
 			${ECHO}; \
@@ -373,5 +373,4 @@ clean:
 	@rm -f potion${EXE} libpotion.*
 	@rm -f p2${EXE} libp2.* core/syntax-p5.c
 
-.PHONY: all config clean doc rebuild test \
-  test.pn test.p2 bench tarball dist install
+.PHONY: all config clean doc rebuild test test.pn test.p2 bench tarball dist install

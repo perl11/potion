@@ -1,2 +1,2 @@
 load 'test/misc/global'
-X # X
+X #=> X

@@ -3,4 +3,4 @@ math = (x):
   sub = (x, y): x - y.
   sub.
 m = math()
-m(60, 2) # 58
+m(60, 2) #=> 58
