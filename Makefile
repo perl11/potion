@@ -71,6 +71,9 @@ core/config.h: core/version.h tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
 	@${MAKE} -s -f config.mak
 
+core/version.h: .git/HEAD .git/refs/heads/master
+	@${MAKE} -s -f config.mak $@
+
 # bootstrap config.inc
 config.inc: tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
@@ -87,11 +90,9 @@ core/callcc.opic: core/callcc.c
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
-
 %.o: %.c core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-
 %.opic: %.c core/config.h
 	@${ECHO} CC -fPIC $<
 	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
@@ -99,11 +100,9 @@ core/callcc.opic: core/callcc.c
 .c.i: core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
-
 .c.o: core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-
 .c.opic: core/config.h
 	@${ECHO} CC -fPIC $<
 	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
@@ -111,7 +110,6 @@ core/callcc.opic: core/callcc.c
 %.c: %.g ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
-
 .g.c: ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
