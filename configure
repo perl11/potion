@@ -1,0 +1,2 @@
+#!/bin/sh
+make -f config.mak
