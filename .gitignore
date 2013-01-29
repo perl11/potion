@@ -3,6 +3,7 @@
 /potion.exe
 /tools/greg.exe
 /tools/config.c
+/config.inc
 /core/config.h
 /core/version.h
 /core/pn-scan.c
