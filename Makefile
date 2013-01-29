@@ -69,7 +69,7 @@ config:
 # Force sync with config.inc
 core/config.h: core/version.h tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
-	@${MAKE} -s -f config.mak
+	@${MAKE} -s -f config.mak $@
 
 core/version.h: .git/HEAD .git/refs/heads/master
 	@${MAKE} -s -f config.mak $@
@@ -77,7 +77,7 @@ core/version.h: .git/HEAD .git/refs/heads/master
 # bootstrap config.inc
 config.inc: tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
-	@${MAKE} -s -f config.mak
+	@${MAKE} -s -f config.mak $@
 
 core/callcc.o: core/callcc.c
 	@${ECHO} CC $< +frame-pointer
