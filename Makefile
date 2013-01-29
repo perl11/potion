@@ -151,7 +151,7 @@ bench: potion${EXE} test/api/gc-bench${EXE}
 	  time test/api/gc-bench
 
 test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
-	${ECHO}; \
+	@${ECHO}; \
 	${ECHO} running API tests; \
 	test/api/potion-test; \
 	${ECHO} running GC tests; \
