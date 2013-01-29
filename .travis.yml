@@ -1,10 +1,12 @@
 language: c
 compiler:
-    - gcc
-    - clang
-    - g++
-install: "echo"
-script: "make && make test CC=\"$CC\""
+  - gcc
+  - clang
+  - g++
+before_install:
+  - git submodule update --init --recursive
+install: echo
+script: make config; make && make test CC=$CC
 notifications:
   irc:
     channels:
