@@ -46,10 +46,10 @@ try = (block, catch):
 
 nil
 
-# TRY 1
-# TRY ERROR!
-# RESUMING
-# SUCCESS
-# TRY 2
-# SUCCESS
-# nil
+#=> TRY 1
+#=> TRY ERROR!
+#=> RESUMING
+#=> SUCCESS
+#=> TRY 2
+#=> SUCCESS
+#=> nil

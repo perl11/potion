@@ -7,7 +7,7 @@ math = [grammar [
   }
   main<- expr
 ]]
-# [grammar [digit <- n:[0-9] { n number }, value <- d:digit+ | '(' e:expr ')' { d or e }, expr <- l:value op:[*/] r:value
-#   {
-#     if (op == '*'): l * r. else: l / r.
-#   }, main <- expr]]
+#=> [grammar [digit <- n:[0-9] { n number }, value <- d:digit+ | '(' e:expr ')' { d or e }, expr <- l:value op:[*/] r:value
+#=>   {
+#=>     if (op == '*'): l * r. else: l / r.
+#=>   }, main <- expr]]

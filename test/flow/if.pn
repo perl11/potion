@@ -14,4 +14,4 @@ d = 40 if true: self. else: 10.
 
 e = 40 if true: 10.
 
-(a, b, c, d, e) # (14, 16, 12, Lobby, 10)
+(a, b, c, d, e) #=> (14, 16, 12, Lobby, 10)

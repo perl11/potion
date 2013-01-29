@@ -4,4 +4,4 @@
  10 kind == Boolean,
  nil kind == Boolean,
  "mailbox" kind == Boolean)
-# (true, true, true, false, false, false)
+#=> (true, true, true, false, false, false)

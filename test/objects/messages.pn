@@ -1,4 +1,4 @@
 String hidden = ():
   (hat = 'trilby', haircut = 'wedge').
 "Guy" hidden ('haircut')
-# wedge
+#=> wedge

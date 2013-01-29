@@ -2,4 +2,4 @@
   if (key == "dog"): (key, " is a ", val) join print.
 .
 ''
-# dog is a canine
+#=> dog is a canine

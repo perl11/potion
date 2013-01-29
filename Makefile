@@ -172,7 +172,7 @@ test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 			 fi; \
 		fi; \
 		for f in test/**/*.pn; do \
-			look=`${CAT} $$f | ${SED} "/\#/!d; s/.*\# //"`; \
+			look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
 			if [ $$pass -eq 0 ]; then \
 				for=`${RUNPOTION} -I -B $$f | ${SED} "s/\n$$//"`; \
 			elif [ $$pass -eq 1 ]; then \
@@ -256,4 +256,4 @@ clean:
 	@rm -f potion${EXE} libpotion.* \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 
-.PHONY: all config config.inc.echo config.h.echo clean doc rebuild test bench tarball dist install
+.PHONY: all config clean doc rebuild test bench tarball dist install

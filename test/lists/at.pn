@@ -1,4 +1,4 @@
 list = ("badgers", "bottles", "germans")
 list2 = ('does', 'exists')
 (list at(2), list at(4), list at(-2), list2(1), list(-2))
-# (germans, nil, bottles, exists, bottles)
+#=> (germans, nil, bottles, exists, bottles)
