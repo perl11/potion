@@ -82,12 +82,15 @@ config:
 # Force sync with config.inc
 core/config.h: core/version.h tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
-	@${MAKE} -s -f config.mak
+	@${MAKE} -s -f config.mak $@
+
+core/version.h: .git/HEAD .git/refs/heads/p2
+	@${MAKE} -s -f config.mak $@
 
 # bootstrap config.inc
 config.inc: tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
-	@${MAKE} -s -f config.mak
+	@${MAKE} -s -f config.mak $@
 
 core/callcc.o core/callcc.o2: core/callcc.c
 	@${ECHO} CC $< +frame-pointer
