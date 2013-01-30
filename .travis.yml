@@ -2,16 +2,12 @@ language: c
 compiler:
   - gcc
   - clang
-  - g++
 before_install:
   - git submodule update --init --recursive
 install:
-  - sudo apt-get update -qq
   - sudo apt-get install -qq libdisasm-dev
+
 script: make config; make && make test CC=$CC
+
 notifications:
-  irc:
-    channels:
-      - "irc.perl.org#perl11"
-    on_success: change
-    on_failure: change
+  irc: "irc.perl.org#perl11"

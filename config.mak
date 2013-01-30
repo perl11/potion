@@ -29,7 +29,7 @@ ifneq ($(shell ./tools/config.sh ${CC} clang),0)
 	CLANG = 1
 	CFLAGS += -Wno-unused-value
 endif
-ifneq (${DEBUG},0)
+ifeq (${DEBUG},0)
 	DEBUGFLAGS += -O2 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
@@ -108,7 +108,6 @@ config.inc.echo:
 config.h.echo:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
 	@${ECHO} "#define POTION_CFLAGS \"${CFLAGS}\""
-	@${ECHO} "#define POTION_DEBUG  ${DEBUG}"
 	@${ECHO} "#define POTION_JIT    ${JIT}"
 	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
 	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
@@ -130,7 +129,7 @@ core/config.h: core/version.h tools/config.sh config.mak
 	@${CAT} core/version.h > core/config.h
 	@${MAKE} -s -f config.mak config.h.echo >> core/config.h
 
-core/version.h: .git/HEAD .git/refs/heads/p2
+core/version.h: .git/HEAD .git/$(shell git symbolic-ref HEAD)
 	@${ECHO} MAKE $@
 	@${ECHO} "/* created by ${MAKE} -f config.mak */" > core/version.h
 	@${ECHO} -n "#define POTION_DATE   \"" >> core/version.h

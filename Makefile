@@ -84,7 +84,7 @@ core/config.h: core/version.h tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
 	@${MAKE} -s -f config.mak $@
 
-core/version.h: .git/HEAD .git/refs/heads/p2
+core/version.h: .git/HEAD .git/$(shell git symbolic-ref HEAD)
 	@${MAKE} -s -f config.mak $@
 
 # bootstrap config.inc
@@ -141,7 +141,6 @@ core/callcc.opic core/callcc.opic2: core/callcc.c
 %.c: %.g ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
-
 .g.c: ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
@@ -310,6 +309,7 @@ test.p2: p2${EXE} \
 	${ECHO}; \
 	if [ $$failed -gt 0 ]; then \
 		${ECHO} "$$failed FAILS ($$count tests)"; \
+		false; \
 	else \
 		${ECHO} "OK ($$count tests)"; \
 	fi
