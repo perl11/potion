@@ -175,7 +175,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
 
   fn = PN_ALLOC_FUNC(asmb->len);
 #if defined(JIT_DEBUG)
-  printf("JIT(%p): ", fn);
+  printf("JIT(%p):\n", fn);
 #  if defined(HAVE_LIBDISASM)
 #    define LINE_SIZE 255
   {
@@ -189,8 +189,9 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     while ( pos < size ) {
       insnsize = x86_disasm(asmb->ptr, size, 0, pos, &insn);
       if ( insnsize ) {
+        int i;
         x86_format_insn(&insn, line, LINE_SIZE, att_syntax);
-        printf("#(code+%3x): ", pos);
+        printf("#(+%3x): ", pos);
 	for ( i = 0; i < 10; i++ ) {
           if ( i < insn.size ) printf(" %02x", insn.bytes[i]);
 	  else printf("   ");
