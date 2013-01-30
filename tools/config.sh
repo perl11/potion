@@ -6,8 +6,14 @@ AOUT="tools/config.out"
 CCEX="$CC $AC -o $AOUT"
 
 CCv=`$CC -v 2>&1`
+if `echo "$CCv" | grep "cc -flags"`; then
+  # solaris
+  CCv=`$CC -V 2>&1`
+  TARGET=$CCv
+else
+  TARGET=`echo "$CCv" | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
+fi
 CLANG=`echo "$CCv" | sed "/clang/!d"`
-TARGET=`echo "$CCv" | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
 MINGW_GCC=`echo "$TARGET" | sed "/mingw/!d"`
 if [ "$MINGW_GCC" = "" ]; then MINGW=0
 else MINGW=1; fi

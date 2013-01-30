@@ -105,8 +105,7 @@ config.inc.echo:
 	@${ECHO} "CLANG   = ${CLANG}"
 	@${ECHO} "DEBUG   = ${DEBUG}"
 	@${ECHO} "RUNPOTION = ${RUNPOTION}"
-	@${ECHO} -n "REVISION = "
-	@${ECHO} $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
+	@${ECHO} "REVISION = " `git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g"`
 
 config.h.echo:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
@@ -135,14 +134,9 @@ core/config.h: core/version.h tools/config.sh config.mk
 core/version.h: .git/HEAD .git/$(shell git symbolic-ref HEAD)
 	@${ECHO} MAKE $@
 	@${ECHO} "/* created by ${MAKE} -f config.mk */" > core/version.h
-	@${ECHO} -n "#define POTION_DATE   \"" >> core/version.h
-	@${ECHO} -n `date +%Y-%m-%d` >> core/version.h
-	@${ECHO} "\"" >> core/version.h
-	@${ECHO} -n "#define POTION_COMMIT \"" >> core/version.h
-	@${ECHO} -n `git rev-list HEAD -1 --abbrev=7 --abbrev-commit` >> core/version.h
-	@${ECHO} "\"" >> core/version.h
-	@${ECHO} -n "#define POTION_REV    " >> core/version.h
-	@${ECHO} -n `git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g"` >> core/version.h
+	@${ECHO} "#define POTION_DATE   \"" `date +%Y-%m-%d` "\"" >> core/version.h
+	@${ECHO} "#define POTION_COMMIT \"" `git rev-list HEAD -1 --abbrev=7 --abbrev-commit` "\"" >> core/version.h
+	@${ECHO} "#define POTION_REV    " `git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g"` >> core/version.h
 	@${ECHO} >> core/version.h
 
 .PHONY: config config.inc.echo config.h.echo

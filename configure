@@ -1,6 +1,6 @@
 #!/bin/sh
 rm config.inc core/config.h core/version.h
-if make --version 2>/dev/null
+if make --version 2>/dev/null | grep GNU
 then
   make -f config.mak $@
 else
