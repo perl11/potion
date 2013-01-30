@@ -82,7 +82,7 @@ void potion_load_dylib(Potion *P, const char *filename) {
 
 static PN pn_loader_path;
 static const char *pn_loader_extensions[] = {
-#ifdef P2
+#ifndef P2
   ".pnb"
   , ".pn"
 #else
