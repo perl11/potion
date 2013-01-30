@@ -71,7 +71,7 @@ core/config.h: core/version.h tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
 	@${MAKE} -s -f config.mak $@
 
-core/version.h: .git/HEAD .git/refs/heads/master
+core/version.h: .git/HEAD .git/$(shell git symbolic-ref HEAD)
 	@${MAKE} -s -f config.mak $@
 
 # bootstrap config.inc

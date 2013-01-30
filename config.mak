@@ -129,7 +129,7 @@ core/config.h: core/version.h tools/config.sh config.mak
 	@${CAT} core/version.h > core/config.h
 	@${MAKE} -s -f config.mak config.h.echo >> core/config.h
 
-core/version.h: .git/HEAD .git/refs/heads/master
+core/version.h: .git/HEAD .git/$(shell git symbolic-ref HEAD)
 	@${ECHO} MAKE $@
 	@${ECHO} "/* created by ${MAKE} -f config.mak */" > core/version.h
 	@${ECHO} -n "#define POTION_DATE   \"" >> core/version.h
