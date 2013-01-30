@@ -1,2 +1,8 @@
 #!/bin/sh
-make -f config.mak
+rm config.inc core/config.h core/version.h
+if make --version 2>/dev/null
+then
+  make -f config.mak $@
+else
+  make -f config.mk $@
+fi

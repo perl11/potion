@@ -1,15 +1,15 @@
-# -*- makefile-gmake -*-
-include config.inc
+# -*- makefile-bsdmake -*-
+.include "config.inc"
 
-ifeq (${PREFIX},)
+.if empty ${PREFIX}
 	$(error need to make config first)
-endif
-ifeq (${DLL},)
+.endif
+.if empty ${DLL}
 	$(error need to make config first)
-endif
+.endif
 
-VERSION   = $(shell ./tools/config.sh ${CC} version)
-RELEASE   ?= ${VERSION}.${REVISION}
+VERSION  != ./tools/config.sh ${CC} version
+RELEASE  ?= ${VERSION}.${REVISION}
 PKG       = potion-${RELEASE}
 
 dist: bin-dist src-dist

@@ -1,0 +1,25 @@
+# -*- makefile -*-
+# posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
+.SUFFIXES: .g .c .i .o .opic .textile .html
+
+SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
+OBJ = ${SRC:.c=.o}
+PIC_OBJ = ${SRC:.c=.opic}
+OBJ_POTION = core/potion.o
+OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
+OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
+OBJ_GC_BENCH = test/api/gc-bench.o
+DOC = doc/start.textile
+DOCHTML = ${DOC:.textile=.html}
+
+CAT  = /bin/cat
+ECHO = /bin/echo
+SED  = sed
+EXPR = expr
+GREG = tools/greg${EXE}
+
+INCS = -Icore
+RUNPOTION = ./potion
+
+# bootstrap config.inc with ./configure
+include config.inc
