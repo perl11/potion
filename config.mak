@@ -21,7 +21,8 @@ GREG = tools/greg${EXE}
 STRIP ?= `./tools/config.sh ${CC} strip`
 
 # http://bastard.sourceforge.net/libdisasm.html
-ifeq ($(shell ./tools/config.sh ${CC} lib -llibdism libdisasm.h),1)
+# apt-get install libdisasm-dev
+ifeq ($(shell ./tools/config.sh ${CC} lib -ldisasm libdis.h),1)
 	DEFINES += -DHAVE_LIBDISASM
 	LIBS += -ldisasm
 endif

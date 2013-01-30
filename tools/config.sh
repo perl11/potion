@@ -20,16 +20,6 @@ JIT_I686=`echo "$TARGET" | sed "/i686/!d"`
 JIT_AMD64=`echo "$TARGET" | sed "/amd64/!d"`
 
 if [ $MINGW -eq 0 ]; then
-  LONG=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(long)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  INT=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(int)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  SHORT=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(short)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  CHAR=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(char)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  LLONG=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(long long)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  DOUBLE=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(double)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  LILEND=`echo "#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\"%d\\", (int)byte[0]); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  PAGESIZE=`echo "#include <stdio.h>#include <unistd.h>int main() { printf(\\"%d\\", (int)sysconf(_SC_PAGE_SIZE)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  STACKDIR=`echo "#include <stdlib.h>#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)((&b - a) / abs(&b - a))); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-  ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
   EXE=""
   LIBEXT=".a"
   if [ "$CYGWIN" != "1" ]; then
@@ -49,17 +39,6 @@ if [ $MINGW -eq 0 ]; then
     OSX=0
   fi
 else
-  # hard coded win32 values
-  CHAR="1"
-  SHORT="2"
-  LONG="4"
-  INT="4"
-  DOUBLE="8"
-  LLONG="8"
-  LILEND="1"
-  PAGESIZE="4096"
-  STACKDIR="-1"
-  ARGDIR="1"
   EXE=".exe"
   LOADEXT=".dll"
   DLL=".dll"
@@ -93,8 +72,34 @@ elif [ "$2" = "strip" ]; then
     echo "ls"
   fi
 elif [ "$2" = "lib" ]; then
-  DISASM=`echo "#include <stdio.h>#include \\"$4\\"int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX $3 2>/dev/null && $AOUT; rm -f $AOUT`
+  LIBOUT=`echo "#include <stdio.h>#include \\"$4\\"int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX $3 2>/dev/null && $AOUT; rm -f $AOUT`
+  echo $LIBOUT
 else
+  if [ $MINGW -eq 0 ]; then
+      LONG=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(long)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      INT=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(int)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      SHORT=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(short)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      CHAR=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(char)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      LLONG=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(long long)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      DOUBLE=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(double)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      LILEND=`echo "#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\"%d\\", (int)byte[0]); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      PAGESIZE=`echo "#include <stdio.h>#include <unistd.h>int main() { printf(\\"%d\\", (int)sysconf(_SC_PAGE_SIZE)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      STACKDIR=`echo "#include <stdlib.h>#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)((&b - a) / abs(&b - a))); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+  else
+      # hard coded win32 values
+      CHAR="1"
+      SHORT="2"
+      LONG="4"
+      INT="4"
+      DOUBLE="8"
+      LLONG="8"
+      LILEND="1"
+      PAGESIZE="4096"
+      STACKDIR="-1"
+      ARGDIR="1"
+  fi
+
   if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
     echo "#define POTION_JIT_TARGET POTION_X86"
   elif [ "$JIT_PPC" != "" ]; then

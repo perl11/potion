@@ -42,7 +42,7 @@ void gc_test_alloc4(CuTest *T) {
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr2));
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr3));
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr4));
-  CuAssertIntEquals(T, "four allocations should be found", 4, count);
+  CuAssert(T, "min. four allocations should be found", count >= 4);
 }
 
 void gc_test_forward(CuTest *T) {
