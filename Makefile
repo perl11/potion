@@ -150,13 +150,16 @@ ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
 ifdef APPLE
-LIBHACK = ../lib/libpotion.dylib
+LIBHACK = ../lib/libpotion.dylib ../lib/libp2.dylib
 else
 LIBHACK =
 endif
 ../lib/libpotion.dylib:
 	mkdir ../lib
 	ln -s `pwd`/libpotion.dylib ../lib/
+../lib/libp2.dylib:
+	mkdir ../lib
+	ln -s `pwd`/libp2.dylib ../lib/
 
 potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
 	@${ECHO} LINK $@
@@ -166,7 +169,7 @@ potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
 	  ${STRIP} $@; \
 	fi
 
-p2${EXE}: ${OBJ_P2} libp2${DLL}
+p2${EXE}: ${OBJ_P2} libp2${DLL} ${LIBHACK}
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ $(subst potion,p2,${LDEXEFLAGS}) -lp2 ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
