@@ -149,7 +149,16 @@ ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
-potion${EXE}: ${OBJ_POTION} libpotion${DLL}
+ifdef APPLE
+LIBHACK = ../lib/libpotion.dylib
+else
+LIBHACK =
+endif
+../lib/libpotion.dylib:
+	mkdir ../lib
+	ln -s `pwd`/libpotion.dylib ../lib/
+
+potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LDEXEFLAGS} -lpotion ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \

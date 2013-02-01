@@ -68,7 +68,8 @@ ifeq ($(shell ./tools/config.sh ${CC} apple),1)
 	LOADEXT  = .bundle
 	RUNPOTION = ./potion
 # in builddir: mkdir ../lib; ln -s `pwd`/libpotion.dylib ../lib/
-	LDDLLFLAGS = -shared -fpic -install_name "@executable_path/../lib/libpotion${DLL}"
+	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic \
+	             -install_name "@executable_path/../lib/libpotion${DLL}"
 	LDEXEFLAGS = -L.
 else
 	RUNPOTION = ./potion
