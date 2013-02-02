@@ -22,9 +22,16 @@ STRIP ?= `./tools/config.sh ${CC} strip`
 
 # http://bastard.sourceforge.net/libdisasm.html
 # apt-get install libdisasm-dev
-ifeq ($(shell ./tools/config.sh ${CC} lib -ldisasm libdis.h),1)
+ifeq ($(shell ./tools/config.sh ${CC} lib -ldisasm_xx libdis.h),1)
 	DEFINES += -DHAVE_LIBDISASM
 	LIBS += -ldisasm
+else
+# http://udis86.sourceforge.net/
+# port install udis86
+ifeq ($(shell ./tools/config.sh ${CC} lib -ludis86 udis86.h),1)
+	DEFINES += -DHAVE_LIBUDIS64
+	LIBS += -ludis86
+endif
 endif
 ifneq ($(shell ./tools/config.sh ${CC} clang),0)
 	CLANG = 1

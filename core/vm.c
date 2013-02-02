@@ -3,6 +3,7 @@
 // the vm execution loop
 //
 // (c) 2008 why the lucky stiff, the freelance professor
+// (c) 2013 cPanel (rurban)
 //
 #include <stdio.h>
 #include <stdarg.h>
@@ -15,8 +16,14 @@
 #include "khash.h"
 #include "table.h"
 
-#if defined(HAVE_LIBDISASM) && defined(JIT_DEBUG)
-#include <libdis.h>
+#if defined(JIT_DEBUG)
+#  if defined(HAVE_LIBDISASM)
+#    include <libdis.h>
+#  else
+#    if defined(HAVE_LIBUDIS86)
+#      include <udis86.h>
+#    endif
+#  endif
 #endif
 
 extern PNTarget potion_target_x86, potion_target_ppc;
@@ -175,8 +182,8 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
 
   fn = PN_ALLOC_FUNC(asmb->len);
 #if defined(JIT_DEBUG)
-  printf("JIT(%p): ", fn);
-#  if defined(HAVE_LIBDISASM)
+  printf("JIT(%p):\n", fn);
+#  if defined(HAVE_LIBDISASM) && (POTION_JIT_TARGET == POTION_X86)
 #    define LINE_SIZE 255
   {
     char line[LINE_SIZE];
@@ -205,11 +212,26 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     x86_cleanup();
   }
 #  else
+#  if defined(HAVE_LIBUDIS86) && (POTION_JIT_TARGET == POTION_X86)
+  {
+    ud_t ud_obj;
+
+    ud_init(&ud_obj);
+    ud_set_input_buffer(&ud_obj, asmb->ptr, asmb->len);
+    ud_set_mode(&ud_obj, LONG_SIZE_T == 8 ? 64 : 32);
+    ud_set_syntax(&ud_obj, UD_SYN_ATT);
+
+    while (ud_disassemble(&ud_obj)) {
+      printf("#(+%3lx):\t%s\n", ud_insn_off(&ud_obj), ud_insn_asm(&ud_obj));
+    }
+  }
+#  else
   long ai = 0;
   for (ai = 0; ai < asmb->len; ai++) {
     printf("%x ", asmb->ptr[ai]);
   }
   printf("\n");
+#  endif
 #  endif
 #endif
   PN_MEMCPY_N(fn, asmb->ptr, u8, asmb->len);
