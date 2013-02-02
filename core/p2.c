@@ -83,7 +83,7 @@ static void p2_cmd_compile(char *filename, int exec, int verbose, void *sp) {
         printf("\n\n-- loaded --\n");
     } else {
       code = p2_parse(P, buf);
-      if (PN_TYPE(code) == PN_TERROR) {
+      if (!code || PN_TYPE(code) == PN_TERROR) {
         potion_send(potion_send(code, PN_string), PN_print);
         goto done;
       }
