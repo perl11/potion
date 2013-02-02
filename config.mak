@@ -22,7 +22,7 @@ STRIP ?= `./tools/config.sh ${CC} strip`
 
 # http://bastard.sourceforge.net/libdisasm.html
 # apt-get install libdisasm-dev
-ifeq ($(shell ./tools/config.sh ${CC} lib -ldisasm_xx libdis.h),1)
+ifeq ($(shell ./tools/config.sh ${CC} lib -ldisasm libdis.h),1)
 	DEFINES += -DHAVE_LIBDISASM
 	LIBS += -ldisasm
 else
