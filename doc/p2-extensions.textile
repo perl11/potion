@@ -1,0 +1,159 @@
+h1. Perl5 on p2 Language backwards-compatible Extensions
+
+With p2 I plan to parse and execute perl5 asis.
+
+Problem will arise with XS code, since the VM is different, and not
+all XS API functions can be supported.  It should be much easier to
+use XS-like functionality with the new FFI, or by using extension
+libraries with native calls. See @lib/readline@. So we will loose 40% of
+CPAN code, but will win on performance, expressibility and
+compile-time error checking when binding libs.
+
+h2. Perl5 Language Extensions
+
+h3. All data are objects, all declarations can be optionally typed
+
+I.e. all core types are implictly blessed into the Int, Str, Num
+classes and mixins thereof.
+
+<pre><code>
+my int $i;
+my const str $s = "string";
+my const int $h = {foo => 1, bla => 0};
+my const int @a = (0..9);
+</code></pre>
+
+h3. const declarations for data, @ISA, classes and functions/methods
+
+method calls should be inlinable and compile-time optimizable.
+
+h3. sized arrays
+
+Sixed arrays are are non-autovivifying and initialized with undef,
+resp. if typed 0, 0.0, "". This speeds up array access by factor 2-4.
+See "optimizing compiler benchmarks part 3":http://blogs.perl.org/users/rurban/2012/10/optimizing-compiler-benchmarks-part-3.html
+
+h3. no magic
+
+A new pragma "no magic" applies to all visible objects in scope.
+
+<pre><code>
+     {
+       no magic;
+       use Config;
+       print $Config{'ccflags'};
+     }
+</code></pre>
+@=> compile-time error: Invalid use of tie with no magic@
+
+use
+<pre><code>
+     {
+       no magic;
+       use Config ();
+       print $Config::Config{'ccflags'};
+     }
+</code></pre> instead.
+
+See "optimizing compiler benchmarks part 3":http://blogs.perl.org/users/rurban/2012/10/optimizing-compiler-benchmarks-part-3.html
+
+h3. match operator
+
+The simple smartmatch is already taken and will just work, becaus1e all
+data is dynamically typed.  But we want to match structures, to find
+structures in trees (nested structures), not only strings, and we want
+to declare macros easily.
+See "magpie patterns":http://magpie.stuffwithstuff.com/patterns.html
+
+<pre><code>
+     my $s = "s";
+     match /^s/, 123, 1 {
+       case $s, $n is Int, $_: say "matched $s, $n, $_";
+       else: say "no match";
+     }
+</code></pre>
+
+@is Int@ is a new Type Pattern, which matches a type or subtype. 
+It calls the typeof() function.
+@is@ is a new keyword to match types in patterns.
+$_ in patterns is always true and returns the given scalar value.
+Use @_ to match multiple expressions, the "rest".
+
+h3. flexible and efficient packrat parser
+
+The leg-based p2 parser can handle complicated expressions and operator
+precedence much better than the simple recursive descent LLAR @yacc@
+parser in @perly.y@.  Problematic syntax can be avoided, like previously
+mandatory parenthesis. @if@ or @while@ boolean expressions don't need
+parens.
+
+<pre><code>
+     if $s say "$s;
+     else say "else";
+</code></pre>
+
+@for@ lists should not need parens, the expressions are evaluated in list
+context.
+
+<pre><code>
+     for $_ qw(a b c) {
+     }
+
+     const int[] sub get_list {(0..9)}
+
+     for my int $i get_list {
+       say $i;
+     }
+</code></pre>
+
+The language should be extendable. Left or right assiocative keywords
+should be easily added to the parser description, with statically
+deterministic proper precedence rules.  (run-time extendable
+associativity only with Pratt)
+
+The packrat parser based on @leg@ is not quite a highly efficient and
+dynamically extendable Pratt top-down parser with special operator
+precedence rules in the parser table declaration, but it does not
+backtrack as much as @yacc@ in expressions due to memoizing, and
+precedence is statically defined in the rules.
+
+h3. macros
+
+Most keywords should be defined as macros.  E.g. for, while and
+match can be more easily defined as macros. Short circuiting and 
+partial evaluation should be possible in macros.
+
+Normal functions or methods do not need to be defined in the language,
+they are library calls. 90% of the ops previously defined in perl5 are
+moved to the standard library. Most syntax extending declarations are
+macros defined in the standard library.
+
+With macros you can define your own compile-time optimizations,
+every statement in a macro, which is not evaluated is not compiled in,
+it is ignored. E.g. you can simplify all your @if $DEBUG@ statements,
+and extend the expressibility of your code.
+
+match patterns should be used to declare macro structures, to be 
+able to define syntax on structures, not just simple statements. 
+E.g. match itself should be definable as macro.
+
+<pre><code>
+TODO: 
+      macro while '('expr')' '{'block'}' {
+          my $label = gensym('WHILE');
+	  $label: if (`expr`) {
+	     @`block`;
+	     goto $label;
+          }
+      }
+</code></pre>
+
+'(' is to disambiguate a parse-time '(' from a list definition.
+`` is taken to evaluate (=expand) expressions within macros.
+() and {} in the match (declaration) defines the context.
+TODO: scalar or list context? @``
+
+Note that the return value of this while is always @undef@, and
+the while construct needs the () and {}, contrary to the current keyword.
+But you can declare a while macro for the single block case without {}.
+

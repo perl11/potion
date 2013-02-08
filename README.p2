@@ -31,12 +31,12 @@
 
   Its exciting points for perl folks are:
 
-   * Should parse most of perl5, just some XS and B tricks not. Since
-     the original perl5 testsuite is not usable for other
-     implementations and compilers it needs to be adjusted. The perl6
-     testsuite is in a better shape.
+   * Should parse most of perl5, just some XS and B tricks not.
+     Since the original perl5 testsuite is not usable for other
+     implementations and compilers it needs to be adjusted. The
+     perl6 testsuite is in a better shape.
 
-   * signatures, types, native threads for perl5
+   * signatures, types, native threads for perl5. Hopefully macros also.
 
    * Using most of Damian Conway's p5i recommendations:
      i.e. classes are immutable and final by default.
@@ -45,13 +45,16 @@
    * libp2 should be usable as a fast backend for nqp/perl6.
 
    * Native and fast calling convention, no XS stack args on the heap.
-     XS is replaced by dlcall (dynamic ffi), and/or shared libraries with
-     normal function calls into the vm.
+     XS is replaced by dlcall (dynamic ffi), and/or shared libraries
+     with normal function calls into the vm.
 
-   * int, str, num are objects, you can optionally type all args and lexical variables.
-     In fact everything is an object as in parrot, even the compiler, the parser, the vm.
+   * int, str, num are objects, you can optionally type all args and
+     lexical variables.  In fact everything is an object as in parrot,
+     even the compiler, the parser, the vm.
 
-   * Sized arrays are non-autovivifying and initialized with undef, resp. if typed 0, 0.0, "".
+   * Sized arrays are non-autovivifying and initialized with undef,
+     resp. if typed 0, 0.0, "".
+
      my $a[3]; print $a[3] => compile-time error: array out of bounds
      my int $i[3]; print $a[2] => 0
      my num $n[3]; print $n[2] => 0.0
@@ -73,9 +76,12 @@
      }
      instead.
 
-   * p6model: :multi, type-optimizer. Like Moose, just better and much faster
+   * p6model: :multi, roles, type-optimizer. Like Moose, just better
+     and much faster. (roughly estimated 800x faster)
 
-   * smartmatch works because all data are typed objects
+   * smartmatch works because all data are typed objects.
+     A destructuring-bind alike new match operator which matches
+     structures (list, trees, hashes of hashes) against structures.
 
    * Just-in-time compilation for x86, x86-64 and ppc done.
 

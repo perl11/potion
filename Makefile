@@ -20,7 +20,7 @@ OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_P2_TEST = test/api/p2-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
-DOC = doc/start.textile
+DOC = doc/start.textile doc/p2-extensions.textile
 DOCHTML = ${DOC:.textile=.html}
 
 CAT  = /bin/cat
