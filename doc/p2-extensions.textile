@@ -5,8 +5,8 @@ With p2 I plan to parse and execute perl5 asis.
 Problem will arise with XS code, since the VM is different, and not
 all XS API functions can be supported.  It should be much easier to
 use XS-like functionality with the new FFI, or by using extension
-libraries with native calls. See @lib/readline@. So we will loose 40% of
-CPAN code, but will win on performance, expressibility and
+libraries with native calls. See @lib/readline@. So we will loose
+40% of CPAN code, but will win on performance, expressibility and
 compile-time error checking when binding libs.
 
 h2. Perl5 Language Extensions
@@ -59,7 +59,7 @@ See "optimizing compiler benchmarks part 3":http://blogs.perl.org/users/rurban/2
 
 h3. match operator
 
-The simple smartmatch is already taken and will just work, becaus1e all
+The simple smartmatch is already taken and will just work, because all
 data is dynamically typed.  But we want to match structures, to find
 structures in trees (nested structures), not only strings, and we want
 to declare macros easily.
