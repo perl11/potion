@@ -116,10 +116,10 @@ static char *makeCharClass(unsigned char *cclass)
 
 static void begin(void)		{ fprintf(output, "\n  {"); }
 static void end(void)		{ fprintf(output, "\n  }"); }
-static void label(int n)	{ fprintf(output, "\n  l%d:;\t", n); }
+static void label(int n)	{ fprintf(output, "\n  l%d:;\n", n); }
 static void jump(int n)		{ fprintf(output, "  goto l%d;", n); }
-static void save(int n)		{ fprintf(output, "  int yypos%d= G->pos, yythunkpos%d= G->thunkpos;", n, n); }
-static void restore(int n)	{ fprintf(output,     "  G->pos= yypos%d; G->thunkpos= yythunkpos%d;", n, n); }
+static void save(int n)		{ fprintf(output, "  int yypos%d= G->pos, yythunkpos%d= G->thunkpos;\n", n, n); }
+static void restore(int n)	{ fprintf(output,     "  G->pos= yypos%d; G->thunkpos= yythunkpos%d;\n", n, n); }
 
 static void Node_compile_c_ko(Node *node, int ko)
 {
@@ -132,13 +132,13 @@ static void Node_compile_c_ko(Node *node, int ko)
       break;
 
     case Dot:
-      fprintf(output, "  if (!yymatchDot(G)) goto l%d;", ko);
+      fprintf(output, "  if (!yymatchDot(G)) goto l%d;\n", ko);
       break;
 
     case Name:
-      fprintf(output, "  if (!yy_%s(G)) goto l%d;", node->name.rule->rule.name, ko);
+      fprintf(output, "  if (!yy_%s(G)) goto l%d;\n", node->name.rule->rule.name, ko);
       if (node->name.variable)
-	fprintf(output, "  yyDo(G, yySet, %d, 0);", node->name.variable->variable.offset);
+	fprintf(output, "  yyDo(G, yySet, %d, 0);\n", node->name.variable->variable.offset);
       break;
 
     case Character:
@@ -146,22 +146,22 @@ static void Node_compile_c_ko(Node *node, int ko)
       {
 	int len= strlen(node->string.value);
 	if (1 == len || (2 == len && '\\' == node->string.value[0]))
-	  fprintf(output, "  if (!yymatchChar(G, '%s')) goto l%d;", node->string.value, ko);
+	  fprintf(output, "  if (!yymatchChar(G, '%s')) goto l%d;\n", node->string.value, ko);
 	else
-	  fprintf(output, "  if (!yymatchString(G, \"%s\")) goto l%d;", node->string.value, ko);
+	  fprintf(output, "  if (!yymatchString(G, \"%s\")) goto l%d;\n", node->string.value, ko);
       }
       break;
 
     case Class:
-      fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\")) goto l%d;", makeCharClass(node->cclass.value), ko);
+      fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), ko);
       break;
 
     case Action:
-      fprintf(output, "  yyDo(G, yy%s, G->begin, G->end);", node->action.name);
+      fprintf(output, "  yyDo(G, yy%s, G->begin, G->end);\n", node->action.name);
       break;
 
     case Predicate:
-      fprintf(output, "  yyText(G, G->begin, G->end);  if (!(%s)) goto l%d;", node->action.text, ko);
+      fprintf(output, "  yyText(G, G->begin, G->end);\n  if (!(%s)) goto l%d;\n", node->action.text, ko);
       break;
 
     case Alternate:
@@ -315,10 +315,10 @@ static void Rule_compile_c2(Node *node)
       fprintf(output, "\nYY_RULE(int) yy_%s(GREG *G)\n{", node->rule.name);
       if (!safe) save(0);
       if (node->rule.variables)
-	fprintf(output, "  yyDo(G, yyPush, %d, 0);", countVariables(node->rule.variables));
-      fprintf(output, "\n  yyprintf((stderr, \"%%s\\n\", \"%s\"));", node->rule.name);
+	fprintf(output, "  yyDo(G, yyPush, %d, 0);\n", countVariables(node->rule.variables));
+      fprintf(output, "  yyprintf((stderr, \"%%s\\n\", \"%s\"));\n", node->rule.name);
       Node_compile_c_ko(node->rule.expression, ko);
-      fprintf(output, "\n  yyprintf((stderr, \"  ok   %%s @ %%s\\n\", \"%s\", G->buf+G->pos));", node->rule.name);
+      fprintf(output, "  yyprintf((stderr, \"  ok   %%s @ %%s\\n\", \"%s\", G->buf+G->pos));\n", node->rule.name);
       if (node->rule.variables)
 	fprintf(output, "  yyDo(G, yyPop, %d, 0);", countVariables(node->rule.variables));
       fprintf(output, "\n  return 1;");
@@ -326,7 +326,7 @@ static void Rule_compile_c2(Node *node)
 	{
 	  label(ko);
 	  restore(0);
-	  fprintf(output, "\n  yyprintf((stderr, \"  fail %%s @ %%s\\n\", \"%s\", G->buf+G->pos));", node->rule.name);
+	  fprintf(output, "  yyprintf((stderr, \"  fail %%s @ %%s\\n\", \"%s\", G->buf+G->pos));\n", node->rule.name);
 	  fprintf(output, "\n  return 0;");
 	}
       fprintf(output, "\n}");
