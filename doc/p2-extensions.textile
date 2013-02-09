@@ -119,6 +119,23 @@ precedence is statically defined in the rules.
 
 h3. macros
 
+macros expose the power of the parser to the language, as in LISP.
+macros are compile-time parser extensions. macro argument declarations
+have the same syntax as @leg@, and may use the same lexer symbols, but
+the body is written in native perl5, with a mix of compile-time and
+run-time expressions.
+
+e.g. 
+<pre><code>
+syntax-p5.g:
+
+block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s); }
+
+</code></pre>
+
+A macro can use any lexed symbol, lexed symbol @block@, and even
+@b:block@ to assign the variable @b@ for the matched block.
+
 Most keywords should be defined as macros.  E.g. for, while and
 match can be more easily defined as macros. Short circuiting and 
 partial evaluation should be possible in macros.
@@ -128,32 +145,56 @@ they are library calls. 90% of the ops previously defined in perl5 are
 moved to the standard library. Most syntax extending declarations are
 macros defined in the standard library.
 
-With macros you can define your own compile-time optimizations,
-every statement in a macro, which is not evaluated is not compiled in,
+With macros you can define your own compile-time optimizations.
+Every statement in a macro, which is not evaluated, is not compiled in,
 it is ignored. E.g. you can simplify all your @if $DEBUG@ statements,
 and extend the expressibility of your code.
 
-match patterns should be used to declare macro structures, to be 
-able to define syntax on structures, not just simple statements. 
+MAYBE: match patterns should be used to declare macro structures, to
+be able to define syntax on structures, not just simple statements.
 E.g. match itself should be definable as macro.
 
 <pre><code>
-TODO: 
-      macro while '('expr')' '{'block'}' {
+      macro while '('e:expr')' '{'b:block'}' {
           my $label = gensym('WHILE');
-	  $label: if (`expr`) {
-	     @`block`;
+	  $label: if (`e`) {
+	     @`b`;
 	     goto $label;
           }
       }
 </code></pre>
 
-'(' is to disambiguate a parse-time '(' from a list definition.
+'(' is to disambiguate a parse-time '(' from a group.
 `` is taken to evaluate (=expand) expressions within macros.
-() and {} in the match (declaration) defines the context.
-TODO: scalar or list context? @``
+@`` expands into list context.
+Similar to perl6 @quasi@ or @{{{ }}}@ blocks, just simplier.
 
 Note that the return value of this while is always @undef@, and
 the while construct needs the () and {}, contrary to the current keyword.
 But you can declare a while macro for the single block case without {}.
+
+{} in the match (declaration) would define a hash context,
+a structure to match against.
+
+MAYBE: Such as:
+<pre><code>
+      # match a leaf hash key, without kids
+      macro leaf h:hash { n:name } {
+	  `$h{n}` if exists $h{n} and !@$h{n};
+      }
+
+      $INC{leaf} => ...
+</code></pre>
+
+But () needs to be reserved for lexical list grouping,
+and not to match perl elements in lists.
+
+<pre><code>
+      macro dbgprint ( s:stmt )* {
+        if ($DEBUG) {
+          print @`s`;
+        }
+      }
+</code></pre>
+
 
