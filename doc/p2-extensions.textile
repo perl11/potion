@@ -13,8 +13,9 @@ h2. Perl5 Language Extensions
 
 h3. All data are objects, all declarations can be optionally typed
 
-I.e. all core types are implictly blessed into the Int, Str, Num
+I.e. all core types are implictly blessed into the int, str, num
 classes and mixins thereof.
+See "pddtypes.pod":https://github.com/rurban/perl/blob/d1c07ab82fd3acf17803a9f7dbd8e3ab3c5d3903/pddtypes.pod and "perltypes.pod":https://github.com/rurban/perl/blob/05514649c35a695734bc8e02911e7efef6ee4dde/pod/perltypes.pod for more.
 
 <pre><code>
 my int $i;
@@ -29,8 +30,13 @@ method calls should be inlinable and compile-time optimizable.
 
 h3. sized arrays
 
-Sixed arrays are are non-autovivifying and initialized with undef,
-resp. if typed 0, 0.0, "". This speeds up array access by factor 2-4.
+<pre><code>
+	my $a[10];
+	my int $a[10];
+</code></pre>
+
+Sized arrays are are non-autovivifying and initialized with undef,
+resp. if typed 0, 0.0, or "". This speeds up array access by factor 2-4.
 See "optimizing compiler benchmarks part 3":http://blogs.perl.org/users/rurban/2012/10/optimizing-compiler-benchmarks-part-3.html
 
 h3. no magic
