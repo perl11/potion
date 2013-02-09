@@ -79,9 +79,9 @@ It calls the typeof() function.
 $_ in patterns is always true and returns the given scalar value.
 Use @_ to match multiple expressions, the "rest".
 
-h3. flexible and efficient packrat parser
+h3. flexible and efficient parser
 
-The leg-based p2 parser can handle complicated expressions and operator
+The current "leg":http://piumarta.com/software/peg/ based p2 parser can handle complicated expressions and operator
 precedence much better than the simple recursive descent LLAR @yacc@
 parser in @perly.y@.  Problematic syntax can be avoided, like previously
 mandatory parenthesis. @if@ or @while@ boolean expressions don't need
@@ -111,15 +111,24 @@ should be easily added to the parser description, with statically
 deterministic proper precedence rules.  (run-time extendable
 associativity only with Pratt)
 
-The packrat parser based on @leg@ is not quite a highly efficient and
-dynamically extendable Pratt top-down parser with special operator
-precedence rules in the parser table declaration, but it does not
-backtrack as much as @yacc@ in expressions due to memoizing, and
+The packrat parser based on @leg@ is not quite as highly efficient and
+dynamically extendable as a "Pratt top-down parser":http://journal.stuffwithstuff.com/2011/02/13/extending-syntax-from-within-a-language/ with special
+operator precedence rules in the parser table declaration, but it does
+not backtrack as much as @yacc@ in expressions due to memoizing, and
 precedence is statically defined in the rules.
+
+But in the end I'll need such a dynamic top-down parser to support macros.
+The problem is that such a parser cannot be stolen yet, nobody has
+written so far one in C, only in LISP or javascript. The idea to base 
+macros on the parser probably didn't come to anyone yet
+outside the LISP community. Rob Pike recently
+presented a nice and easy-enough parser for 
+"Go templates":https://www.youtube.com/watch?v=HxaD_trXwRE
 
 h3. macros
 
 macros expose the power of the parser to the language, as in LISP.
+
 macros are compile-time parser extensions. macro argument declarations
 have the same syntax as @leg@, and may use the same lexer symbols, but
 the body is written in native perl5, with a mix of compile-time and
@@ -133,8 +142,8 @@ block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s); }
 
 </code></pre>
 
-A macro can use any lexed symbol, lexed symbol @block@, and even
-@b:block@ to assign the variable @b@ for the matched block.
+A macro can use any lexed symbol, here the lexed symbol @block@, and
+even @b:block@ to assign the variable @b@ for the matched block.
 
 Most keywords should be defined as macros.  E.g. for, while and
 match can be more easily defined as macros. Short circuiting and 
