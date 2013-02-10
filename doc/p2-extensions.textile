@@ -134,12 +134,14 @@ presented a nice and easy-enough parser for
 h3. macros
 
 macros expose the power of the parser to the language, as in LISP.
+They allow extending and simplifying the language.
 
-macros are compile-time parser extensions. macro argument declarations
-have the same syntax as @leg@, and may use the same nonterminal
-symbols from the grammer, i.e. the left hand side of the grammar rules,
-but the body is written in native perl5,
-with a mix of compile-time and run-time expressions.
+macros are compile-time parser extensions, rules added after startup,
+which do not construct parse trees directy, but indirectly.  macro
+argument declarations have the same syntax as @leg@, and may use the
+same nonterminal symbols from the grammer, i.e. the left hand side of
+the grammar rules, but the body is written in native perl5, with a mix
+of compile-time and run-time expressions.
 
 e.g. 
 <pre><code>
