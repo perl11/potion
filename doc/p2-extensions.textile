@@ -136,16 +136,19 @@ h3. macros
 macros expose the power of the parser to the language, as in LISP.
 
 macros are compile-time parser extensions. macro argument declarations
-have the same syntax as @leg@, and may use the same lexer symbols, but
-the body is written in native perl5, with a mix of compile-time and
-run-time expressions.
+have the same syntax as @leg@, and may use the same nonterminal
+symbols from the grammer, i.e. the left hand side of the grammar rules,
+but the body is written in native perl5,
+with a mix of compile-time and run-time expressions.
 
 e.g. 
 <pre><code>
 syntax-p5.g:
+  block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s); }
 
-block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s); }
-
+macro ifdebug block {
+  if $DEBUG `block`;
+}
 </code></pre>
 
 A macro can use any lexed symbol, here the lexed symbol @block@, and
