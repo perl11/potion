@@ -114,22 +114,27 @@ context.
 
 The language should be extendable. Left or right assiocative keywords
 should be easily added to the parser description, with statically
-deterministic proper precedence rules.  (run-time extendable
-associativity only with Pratt)
+deterministic proper precedence rules. (run-time extendable
+associativity only with Pratt or marpa.)
 
 The packrat parser based on @leg@ is not quite as highly efficient and
-dynamically extendable as a "Pratt top-down parser":http://journal.stuffwithstuff.com/2011/02/13/extending-syntax-from-within-a-language/ with special
-operator precedence rules in the parser table declaration, but it does
-not backtrack as much as @yacc@ in expressions due to memoizing, and
-precedence is statically defined in the rules.
+dynamically extendable as a "Pratt top-down
+parser":http://journal.stuffwithstuff.com/2011/02/13/extending-syntax-from-within-a-language/
+with special operator precedence rules in the parser table
+declaration, but it does not backtrack as much as @yacc@ in
+expressions due to memoizing, and precedence is statically defined in
+the rules.
 
-But in the end I'll need such a dynamic top-down parser to support macros.
-The problem is that such a parser cannot be stolen yet, nobody has
-written so far one in C, only in LISP or javascript. The idea to base 
-macros on the parser probably didn't come to anyone yet
-outside the LISP community. Rob Pike recently
-presented a nice and easy-enough parser for 
-"Go templates":https://www.youtube.com/watch?v=HxaD_trXwRE
+But in the end I'll need a dynamic parser to support macros.  The
+problem is that such a parser cannot be stolen yet, nobody has written
+so far one in C, only in LISP, java or javascript. The idea to base
+macros on the parser probably didn't come to anyone yet outside the
+LISP community. Rob Pike recently presented a nice and easy-enough
+parser for "Go templates":https://www.youtube.com/watch?v=HxaD_trXwRE
+So far "marpa":http://jeffreykegler.github.com/Marpa-web-site/ seems
+to be the best dynamic parser library, there is a C library, extending
+it at run-time should be achievable easily, and the parser algorithm
+is pretty robust.
 
 h3. macros
 
