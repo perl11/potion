@@ -359,8 +359,9 @@ tarball:
 	@${ECHO} "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">" >> $@
 	@${ECHO} "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" >> $@
 	@${ECHO} "<style type=\"text/css\">@import 'doc.css';</style>" >> $@
-	@${ECHO} "<div id='potion'><img src='potion-1.png' /></div>" >> $@
-	@${ECHO} "</head><body><div id='central'>" >> $@
+	@${ECHO} "</head><body>" >> $@
+	@${CAT} doc/logo >> $@
+	@${ECHO} "<div id='central'>" >> $@
 	@redcloth $< >> $@
 	@${ECHO} "</div></body></html>" >> $@
 

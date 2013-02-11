@@ -7,6 +7,7 @@ h1, h4 {
   text-align: center;
 }
 h1 {
+  line-height: 100%;
   color: #390;
 }
 h1.kana {
