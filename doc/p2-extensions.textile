@@ -95,7 +95,7 @@ mandatory parenthesis. E.g. @if@ or @while@ boolean expressions don't need
 parens.
 
 <pre><code>
-     if $s say "$s;
+     if $s say "$s";
      else say "else";
 </code></pre>
 
@@ -136,8 +136,7 @@ to be the best dynamic parser library, there is a C library, extending
 it at run-time should be achievable easily, and the parser algorithm
 is pretty robust.
 
-marketing blurbs: p2 will be the first implementation of any
-non-LISP language with proper macro support.
+*marketing blurbs*: _p2 will be the first implementation of any non-LISP language with proper macro support._
 
 h3. macros
 
