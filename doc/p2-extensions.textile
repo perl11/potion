@@ -66,9 +66,10 @@ See "optimizing compiler benchmarks part 3":http://blogs.perl.org/users/rurban/2
 h3. match operator
 
 The simple smartmatch is already taken and will just work, because all
-data is dynamically typed.  But we want to match structures, to find
-structures in trees (nested structures), not only strings, and we want
-to declare macros easily.
+data is dynamically typed. smartmatch will use a user-defined @MATCH@ method
+for objects. given/when is too limited and a bit broken.
+But we want to match structures to find structures in lists or trees
+(nested structures), not only strings, and we want to declare macros easily.
 See "magpie patterns":http://magpie.stuffwithstuff.com/patterns.html
 
 <pre><code>
@@ -90,7 +91,7 @@ h3. flexible and efficient parser
 The current "leg":http://piumarta.com/software/peg/ based p2 parser can handle complicated expressions and operator
 precedence much better than the simple recursive descent LLAR @yacc@
 parser in @perly.y@.  Problematic syntax can be avoided, like previously
-mandatory parenthesis. @if@ or @while@ boolean expressions don't need
+mandatory parenthesis. E.g. @if@ or @while@ boolean expressions don't need
 parens.
 
 <pre><code>
@@ -107,7 +108,7 @@ context.
 
      const int[] sub get_list {(0..9)}
 
-     for my int $i get_list {
+     for my $i get_list() {
        say $i;
      }
 </code></pre>
@@ -118,8 +119,7 @@ deterministic proper precedence rules. (run-time extendable
 associativity only with Pratt or marpa.)
 
 The packrat parser based on @leg@ is not quite as highly efficient and
-dynamically extendable as a "Pratt top-down
-parser":http://journal.stuffwithstuff.com/2011/02/13/extending-syntax-from-within-a-language/
+dynamically extendable as a "Pratt top-down parser":http://journal.stuffwithstuff.com/2011/02/13/extending-syntax-from-within-a-language/
 with special operator precedence rules in the parser table
 declaration, but it does not backtrack as much as @yacc@ in
 expressions due to memoizing, and precedence is statically defined in
@@ -136,6 +136,9 @@ to be the best dynamic parser library, there is a C library, extending
 it at run-time should be achievable easily, and the parser algorithm
 is pretty robust.
 
+marketing blurbs: p2 will be the first implementation of any
+non-LISP language with proper macro support.
+
 h3. macros
 
 macros expose the power of the parser to the language, as in LISP.
@@ -144,7 +147,7 @@ They allow extending and simplifying the language.
 macros are compile-time parser extensions, rules added after startup,
 which do not construct parse trees directy, but indirectly.  macro
 argument declarations have the same syntax as @leg@, and may use the
-same rules (i.e. nonterminal symbols) from the grammer, i.e. the left
+same rules (i.e. non-terminal symbols) from the grammer, i.e. the left
 hand side of the grammar rules, but the body is written in native
 perl5, with a mix of compile-time and run-time expressions.
 
@@ -159,9 +162,20 @@ e.g.
   }
 </code></pre>
 
-A macro can use any parser rule, here the rule @block@, and
-even @b:block@ to assign the variable @b@ for the matched block, esp.
-when matching two rules, i.e. @b1:block b2:block@
+A macro can use valid parser expressions, i.e. strings
+(i.e. terminals) or any valid parser rule (i.e. non-terminals) as argument,
+here the rule @block@, and even @b:block@ to assign the variable @b@
+for the matched block, esp.  when matching two rules, i.e. @b1:block
+b2:block@.
+See the documentation of the parser for valid parser expressions. 
+@leg@ supports peg expressions like @* + ?@, backtracking lookahead assertions
+@! &@, and grouping via @()@.
+@marpa@ only supports sequences with a defined number of @min@ and @max@ sequences,
+@min=0@ i.e. @*@, @min=1@ i.e. @+@, optional @?@ would be @min=0, max=1@.
+Syntax: @rule{min,max}@ min defaults to 0, max to infinite,
+Later hopefully @rule+@, @rule*@ and @rule?@. The PEG backtracking lookahead
+assertions @! &@ are not needed in marpa, because it embraces a bottom-up BNF
+grammar.
 
 Most keywords should be defined as macros.  E.g. @for@, @while@ and
 @match@ can be more easily defined as macros. Short circuiting and
