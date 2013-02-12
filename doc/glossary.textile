@@ -1,0 +1,28 @@
+See "start":start.html for an overview of the syntax and data structures.
+
+tuple: an ordered list
+
+table: a hash
+
+lick:  a nested data structure, i.e. named hash. the keys are called path.
+
+Every lick can have a name, a table of attributes, and a list of
+children. The list of children can, instead, be a Potion data
+type, such as a number or string or something.
+
+path:  key of a lick, an instance variable of an object.
+
+Paths cannot be randomly added to the object after the object
+is created. Each object has a strict set of paths. Every path
+which is used in the constructor is added to the object upon
+creation.
+
+upval: A variable in an upper scope.
+
+Since a closure doesn't have access to the registers
+of another function, these variables are passed
+as pointers (the PNWeakRef struct.)
+
+Lobby: potion called the main interp object Lobby, which holds the
+methods about, here, exit, self, ...
+p2 renames it to P2
