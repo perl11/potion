@@ -32,3 +32,4 @@ readline.bundle
 /history.txt
 /TAGS
 /pkg
+/doc/*.html
