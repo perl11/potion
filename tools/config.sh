@@ -69,7 +69,7 @@ elif [ "$2" = "strip" ]; then
       echo "strip"
     fi
   else
-    echo "ls"
+    echo "echo"
   fi
 elif [ "$2" = "lib" ]; then
   LIBOUT=`echo "#include <stdio.h>#include \\"$4\\"int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX $3 2>/dev/null && $AOUT; rm -f $AOUT`
