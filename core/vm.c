@@ -129,10 +129,11 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       }
     }
 
+    // see http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
     switch (PN_OP_AT(f->asmb, pos).code) {
       CASE_OP(MOVE, (P, f, &asmb, pos))		// copy value between registers
       CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
-      CASE_OP(LOADK, (P, f, &asmb, pos, need))  // load a tuple key into a register
+      CASE_OP(LOADK, (P, f, &asmb, pos, need))  // load a constant into a register
       CASE_OP(SELF, (P, f, &asmb, pos, need))   // prepare an object method for calling
       CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs))// read a local into a register
       CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))// write a register value into a local
