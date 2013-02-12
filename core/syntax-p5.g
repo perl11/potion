@@ -34,48 +34,58 @@
 #define YY_TNUM 3
 #define YY_TDEC 13
 
-const char *Nullch = '\0';
+//const char *Nullch = '\0';
 %}
 
-perl5 = s:prog* end-of-file { $$ = P->source = PN_AST(CODE, s); }
+perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
 
-prog  = s:lineseq { $$ = PN_AST(CODE, s); }
-
-lineseq = lineseq s1:decl	{ $$ = s1 = PN_TUP(s1); }
-    |	s1:lineseq s2:line	{ $$ = s1 = PN_PUSH(s1, s2); }
-    |	'' 					{ $$ = PN_NIL; }
-
+#prog  = s:lineseq { $$ = PN_AST(CODE, s); }
+#
+#lineseq = s1:decl*	{ $$ = s1 = PN_TUP(s1); }
+#    |	s2:line*	{ $$ = s1 = PN_PUSH(s1, s2); }
+#    |	'' 			{ $$ = PN_NIL; }
+#
 # todo BLOCK => STATE: no scope, just add a label to a cond or sideeff
-
-line = 	l:label c:cond       { $$ = PN_AST2(PN_BLOCK, l, c); }
-	|	loop	{} # loops add their own labels
-	|	l:label ';'          { $$ = PN_AST2(PN_BLOCK, l, PN_NIL); }
-	|	l:label s:sideff ';' { $$ = PN_AST2(PN_BLOCK, l, s); }
-
-label = '' { $$ = Nullch; }
-	|	LABEL
-
-decl =	format
-	|	subrout
-	|	lexsubrout
-	|	package
-	|	use
-
-format	=	FORMAT s:startformsub f:formname b:block
-			{ $$ = PN_AST2(ASSIGN, f, YY_NAME(format)(s, b)); }
-
-formname =	w:WORD		{ $$ = w; }
-	| '' 	            { $$ = PN_NIL; }
+#
+#line = 	l:label c:cond       { $$ = PN_AST2(BLOCK, l, c); }
+#	|	loop	{} # loops add their own labels
+#	|	l:label ';'          { $$ = PN_AST2(BLOCK, l, PN_NIL); }
+#	|	l:label s:sideff ';' { $$ = PN_AST2(BLOCK, l, s); }
+#
+#sideff = stmt
+#    | expr
+#loop = --
+#cond = --
+#
+#label = arg-name?
+#
+#decl =	subrout
+#	|	lexsubrout
+#	|	package
+#	|	use
+#   |   format
+#
+#format	=	FORMAT s:startformsub f:formname b:block
+#			{ $$ = PN_AST2(ASSIGN, f, YY_NAME(format)(s, b)); }
+#
+#formname =	w:WORD		{ $$ = w; }
+#	| '' 	            { $$ = PN_NIL; }
 
 # so far no difference in global or lex assignment
-subrout = 'sub' n:subname p:proto a:subattrlist b:subbody 
-        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
-	|	'my' - 'sub' n:subname p:proto a:subattrlist b:subbody
-        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
-
+#subrout = 'sub' n:subname p:proto? a:subattrlist? b:subbody 
+#        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
+#
+#lexsubrout = 'my' - 'sub' n:subname p:proto? a:subattrlist? b:subbody
+#        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
+#
+#proto = table
+#subname = arg-name
+#subbody = block
+#subattrlist = ':' -? arg-name
+#
 # AST BLOCK needs to capture lexicals, not block_start()
 # Note that if/else blocks (mblock) do not capture lexicals
-block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s); }
+# block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s); }
 
 statements = s1:stmt { $$ = s1 = PN_TUP(s1); }
         (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })* sep?
@@ -184,9 +194,9 @@ loose = value
 
 # anonymous sub, w or w/o proto (aka table)
 anonsub = 'sub' - t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
-sub = 'sub' - n:arg-name - t:table? b:block { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)); }
+#sub = 'sub' - n:arg-name - t:table? b:block { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)); }
 table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
-#block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
+block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 
@@ -314,7 +324,7 @@ sep = ';' (space | comment | ';')*
 comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t' | end-of-line
 end-of-line = '\r\n' | '\n' | '\r'
-end-of-file = !.
+end-of-file = !'\0'
 
 $ sig = args+ end-of-file
 args = arg-list (arg-sep arg-list)*
