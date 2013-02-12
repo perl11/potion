@@ -20,17 +20,17 @@ GREG = tools/greg${EXE}
 
 STRIP ?= `./tools/config.sh ${CC} strip`
 
-# http://bastard.sourceforge.net/libdisasm.html
+# http://udis86.sourceforge.net/
+# port install udis86
+ifeq ($(shell ./tools/config.sh ${CC} lib -ludis86 udis86.h),1)
+	DEFINES += -DHAVE_LIBUDIS86
+	LIBS += -ludis86
+else
+# http://bastard.sourceforge.net/libdisasm.html 32bit only
 # apt-get install libdisasm-dev
 ifeq ($(shell ./tools/config.sh ${CC} lib -ldisasm libdis.h),1)
 	DEFINES += -DHAVE_LIBDISASM
 	LIBS += -ldisasm
-else
-# http://udis86.sourceforge.net/
-# port install udis86
-ifeq ($(shell ./tools/config.sh ${CC} lib -ludis86 udis86.h),1)
-	DEFINES += -DHAVE_LIBUDIS64
-	LIBS += -ludis86
 endif
 endif
 ifneq ($(shell ./tools/config.sh ${CC} clang),0)
@@ -41,6 +41,7 @@ ifeq (${DEBUG},0)
 	DEBUGFLAGS += -O2 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
+	STRIP = echo
   ifneq (${CLANG},1)
 	DEBUGFLAGS += -g3 -fstack-protector
   else
