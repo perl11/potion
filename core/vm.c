@@ -136,27 +136,28 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
       CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
       CASE_OP(LOADK, (P, f, &asmb, pos, need))  // load a constant into a register
       CASE_OP(SELF, (P, f, &asmb, pos, need))   // prepare an object method for calling
+						// R(A+1) := R(B); R(A) := R(B)[RK(C)]
       CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs))// read a local into a register
       CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))// write a register value into a local
-      CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))// read an upvalue
+      CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))// read an upvalue (upper scope)
       CASE_OP(SETUPVAL, (P, f, &asmb, pos, lregs))// write to an upvalue
-      CASE_OP(GLOBAL, (P, f, &asmb, pos, need))	// globally define a value
+      CASE_OP(GLOBAL, (P, f, &asmb, pos, need))	//? globally define a value (set?)
       CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))// create tuple
       CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))// write register into tuple key
       CASE_OP(SETTABLE, (P, f, &asmb, pos, need))// write register into a table entry
-      CASE_OP(NEWLICK, (P, f, &asmb, pos, need))// create lick
+      CASE_OP(NEWLICK, (P, f, &asmb, pos, need))// create lick. R(A) := {} (size = B,C)
       CASE_OP(GETPATH, (P, f, &asmb, pos, need))// read obj field into register
       CASE_OP(SETPATH, (P, f, &asmb, pos, need))// write into obj field
-      CASE_OP(ADD, (P, f, &asmb, pos, need))
-      CASE_OP(SUB, (P, f, &asmb, pos, need))
+      CASE_OP(ADD, (P, f, &asmb, pos, need))	// a = b + c
+      CASE_OP(SUB, (P, f, &asmb, pos, need))	// a = b - c
       CASE_OP(MULT, (P, f, &asmb, pos, need))
       CASE_OP(DIV, (P, f, &asmb, pos, need))
       CASE_OP(REM, (P, f, &asmb, pos, need))
       CASE_OP(POW, (P, f, &asmb, pos, need))
       CASE_OP(NEQ, (P, f, &asmb, pos))
-      CASE_OP(EQ, (P, f, &asmb, pos))
-      CASE_OP(LT, (P, f, &asmb, pos))
-      CASE_OP(LTE, (P, f, &asmb, pos))
+      CASE_OP(EQ, (P, f, &asmb, pos))		// if ((RK(B) == RK(C)) ~= A) then PC++
+      CASE_OP(LT, (P, f, &asmb, pos))		// if ((RK(B) < RK(C)) ~= A) then PC++
+      CASE_OP(LTE, (P, f, &asmb, pos))		// if ((RK(B) <= RK(C)) ~= A) then PC++
       CASE_OP(GT, (P, f, &asmb, pos))
       CASE_OP(GTE, (P, f, &asmb, pos))
       CASE_OP(BITN, (P, f, &asmb, pos, need))
@@ -165,16 +166,16 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
       CASE_OP(DEF, (P, f, &asmb, pos, need))	// define a method for an object
       CASE_OP(BIND, (P, f, &asmb, pos, need))   // returns the lookup method for an object
       CASE_OP(MESSAGE, (P, f, &asmb, pos, need))// call a method of an object 
-      CASE_OP(JMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
-      CASE_OP(TEST, (P, f, &asmb, pos))
-      CASE_OP(NOT, (P, f, &asmb, pos))
+      CASE_OP(JMP, (P, f, &asmb, pos, jmps, offs, &jmpc)) // PC += sBx
+      CASE_OP(TEST, (P, f, &asmb, pos))		// if not (R(A) <=> C) then PC++
+      CASE_OP(NOT, (P, f, &asmb, pos))		// a = not b
       CASE_OP(CMP, (P, f, &asmb, pos))
       CASE_OP(TESTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(NOTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
-      CASE_OP(NAMED, (P, f, &asmb, pos, need))
-      CASE_OP(CALL, (P, f, &asmb, pos, need))	//? call a function
+      CASE_OP(NAMED, (P, f, &asmb, pos, need))  //? 
+      CASE_OP(CALL, (P, f, &asmb, pos, need))	// call a function. R(A),...:= R(A)(R(A+1),...,R(A+B-1))
       CASE_OP(CALLSET, (P, f, &asmb, pos, need))//? set return register to write to
-      CASE_OP(RETURN, (P, f, &asmb, pos))	// local exit from a function
+      CASE_OP(RETURN, (P, f, &asmb, pos))	// return R(A), ... ,R(A+B-2)
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))// define function prototype
       CASE_OP(CLASS, (P, f, &asmb, pos, need)) // find class for register value
     }
