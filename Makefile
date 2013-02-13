@@ -1,7 +1,7 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .g .c .i .i2 .o .opic .o2 .opic2 .textile .html
 
-SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
+SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
 
 # bootstrap config.inc with make -f config.mak
 include config.inc
@@ -38,7 +38,7 @@ OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_P2_TEST = test/api/p2-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
-DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile
+DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile design-decisions.textile
 DOCHTML = ${DOC:.textile=.html}
 
 CAT  = /bin/cat
@@ -347,21 +347,21 @@ test.p2: p2${EXE} \
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test${EXE}: ${OBJ_TEST} ${OBJ}
+test/api/potion-test${EXE}: ${OBJ_TEST} libpotion.a
 	@${ECHO} LINK potion-test
-	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_TEST} ${LIBS} -o $@ libpotion.a
 
-test/api/gc-test${EXE}: ${OBJ_GC_TEST} ${OBJ}
+test/api/gc-test${EXE}: ${OBJ_GC_TEST} libp2.a
 	@${ECHO} LINK gc-test
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${LIBS} -o $@ libp2.a
 
-test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ}
+test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ} libp2.a
 	@${ECHO} LINK gc-bench
-	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@ libp2.a
 
-test/api/p2-test${EXE}: ${OBJ_P2_TEST}
+test/api/p2-test${EXE}: ${OBJ_P2_TEST} libp2.a
 	@${ECHO} LINK p2-test
-	@${CC} ${CFLAGS} ${OBJ_P2_TEST} ${OBJ} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_P2_TEST} ${LIBS} -o $@ libp2.a
 
 dist: core/config.h core/version.h core/syntax.c core/syntax-p5.c \
   potion${EXE} p2${EXE} \
