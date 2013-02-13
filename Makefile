@@ -132,6 +132,8 @@ ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
+# the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
+# on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
 ifdef APPLE
 LIBHACK = ../lib/libpotion.dylib
 else
@@ -277,8 +279,11 @@ clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o core/*.opic core/*.i test/api/*.o ${DOCHTML}
 	@rm -f ${GREG} tools/*.o
-	@rm -f core/config.h core/version.h core/syntax.c config.inc
+	@rm -f core/config.h core/version.h core/syntax.c
 	@rm -f potion${EXE} libpotion.* \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
+
+realclean: clean
+	@rm -f config.inc
 
 .PHONY: all config clean doc rebuild test bench tarball dist install
