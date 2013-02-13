@@ -11,7 +11,7 @@
     ud_set_syntax(&ud_obj, UD_SYN_ATT);
 
     while (ud_disassemble(&ud_obj)) {
-      printf("0x%lx\t%s\n", ud_insn_off(&ud_obj), ud_insn_asm(&ud_obj));
+      printf("0x%lx\t%s\n", (long)ud_insn_off(&ud_obj), ud_insn_asm(&ud_obj));
     }
   }
 #  else
