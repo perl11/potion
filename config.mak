@@ -11,6 +11,7 @@ AR ?= ar
 JIT ?= 1
 DEBUG ?= 0
 EXE  =
+APPLE =
 
 CAT  = /bin/cat
 ECHO = /bin/echo
@@ -23,15 +24,15 @@ STRIP ?= `./tools/config.sh ${CC} strip`
 ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/
 # port install udis86
-CCx = ${CC}
-CCx += -I/opt/local/include -L/opt/local/lib
-ifeq ($(shell ./tools/config.sh "${CCx}" lib -ludis86 udis86.h),1)
+ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h),1)
+	DEFINES += -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	LIBS += -ludis86
+else
+ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h /opt/local),1)
 	DEFINES += -I/opt/local/include -DHAVE_LIBUDIS86 -DJIT_DEBUG
 	LIBS += -L/opt/local/lib -ludis86
 else
-CCx = ${CC}
-CCx += -I/usr/local/include -L/usr/local/lib
-ifeq ($(shell ./tools/config.sh "${CCx}" lib -ludis86 udis86.h),1)
+ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h /usr/local),1)
 	DEFINES += -I/usr/local/include -DHAVE_LIBUDIS86 -DJIT_DEBUG
 	LIBS += -L/usr/local/lib -ludis86
 else
@@ -41,7 +42,7 @@ ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h),1)
 	DEFINES += -DHAVE_LIBDISASM -DJIT_DEBUG
 	LIBS += -ldisasm
 else
-ifeq ($(shell ./tools/config.sh "${CCx}" lib -ldisasm libdis.h),1)
+ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h /usr/local),1)
 	DEFINES += -I/usr/local/include -DHAVE_LIBDISASM -DJIT_DEBUG
 	LIBS += -L/usr/local/lib -ldisasm
 endif
@@ -49,6 +50,8 @@ endif
 endif
 endif
 endif
+endif
+
 ifneq ($(shell ./tools/config.sh ${CC} clang),0)
 	CLANG = 1
 	CFLAGS += -Wno-unused-value
