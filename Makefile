@@ -13,6 +13,9 @@ else
 ifeq (${JIT_PPC},1)
 SRC += core/vm-ppc.c
 endif
+ifeq (${JIT_ARM},1)
+SRC += core/vm-arm.c # not yet ready
+endif
 endif
 endif
 OBJ = ${SRC:.c=.o}
@@ -61,7 +64,6 @@ usage:
 	@${ECHO} " Potion builds its JIT compiler by default, but"
 	@${ECHO} " you can use the bytecode VM by running scripts"
 	@${ECHO} " with the -B flag."
-	@${ECHO} " "
 	@${ECHO} " If you built with JIT=0, then the bytecode VM"
 	@${ECHO} " will run by default."
 	@${ECHO} " "
