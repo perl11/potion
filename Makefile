@@ -218,10 +218,10 @@ test.pn: potion${EXE} \
   test/api/potion-test${EXE} \
   test/api/gc-test${EXE}
 	@${ECHO}; \
+	${ECHO} running API tests; \
 	LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH \
 	DYLD_LIBRARY_PATH=`pwd`:$DYLD_LIBRARY_PATH \
 	export LD_LIBRARY_PATH; export DYLD_LIBRARY_PATH; \
-	${ECHO} running potion API tests; \
 	test/api/potion-test; \
 	${ECHO} running GC tests; \
 	test/api/gc-test; \
