@@ -72,6 +72,11 @@ elif [ "$2" = "strip" ]; then
     echo "echo"
   fi
 elif [ "$2" = "lib" ]; then
+  prefix=$5
+  if [ -n $prefix ]; then
+    CC="$CC -I$prefix/include -L$prefix/lib"
+    CCEX="$CC $AC -o $AOUT"
+  fi
   LIBOUT=`echo "#include <stdio.h>#include \\"$4\\"int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX $3 2>/dev/null && $AOUT; rm -f $AOUT`
   echo $LIBOUT
 else
