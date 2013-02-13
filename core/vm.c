@@ -26,7 +26,7 @@
 #  endif
 #endif
 
-#ifdef JIT
+#ifdef POTION_JIT
 extern PNTarget
 #if (POTION_JIT_TARGET == POTION_X86)
   potion_target_x86
@@ -70,7 +70,7 @@ PN potion_vm_class(Potion *P, PN cl, PN self) {
 #define JUMPS_MAX 1024
 
 void potion_vm_init(Potion *P) {
-#ifdef JIT
+#ifdef POTION_JIT
 #if (POTION_JIT_TARGET == POTION_X86)
   P->targets[POTION_X86] = potion_target_x86;
 #elif (POTION_JIT_TARGET == POTION_PPC)
