@@ -126,8 +126,8 @@ else
 LIBHACK =
 endif
 ../lib/libpotion.dylib:
-	mkdir ../lib
-	ln -s `pwd`/libpotion.dylib ../lib/
+	-mkdir ../lib
+	-ln -s `pwd`/libpotion.dylib ../lib/
 
 potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
 	@${ECHO} LINK $@
