@@ -177,8 +177,9 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
       CASE_OP(BITL, (P, f, &asmb, pos, need))
       CASE_OP(BITR, (P, f, &asmb, pos, need))
       CASE_OP(DEF, (P, f, &asmb, pos, need))	// define a method for an object
-      CASE_OP(BIND, (P, f, &asmb, pos, need))   // returns the lookup method for an object
-      CASE_OP(MESSAGE, (P, f, &asmb, pos, need))// call a method of an object 
+      CASE_OP(BIND, (P, f, &asmb, pos, need))   // extend obj by set a binding
+						// http://piumarta.com/software/cola/colas-whitepaper.pdf
+      CASE_OP(MESSAGE, (P, f, &asmb, pos, need))// call a method of an object
       CASE_OP(JMP, (P, f, &asmb, pos, jmps, offs, &jmpc)) // PC += sBx
       CASE_OP(TEST, (P, f, &asmb, pos))		// if not (R(A) <=> C) then PC++
       CASE_OP(NOT, (P, f, &asmb, pos))		// a = not b
