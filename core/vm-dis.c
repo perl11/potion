@@ -15,6 +15,56 @@
     }
   }
 #  else
+#  if defined(HAVE_LIBDISTORM64) && (POTION_JIT_TARGET == POTION_X86)
+  {
+    #define MAX_INSTRUCTIONS 2048
+    #define MAX_TEXT_SIZE (60)
+    typedef enum {Decode16Bits = 0, Decode32Bits = 1, Decode64Bits = 2} _DecodeType;
+    typedef enum {DECRES_NONE, DECRES_SUCCESS, DECRES_MEMORYERR, DECRES_INPUTERR} _DecodeResult;
+    typedef long _OffsetType;
+    typedef struct {
+      unsigned int pos;
+      int8_t p[MAX_TEXT_SIZE];
+    } _WString;
+    typedef struct {
+      _WString mnemonic;
+      _WString operands;
+      _WString instructionHex;
+      unsigned int size;
+      _OffsetType offset;
+    } _DecodedInst;
+    _DecodeResult distorm_decode64(_OffsetType,
+			 const unsigned char*,
+			 long,
+			 int,
+			 _DecodedInst*,
+			 int,
+			 unsigned int*);
+
+    _DecodeResult res;
+    _DecodedInst disassembled[MAX_INSTRUCTIONS];
+    unsigned int decodedInstructionsCount = 0;
+    _OffsetType offset = 0;
+    int i;
+
+    distorm_decode64(offset,
+      (const unsigned char*)asmb->ptr,
+      asmb->len,
+      __WORDSIZE == 64 ? 2 : 1,
+      disassembled,
+      MAX_INSTRUCTIONS,
+      &decodedInstructionsCount);
+    for (i = 0; i < decodedInstructionsCount; i++) {
+      printf("0x%04x (%02d) %-24s %s%s%s\r\n",
+	     disassembled[i].offset,
+	     disassembled[i].size,
+	     (char*)disassembled[i].instructionHex.p,
+	     (char*)disassembled[i].mnemonic.p,
+	     disassembled[i].operands.pos != 0 ? " " : "",
+	     (char*)disassembled[i].operands.p);
+    }
+  }
+#  else
 #  if defined(HAVE_LIBDISASM) && (POTION_JIT_TARGET == POTION_X86)
 #    define LINE_SIZE 255
   {
@@ -51,6 +101,7 @@
     printf("%x ", asmb->ptr[ai]);
   }
   printf("\n");
+#  endif
 #  endif
 #  endif
 #endif
