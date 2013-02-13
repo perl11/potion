@@ -1,0 +1,108 @@
+h1. design decisions on p2
+
+With p2 I plan to parse and execute perl5 asis.
+libp2, the compiler and vm based on potion, should be a good target
+for perl6.
+
+But I will not be able to run 100% of CPAN. I could, but then there
+would be no progress.
+I plan significant enhancements in perl performance and features.
+
+h1. Incompatibilities
+
+Some functionality will change, some annoying bugs fixed, 
+and some functionality might get removed, or not yet supported.
+
+h2. XS 
+
+Problem will arise with XS code, since the VM is different, and not
+all XS API functions can be supported.  It should be much easier to
+use XS-like functionality with the new FFI, or by using extension
+libraries with native calls. See @lib/readline@. So we will loose
+40% of CPAN code, but will win on performance, expressibility and
+compile-time error checking when binding libs.
+
+There should be a translator of old XS code to check the argument 
+handling macros and convert them to direct calls.
+
+h2. functional programming support
+
+Some side-effect-only functions will be changed to return the
+changed argument.
+E.g. chop, chomp, ...
+
+h2. order of destruction
+
+If you don't use explicit DESTROY calls at the end of blocks, the compiler 
+might miss some DESTROY calls of untyped objects. DESTROY might be called
+later then, as in other GC'd languages. get over it.
+
+reference counted objects are too dangerous, too hard and too slow.
+cyclic data structures do not play well with refcounts.
+use-after-free bugs are by factor 10 the most exploited security problems
+nowadays, and perl5 is full of them.
+
+h2. lexical hash iterators
+
+iterating a hash twice in lexically scoped blocks does not work in the second, 
+outer iterator, as the iterator in p5p perl is stored in the data. 
+This will be changed to be stored in the block.
+
+i.e. using Data::Dumper inside a each %hash loop will restore the position after 
+Data::Dumper dumped the hash.
+
+h1. New features (planned)
+
+h3. All data are objects, all declarations can be optionally typed.
+
+extendability, maintainance
+
+h3. const declarations for lexical data, @ISA, classes and functions/methods
+
+Define immutable and final classes.
+efficiency
+
+h3. optional function signatures and type declarations
+
+efficiency and safety, compile-time checks
+
+h3. efficient meta-object system, with classes, methods, roles
+
+like Moose (i.e. CLOS), but ~800x faster and with native type support.
+i.e. compile-time checks.
+
+h3. sized arrays
+
+efficiency
+
+h3. no magic
+
+efficiency
+
+h3. match operator
+
+expressibility
+
+A proper matcher should be able to match structures and types, 
+and to bind result variables.
+
+h3. dynamic and cleaned up parser
+
+allow sensible language features, disallowed by p5p or the old yacc parser.
+maintainability.
+needed for macros.
+
+h3. macros as parser extensions
+
+expressibility (lisp-like)
+
+perl will be the first non-lisp language with a proper macro system, 
+i.e. extending parser grammars.
+
+h3. auto-threads with a OO task and scheduler interface
+
+as in parrot and go
+
+h3. ffi
+
+maybe ctypes, maybe something simplier
