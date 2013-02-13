@@ -20,17 +20,28 @@ GREG = tools/greg${EXE}
 
 STRIP ?= `./tools/config.sh ${CC} strip`
 
+ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/
 # port install udis86
-ifeq ($(shell ./tools/config.sh ${CC} lib -ludis86 udis86.h),1)
-	DEFINES += -DHAVE_LIBUDIS86
-	LIBS += -ludis86
+CCx = ${CC}
+CCx += -I/usr/local/include -L/usr/local/lib
+ifeq ($(shell ./tools/config.sh "${CCx}" lib -ludis86 udis86.h),1)
+	DEFINES += -I/usr/local/include -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	LIBS += -L/usr/local/lib -ludis86
+else
+CCx = ${CC}
+CCx += -I/opt/local/include -L/opt/local/lib
+ifeq ($(shell ./tools/config.sh "${CCx}" lib -ludis86 udis86.h),1)
+	DEFINES += -I/opt/local/include -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	LIBS += -L/opt/local/lib -ludis86
 else
 # http://bastard.sourceforge.net/libdisasm.html 32bit only
 # apt-get install libdisasm-dev
-ifeq ($(shell ./tools/config.sh ${CC} lib -ldisasm libdis.h),1)
-	DEFINES += -DHAVE_LIBDISASM
+ifeq ($(shell ./tools/config.sh "${CCx}" lib -ldisasm libdis.h),1)
+	DEFINES += -DHAVE_LIBDISASM -DJIT_DEBUG
 	LIBS += -ldisasm
+endif
+endif
 endif
 endif
 ifneq ($(shell ./tools/config.sh ${CC} clang),0)
@@ -120,7 +131,7 @@ config.h.echo:
 	@${ECHO} "#define POTION_JIT    ${JIT}"
 	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
 	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
-	@${ECHO} ${DEFINES} | ${SED} "s,-D\(\w*\),\n#define \1 1,g"
+	@${ECHO} ${DEFINES} | ${SED} "/-I[\w+/\\:]/d;s,-D\(\w*\),\n#define \1 1,g"
 	@${ECHO}
 	@./tools/config.sh ${CC}
 
