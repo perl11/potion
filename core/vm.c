@@ -68,7 +68,7 @@ void potion_vm_init(Potion *P) {
 
 #define CASE_OP(name, args) case OP_##name: target->op[OP_##name]args; break;
 
-PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
+PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
   PN_SIZE pos;
   PNJumps jmps[JUMPS_MAX]; size_t offs[JUMPS_MAX]; int jmpc = 0, jmpi = 0;
@@ -90,7 +90,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
         });
       }
       if (f2->jit == NULL)
-        potion_jit_proto(P, proto2, target_id);
+        potion_jit_proto(P, proto2, target_id, verbose);
       if (p2args > protoargs)
         protoargs = p2args;
     });
@@ -130,6 +130,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
     }
 
     // see http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
+    // or http://www.lua.org/doc/jucs05.pdf
     switch (PN_OP_AT(f->asmb, pos).code) {
       CASE_OP(MOVE, (P, f, &asmb, pos))		// copy value between registers
       CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
@@ -184,7 +185,9 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
 
   fn = PN_ALLOC_FUNC(asmb->len);
 #if defined(JIT_DEBUG)
-  #include "vm-dis.c"
+  if (verbose > 1) {
+    #include "vm-dis.c"
+  }
 #endif
   PN_MEMCPY_N(fn, asmb->ptr, u8, asmb->len);
 
