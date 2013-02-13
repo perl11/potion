@@ -188,7 +188,7 @@ libpotion${DLL}: ${PIC_OBJ_SYN} ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
-	  ${PIC_OBJ_SYN} ${PIC_OBJ} > /dev/null
+	  ${PIC_OBJ_SYN} ${PIC_OBJ} ${LIBS} > /dev/null
 
 libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ})
 	@${ECHO} AR $@
@@ -199,7 +199,7 @@ libp2${DLL}: ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ})
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ $(subst potion,p2,${LDDLLFLAGS}) \
-	  ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ}) > /dev/null
+	  ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ}) ${LIBS} > /dev/null
 
 lib/readline${LOADEXT}: config.inc lib/readline/Makefile \
   lib/readline/linenoise.c lib/readline/linenoise.h
@@ -331,21 +331,21 @@ test.p2: p2${EXE} \
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test${EXE}: ${OBJ_TEST} libpotion${DLL}
+test/api/potion-test${EXE}: ${OBJ_TEST} ${OBJ}
 	@${ECHO} LINK potion-test
-	@${CC} ${CFLAGS} ${OBJ_TEST} ${LIBS} -o $@ -L. -lpotion
+	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
 
-test/api/p2-test${EXE}: ${OBJ_P2_TEST} libp2${DLL}
-	@${ECHO} LINK p2-test
-	@${CC} ${CFLAGS} ${OBJ_P2_TEST} ${LIBS} -o $@ -L. -lp2
-
-test/api/gc-test${EXE}: ${OBJ_GC_TEST} libp2${DLL}
+test/api/gc-test${EXE}: ${OBJ_GC_TEST} ${OBJ}
 	@${ECHO} LINK gc-test
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${LIBS} -o $@ -L. -lp2
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${LIBS} -o $@
 
-test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} libp2${DLL}
+test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ}
 	@${ECHO} LINK gc-bench
-	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${LIBS} -o $@ -L. -lp2
+	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
+
+test/api/p2-test${EXE}: ${OBJ_P2_TEST}
+	@${ECHO} LINK p2-test
+	@${CC} ${CFLAGS} ${OBJ_P2_TEST} ${OBJ} ${LIBS} -o $@
 
 dist: core/config.h core/version.h core/syntax.c core/syntax-p5.c \
   potion${EXE} p2${EXE} \
