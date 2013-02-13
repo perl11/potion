@@ -22,7 +22,7 @@ GREG = tools/greg${EXE}
 STRIP ?= `./tools/config.sh ${CC} strip`
 
 ifneq (${DEBUG},0)
-# http://udis86.sourceforge.net/
+# http://udis86.sourceforge.net/ x86 16,32,64 bit
 # port install udis86
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h),1)
 	DEFINES += -DHAVE_LIBUDIS86 -DJIT_DEBUG
@@ -36,7 +36,17 @@ ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h /usr/local),1)
 	DEFINES += -I/usr/local/include -DHAVE_LIBUDIS86 -DJIT_DEBUG
 	LIBS += -L/usr/local/lib -ludis86
 else
-# http://bastard.sourceforge.net/libdisasm.html 32bit only
+# http://ragestorm.net/distorm/ x86 16,32,64 bit with all intel/amd extensions
+# apt-get install libdistorm64-dev
+ifeq ($(shell ./tools/config.sh "${CC}" lib -ldistorm64 stdlib.h),1)
+	DEFINES += -DHAVE_LIBDISTORM64 -DJIT_DEBUG
+	LIBS += -ldistorm64
+else
+ifeq ($(shell ./tools/config.sh "${CC}" lib -ldistorm64 stdlib.h /usr/local),1)
+	DEFINES += -DHAVE_LIBDISTORM64 -DJIT_DEBUG
+	LIBS += -L/usr/local/lib -ldistorm64
+else
+# http://bastard.sourceforge.net/libdisasm.html 386 32bit only
 # apt-get install libdisasm-dev
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h),1)
 	DEFINES += -DHAVE_LIBDISASM -DJIT_DEBUG
@@ -45,6 +55,8 @@ else
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h /usr/local),1)
 	DEFINES += -I/usr/local/include -DHAVE_LIBDISASM -DJIT_DEBUG
 	LIBS += -L/usr/local/lib -ldisasm
+endif
+endif
 endif
 endif
 endif
@@ -68,7 +80,7 @@ else
   endif
 endif
 
-CFLAGS += ${DEFINES} ${DEBUGFLAGS}
+# CFLAGS += \${DEFINES} \${DEBUGFLAGS}
 
 # cygwin is not WIN32
 ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
@@ -112,25 +124,28 @@ config: config.inc
 
 config.inc.echo:
 	@${ECHO} "PREFIX  = ${PREFIX}"
-	@${ECHO} "EXE  = ${EXE}"
-	@${ECHO} "DLL  = ${DLL}"
-	@${ECHO} "LOADEXT = ${LOADEXT}"
 	@${ECHO} "ECHO    = ${ECHO}"
+	@${ECHO} "EXE     = ${EXE}"
+	@${ECHO} "DLL     = ${DLL}"
+	@${ECHO} "LOADEXT = ${LOADEXT}"
 	@${ECHO} "CC      = ${CC}"
-	@${ECHO} "CFLAGS  = ${CFLAGS}"
-	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
-	@${ECHO} "LDEXEFLAGS = ${LDEXEFLAGS}"
-	@${ECHO} "JIT     = ${JIT}"
-	@${ECHO} "LIBS    = ${LIBS}"
 	@${ECHO} "DEFINES = ${DEFINES}"
 	@${ECHO} "DEBUGFLAGS = ${DEBUGFLAGS}"
+	@${ECHO} -n "CFLAGS  = ${CFLAGS} "
+	@${ECHO} -n "\$$"
+	@${ECHO} -n "{DEFINES} \$$"
+	@${ECHO} "{DEBUGFLAGS}"
+	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
+	@${ECHO} "LDEXEFLAGS = ${LDEXEFLAGS}"
+	@${ECHO} "LIBS    = ${LIBS}"
 	@${ECHO} "STRIP   = ${STRIP}"
 	@${ECHO} "APPLE   = ${APPLE}"
 	@${ECHO} "WIN32   = ${WIN32}"
 	@${ECHO} "CLANG   = ${CLANG}"
+	@${ECHO} "JIT     = ${JIT}"
 	@${ECHO} "DEBUG   = ${DEBUG}"
 	@${ECHO} "RUNPOTION = ${RUNPOTION}"
-	@${ECHO} -n "REVISION = "
+	@${ECHO} -n "REVISION  = "
 	@${ECHO} $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
 
 config.h.echo:
@@ -150,6 +165,7 @@ config.inc: tools/config.sh config.mak
 	@${ECHO} "# created by ${MAKE} -f config.mak" >> config.inc
 	@${MAKE} -s -f config.mak config.inc.echo >> $@
 	@${MAKE} -s -f config.mak -B core/config.h
+	@${CAT} core/config.h | ${SED} '/POTION_JIT_TARGET /!d; s,#define POTION_JIT_TARGET POTION_\(\w*\),\nJIT_\1 = 1,g' >> $@
 
 # Force sync with config.inc
 core/config.h: core/version.h tools/config.sh config.mak

@@ -1,11 +1,29 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .g .c .i .i2 .o .opic .o2 .opic2 .textile .html
 
-SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
+SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
+
+# bootstrap config.inc with make -f config.mak
+include config.inc
+
+ifeq (${JIT},1)
+ifeq (${JIT_X86},1)
+SRC += core/vm-x86.c
+else
+ifeq (${JIT_PPC},1)
+SRC += core/vm-ppc.c
+endif
+ifeq (${JIT_ARM},1)
+SRC += core/vm-arm.c # not yet ready
+endif
+endif
+endif
+
 SRC_SYN = core/syntax.c
 SRC_P2_SYN = core/syntax-p5.c
 SRC_POTION = core/potion.c
 SRC_P2 = core/p2.c
+
 OBJ = ${SRC:.c=.o}
 OBJ_SYN = ${SRC_SYN:.c=.o}
 OBJ_POTION = ${SRC_POTION:.c=.o}
@@ -32,9 +50,6 @@ GREG = tools/greg${EXE}
 INCS = -Icore
 RUNPOTION = ./potion
 RUNP2 = ./p2
-
-# bootstrap config.inc with make -f config.mak
-include config.inc
 
 all: pn p2${EXE}
 	+${MAKE} -s usage
@@ -64,7 +79,6 @@ usage:
 	@${ECHO} " Potion builds its JIT compiler by default, but"
 	@${ECHO} " you can use the bytecode VM by running scripts"
 	@${ECHO} " with the -B flag."
-	@${ECHO} " "
 	@${ECHO} " If you built with JIT=0, then the bytecode VM"
 	@${ECHO} " will run by default."
 	@${ECHO} " "
@@ -151,6 +165,8 @@ ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
+# the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
+# on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
 ifdef APPLE
 LIBHACK = ../lib/libpotion.dylib ../lib/libp2.dylib
 else
@@ -393,6 +409,10 @@ clean:
 	@rm -f test/api/potion-test${EXE} test/api/gc-test${EXE} \
                test/api/gc-bench${EXE}
 	@rm -f potion${EXE} libpotion.*
+	@rm -f test/api/p2-test${EXE}
 	@rm -f p2${EXE} libp2.* core/syntax-p5.c
+
+realclean: clean
+	@rm -f config.inc
 
 .PHONY: all config clean doc rebuild test test.pn test.p2 bench tarball dist install
