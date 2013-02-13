@@ -1,7 +1,20 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .g .c .i .o .opic .textile .html
 
-SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c core/vm-ppc.c core/vm-x86.c
+SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
+
+# bootstrap config.inc with make -f config.mak
+include config.inc
+
+ifeq (${JIT},1)
+ifeq (${JIT_X86},1)
+SRC += core/vm-x86.c
+else
+ifeq (${JIT_PPC},1)
+SRC += core/vm-ppc.c
+endif
+endif
+endif
 OBJ = ${SRC:.c=.o}
 PIC_OBJ = ${SRC:.c=.opic}
 OBJ_POTION = core/potion.o
@@ -19,9 +32,6 @@ GREG = tools/greg${EXE}
 
 INCS = -Icore
 RUNPOTION = ./potion
-
-# bootstrap config.inc with make -f config.mak
-include config.inc
 
 all: pn
 	+${MAKE} -s usage

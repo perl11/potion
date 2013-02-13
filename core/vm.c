@@ -26,7 +26,15 @@
 #  endif
 #endif
 
-extern PNTarget potion_target_x86, potion_target_ppc;
+#ifdef JIT
+extern PNTarget
+#if (POTION_JIT_TARGET == POTION_X86)
+  potion_target_x86
+#elif (POTION_JIT_TARGET == POTION_PPC)
+  potion_target_ppc
+#endif
+  ;
+#endif
 
 PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   PN ary = PN_NIL;
@@ -62,8 +70,13 @@ PN potion_vm_class(Potion *P, PN cl, PN self) {
 #define JUMPS_MAX 1024
 
 void potion_vm_init(Potion *P) {
+#ifdef JIT
+#if (POTION_JIT_TARGET == POTION_X86)
   P->targets[POTION_X86] = potion_target_x86;
+#elif (POTION_JIT_TARGET == POTION_PPC)
   P->targets[POTION_PPC] = potion_target_ppc;
+#endif
+#endif
 }
 
 #define CASE_OP(name, args) case OP_##name: target->op[OP_##name]args; break;
