@@ -14,8 +14,7 @@
 #include "internal.h"
 #include "CuTest.h"
 
-PN num = PN_NUM(484);
-PN tnum = PN_NUM(490);
+PN num = PN_NUM(490);
 Potion *P;
 
 // TODO p2 perl5 api
@@ -35,7 +34,7 @@ void p2_test_int1(CuTest *T) {
   CuAssert(T, "zero isn't a number", PN_IS_NUM(zero));
   CuAssert(T, "zero is a ref", !PN_IS_PTR(zero));
   CuAssert(T, "zero bad add",
-    490 == PN_INT(potion_send(zero, potion_str(P, "+"), tnum)));
+    490 == PN_INT(potion_send(zero, potion_str(P, "+"), num)));
 }
 
 void p2_test_int2(CuTest *T) {
@@ -44,7 +43,7 @@ void p2_test_int2(CuTest *T) {
   CuAssert(T, "positive not a number", PN_IS_NUM(pos));
   CuAssert(T, "positive is a ref", !PN_IS_PTR(pos));
   CuAssert(T, "positive bad add",
-    11381 == PN_INT(potion_send(pos, potion_str(P, "+"), tnum)));
+    11381 == PN_INT(potion_send(pos, potion_str(P, "+"), num)));
 }
 
 void p2_test_int3(CuTest *T) {
@@ -53,7 +52,7 @@ void p2_test_int3(CuTest *T) {
   CuAssert(T, "negative not a number", PN_IS_NUM(neg));
   CuAssert(T, "negative is a ref", !PN_IS_PTR(neg));
   CuAssert(T, "negative bad add",
-    -3853 == PN_INT(potion_send(neg, potion_str(P, "+"), tnum)));
+    -3853 == PN_INT(potion_send(neg, potion_str(P, "+"), num)));
 }
 
 void p2_test_decimal(CuTest *T) {
