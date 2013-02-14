@@ -98,7 +98,7 @@ core/config.h: core/version.h tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
 	@${MAKE} -s -f config.mak $@
 
-core/version.h: .git/HEAD .git/$(shell git symbolic-ref HEAD)
+core/version.h: .git/$(shell git show-ref HEAD | ${SED} "s/^.* //;")
 	@${MAKE} -s -f config.mak $@
 
 # bootstrap config.inc
