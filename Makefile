@@ -408,6 +408,7 @@ clean:
 	@rm -f core/*.o test/api/*.o ${DOCHTML} \
 	       core/*.i core/*.opic core/*.opic2 core/*.o2
 	@rm -f ${GREG} tools/*.o core/config.h core/version.h core/syntax.c
+	@rm -f tools/*~ doc/*~ example/*~
 	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
 	@rm -f test/api/potion-test${EXE} test/api/gc-test${EXE} \
                test/api/gc-bench${EXE}
