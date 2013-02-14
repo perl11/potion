@@ -374,6 +374,9 @@ install: dist
 tarball:
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
+release:
+	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+
 %.html: %.textile
 	@${ECHO} DOC $@
 	@${ECHO} "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"DTD/xhtml1-transitional.dtd\">" > $@
@@ -415,4 +418,4 @@ clean:
 realclean: clean
 	@rm -f config.inc
 
-.PHONY: all config clean doc rebuild test test.pn test.p2 bench tarball dist install
+.PHONY: all config clean doc rebuild test test.pn test.p2 bench tarball dist release install

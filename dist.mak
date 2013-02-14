@@ -1,6 +1,8 @@
 # -*- makefile -*-
 include config.inc
 
+SUDO = sudo
+
 ifeq (${PREFIX},)
 	$(error need to make config first)
 endif
@@ -18,8 +20,10 @@ PKG     = p2-${RELEASE}
 
 dist: bin-dist src-dist
 
+release: dist
+
 install: bin-dist
-	sudo tar xfz pkg/${PKG}.tar.gz -C $(PREFIX)/
+	${SUDO} tar xfz pkg/${PKG}.tar.gz -C $(PREFIX)/
 
 bin-dist: pkg/${PKG}.tar.gz
 
@@ -55,4 +59,4 @@ tarball: core/version.h core/syntax.c
 	tar czvf pkg/${PKG}-src.tar.gz ${PKG}
 	rm -rf ${PKG}
 
-.PHONY: dist install tarball src-dist bin-dist
+.PHONY: dist release install tarball src-dist bin-dist
