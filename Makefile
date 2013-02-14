@@ -281,7 +281,7 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o core/*.opic core/*.i test/api/*.o ${DOCHTML}
-	@rm -f ${GREG} tools/*.o
+	@rm -f ${GREG} tools/*.o tools/*~ doc/*~ example/*~
 	@rm -f core/config.h core/version.h core/syntax.c
 	@rm -f potion${EXE} libpotion.* \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
