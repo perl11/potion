@@ -3,7 +3,7 @@
 // the vm execution loop
 //
 // (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2013 cPanel (rurban)
+// (c) 2013 by perl11 org
 //
 #include <stdio.h>
 #include <stdarg.h>
