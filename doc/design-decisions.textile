@@ -8,6 +8,24 @@ But I will not be able to run 100% of CPAN. I could, but then there
 would be no progress.
 I plan significant enhancements in perl performance and features.
 
+
+h2. Generally
+
+I go along with _why and every lisp coder. Good software should be
+beautiful. It's art not technology.
+short, precise, readable. no one wants to work with a big and ugly mess,
+not even companies. rather restrict the usage to those who know and
+can be taught, than sacrifice your system for it.  support 90% but do
+not sacrifice for the rest.  gmake and gcc/clang are available
+everywhere, even on pure bsd's.
+
+Examples:
+no support for MS cl/nmake, people should use mingw with gmake and gcc instead.
+no support for BSDmakefile syntax (see the bsd branch).
+no support for pure strict c++ compilers (see the p2-c++ branch).
+no vax, hpux, aix without gnu tools
+
+
 h1. Incompatibilities
 
 Some functionality will change, some annoying bugs fixed, 
@@ -22,8 +40,9 @@ libraries with native calls. See @lib/readline@. So we will loose
 40% of CPAN code, but will win on performance, expressibility and
 compile-time error checking when binding libs.
 
-There should be a translator of old XS code to check the argument 
-handling macros and convert them to direct calls.
+There should be a translator of old XS code to check the stack
+(argument + return values) handling macros and convert them to direct
+calls.
 
 h2. functional programming support
 
@@ -42,14 +61,16 @@ cyclic data structures do not play well with refcounts.
 use-after-free bugs are by factor 10 the most exploited security problems
 nowadays, and perl5 is full of them.
 
+
 h2. lexical hash iterators
 
 iterating a hash twice in lexically scoped blocks does not work in the second, 
 outer iterator, as the iterator in p5p perl is stored in the data. 
-This will be changed to be stored in the block.
+This will be changed to be stored in the scope (block).
 
 i.e. using Data::Dumper inside a each %hash loop will restore the position after 
 Data::Dumper dumped the hash.
+
 
 h1. New features (planned)
 
@@ -57,52 +78,123 @@ h3. All data are objects, all declarations can be optionally typed.
 
 extendability, maintainance
 
+efficient oo and dynamic type system, with compiler support for static types.
+
+
 h3. const declarations for lexical data, @ISA, classes and functions/methods
 
-Define immutable and final classes.
 efficiency
+
+Also needed for threads and oo to avoid generating writer methods.
+Define immutable and final classes.
 
 h3. optional function signatures and type declarations
 
 efficiency and safety, compile-time checks
+
 
 h3. efficient meta-object system, with classes, methods, roles
 
 like Moose (i.e. CLOS), but ~800x faster and with native type support.
 i.e. compile-time checks.
 
+
 h3. sized arrays
 
 efficiency
+
 
 h3. no magic
 
 efficiency
 
+
 h3. match operator
 
 expressibility
 
-A proper matcher should be able to match structures and types, 
-and to bind result variables.
+A proper matcher should be able to match structures and types, and to
+bind result variables.
+
 
 h3. dynamic and cleaned up parser
 
-allow sensible language features, disallowed by p5p or the old yacc parser.
 maintainability.
-needed for macros.
+new technology (risc and code maintainability), but needed for macros.
+
+allow sensible language features, disallowed by p5p or the old yacc
+parser.  the parser grammar needs to be expressive, even for perl,
+which is known to be hard to parse, and dynamic at parse-time
+(prototypes).
+
+new syntactic constructs needs to added to the grammar, not elsewhere
+in the code.  the parser needs to be accessible and extendable at
+compile-time, maybe even run-time, but we cannot use a non-optimized
+pure top-down parser as e.g. lua to enable this.
+
+we need to precompile the base grammar, bootstrap system macros and
+allow user macros. expose the parser API to the user. query and
+insert rules. use custom rules to parse ffi declarations (c headers)
+templates, ... or even basic, ruby, python or perl6.
+
+<pre><code>
+  {
+    use v6;
+    # perl6 syntax...
+  }
+</code></pre>
+
+_(this will need a pre-compiled @syntax-p6.g@ and scoped syntax)_
+
+Either done by extending packrat greg (ie leg) by with a parser
+interpreter to add rules at run-time, - from precompiled rules and
+user-added rules - or by extending marpa to be extensible.
+
 
 h3. macros as parser extensions
 
 expressibility (lisp-like)
+keep the vm small, do not prototype everything in the C library.
+use the existing parser engine.
 
-perl will be the first non-lisp language with a proper macro system, 
-i.e. extending parser grammars.
+macro args are rules (non-terminals) and terminals (strings) to be
+added to the parser, the macro block is evaluated at compile-time,
+with `...` expanded at run-time.
 
-h3. auto-threads with a OO task and scheduler interface
+so perl will be the first non-lisp like language with a proper macro
+system, i.e. extending parser grammars. perl6 has similar ideas using peg
+at run-time, but their syntactic macros are too complicated for me.
+maybe using the perl6 <rule> syntax looks ok. _(i.e. <block> below)_
 
-as in parrot and go
+There are some similar non-mainstream approaches, on mono or java or
+haskell, but none on fast, compiled to C scripting languages.
+
+<pre><code>
+  syntax-p5.g:
+    block = '{' s:statements* '}' { $$ = PN_AST(BLOCK, s); }
+</code></pre>
+<pre><code>
+  macro ifdebug block 'ifdebug' {
+    if ($DEBUG) `block`;
+  }
+  { call() } ifdebug;
+</code></pre>
+
+h3. auto-threads
+
+the p2/potion data-structures, compiler, vm, gc, interpreter are
+thread-safe.
+
+with a OO task and scheduler interface as in parrot (pre-create,
+useful esp. for windows alarms),
+or as in Go (similar),
+or maybe only non-autothreaded as in lua, with just first-class
+  coroutines, methods: create, status, resume, yield, wrap
 
 h3. ffi
 
-maybe ctypes, maybe something simplier
+builtin
+extendability, maintainance
+
+maybe ctypes, maybe something simplier.
+

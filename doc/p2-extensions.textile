@@ -95,8 +95,10 @@ mandatory parenthesis. E.g. @if@ or @while@ boolean expressions don't need
 parens.
 
 <pre><code>
-     if $s say "$s";
-     else say "else";
+     if $cmp {
+       if $s say "$s";
+       else say "else";
+     }
 </code></pre>
 
 @for@ lists should not need parens, the expressions are evaluated in list
@@ -153,11 +155,11 @@ perl5, with a mix of compile-time and run-time expressions.
 e.g. 
 <pre><code>
   syntax-p5.g:
-    block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s); }
+    block = '{' s:statements* '}' { $$ = PN_AST(BLOCK, s); }
 </code></pre>
 <pre><code>
-  macro ifdebug block {
-    if $DEBUG `block`;
+  macro ifdebug block 'ifdebug' {
+    if (DEBUG) `block`;
   }
 </code></pre>
 

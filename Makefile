@@ -377,7 +377,7 @@ tarball:
 release:
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
-%.html: %.textile
+%.html: %.textile doc/logo
 	@${ECHO} DOC $@
 	@${ECHO} "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"DTD/xhtml1-transitional.dtd\">" > $@
 	@${ECHO} "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">" >> $@
