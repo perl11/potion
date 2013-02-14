@@ -3,7 +3,7 @@
 # perl5 tokens and grammar
 #
 # (c) 2009 _why
-# (c) 2013 cPanel (rurban)
+# (c) 2013 by perl11 org
 #
 
 %{
