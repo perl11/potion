@@ -230,11 +230,9 @@ bench: potion${EXE} test/api/gc-bench${EXE}
 
 test: test.pn test.p2
 
-test.pn: potion${EXE} \
-  test/api/potion-test${EXE} \
-  test/api/gc-test${EXE}
+test.pn: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
-	${ECHO} running API tests; \
+	${ECHO} running potion API tests; \
 	LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH \
 	DYLD_LIBRARY_PATH=`pwd`:$DYLD_LIBRARY_PATH \
 	export LD_LIBRARY_PATH; export DYLD_LIBRARY_PATH; \
@@ -290,9 +288,7 @@ test.pn: potion${EXE} \
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test.p2: p2${EXE} \
-  test/api/p2-test${EXE} \
-  test/api/gc-test${EXE}
+test.p2: p2${EXE} test/api/p2-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running p2 API tests; \
 	test/api/p2-test; \
@@ -318,6 +314,7 @@ test.p2: p2${EXE} \
 	  fi; \
 	  for f in test/**/*.pl; do \
 		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
+		look="P2"; \
 		if [ $$t -eq 0 ]; then \
 			for=`${RUNP2} -I -B $$f | ${SED} "s/\n$$//"`; \
 		elif [ $$t -eq 1 ]; then \
