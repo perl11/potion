@@ -352,19 +352,19 @@ test.p2: p2${EXE} test/api/p2-test${EXE} test/api/gc-test${EXE}
 
 test/api/potion-test${EXE}: ${OBJ_TEST} libpotion.a
 	@${ECHO} LINK potion-test
-	@${CC} ${CFLAGS} ${OBJ_TEST} ${LIBS} -o $@ libpotion.a
+	@${CC} ${CFLAGS} ${OBJ_TEST} -o $@ libpotion.a ${LIBS}
 
 test/api/gc-test${EXE}: ${OBJ_GC_TEST} libp2.a
 	@${ECHO} LINK gc-test
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${LIBS} -o $@ libp2.a
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ libp2.a ${LIBS}
 
-test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ} libp2.a
+test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} libp2.a
 	@${ECHO} LINK gc-bench
-	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@ libp2.a
+	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ libp2.a ${LIBS}
 
 test/api/p2-test${EXE}: ${OBJ_P2_TEST} libp2.a
 	@${ECHO} LINK p2-test
-	@${CC} ${CFLAGS} ${OBJ_P2_TEST} ${LIBS} -o $@ libp2.a
+	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ libp2.a ${LIBS}
 
 dist: core/config.h core/version.h core/syntax.c core/syntax-p5.c \
   potion${EXE} p2${EXE} \
