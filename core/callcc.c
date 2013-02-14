@@ -12,9 +12,8 @@
 #include "internal.h"
 
 PN potion_continuation_yield(Potion *P, PN cl, PN self) {
-  int i = 0, diff;
   struct PNCont *cc = (struct PNCont *)self;
-  PN rcx, *start, *end, *sp1 = P->mem->cstack, *sp2 = NULL;
+  PN *start, *end, *sp1 = P->mem->cstack;
 #if POTION_STACK_DIR > 0
   start = (PN *)cc->stack[0];
   end = (PN *)cc->stack[1];
@@ -81,7 +80,7 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
           );
 #endif
 #else
-  fprintf(stderr, "** TODO: callcc does not work outside of X86.\n");
+  fprintf(stderr, "** TODO: callcc/yield does not work outside of X86 yet.\n");
 #endif
   return self;
 }

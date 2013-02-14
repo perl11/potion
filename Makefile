@@ -91,15 +91,21 @@ config.inc: tools/config.sh config.mak
 	@${ECHO} MAKE -f config.mak $@
 	@${MAKE} -s -f config.mak $@
 
+DEFS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
 core/callcc.o: core/callcc.c
 	@${ECHO} CC $< +frame-pointer
-	@${CC} -c -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c ${DEFS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/callcc.opic: core/callcc.c
 	@${ECHO} CC -fPIC $< +frame-pointer
-	@${CC} -c -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c ${DEFS} -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/vm.o core/vm.opic: core/vm-dis.c
+
+# no optimizations
+#core/vm-x86.opic: core/vm-x86.c
+#	@${ECHO} CC -fPIC $< +frame-pointer
+#	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE -fPIC ${INCS} -o $@ $<
 
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
