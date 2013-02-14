@@ -254,7 +254,7 @@ void CuSuiteSummary(CuSuite* testSuite, CuString* summary)
 		CuTest* testCase = testSuite->list[i];
 		CuStringAppend(summary, testCase->failed ? "F" : ".");
 	}
-	CuStringAppend(summary, "\n\n");
+	CuStringAppend(summary, "\n");
 }
 
 void CuSuiteDetails(CuSuite* testSuite, CuString* details)
