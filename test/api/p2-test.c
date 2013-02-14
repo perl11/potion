@@ -3,7 +3,7 @@
 // tests of the p2 C api (perl5)
 //
 // (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2012-2013 cPanel
+// (c) 2012-2013 by perl11 org
 //
 #include <stdio.h>
 #include <stdlib.h>
