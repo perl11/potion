@@ -207,7 +207,7 @@ value = i:immed - { $$ = PN_AST(VALUE, i); }
       | lick
       | group
 
-immed = nil   { $$ = PN_NIL; }
+immed = undef { $$ = PN_NIL; }
       | true  { $$ = PN_TRUE; }
       | false { $$ = PN_FALSE; }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)); }
@@ -265,7 +265,7 @@ or = ("||" | "or" !utfw) --
 not = ("!" | "not" !utfw) --
 keyword = ("and" | "or" | "not") !utfw
 
-nil = "nil" !utfw
+undef = "undef" !utfw
 true = "true" !utfw
 false = "false" !utfw
 hexl = [0-9A-Fa-f]

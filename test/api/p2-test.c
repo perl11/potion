@@ -14,26 +14,20 @@
 #include "internal.h"
 #include "CuTest.h"
 
-PN num = PN_NUM(482);
+PN num = PN_NUM(484);
 PN tnum = PN_NUM(490);
 Potion *P;
 
 // TODO p2 perl5 api
-#if 0
-void p2_test_nil(CuTest *T) {
-  CuAssert(T, "nil isn't a nil type", PN_TYPE(PN_NIL) == PN_TNIL);
-  CuAssert(T, "nil is a ref", !PN_IS_PTR(PN_NIL));
-  CuAssert(T, "nil nil? is false",
-    PN_TRUE == potion_send(PN_NIL, potion_str(P, "nil?")));
-}
 
-void p2_test_bool(CuTest *T) {
-  CuAssert(T, "true isn't a bool type", PN_TYPE(PN_TRUE) == PN_TBOOLEAN);
-  CuAssert(T, "true is a ref", !PN_IS_PTR(PN_TRUE));
-  CuAssert(T, "false isn't a bool type", PN_TYPE(PN_FALSE) == PN_TBOOLEAN);
-  CuAssert(T, "false is a ref", !PN_IS_PTR(PN_FALSE));
-}
+void p2_test_undef(CuTest *T) {
+  CuAssert(T, "undef isn't a nil type", PN_TYPE(PN_NIL) == PN_TNIL);
+  CuAssert(T, "undef is a ref", !PN_IS_PTR(PN_NIL));
+#if 0
+  CuAssert(T, "undef undef? is false",
+    PN_TRUE == potion_send(PN_NIL, potion_str(P, "undef?")));
 #endif
+}
 
 void p2_test_int1(CuTest *T) {
   PN zero = PN_NUM(0);
@@ -123,7 +117,7 @@ void p2_test_allocated(CuTest *T) {
 CuSuite *p2_suite() {
   CuSuite *S = CuSuiteNew();
   //SUITE_ADD_TEST(S, p2_test_eval);
-  //SUITE_ADD_TEST(S, p2_test_nil);
+  SUITE_ADD_TEST(S, p2_test_undef);
   //SUITE_ADD_TEST(S, p2_test_bool);
   SUITE_ADD_TEST(S, p2_test_int1);
   SUITE_ADD_TEST(S, p2_test_int2);
