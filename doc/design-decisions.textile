@@ -196,5 +196,8 @@ h3. ffi
 builtin
 extendability, maintainance
 
-maybe ctypes, maybe something simplier.
+maybe ctypes alike, maybe something simplier or more advanced.
+(i.e. import parses header files and generates all ffi functions
+and types, or on the hand only support the bare cc types:
+signed/unsigned, void/byte/short/long/ptr float/double/long double)
 
