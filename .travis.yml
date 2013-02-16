@@ -4,10 +4,11 @@ compiler:
   - clang
 before_install:
   - git submodule update --init --recursive
-install:
-  - sudo apt-get install -qq libdisasm-dev
+#install:
+#  - sudo apt-get update -qq
+#  - sudo apt-get install -qq libdisasm-dev
 
-script: make config; make && make test CC=$CC
+script: make config CC=$CC; make && make test
 
 notifications:
   irc: "irc.perl.org#perl11"
