@@ -628,6 +628,7 @@ void potion_file_init(Potion *);
 void potion_loader_init(Potion *);
 void potion_cont_init(Potion *);
 void potion_dump_stack(Potion *);
+void potion_loader_add(Potion *, PN path);
 
 PN potion_any_is_nil(Potion *, PN, PN);
 PN potion_num_string(Potion *, PN, PN);

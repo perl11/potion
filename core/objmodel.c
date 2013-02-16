@@ -420,13 +420,13 @@ void potion_object_init(Potion *P) {
 }
 
 void potion_lobby_init(Potion *P) {
-  potion_init_class_reference(P, potion_str(P,
-#ifdef P2
-					    "P2"
-#else
-					    "Lobby"
-#endif
-					    ),                  P->lobby);
+
+# ifdef P2
+#   define LOBBY_NAME "P2"
+# else
+#    define LOBBY_NAME "Lobby"
+# endif
+  potion_init_class_reference(P, potion_str(P, LOBBY_NAME),     P->lobby);
   potion_init_class_reference(P, potion_str(P, "Mixin"),        PN_VTABLE(PN_TVTABLE));
   potion_init_class_reference(P, potion_str(P, "Object"),       PN_VTABLE(PN_TOBJECT));
   potion_init_class_reference(P, potion_str(P, "NilKind"),      PN_VTABLE(PN_TNIL));

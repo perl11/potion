@@ -12,7 +12,6 @@
 #include <unistd.h>
 
 #include "p2.h"
-#include "p2.h"
 #include "internal.h"
 #include "opcodes.h"
 #include "khash.h"
@@ -23,49 +22,56 @@ const char p2_banner[] = "p2 " P2_VERSION
                              "', platform='" POTION_PLATFORM "', jit=%d)\n";
 const char p2_version[] = P2_VERSION;
 
-static void p2_cmd_usage() {
+static void p2_cmd_usage(Potion *P) {
   printf("usage: p2 [options] [script] [arguments]\n"
-      "  -B, --bytecode     run with bytecode VM (slower, but cross-platform)\n"
-      "  -X, --x86          run with x86 JIT VM (faster, x86 and x86-64)\n"
-      "  -I, --inspect      print only the return value\n"
-      "  -V, --verbose      show bytecode and ast info\n"
-      "  -c, --compile      compile the script to bytecode\n"
-      "  -h, --help         show this helpful stuff\n"
-      "  -v, --version      show version\n"
-      "(default: %s)\n",
-#if POTION_JIT == 1
-      "-X"
+      "  -B, --bytecode     run with bytecode VM (slower, but cross-platform)"
+#if POTION_JIT == 0
+	 " (default)\n"
 #else
-      "-B"
+	 "\n"
 #endif
+      "  -J, --jit          run with JIT VM (faster, only x86, x86-64, ppc)"
+#if POTION_JIT == 1
+	 " (default)\n"
+#else
+	 "\n"
+#endif
+      "  -Idirectory        add library search path\n"
+//    "  -c                 check script and exit\n"
+//    "  -d                 run program under the debugger\n"
+//    "  -e script          execute string\n"
+//    "  -E script          execute string with extended features enabled\n"
+      "  -V, --verbose      print bytecode and ast info\n"
+      "  -h, --help         print this usage info and exit\n"
+      "  -v, --version      print version, patchlevel and features and exit\n"
+      "  --inspect          print the return value\n"
+      "  --stats            print statistics and exit\n"
+      "  --compile          compile the script to bytecode and exit\n"
   );
 }
 
-static void p2_cmd_stats(void *sp) {
-  Potion *P = potion_create(sp);
+static void p2_cmd_stats(Potion *P) {
   printf("sizeof(PN=%d, PNObject=%d, PNTuple=%d, PNTuple+1=%d, PNTable=%d)\n",
       (int)sizeof(PN), (int)sizeof(struct PNObject), (int)sizeof(struct PNTuple),
       (int)(sizeof(PN) + sizeof(struct PNTuple)), (int)sizeof(struct PNTable));
   printf("GC (fixed=%ld, actual=%ld, reserved=%ld)\n",
       PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
       PN_INT(potion_gc_reserved(P, 0, 0)));
-  potion_destroy(P);
 }
 
-static void p2_cmd_version() {
+static void p2_cmd_version(Potion *P) {
   printf(p2_banner, POTION_JIT);
 }
 
-static void p2_cmd_compile(char *filename, int exec, int verbose, void *sp) {
+static void p2_cmd_compile(Potion *P, char *filename, int exec, int verbose) {
   PN buf;
   int fd = -1;
   struct stat stats;
-  Potion *P = potion_create(sp);
+
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
     goto done;
   }
-
   fd = open(filename, O_RDONLY | O_BINARY);
   if (fd == -1) {
     fprintf(stderr, "** could not open %s. check permissions.", filename);
@@ -125,7 +131,7 @@ static void p2_cmd_compile(char *filename, int exec, int verbose, void *sp) {
         printf("\n");
       }
 #else
-      fprintf(stderr, "** potion built without JIT support\n");
+      fprintf(stderr, "** p2 built without JIT support\n");
 #endif
     } else {
       char pnbpath[255];
@@ -147,7 +153,8 @@ static void p2_cmd_compile(char *filename, int exec, int verbose, void *sp) {
       }
     }
 
-#if 0
+#if 0 && defined(DEBUG)
+    // GC check
     void *scanptr = (void *)((char *)P->mem->old_lo + (sizeof(PN) * 2));
     while ((PN)scanptr < (PN)P->mem->old_cur) {
           printf("%p.vt = %lx (%u)\n",
@@ -175,89 +182,95 @@ static void p2_cmd_compile(char *filename, int exec, int verbose, void *sp) {
 done:
   if (fd != -1)
     close(fd);
-  if (P != NULL)
-    potion_destroy(P);
 }
 
 int main(int argc, char *argv[]) {
   POTION_INIT_STACK(sp);
   int i, verbose = 0, exec = 1 + POTION_JIT, interactive = 1;
+  Potion *P = potion_create(sp);
   
   for (i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "-I") == 0 ||
-        strcmp(argv[i], "--inspect") == 0) {
+    if (strcmp(argv[i], "-I") == 0) {
+      char *extra_path = &argv[i][2]; // todo: flexible
+      if (*extra_path)
+	potion_loader_add(P, potion_str(P, extra_path));
+      else {
+	if (i == argc) {
+	    fprintf(stderr, "-I missing directory\n");
+	    goto END;
+	}
+	potion_loader_add(P, potion_str(P, argv[i+1]));
+	i++;
+      }
+      continue;
+    }
+    if (strcmp(argv[i], "--inspect") == 0) {
       verbose = 1;
       continue;
     }
-
     if (strcmp(argv[i], "-V") == 0 ||
         strcmp(argv[i], "--verbose") == 0) {
       verbose = 2;
       continue;
     }
-
     if (strcmp(argv[i], "-v") == 0 ||
         strcmp(argv[i], "--version") == 0) {
-      p2_cmd_version();
-      return 0;
+      p2_cmd_version(P);
+      goto END;
     }
-
     if (strcmp(argv[i], "-h") == 0 ||
         strcmp(argv[i], "--help") == 0) {
-      p2_cmd_usage();
-      return 0;
+      p2_cmd_usage(P);
+      goto END;
     }
-
-    if (strcmp(argv[i], "-s") == 0 ||
-        strcmp(argv[i], "--stats") == 0) {
-      p2_cmd_stats(sp);
-      return 0;
+    if (strcmp(argv[i], "--stats") == 0) {
+      p2_cmd_stats(P);
+      goto END;
     }
-
-    if (strcmp(argv[i], "-c") == 0 ||
-        strcmp(argv[i], "--compile") == 0) {
+    if (strcmp(argv[i], "--compile") == 0) {
       exec = 0;
       continue;
     }
-
     if (strcmp(argv[i], "-B") == 0 ||
         strcmp(argv[i], "--bytecode") == 0) {
       exec = 1;
       continue;
     }
-
-    if (strcmp(argv[i], "-X") == 0 ||
-        strcmp(argv[i], "--x86") == 0) {
+    if (strcmp(argv[i], "-J") == 0 ||
+        strcmp(argv[i], "--jit") == 0) {
       exec = 2;
       continue;
     }
-    
     if (i == argc - 1) {
       interactive = 0;
       continue;
     }
-    
     fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
   }
   
   if (!interactive) {
-    p2_cmd_compile(argv[argc-1], exec, verbose, sp);
+    p2_cmd_compile(P, argv[argc-1], exec, verbose);
   } else {
     if (!exec || verbose) potion_fatal("no filename given");
-    Potion *P = potion_create(sp);
+    // todo: not yet parsed
     p2_eval(P, potion_byte_str(P,
-      "load 'readline'\n" \
-      "loop:\n" \
-      "  code = readline('>> ')\n" \
-      "  if (not code): \"\\n\" print, break.\n" \
-      "  if (code != ''):\n" \
-      "    obj = code eval\n" \
-      "    if (obj kind == Error):\n" \
-      "      obj string print." \
-      "    else: ('=> ', obj, \"\\n\") join print.\n" \
-      "  .\n"
-      "."), exec - 1);
-    potion_destroy(P);
+      "load 'readline';\n" \
+      "while(1){\n" \
+      "  $code = readline('>> ');\n" \
+      "  if (!$code) {\n" \
+      "    print \"\\n\"; break;\n" \
+      "  } else {\n" \
+      "    $obj = eval $code;\n" \
+      "    if (obj kind == Error) {\n" \
+      "      print obj;\n" \
+      "    } else {\n" \
+      "      say '=> '; say $obj;\n" \
+      "    }\n"
+      "  }\n"
+      "}"), exec - 1);
   }
+END:
+  if (P != NULL)
+    potion_destroy(P);
   return 0;
 }

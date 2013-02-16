@@ -16,6 +16,12 @@
 /core/*.opic
 /core/*.o2
 /core/*.opic2
+/front/*.i
+/front/*.o
+/syn/syntax*.c
+/syn/*.i
+/syn/*.o
+/syn/*.opic
 /test/api/potion-test
 /test/api/potion-test.exe
 /test/api/p2-test
@@ -24,8 +30,6 @@
 /test/api/gc-test.exe
 /test/api/*.o
 /config.inc
-syntax.c
-syntax-p5.c
 *.pnb
 ._*
 .DS_Store

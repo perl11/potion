@@ -208,7 +208,16 @@ void potion_loader_init(Potion *P) {
   PN_PUSH(pn_loader_path, potion_str(P, "lib"));
   PN_PUSH(pn_loader_path, potion_str(P, POTION_PREFIX"/lib/potion"));
   PN_PUSH(pn_loader_path, potion_str(P, "."));
-  
-  potion_define_global(P, potion_str(P, "LOADER_PATH"), pn_loader_path);
+
+#ifdef P2
+#define LOADER_PATH "@INC"
+#else
+#define LOADER_PATH "LOADER_PATH"
+#endif
+  potion_define_global(P, potion_str(P, LOADER_PATH), pn_loader_path);
   potion_method(P->lobby, "load", potion_load, "file=S");
+}
+
+void potion_loader_add(Potion *P, PN path) {
+  PN_PUSH(pn_loader_path, path);
 }

@@ -19,10 +19,10 @@ endif
 endif
 endif
 
-SRC_SYN = core/syntax.c
-SRC_P2_SYN = core/syntax-p5.c
-SRC_POTION = core/potion.c
-SRC_P2 = core/p2.c
+SRC_SYN    = syn/syntax.c
+SRC_P2_SYN = syn/syntax-p5.c
+SRC_POTION = front/potion.c
+SRC_P2     = front/p2.c
 
 OBJ = ${SRC:.c=.o}
 OBJ_SYN = ${SRC_SYN:.c=.o}
@@ -322,14 +322,14 @@ test.p2: p2${EXE} test/api/p2-test${EXE} test/api/gc-test${EXE}
 		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
 		look="P2"; \
 		if [ $$t -eq 0 ]; then \
-			for=`${RUNP2} -I -B $$f | ${SED} "s/\n$$//"`; \
+			for=`${RUNP2} --inspect -B $$f | ${SED} "s/\n$$//"`; \
 		elif [ $$t -eq 1 ]; then \
-			${RUNP2} -c $$f > /dev/null; \
+			${RUNP2} --compile $$f > /dev/null; \
 			fb="$$f"b; \
-			for=`${RUNP2} -I -B $$fb | ${SED} "s/\n$$//"`; \
+			for=`${RUNP2} --inspect -B $$fb | ${SED} "s/\n$$//"`; \
 			rm -rf $$fb; \
 		else \
-			for=`${RUNP2} -I -X $$f | ${SED} "s/\n$$//"`; \
+			for=`${RUNP2} --inspect -J $$f | ${SED} "s/\n$$//"`; \
 		fi; \
 		if [ "$$look" != "$$for" ]; then \
 			${ECHO}; \
@@ -408,8 +408,9 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f core/*.o test/api/*.o ${DOCHTML} \
+	@rm -f core/*.o test/api/*.o front/*.o syn/*.c syn/*.o syn/*.opic \
 	       core/*.i core/*.opic core/*.opic2 core/*.o2
+	@rm -f ${DOCHTML}
 	@rm -f ${GREG} tools/*.o core/config.h core/version.h core/syntax.c
 	@rm -f tools/*~ doc/*~ example/*~
 	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
