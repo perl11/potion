@@ -52,3 +52,6 @@ pre {
   color: #500;
   font-weight: bold;
 }
+dt {
+  font: bold 16px arial, sans-serif;
+}

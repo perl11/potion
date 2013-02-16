@@ -597,7 +597,7 @@ or academic software. I've had a good time and am want for nothing.
 Copyright (c) 2009 why the lucky stiff, MIT licensed.
  
 p2 and maintainance code by perl11 http://perl11.org/p2/
-  (c) perl11 org, licensed under the ARTISTIC 2.
+  (c) 2013 perl11 org, licensed under the ARTISTIC 2.
 
 HOWEVER. The follow MIT licensed codes have also been employed:
 

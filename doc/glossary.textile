@@ -1,32 +1,33 @@
-See "start":start.html for an overview of the syntax and data structures.
+See the "pamphlet":start.html for an overview of the potion syntax and data structures.
 
-**tuple**: an ordered list
+- <a name="tuple">tuple</a> := an ordered list
 
-**table**: a hash
+- <a name="table">table</a> := a hash
 
-**lick**:  a nested data structure, i.e. named hash. the keys are called @path@.
+- <a name="lick">lick</a> :=  a nested data structure, i.e. named hash. the keys are called @path@.
 
 Every lick can have a name, a table of attributes, and a list of
 children. The list of children can, instead, be a Potion data
 type, such as a number or string or something.
 
-**path**:  key of a @lick@, an instance variable of an object.
+- <a name="path">path</a> :=  key of a @lick@, an instance variable of an object.
 
 Paths cannot be randomly added to the object after the object
 is created. Each object has a strict set of paths. Every path
 which is used in the constructor is added to the object upon
 creation.
 
-**upvalue**: A variable in an upper scope.
+- <a name="upvalue">upvalue</a> := A variable in an upper scope.
 
 Since a closure doesn't have access to the registers
 of another function, these variables are passed
 as pointers (the @PNWeakRef@ struct.)
 
-**Lobby**: potion called the main interp object @Lobby@, which holds the
+- <a name="lobby">Lobby</a> := potion named the main interp object @Lobby@, which holds the
 methods @about@, @here@, @exit@, @self@, ...
 p2 renames it to @"P2"@
 
-**mop**: potion/p2 uses the "cola mop":http://piumarta.com/software/cola/objmodel2.pdf
+- <a name="mop">mop</a> := potion/p2 uses the "cola mop":http://piumarta.com/software/cola/objmodel2.pdf
 with 5 core functions: @addMethod@, @lookup@, @allocate@, @delegated@ and @intern@.
+And 4 native (and jitted) VM ops: @SELF@, @CLASS@, @BIND@ and @MESSAGE@.
 !p2-mop.png(p2-mop)!
