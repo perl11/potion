@@ -1,4 +1,6 @@
-h1. Perl5 on p2 Language backwards-compatible Extensions
+h1. Perl5 on p2
+
+h2. Language backwards-compatible Extensions
 
 With p2 I plan to parse and execute perl5 asis.
 
@@ -8,8 +10,6 @@ use XS-like functionality with the new FFI, or by using extension
 libraries with native calls. See @lib/readline@. So we will loose
 40% of CPAN code, but will win on performance, expressibility and
 compile-time error checking when binding libs.
-
-h2. Perl5 Language Extensions
 
 h3. All data are objects, all declarations can be optionally typed
 
