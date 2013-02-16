@@ -11,19 +11,21 @@ I plan significant enhancements in perl performance and features.
 
 h2. Generally
 
-I go along with _why and every lisp coder. Good software should be
-beautiful. It's art not technology.
+I go along with _why and every lisp coder.
+Good software should be beautiful. It's also art not only technology.
 short, precise, readable. no one wants to work with a big and ugly mess,
-not even companies. rather restrict the usage to those who know and
-can be taught, than sacrifice your system for it.  support 90% but do
-not sacrifice for the rest.  gmake and gcc/clang are available
-everywhere, even on pure bsd's.
+not even companies. a lot of code smells.
+rather restrict the usage to those who know and can be taught,
+than sacrifice your system for it.
+
+support 90% but do not sacrifice for the rest. 
+gmake and gcc/clang are available everywhere, even on pure bsd's.
 
 Examples:
-no support for MS cl/nmake, people should use mingw with gmake and gcc instead.
-no support for BSDmakefile syntax (see the bsd branch).
-no support for pure strict c++ compilers (see the p2-c++ branch).
-no vax, hpux, aix without gnu tools
+no support for MS cl/nmake. people should use mingw with gmake and gcc instead.
+no support for BSDmakefile syntax. see the @bsd@ branch.
+no support for pure strict c++ compilers. see the @p2-c++@ branch.
+no vax, hpux, aix without gnu tools.
 
 
 h1. Incompatibilities
@@ -137,12 +139,10 @@ allow user macros. expose the parser API to the user. query and
 insert rules. use custom rules to parse ffi declarations (c headers)
 templates, ... or even basic, ruby, python or perl6.
 
-<pre><code>
-  {
-    use v6;
-    # perl6 syntax...
-  }
-</code></pre>
+bc. {
+  use v6;
+  # perl6 syntax...
+}
 
 _(this will need a pre-compiled @syntax-p6.g@ and scoped syntax)_
 
@@ -169,16 +169,13 @@ maybe using the perl6 <rule> syntax looks ok. _(i.e. <block> below)_
 There are some similar non-mainstream approaches, on mono or java or
 haskell, but none on fast, compiled to C scripting languages.
 
-<pre><code>
-  syntax-p5.g:
+bc. syntax-p5.g:
     block = '{' s:statements* '}' { $$ = PN_AST(BLOCK, s); }
-</code></pre>
-<pre><code>
-  macro ifdebug block 'ifdebug' {
-    if ($DEBUG) `block`;
-  }
-  { call() } ifdebug;
-</code></pre>
+
+bc.  macro ifdebug block 'ifdebug' {
+  if ($DEBUG) `block`;
+}
+{ call() } ifdebug;
 
 h3. auto-threads
 

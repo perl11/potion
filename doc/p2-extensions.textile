@@ -17,12 +17,10 @@ I.e. all core types are implictly blessed into the int, str, num
 classes and mixins thereof.
 See "pddtypes.pod":https://github.com/rurban/perl/blob/d1c07ab82fd3acf17803a9f7dbd8e3ab3c5d3903/pddtypes.pod and "perltypes.pod":https://github.com/rurban/perl/blob/05514649c35a695734bc8e02911e7efef6ee4dde/pod/perltypes.pod for more.
 
-<pre><code>
-my int $i;
+bc. my int $i;
 my const str $s = "string";
 my const int $h = {foo => 1, bla => 0};
 my const int @a = (0..9);
-</code></pre>
 
 h3. const declarations for data, @ISA, classes and functions/methods
 
@@ -30,10 +28,8 @@ method calls should be inlinable and compile-time optimizable.
 
 h3. sized arrays
 
-<pre><code>
-	my $a[10];
-	my int $a[10];
-</code></pre>
+bc. my $a[10];
+my int $a[10];
 
 Sized arrays are are non-autovivifying and initialized with undef,
 resp. if typed 0, 0.0, or "". This speeds up array access by factor 2-4.
@@ -43,23 +39,22 @@ h3. no magic
 
 A new pragma "no magic" applies to all visible objects in scope.
 
-<pre><code>
-     {
-       no magic;
-       use Config;
-       print $Config{'ccflags'};
-     }
-</code></pre>
+bc. {
+  no magic;
+  use Config;
+  print $Config{'ccflags'};
+}
 @=> compile-time error: Invalid use of tie with no magic@
 
 use
-<pre><code>
-     {
-       no magic;
-       use Config ();
-       print $Config::Config{'ccflags'};
-     }
-</code></pre> instead.
+
+bc. {
+  no magic;
+  use Config ();
+  print $Config::Config{'ccflags'};
+}
+
+instead.
 
 See "optimizing compiler benchmarks part 3":http://blogs.perl.org/users/rurban/2012/10/optimizing-compiler-benchmarks-part-3.html
 
@@ -72,13 +67,11 @@ But we want to match structures to find structures in lists or trees
 (nested structures), not only strings, and we want to declare macros easily.
 See "magpie patterns":http://magpie.stuffwithstuff.com/patterns.html
 
-<pre><code>
-     my $s = "s";
-     match /^s/, 123, 1 {
-       case $s, $n is Int, $_: say "matched $s, $n, $_";
-       else: say "no match";
-     }
-</code></pre>
+bc. my $s = "s";
+match /^s/, 123, 1 {
+  case $s, $n is Int, $_: say "matched $s, $n, $_";
+  else: say "no match";
+}
 
 @is Int@ is a new Type Pattern, which matches a type or subtype. 
 It calls the typeof() function.
@@ -94,31 +87,28 @@ parser in @perly.y@.  Problematic syntax can be avoided, like previously
 mandatory parenthesis. E.g. @if@ or @while@ boolean expressions don't need
 parens.
 
-<pre><code>
-     if $cmp {
-       if $s say "$s";
-       else say "else";
-     }
-</code></pre>
+bc. if $cmp {
+  if $s say "$s";
+  else say "else";
+}
 
 @for@ lists should not need parens, the expressions are evaluated in list
 context.
 
-<pre><code>
-     for $_ qw(a b c) {
-     }
+bc.. for $_ qw(a b c) {
+}
 
-     const int[] sub get_list {(0..9)}
+const int[] sub get_list {(0..9)}
 
-     for my $i get_list() {
-       say $i;
-     }
-</code></pre>
+for my $i get_list() {
+  say $i;
+}
 
-The language should be extendable. Left or right assiocative keywords
+p. The language should be extendable. Left or right assiocative keywords
 should be easily added to the parser description, with statically
-deterministic proper precedence rules. (run-time extendable
-associativity only with Pratt or marpa.)
+deterministic proper precedence rules. _(run-time extendable
+associativity only with Pratt or marpa. with peg/leg I need to add a little eval
+or precompile macros.)_
 
 The packrat parser based on @leg@ is not quite as highly efficient and
 dynamically extendable as a "Pratt top-down parser":http://journal.stuffwithstuff.com/2011/02/13/extending-syntax-from-within-a-language/
@@ -133,12 +123,13 @@ so far one in C, only in LISP, java or javascript. The idea to base
 macros on the parser probably didn't come to anyone yet outside the
 LISP community. Rob Pike recently presented a nice and easy-enough
 parser for "Go templates":https://www.youtube.com/watch?v=HxaD_trXwRE
-So far "marpa":http://jeffreykegler.github.com/Marpa-web-site/ seems
-to be the best dynamic parser library, there is a C library, extending
-it at run-time should be achievable easily, and the parser algorithm
-is pretty robust.
+So far "marpa":http://jeffreykegler.github.com/Marpa-web-site/ seems to be the best dynamic parser library, there is a C library. 
+Extending it at run-time should be achievable easily, and the parser 
+algorithm is pretty robust. "magpie":http://journal.stuffwithstuff.com/2011/02/13/extending-syntax-from-within-a-language/, "maru":http://piumarta.com/software/maru/ and "idst":http://piumarta.com/software/cola/ provide similar dynamic
+extensible parsing frameworks.
 
-*marketing blurbs*: _p2 will be the first implementation of any non-LISP language with proper macro support._
+*marketing blurbs*: _p2 will be the first implementation of any mainstream 
+non-LISP language with proper macro support._
 
 h3. macros
 
@@ -152,16 +143,15 @@ same rules (i.e. non-terminal symbols) from the grammer, i.e. the left
 hand side of the grammar rules, but the body is written in native
 perl5, with a mix of compile-time and run-time expressions.
 
-e.g. 
-<pre><code>
-  syntax-p5.g:
-    block = '{' s:statements* '}' { $$ = PN_AST(BLOCK, s); }
-</code></pre>
-<pre><code>
-  macro ifdebug block 'ifdebug' {
-    if (DEBUG) `block`;
-  }
-</code></pre>
+e.g.
+
+bc. syntax-p5.g:
+  block = '{' s:statements* '}' { $$ = PN_AST(BLOCK, s); }
+
+bc. macro ifdebug block 'ifdebug' {
+  if ($DEBUG) `block`;
+}
+{ call() } ifdebug;
 
 A macro can use valid parser expressions, i.e. strings
 (i.e. terminals) or any valid parser rule (i.e. non-terminals) as argument,
@@ -194,23 +184,19 @@ and extend the expressibility of your code.
 
 @()@ groups list in parse expressions, and does not match perl elements in lists.
 
-<pre><code>
-      macro dbgprint ( s:stmt )* {
-        if ($DEBUG) {
-          print @`s`;
-        }
-      }
-</code></pre>
+bc. macro dbgprint 'dbgprint' ( s:stmt )* {
+  if ($DEBUG) {
+    print @`s`;
+  }
+}
 
-<pre><code>
-      macro while '('e:expr')' '{'b:block'}' {
-          my $label = gensym('WHILE');
-	  $label: if (`e`) {
-	     @`b`;
-	     goto $label;
-          }
-      }
-</code></pre>
+bc. macro while 'while' - '(' e:expr ')' - '{' b:block '}' {
+  my $label = gensym('WHILE');
+  $label: if (`e`) {
+    @`b`;
+    goto $label;
+  }
+}
 
 '(' is to disambiguate a parse-time '(' from a grouping @(@.
 `` is taken to evaluate (=expand) expressions within macros.
