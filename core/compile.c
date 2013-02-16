@@ -861,7 +861,7 @@ PN potion_source_dump(Potion *P, PN cl, PN proto) {
 PN potion_run(Potion *P, PN code, int jit) {
   if (jit) {
     if (!POTION_JIT) potion_fatal("potion not compiled with JIT");
-    PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, POTION_JIT_TARGET, 0), PN_NIL, 1);
+    PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, 0), PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = code;
     return PN_PROTO(code)->jit(P, cl, P->lobby);
   } else {

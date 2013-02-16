@@ -366,7 +366,7 @@ test/api/p2-test${EXE}: ${OBJ_P2_TEST} libp2.a
 	@${ECHO} LINK p2-test
 	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ libp2.a ${LIBS}
 
-dist: core/config.h core/version.h core/syntax.c core/syntax-p5.c \
+dist: core/config.h core/version.h ${SRC_SYN} ${SRC_P2_SYN} \
   potion${EXE} p2${EXE} \
   libpotion.a libpotion${DLL} libp2.a libp2${DLL} lib/readline${LOADEXT}
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
@@ -399,9 +399,9 @@ TAGS: ${SRC} core/*.h
 	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
-	@cp core/syntax.g core/syntax-g.c
-	@sloccount core
-	@rm -f core/syntax-g.c
+	@cp syn/syntax.g syn/syntax-g.c
+	@sloccount core syn front
+	@rm -f syn/syntax-g.c
 
 todo:
 	@grep -rInso 'TODO: \(.\+\)' core
@@ -411,14 +411,14 @@ clean:
 	@rm -f core/*.o test/api/*.o front/*.o syn/*.c syn/*.o syn/*.opic \
 	       core/*.i core/*.opic core/*.opic2 core/*.o2
 	@rm -f ${DOCHTML}
-	@rm -f ${GREG} tools/*.o core/config.h core/version.h core/syntax.c
+	@rm -f ${GREG} tools/*.o core/config.h core/version.h ${SRC_SYN}
 	@rm -f tools/*~ doc/*~ example/*~
 	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
 	@rm -f test/api/potion-test${EXE} test/api/gc-test${EXE} \
                test/api/gc-bench${EXE}
 	@rm -f potion${EXE} libpotion.*
 	@rm -f test/api/p2-test${EXE}
-	@rm -f p2${EXE} libp2.* core/syntax-p5.c
+	@rm -f p2${EXE} libp2.* ${SRC_P2_SYN}
 
 realclean: clean
 	@rm -f config.inc

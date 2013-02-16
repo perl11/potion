@@ -119,7 +119,7 @@ static void p2_cmd_compile(Potion *P, char *filename, int exec, int verbose) {
     } else if (exec == 2) {
 #if POTION_JIT == 1
       PN val;
-      PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, POTION_JIT_TARGET, verbose), PN_NIL, 1);
+      PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, verbose), PN_NIL, 1);
       PN_CLOSURE(cl)->data[0] = code;
       val = PN_PROTO(code)->jit(P, cl, P->lobby);
       if (verbose > 1)

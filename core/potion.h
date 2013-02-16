@@ -14,7 +14,8 @@
 
 #define POTION_X86      0
 #define POTION_PPC      1
-#define POTION_TARGETS  2
+//#define POTION_ARM      2
+//#define POTION_TARGETS  2 // prev. TSTATE held all vm targets in memory
 
 #include <limits.h>
 #include <string.h>
@@ -404,7 +405,7 @@ typedef struct {
 //
 struct Potion_State {
   PN_OBJECT_HEADER
-  PNTarget targets[POTION_TARGETS];
+  PNTarget target;
   struct PNTable *strings; /* table of all strings */
   PN lobby; /* root namespace */
   PNFlex * volatile vts; /* built in types */
@@ -642,6 +643,6 @@ PN potion_vm_class(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
 PN potion_eval(Potion *, PN, int);
 PN potion_run(Potion *, PN, int);
-PN_F potion_jit_proto(Potion *, PN, PN, int);
+PN_F potion_jit_proto(Potion *, PN, int);
 
 #endif

@@ -24,10 +24,10 @@ PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
 
 static void potion_init(Potion *P) {
   PN vtable, obj_vt;
-  P->lobby = potion_type_new(P, PN_TLOBBY, 0);
-  vtable = potion_type_new(P, PN_TVTABLE, P->lobby);
+  P->lobby = potion_type_new(P, PN_TLOBBY, 0);       // named Lobby resp. P2
+  vtable = potion_type_new(P, PN_TVTABLE, P->lobby); // named Mixin
   obj_vt = potion_type_new(P, PN_TOBJECT, P->lobby);
-  potion_type_new(P, PN_TNIL, obj_vt);
+  potion_type_new(P, PN_TNIL, obj_vt);               // named NilKind resp. Undef
   potion_type_new(P, PN_TNUMBER, obj_vt);
   potion_type_new(P, PN_TBOOLEAN, obj_vt);
   potion_type_new(P, PN_TSTRING, obj_vt);
@@ -35,7 +35,7 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TCLOSURE, obj_vt);
   potion_type_new(P, PN_TTUPLE, obj_vt);
   potion_type_new(P, PN_TFILE, obj_vt);
-  potion_type_new(P, PN_TSTATE, obj_vt);
+  potion_type_new(P, PN_TSTATE, obj_vt); // named Potion
   potion_type_new(P, PN_TSOURCE, obj_vt);
   potion_type_new(P, PN_TBYTES, obj_vt);
   potion_type_new(P, PN_TPROTO, obj_vt);
