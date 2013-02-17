@@ -37,19 +37,19 @@ static void p2_cmd_usage(Potion *P) {
 	 "\n"
 #endif
       "  -Idirectory        add library search path\n"
-//    "  -c                 check script and exit\n"
-//    "  -d                 run program under the debugger\n"
-//    "  -e script          execute string\n"
-//    "  -E script          execute string with extended features enabled\n"
+//    "  -c                 check script and exit\n"          // TODO:
+//    "  -d                 run program under the debugger\n" // TODO: run p2d or do it internally?
+//    "  -e script          execute string\n" // todo:
+//    "  -E script          execute string with extended features enabled\n" // TODO: add a "use p2;"
       "  -V, --verbose      print bytecode and ast info\n"
       "  -h, --help         print this usage info and exit\n"
       "  -v, --version      print version, patchlevel and features and exit\n"
       "  --inspect          print the return value\n"
       "  --stats            print statistics and exit\n"
       "  --compile          compile the script to bytecode and exit\n"
-//    "  --compile-c        compile the script to C and exit\n" // or use p2c?
+//    "  --compile-c        compile the script to C and exit\n" // TODO: or use p2c?
 #if POTION_JIT
-//    "  --compile-exec     compile the script to native executable and exit\n"
+//    "  --compile-exec     compile the script to native executable and exit\n" // TODO: 2st via C, then direct
 #endif
   );
 }
