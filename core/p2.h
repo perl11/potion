@@ -35,6 +35,8 @@ PN p2_eval(Potion *, PN, int);
 //PN_F p2_jit_proto(Potion *, PN, PN);
 
 #ifdef P2
+PN potion_any_is_defined(Potion *, PN, PN);
+
 #define potion_load_code   p2_load_code
 #define potion_load        p2_load
 #define potion_source_load p2_source_load
