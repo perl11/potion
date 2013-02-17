@@ -51,13 +51,19 @@ On Ubuntu, if you have MinGW installed,
 ## ~ building on bsd ~
 
 BSD make is not supported.
-You can either install gnu make (gmake) by
+You can either install gnu make (gmake)
+
     $ sudo port install gmake
 
 or try to merge 'master' with the branch 'bsd'
 
     $ git merge bsd
     ... resolve conflicts, or not
+
+and remove then -ldl from config.inc LIBS
+
+    $ make
+    $ cat config.inc | sed 's, -ldl,,' > config.inc
     $ make
 
 ## ~ building with a strict C++ compiler ~
