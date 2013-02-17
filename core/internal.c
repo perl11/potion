@@ -209,6 +209,7 @@ void potion_allocation_error(void) {
   potion_fatal("Couldn't allocate memory.");
 }
 
+// say
 void potion_p(Potion *P, PN x) {
   potion_send(potion_send(x, PN_string), PN_print);
   printf("\n");

@@ -82,32 +82,25 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
     } else {
       code = potion_parse(P, buf);
       if (!code || PN_TYPE(code) == PN_TERROR) {
-        potion_send(potion_send(code, PN_string), PN_print);
+	potion_p(P, code);
         goto done;
       }
       if (verbose > 1) {
         printf("\n-- parsed --\n");
-        potion_send(potion_send(code, PN_string), PN_print);
-        printf("\n");
+	potion_p(P, code);
       }
       code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
       if (verbose > 1)
         printf("\n-- compiled --\n");
     }
-    if (verbose > 1) {
-      potion_send(potion_send(code, PN_string), PN_print);
-      printf("\n");
-    }
+    if (verbose > 1) potion_p(P, code);
     if (exec == 1) {
       code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
       if (verbose > 1)
         printf("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
           PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
           PN_INT(potion_gc_reserved(P, 0, 0)));
-      if (verbose) {
-        potion_send(potion_send(code, PN_string), PN_print);
-        printf("\n");
-      }
+      if (verbose) potion_p(P, code);
     } else if (exec == 2) {
 #if POTION_JIT == 1
       PN val;
@@ -118,10 +111,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
         printf("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
           PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
           PN_INT(potion_gc_reserved(P, 0, 0)));
-      if (verbose) {
-        potion_send(potion_send(val, PN_string), PN_print);
-        printf("\n");
-      }
+      if (verbose) potion_p(P, val);
 #else
       fprintf(stderr, "** potion built without JIT support\n");
 #endif
