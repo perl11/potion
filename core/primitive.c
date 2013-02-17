@@ -29,9 +29,9 @@ PN potion_any_is_nil(Potion *P, PN closure, PN self) {
 void potion_primitive_init(Potion *P) {
   PN nil_vt = PN_VTABLE(PN_TNIL);
   PN boo_vt = PN_VTABLE(PN_TBOOLEAN);
-  potion_method(nil_vt, "nil?", potion_nil_is_nil, 0);
+  potion_method(nil_vt, NIL_NAME"?", potion_nil_is_nil, 0);
   potion_method(nil_vt, "number", potion_bool_number, 0);
-  potion_send(nil_vt, PN_def, PN_string, potion_str(P, "nil"));
+  potion_send(nil_vt, PN_def, PN_string, potion_str(P, NIL_NAME));
   potion_method(boo_vt, "number", potion_bool_number, 0);
   potion_method(boo_vt, "string", potion_bool_string, 0);
 }

@@ -15,6 +15,11 @@
 
 #include "potion.h"
 
+#ifdef P2
+#  undef NIL_NAME
+#  define NIL_NAME "undef" // nil => undef
+#endif
+
 //
 // additional p2 functions
 //
