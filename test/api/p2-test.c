@@ -22,9 +22,11 @@ Potion *P;
 void p2_test_undef(CuTest *T) {
   CuAssert(T, "undef isn't a nil type", PN_TYPE(PN_NIL) == PN_TNIL);
   CuAssert(T, "undef is a ref", !PN_IS_PTR(PN_NIL));
-#if 0
-  CuAssert(T, "undef undef? is false",
-    PN_TRUE == potion_send(PN_NIL, potion_str(P, "undef?")));
+  CuAssert(T, "defined undef is not false",
+    PN_FALSE == potion_send(PN_NIL, potion_str(P, "defined")));
+#if 0 // todo: any->defined
+  CuAssert(T, "defined num is not true",
+    PN_TRUE == potion_send(num, potion_str(P, "defined")));
 #endif
 }
 
