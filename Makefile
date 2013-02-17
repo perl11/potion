@@ -6,7 +6,6 @@ SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/fil
 # bootstrap config.inc with make -f config.mak
 include config.inc
 
-ifeq (${JIT},1)
 ifeq (${JIT_X86},1)
 SRC += core/vm-x86.c
 else
@@ -15,7 +14,6 @@ SRC += core/vm-ppc.c
 endif
 ifeq (${JIT_ARM},1)
 SRC += core/vm-arm.c # not yet ready
-endif
 endif
 endif
 

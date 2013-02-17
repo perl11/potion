@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CC=$1
+CC=${1:-cc}
 AC="tools/config.c"
 AOUT="tools/config.out"
 CCEX="$CC $AC -o $AOUT"
@@ -109,6 +109,9 @@ else
     echo "#define POTION_JIT_TARGET POTION_X86"
   elif [ "$JIT_PPC" != "" ]; then
     echo "#define POTION_JIT_TARGET POTION_PPC"
+  else
+    echo "#undef POTION_JIT"
+    echo "#define POTION_JIT      0"
   fi
   echo "#define POTION_PLATFORM   \"$TARGET\""
   echo "#define POTION_WIN32      $MINGW"

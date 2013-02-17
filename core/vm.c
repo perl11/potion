@@ -16,17 +16,18 @@
 #include "khash.h"
 #include "table.h"
 
-#if defined(JIT_DEBUG)
+#if defined(POTION_JIT_TARGET) && defined(JIT_DEBUG)
 #  if defined(HAVE_LIBDISASM)
 #    include <libdis.h>
 #  else
 #    if defined(HAVE_LIBUDIS86)
 #      include <udis86.h>
 #    endif
+// libdistorm64 has no usable headers yet
 #  endif
 #endif
 
-#ifdef POTION_JIT
+#ifdef POTION_JIT_TARGET
 #if (POTION_JIT_TARGET == POTION_X86)
 extern PNTarget potion_target_x86;
 #elif (POTION_JIT_TARGET == POTION_PPC)
@@ -37,7 +38,7 @@ extern PNTarget potion_target_arm;
 #endif
 
 void potion_vm_init(Potion *P) {
-#ifdef POTION_JIT
+#ifdef POTION_JIT_TARGET
 #if (POTION_JIT_TARGET == POTION_X86)
   P->target = potion_target_x86;
 #elif (POTION_JIT_TARGET == POTION_PPC)

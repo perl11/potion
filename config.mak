@@ -21,6 +21,7 @@ GREG = tools/greg${EXE}
 
 STRIP ?= `./tools/config.sh ${CC} strip`
 
+ifeq (${JIT},1)
 ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/ x86 16,32,64 bit
 # port install udis86
@@ -55,6 +56,7 @@ else
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h /usr/local),1)
 	DEFINES += -I/usr/local/include -DHAVE_LIBDISASM -DJIT_DEBUG
 	LIBS += -L/usr/local/lib -ldisasm
+endif
 endif
 endif
 endif

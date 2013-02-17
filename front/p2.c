@@ -22,8 +22,11 @@ const char p2_banner[] = "p2 " P2_VERSION
                              "', platform='" POTION_PLATFORM "', jit=%d)\n";
 const char p2_version[] = P2_VERSION;
 
+// POTION_JIT 1/0 if jit is default
+// POTION_JIT_TARGET defined if jittable
 static void p2_cmd_usage(Potion *P) {
   printf("usage: p2 [options] [script] [arguments]\n"
+#ifdef POTION_JIT_TARGET
       "  -B, --bytecode     run with bytecode VM (slower, but cross-platform)"
 #if !POTION_JIT
 	 " (default)\n"
@@ -35,6 +38,7 @@ static void p2_cmd_usage(Potion *P) {
 	 " (default)\n"
 #else
 	 "\n"
+#endif
 #endif
       "  -Idirectory        add library search path\n"
 //    "  -c                 check script and exit\n"          // TODO:
@@ -114,7 +118,7 @@ static void p2_cmd_compile(Potion *P, char *filename, int exec, int verbose) {
           PN_INT(potion_gc_reserved(P, 0, 0)));
       if (verbose) potion_p(P, code);
     } else if (exec == 2) {
-#if POTION_JIT == 1
+#ifdef POTION_JIT_TARGET
       PN val;
       PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, verbose), PN_NIL, 1);
       PN_CLOSURE(cl)->data[0] = code;
@@ -246,22 +250,17 @@ int main(int argc, char *argv[]) {
     p2_cmd_compile(P, argv[argc-1], exec, verbose);
   } else {
     if (!exec || verbose) potion_fatal("no filename given");
-    // todo: not yet parsed
+    // TODO: p5 not yet parsed
     p2_eval(P, potion_byte_str(P,
-      "load 'readline';\n" \
-      "while(1){\n" \
-      "  $code = readline('>> ');\n" \
-      "  if (!$code) {\n" \
-      "    print \"\\n\"; break;\n" \
-      "  } else {\n" \
-      "    $obj = eval $code;\n" \
-      "    if (obj kind == Error) {\n" \
-      "      print obj;\n" \
-      "    } else {\n" \
-      "      say '=> '; say $obj;\n" \
-      "    }\n"
-      "  }\n"
-      "}"), exec - 1);
+      "p2::load 'readline';" \
+      "while ($code = readline('>> ')) {" \
+      "  $obj = eval $code;" \
+      "  if ($@) {" \
+      "    say $@;" \
+      "  } else {" \
+      "    say '=> ', $obj;" \
+      "  }"
+      "}"), exec - 1); // 1/2 => 0/1
   }
 END:
   if (P != NULL)
