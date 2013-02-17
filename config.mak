@@ -169,7 +169,8 @@ config.inc: tools/config.sh config.mak
 	@${ECHO} "# created by ${MAKE} -f config.mak" >> config.inc
 	@${MAKE} -s -f config.mak config.inc.echo >> $@
 	@${MAKE} -s -f config.mak -B core/config.h
-	@${CAT} core/config.h | ${SED} '/POTION_JIT_TARGET /!d; s,#define POTION_JIT_TARGET POTION_\(\w*\),\nJIT_\1 = 1,g' >> $@
+	@${CAT} core/config.h | ${SED} "/POTION_JIT_TARGET /!d;" | \
+	  ${SED} "s,\(.*JIT_TARGET \)POTION_\(.*\),JIT_\2 = 1," >> $@
 
 # Force sync with config.inc
 core/config.h: core/version.h tools/config.sh config.mak
