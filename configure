@@ -1,2 +1,3 @@
 #!/bin/sh
-make -f config.mak
+test -f config.inc && mv config.inc config.bak
+make -f config.mak $*
