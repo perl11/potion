@@ -25,13 +25,13 @@ const char p2_version[] = P2_VERSION;
 static void p2_cmd_usage(Potion *P) {
   printf("usage: p2 [options] [script] [arguments]\n"
       "  -B, --bytecode     run with bytecode VM (slower, but cross-platform)"
-#if POTION_JIT == 0
+#if !POTION_JIT
 	 " (default)\n"
 #else
 	 "\n"
 #endif
       "  -J, --jit          run with JIT VM (faster, only x86, x86-64, ppc)"
-#if POTION_JIT == 1
+#if POTION_JIT
 	 " (default)\n"
 #else
 	 "\n"
@@ -47,6 +47,10 @@ static void p2_cmd_usage(Potion *P) {
       "  --inspect          print the return value\n"
       "  --stats            print statistics and exit\n"
       "  --compile          compile the script to bytecode and exit\n"
+//    "  --compile-c        compile the script to C and exit\n" // or use p2c?
+#if POTION_JIT
+//    "  --compile-exec     compile the script to native executable and exit\n"
+#endif
   );
 }
 
