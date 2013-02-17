@@ -45,7 +45,7 @@ CAT  = /bin/cat
 ECHO = /bin/echo
 SED  = sed
 EXPR = expr
-GREG = tools/greg${EXE}
+GREG = syn/greg${EXE}
 
 INCS = -Icore
 RUNPOTION = ./potion
@@ -167,10 +167,6 @@ core/vm.o core/vm.opic: core/vm-dis.c
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
 
-${GREG}: tools/greg.c tools/compile.c tools/tree.c
-	@${ECHO} CC $@
-	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
-
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
 # on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
 ifdef APPLE
@@ -200,6 +196,10 @@ p2${EXE}: ${OBJ_P2} libp2${DLL} ${LIBHACK}
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
 	fi
+
+${GREG}: syn/greg.c syn/compile.c syn/tree.c
+	@${ECHO} CC $@
+	@${CC} -O3 -DNDEBUG -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
 libpotion.a: ${OBJ_SYN} ${OBJ}
 	@${ECHO} AR $@
@@ -233,6 +233,8 @@ bench: potion${EXE} test/api/gc-bench${EXE}
 	@${ECHO}; \
 	  ${ECHO} running GC benchmark; \
 	  time test/api/gc-bench
+
+check: test.pn test.p2
 
 test: test.pn test.p2
 
@@ -404,11 +406,11 @@ sloc: clean
 	@rm -f syn/syntax-g.c
 
 todo:
-	@grep -rInso 'TODO: \(.\+\)' core
+	@grep -rInso 'TODO: \(.\+\)' core syn front
 
 clean:
 	@${ECHO} cleaning
-	@rm -f core/*.o test/api/*.o front/*.o syn/*.c syn/*.o syn/*.opic \
+	@rm -f core/*.o test/api/*.o front/*.o syn/*.i syn/*.o syn/*.opic \
 	       core/*.i core/*.opic core/*.opic2 core/*.o2
 	@rm -f ${DOCHTML}
 	@rm -f ${GREG} tools/*.o core/config.h core/version.h ${SRC_SYN}
@@ -423,4 +425,4 @@ clean:
 realclean: clean
 	@rm -f config.inc
 
-.PHONY: all config clean doc rebuild test test.pn test.p2 bench tarball dist release install
+.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release install
