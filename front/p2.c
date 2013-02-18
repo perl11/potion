@@ -146,7 +146,7 @@ static void p2_cmd_compile(Potion *P, char *filename, int exec, int verbose) {
     } else {
       char pnbpath[255];
       FILE *pnb;
-      sprintf(pnbpath, "%sb", filename);
+      sprintf(pnbpath, "%sc", filename); // .plc and .pmc
       pnb = fopen(pnbpath, "wb");
       if (!pnb) {
         fprintf(stderr, "** could not open %s for writing. check permissions.", pnbpath);

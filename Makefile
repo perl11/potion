@@ -322,14 +322,13 @@ test.p2: p2${EXE} test/api/p2-test${EXE} test/api/gc-test${EXE}
 	  fi; \
 	  for f in test/**/*.pl; do \
 		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
-		look="P2"; \
 		if [ $$t -eq 0 ]; then \
 			for=`${RUNP2} --inspect -B $$f | ${SED} "s/\n$$//"`; \
 		elif [ $$t -eq 1 ]; then \
 			${RUNP2} --compile $$f > /dev/null; \
-			fb="$$f"b; \
+			fb="$$f"c; \
 			for=`${RUNP2} --inspect -B $$fb | ${SED} "s/\n$$//"`; \
-			rm -rf $$fb; \
+			rm -rf $$fc; \
 		else \
 			for=`${RUNP2} --inspect -J $$f | ${SED} "s/\n$$//"`; \
 		fi; \
