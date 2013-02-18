@@ -297,6 +297,8 @@ test.pn: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 test.p2: p2${EXE} test/api/p2-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running p2 API tests; \
+	LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH \
+	DYLD_LIBRARY_PATH=`pwd`:$DYLD_LIBRARY_PATH \
 	test/api/p2-test; \
 	${ECHO} running GC tests; \
 	test/api/gc-test; \
