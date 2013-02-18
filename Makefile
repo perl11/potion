@@ -166,7 +166,7 @@ libpotion${DLL}: ${PIC_OBJ}
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
-	  ${PIC_OBJ} > /dev/null
+	  ${PIC_OBJ} ${LIBS} > /dev/null
 
 lib/readline${LOADEXT}: config.inc lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
