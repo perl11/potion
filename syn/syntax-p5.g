@@ -156,7 +156,7 @@ power = e:expr
         { $$ = e; }
 
 expr = ( not a:expr           { a = PN_AST(NOT, a); }
-       | wavy a:expr          { a = PN_AST(WAVY, a); }
+#      | wavy a:expr          { a = PN_AST(WAVY, a); }
        | minus !minus a:atom  { a = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), a); }
        | plus !plus a:atom    { a = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), a); }
        | mminus a:atom        { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
@@ -237,13 +237,13 @@ lick-start = '[' --
 lick-end = ']' -
 group-start = '{'
 group-end = '}'
-#quiz = '?' --
+# quiz = '?' --
+# wavy = '~' --
 assign = '=' --
 pplus = "++" -
 mminus = "--" -
 minus = '-' --
 plus = '+' --
-wavy = '~' --
 times = '*' --
 div = '/' --
 rem = '%' --
