@@ -93,9 +93,9 @@ statements =
     | ''         { $$ = PN_NIL; }
 
 stmt =
-      "package" -- arg-name ';' {} // TODO: set namespace
-    | "if" expr stmt ';' {}        // TODO: simple AND op
-    | "if" expr stmt ('else' stmt)? ';' {} // TODO: tricky TEST op
+      "package" -- arg-name ';' {} # TODO: set namespace
+    | "if" expr stmt ';' {}        # TODO: simple AND op
+    | "if" expr stmt ('else' stmt)? ';' {} # TODO: tricky TEST op
     | expr
     | s:sets ';'
         ( or x:sets ';'      { s = PN_OP(AST_OR, s, x); }
