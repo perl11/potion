@@ -6,7 +6,7 @@ CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
 LDEXEFLAGS = -L. -Wl,-rpath=. -Wl,-rpath=../lib
 LDDLLFLAGS = -shared -fpic
 INCS = -Icore
-LIBS = -lm -ldl
+LIBS = -lm
 AR ?= ar
 JIT ?= 1
 DEBUG ?= 0
@@ -86,6 +86,9 @@ endif
 
 # CFLAGS += \${DEFINES} \${DEBUGFLAGS}
 
+ifneq ($(shell ./tools/config.sh ${CC} bsd),1)
+	LIBS += -ldl
+endif
 # cygwin is not WIN32
 ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
 	WIN32 = 1

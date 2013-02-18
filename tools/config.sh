@@ -14,6 +14,7 @@ else MINGW=1; fi
 CYGWIN=`echo "$TARGET" | sed "/cygwin/!d"`
 if [ "$CYGWIN" = "" ]; then CYGWIN=0
 else CYGWIN=1; fi
+BSD=`echo "$TARGET" | sed "/bsd/!d"`
 JIT_X86=`echo "$TARGET" | sed "/86/!d"`
 JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
 JIT_I686=`echo "$TARGET" | sed "/i686/!d"`
@@ -56,6 +57,9 @@ elif [ "$2" = "cygwin" ]; then
   else echo "1"; fi
 elif [ "$2" = "clang" ]; then
   if [ "$CLANG" = "" ]; then echo "0"
+  else echo "1"; fi
+elif [ "$2" = "bsd" ]; then
+  if [ "$BSD" = "" ]; then echo "0"
   else echo "1"; fi
 elif [ "$2" = "version" ]; then
   cat core/potion.h | sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//"
