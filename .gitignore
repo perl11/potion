@@ -2,8 +2,8 @@
 /potion.exe
 /p2
 /p2.exe
-/tools/greg
-/tools/greg.exe
+/syn/greg
+/syn/greg.exe
 /tools/config.c
 /config.inc
 /core/config.h
