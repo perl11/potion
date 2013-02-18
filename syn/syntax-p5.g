@@ -87,14 +87,20 @@ perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
 # Note that if/else blocks (mblock) do not capture lexicals
 # block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s); }
 
-statements = s1:stmt { $$ = s1 = PN_TUP(s1); }
+statements =
+    s1:stmt          { $$ = s1 = PN_TUP(s1); }
         (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })* sep?
-        | ''         { $$ = PN_NIL; }
+    | ''         { $$ = PN_NIL; }
 
-stmt = s:sets ';'
-       ( or x:sets ';'      { s = PN_OP(AST_OR, s, x); }
-       | and x:sets ';'     { s = PN_OP(AST_AND, s, x); })*
-       { $$ = s; }
+stmt =
+      "package" -- arg-name ';' {} // TODO: set namespace
+    | "if" expr stmt ';' {}        // TODO: simple AND op
+    | "if" expr stmt ('else' stmt)? ';' {} // TODO: tricky TEST op
+    | expr
+    | s:sets ';'
+        ( or x:sets ';'      { s = PN_OP(AST_OR, s, x); }
+        | and x:sets ';'     { s = PN_OP(AST_AND, s, x); })*
+                             { $$ = s; }
 
 sets = e:eqs
        ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
@@ -157,12 +163,14 @@ power = e:expr
 
 expr = ( not a:expr           { a = PN_AST(NOT, a); }
 #      | wavy a:expr          { a = PN_AST(WAVY, a); }
-       | minus !minus a:atom  { a = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), a); }
-       | plus !plus a:atom    { a = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), a); }
+       | l:atom times !times r:atom { a = PN_OP(AST_TIMES, l, r); }
+       | l:atom div   !div r:atom   { a = PN_OP(AST_DIV,  l, r); }
+       | l:atom minus !minus r:atom { a = PN_OP(AST_MINUS, l, r); }
+       | l:atom plus  !plus r:atom  { a = PN_OP(AST_PLUS,  l, r); }
        | mminus a:atom        { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
        | pplus a:atom         { a = PN_OP(AST_INC, a, PN_NUM(1) ^ 1); }
-       | a:atom (pplus          { a = PN_OP(AST_INC, a, PN_NUM(1)); }
-               | mminus         { a = PN_OP(AST_INC, a, PN_NUM(-1)); })?) { a = PN_TUP(a); }
+       | a:atom (pplus        { a = PN_OP(AST_INC, a, PN_NUM(1)); }
+               | mminus       { a = PN_OP(AST_INC, a, PN_NUM(-1)); })?) { a = PN_TUP(a); }
          (c:call { a = PN_PUSH(a, c) })*
        { $$ = PN_AST(EXPR, a); }
 
@@ -204,12 +212,13 @@ path = '/' < utfw+ > -      { $$ = potion_str2(P, yytext, yyleng); }
 message = < utfw+ '?'? > -   { $$ = potion_str2(P, yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
+      | s:scalar  { $$ = PN_AST(VALUE, s); }
       | lick
       | group
 
 immed = undef { $$ = PN_NIL; }
-      | true  { $$ = PN_TRUE; }
-      | false { $$ = PN_FALSE; }
+#      | true  { $$ = PN_TRUE; }
+#      | false { $$ = PN_FALSE; }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)); }
       | dec   { if ($$ == YY_TNUM) {
                   $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10));
@@ -217,6 +226,8 @@ immed = undef { $$ = PN_NIL; }
                   $$ = potion_decimal(P, yytext, yyleng);
               } }
       | str1 | str2
+
+scalar = '$' < utf8+ > { $$ = potion_str2(P, yytext, yyleng); }
 
 utfw = [A-Za-z0-9_$@;`{}]
      | '\304' [\250-\277]
@@ -257,17 +268,276 @@ lt = '<' --
 lte = "<=" --
 gt = '>' --
 gte = ">=" --
-neq = "!=" --
-eq = "==" --
+neq = ("!=" | "ne" !utfw) --
+eq = ("==" | "eq" !utfw) --
 cmp = "<=>" --
 and = ("&&" | "and" !utfw) --
 or = ("||" | "or" !utfw) --
 not = ("!" | "not" !utfw) --
-keyword = ("and" | "or" | "not") !utfw
+
+# only used as !
+keyword = (
+  "NULL"
+| "__FILE__"
+| "__LINE__"
+| "__PACKAGE__"
+| "__DATA__"
+| "__END__"
+| "__SUB__"
+| "AUTOLOAD"
+| "BEGIN"
+| "UNITCHECK"
+| "CORE"
+| "DESTROY"
+| "END"
+| "INIT"
+| "CHECK"
+| "abs"
+| "accept"
+| "alarm"
+| "and"
+| "atan2"
+| "bind"
+| "binmode"
+| "bless"
+| "break"
+| "caller"
+| "chdir"
+| "chmod"
+| "chomp"
+| "chop"
+| "chown"
+| "chr"
+| "chroot"
+| "close"
+| "closedir"
+| "cmp"
+| "connect"
+| "continue"
+| "cos"
+| "crypt"
+| "dbmclose"
+| "dbmopen"
+| "default"
+| "defined"
+| "delete"
+| "die"
+| "do"
+| "dump"
+| "each"
+| "else"
+| "elsif"
+| "endgrent"
+| "endhostent"
+| "endnetent"
+| "endprotoent"
+| "endpwent"
+| "endservent"
+| "eof"
+| "eq"
+| "eval"
+| "evalbytes"
+| "exec"
+| "exists"
+| "exit"
+| "exp"
+| "fc"
+| "fcntl"
+| "fileno"
+| "flock"
+| "for"
+| "foreach"
+| "fork"
+| "format"
+| "formline"
+| "ge"
+| "getc"
+| "getgrent"
+| "getgrgid"
+| "getgrnam"
+| "gethostbyaddr"
+| "gethostbyname"
+| "gethostent"
+| "getlogin"
+| "getnetbyaddr"
+| "getnetbyname"
+| "getnetent"
+| "getpeername"
+| "getpgrp"
+| "getppid"
+| "getpriority"
+| "getprotobyname"
+| "getprotobynumber"
+| "getprotoent"
+| "getpwent"
+| "getpwnam"
+| "getpwuid"
+| "getservbyname"
+| "getservbyport"
+| "getservent"
+| "getsockname"
+| "getsockopt"
+| "given"
+| "glob"
+| "gmtime"
+| "goto"
+| "grep"
+| "gt"
+| "hex"
+| "if"
+| "index"
+| "int"
+| "ioctl"
+| "join"
+| "keys"
+| "kill"
+| "last"
+| "lc"
+| "lcfirst"
+| "le"
+| "length"
+| "link"
+| "listen"
+| "local"
+| "localtime"
+| "lock"
+| "log"
+| "lstat"
+| "lt"
+| "m"
+| "map"
+| "mkdir"
+| "msgctl"
+| "msgget"
+| "msgrcv"
+| "msgsnd"
+| "my"
+| "ne"
+| "next"
+| "no"
+| "not"
+| "oct"
+| "open"
+| "opendir"
+| "or"
+| "ord"
+| "our"
+| "pack"
+| "package"
+| "pipe"
+| "pop"
+| "pos"
+| "print"
+| "printf"
+| "prototype"
+| "push"
+| "q"
+| "qq"
+| "qr"
+| "quotemeta"
+| "qw"
+| "qx"
+| "rand"
+| "read"
+| "readdir"
+| "readline"
+| "readlink"
+| "readpipe"
+| "recv"
+| "redo"
+| "ref"
+| "rename"
+| "require"
+| "reset"
+| "return"
+| "reverse"
+| "rewinddir"
+| "rindex"
+| "rmdir"
+| "s"
+| "say"
+| "scalar"
+| "seek"
+| "seekdir"
+| "select"
+| "semctl"
+| "semget"
+| "semop"
+| "send"
+| "setgrent"
+| "sethostent"
+| "setnetent"
+| "setpgrp"
+| "setpriority"
+| "setprotoent"
+| "setpwent"
+| "setservent"
+| "setsockopt"
+| "shift"
+| "shmctl"
+| "shmget"
+| "shmread"
+| "shmwrite"
+| "shutdown"
+| "sin"
+| "sleep"
+| "socket"
+| "socketpair"
+| "sort"
+| "splice"
+| "split"
+| "sprintf"
+| "sqrt"
+| "srand"
+| "stat"
+| "state"
+| "study"
+| "sub"
+| "substr"
+| "symlink"
+| "syscall"
+| "sysopen"
+| "sysread"
+| "sysseek"
+| "system"
+| "syswrite"
+| "tell"
+| "telldir"
+| "tie"
+| "tied"
+| "time"
+| "times"
+| "tr"
+| "truncate"
+| "uc"
+| "ucfirst"
+| "umask"
+| "undef"
+| "unless"
+| "unlink"
+| "unpack"
+| "unshift"
+| "untie"
+| "until"
+| "use"
+| "utime"
+| "values"
+| "vec"
+| "wait"
+| "waitpid"
+| "wantarray"
+| "warn"
+| "when"
+| "while"
+| "write"
+| "x"
+| "xor"
+| "y"
+        ) !utfw
 
 undef = "undef" !utfw
-true = "true" !utfw
-false = "false" !utfw
+#true = "true" !utfw
+#false = "false" !utfw
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
 dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM; }
