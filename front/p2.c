@@ -17,9 +17,21 @@
 #include "khash.h"
 #include "table.h"
 
-const char p2_banner[] = "p2 " P2_VERSION
-                             " (date='" POTION_DATE "', commit='" POTION_COMMIT
-                             "', platform='" POTION_PLATFORM "', jit=%d)\n";
+#ifdef POTION_JIT_TARGET
+#define P2_BANNER(jit) "p2 " P2_VERSION \
+  " (date='" POTION_DATE "', commit='" POTION_COMMIT \
+  "', platform='" POTION_PLATFORM \
+  "', jit=%d/" jit \
+  ")\n"
+#else
+#define P2_BANNER(nojit) "p2 " P2_VERSION \
+  " (date='" POTION_DATE "', commit='" POTION_COMMIT \
+  "', platform='" POTION_PLATFORM \
+  "', jit=%d" \
+  ")\n"
+#endif
+
+const char p2_banner[]  = P2_BANNER(_XSTR(POTION_JIT_NAME));
 const char p2_version[] = P2_VERSION;
 
 // POTION_JIT 1/0 if jit is default

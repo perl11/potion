@@ -107,9 +107,15 @@ else
 
   if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
     echo "#define POTION_JIT_TARGET POTION_X86"
+    echo "#define POTION_JIT_NAME x86"
   elif [ "$JIT_PPC" != "" ]; then
     echo "#define POTION_JIT_TARGET POTION_PPC"
+    echo "#define POTION_JIT_NAME ppc"
+  elif [ "$JIT_ARM" != "" ]; then
+    echo "#define POTION_JIT_TARGET POTION_ARM"
+    echo "#define POTION_JIT_NAME arm"
   else
+    # defined upwards
     echo "#undef POTION_JIT"
     echo "#define POTION_JIT      0"
   fi

@@ -49,7 +49,6 @@ void potion_vm_init(Potion *P) {
 #endif
 }
 
-
 PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   PN ary = PN_NIL;
   vPN(Proto) f = (struct PNProto *)PN_CLOSURE(cl)->data[0];

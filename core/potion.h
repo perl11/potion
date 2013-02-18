@@ -14,13 +14,15 @@
 
 #define POTION_X86      0
 #define POTION_PPC      1
-//#define POTION_ARM      2
-//#define POTION_TARGETS  2 // prev. TSTATE held all vm targets in memory
+#define POTION_ARM      2
 
 #include <limits.h>
 #include <string.h>
 #include <fcntl.h>
 #include "config.h"
+
+#define _XSTR(s) _STR(s)
+#define _STR(s)  #s
 
 //
 // types
