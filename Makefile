@@ -58,21 +58,21 @@ rebuild: clean potion${EXE} test
 
 usage:
 	@${ECHO} " "
-	@${ECHO} " ~ using potion ~"
+	@${ECHO} " ~ using p2 ~ (same as perl)"
 	@${ECHO} " "
-	@${ECHO} " Running a script."
-
+	@${ECHO} " Running a script or code."
 	@${ECHO} " "
-	@${ECHO} "   $$ ./potion example/fib.pn"
+	@${ECHO} "   $$ ./p2 example/fib.pl"
+	@${ECHO} "   $$ ./p2 -e \"code\""
 	@${ECHO} " "
 	@${ECHO} " Dump the AST and bytecode inspection for a script. "
 	@${ECHO} " "
-	@${ECHO} "   $$ ./potion -V example/fib.pn"
+	@${ECHO} "   $$ ./p2 -V example/fib.pl"
 	@${ECHO} " "
 	@${ECHO} " Compiling to bytecode."
 	@${ECHO} " "
-	@${ECHO} "   $$ ./potion -c example/fib.pn"
-	@${ECHO} "   $$ ./potion example/fib.pnb"
+	@${ECHO} "   $$ ./p2 --compile example/fib.pl"
+	@${ECHO} "   $$ ./p2 example/fib.plc"
 	@${ECHO} " "
 	@${ECHO} " Potion builds its JIT compiler by default, but"
 	@${ECHO} " you can use the bytecode VM by running scripts"
@@ -84,7 +84,7 @@ usage:
 	@${ECHO} " "
 	@${ECHO} "   $$ make test"
 	@${ECHO} " "
-	@${ECHO} " Written by _why <why@whytheluckystiff.net>"
+	@${ECHO} " Written by _why and rurban."
 	@${ECHO} " Maintained at https://github.com/perl11/potion, branch p2"
 
 config:
