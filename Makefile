@@ -72,7 +72,7 @@ usage:
 	@${ECHO} "   $$ make test"
 	@${ECHO} " "
 	@${ECHO} " Written by _why <why@whytheluckystiff.net>"
-	@${ECHO} " Maintained at https://github.com/fogus/potion"
+	@${ECHO} " Maintained at https://github.com/perl11/potion"
 
 config:
 	@${ECHO} MAKE -f config.mak $@
