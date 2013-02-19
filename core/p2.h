@@ -15,6 +15,10 @@
 
 #include "potion.h"
 
+#define EXEC_COMPILE 0
+#define EXEC_VM      1
+#define EXEC_JIT     2
+
 #ifdef P2
 #  undef NIL_NAME
 #  define NIL_NAME "undef" // nil => undef
@@ -31,7 +35,7 @@ PN p2_source_load(Potion *P, PN cl, PN buf);
 PN p2_parse(Potion *, PN);
 PN p2_run(Potion *, PN, int);
 PN p2_eval(Potion *, PN, int);
-// not yet:
+// not yet, because its the same
 //PN p2_vm_proto(Potion *, PN, PN, ...);
 //PN p2_vm_class(Potion *, PN, PN);
 //PN p2_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);

@@ -83,6 +83,51 @@ static void p2_cmd_version(Potion *P) {
   printf(p2_banner, POTION_JIT);
 }
 
+static PN p2_cmd_exec(Potion *P, PN buf, char *filename, int exec, int verbose) {
+  PN code = p2_source_load(P, PN_NIL, buf);
+  if (PN_IS_PROTO(code)) {
+    if (verbose > 1)
+      printf("\n\n-- loaded --\n");
+  } else {
+    code = p2_parse(P, buf);
+    if (!code || PN_TYPE(code) == PN_TERROR) {
+      potion_p(P, code);
+      return code;
+    }
+    if (verbose > 1) {
+      printf("\n-- parsed --\n");
+      potion_p(P, code);
+    }
+    code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
+    if (verbose > 1)
+      printf("\n-- compiled --\n");
+  }
+  if (verbose > 1) potion_p(P, code);
+  if (exec == EXEC_VM) {
+    code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
+    if (verbose > 1)
+      printf("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
+	     PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+	     PN_INT(potion_gc_reserved(P, 0, 0)));
+    if (verbose) potion_p(P, code);
+  } else if (exec == EXEC_JIT) {
+#ifdef POTION_JIT_TARGET
+    PN val;
+    PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, verbose), PN_NIL, 1);
+    PN_CLOSURE(cl)->data[0] = code;
+    val = PN_PROTO(code)->jit(P, cl, P->lobby);
+    if (verbose > 1)
+      printf("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
+	     PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+	     PN_INT(potion_gc_reserved(P, 0, 0)));
+    if (verbose) potion_p(P, val);
+#else
+    fprintf(stderr, "** p2 built without JIT support\n");
+#endif
+  }
+  return code;
+}
+
 static void p2_cmd_compile(Potion *P, char *filename, int exec, int verbose) {
   PN buf;
   int fd = -1;
@@ -103,59 +148,24 @@ static void p2_cmd_compile(Potion *P, char *filename, int exec, int verbose) {
   if (read(fd, PN_STR_PTR(buf), stats.st_size) == stats.st_size) {
     PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
-    code = p2_source_load(P, PN_NIL, buf);
-    if (PN_IS_PROTO(code)) {
-      if (verbose > 1)
-        printf("\n\n-- loaded --\n");
-    } else {
-      code = p2_parse(P, buf);
-      if (!code || PN_TYPE(code) == PN_TERROR) {
-        potion_p(P, code);
-        goto done;
-      }
-      if (verbose > 1) {
-        printf("\n-- parsed --\n");
-        potion_p(P, code);
-      }
-      code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
-      if (verbose > 1)
-        printf("\n-- compiled --\n");
-    }
-    if (verbose > 1) potion_p(P, code);
-    if (exec == 1) {
-      code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-      if (verbose > 1)
-        printf("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
-          PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-          PN_INT(potion_gc_reserved(P, 0, 0)));
-      if (verbose) potion_p(P, code);
-    } else if (exec == 2) {
-#ifdef POTION_JIT_TARGET
-      PN val;
-      PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, verbose), PN_NIL, 1);
-      PN_CLOSURE(cl)->data[0] = code;
-      val = PN_PROTO(code)->jit(P, cl, P->lobby);
-      if (verbose > 1)
-        printf("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
-          PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-          PN_INT(potion_gc_reserved(P, 0, 0)));
-      if (verbose) potion_p(P, val);
-#else
-      fprintf(stderr, "** p2 built without JIT support\n");
-#endif
-    } else {
+
+    code = p2_cmd_exec(P, buf, filename, exec, verbose);
+    if (!code || PN_TYPE(code) == PN_TERROR)
+      goto done;
+
+    if (exec == EXEC_COMPILE) {
       char pnbpath[255];
       FILE *pnb;
       sprintf(pnbpath, "%sc", filename); // .plc and .pmc
       pnb = fopen(pnbpath, "wb");
       if (!pnb) {
-        fprintf(stderr, "** could not open %s for writing. check permissions.", pnbpath);
-        goto done;
+	fprintf(stderr, "** could not open %s for writing. check permissions.", pnbpath);
+	goto done;
       }
 
       code = potion_source_dump(P, PN_NIL, code);
       if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code)) {
-        printf("** compiled code saved to %s\n", pnbpath);
+	printf("** compiled code saved to %s\n", pnbpath);
         printf("** run it with: p2 %s\n", pnbpath);
         fclose(pnb);
       } else {
@@ -198,8 +208,12 @@ int main(int argc, char *argv[]) {
   POTION_INIT_STACK(sp);
   int i, verbose = 0, exec = 1 + POTION_JIT, interactive = 1;
   Potion *P = potion_create(sp);
-  
+  PN buf = PN_NIL;
+
   for (i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "--") == 0) {
+      break;
+    }
     if (strcmp(argv[i], "-I") == 0) {
       char *extra_path = &argv[i][2]; // todo: flexible
       if (*extra_path)
@@ -238,17 +252,29 @@ int main(int argc, char *argv[]) {
       goto END;
     }
     if (strcmp(argv[i], "--compile") == 0) {
-      exec = 0;
+      exec = EXEC_COMPILE;
       continue;
     }
     if (strcmp(argv[i], "-B") == 0 ||
         strcmp(argv[i], "--bytecode") == 0) {
-      exec = 1;
+      exec = EXEC_VM;
       continue;
     }
     if (strcmp(argv[i], "-J") == 0 ||
         strcmp(argv[i], "--jit") == 0) {
-      exec = 2;
+      exec = EXEC_JIT;
+      continue;
+    }
+    if (strcmp(argv[i], "-e") == 0 ||
+        strcmp(argv[i], "-E") == 0) {
+      if (i <= argc) {
+	if (strcmp(argv[i], "-E") == 0) {
+	  buf = potion_str(P, "use p2;\n");
+	  buf = potion_bytes_append(P, 0, buf, potion_str(P, argv[i+1]));
+	} else {
+	  buf = potion_str(P, argv[i+1]);
+	}
+      }
       continue;
     }
     if (i == argc - 1) {
@@ -259,7 +285,14 @@ int main(int argc, char *argv[]) {
   }
   
   if (!interactive) {
-    p2_cmd_compile(P, argv[argc-1], exec, verbose);
+    if (buf != PN_NIL) {
+      PN code = p2_cmd_exec(P, buf, "-e", exec, verbose);
+      if (!code || PN_TYPE(code) == PN_TERROR)
+	goto END;
+    }
+    else {
+      p2_cmd_compile(P, argv[argc-1], exec, verbose);
+    }
   } else {
     if (!exec || verbose) potion_fatal("no filename given");
     // TODO: p5 not yet parsed
