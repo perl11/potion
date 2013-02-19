@@ -4,6 +4,7 @@ CC=$1
 AC="tools/config.c"
 AOUT="tools/config.out"
 CCEX="$CC $AC -o $AOUT"
+LANG=C
 
 TARGET=`$CC -v 2>&1 | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
 MINGW_GCC=`echo "$TARGET" | sed "/mingw/!d"`
