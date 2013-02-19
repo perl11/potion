@@ -189,7 +189,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, int verbose) {
       CASE_OP(CMP, (P, f, &asmb, pos))
       CASE_OP(TESTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(NOTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
-      CASE_OP(NAMED, (P, f, &asmb, pos, need))  //? 
+      CASE_OP(NAMED, (P, f, &asmb, pos, need))	// assign named args before a CALL
       CASE_OP(CALL, (P, f, &asmb, pos, need))	// call a function. R(A),...:= R(A)(R(A+1),...,R(A+B-1))
       CASE_OP(CALLSET, (P, f, &asmb, pos, need))//? set return register to write to
       CASE_OP(RETURN, (P, f, &asmb, pos))	// return R(A), ... ,R(A+B-2)
