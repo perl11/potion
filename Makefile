@@ -75,7 +75,7 @@ usage:
 	@${ECHO} "   $$ make test"
 	@${ECHO} " "
 	@${ECHO} " Kindly email your respects and thoughtful queries"
-	@${ECHO} " to _why <why@whytheluckystiff.net>. Thankyou."
+	@${ECHO} " to fogus <me -at- fogus -dot- me>. Thank you."
 
 config:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
