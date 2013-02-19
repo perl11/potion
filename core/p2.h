@@ -18,6 +18,9 @@
 #ifdef P2
 #  undef NIL_NAME
 #  define NIL_NAME "undef" // nil => undef
+#  undef POTION_SIG // do not mix compiled potion with p2 bytecode,
+                    // though it should be compatible for now
+#  define POTION_SIG P2_SIG
 #endif
 
 //

@@ -156,7 +156,7 @@ static void p2_cmd_compile(Potion *P, char *filename, int exec, int verbose) {
       code = potion_source_dump(P, PN_NIL, code);
       if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code)) {
         printf("** compiled code saved to %s\n", pnbpath);
-        printf("** run it with: potion %s\n", pnbpath);
+        printf("** run it with: p2 %s\n", pnbpath);
         fclose(pnb);
       } else {
         fprintf(stderr, "** could not write all bytecode.");
