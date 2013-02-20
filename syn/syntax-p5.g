@@ -162,7 +162,7 @@ power = e:expr
         { $$ = e; }
 
 expr = ( not a:expr           { a = PN_AST(NOT, a); }
-#      | wavy a:expr          { a = PN_AST(WAVY, a); }
+       | bitnot a:expr          { a = PN_AST(WAVY, a); }
        | l:atom times !times r:atom { a = PN_OP(AST_TIMES, l, r); }
        | l:atom div   !div r:atom   { a = PN_OP(AST_DIV,  l, r); }
        | l:atom minus !minus r:atom { a = PN_OP(AST_MINUS, l, r); }
@@ -249,7 +249,7 @@ lick-end = ']' -
 group-start = '{'
 group-end = '}'
 query = '?' --
-# wavy = '~' --
+bitnot = '~' --
 assign = '=' --
 pplus = "++" -
 mminus = "--" -
