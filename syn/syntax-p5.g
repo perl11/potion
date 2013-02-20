@@ -181,8 +181,8 @@ call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? (b:block | b:ano
          { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
 name = p:path           { $$ = PN_AST(PATH, p); }
-#     | quiz ( m:message { $$ = PN_AST(QUERY, m); }
-#            | p:path    { $$ = PN_AST(PATHQ, p); })
+     | query ( m:message { $$ = PN_AST(QUERY, m); }
+             | p:path    { $$ = PN_AST(PATHQ, p); })
      | !keyword
        m:message        { $$ = PN_AST(MESSAGE, m); }
 
@@ -248,7 +248,7 @@ lick-start = '[' --
 lick-end = ']' -
 group-start = '{'
 group-end = '}'
-# quiz = '?' --
+query = '?' --
 # wavy = '~' --
 assign = '=' --
 pplus = "++" -
