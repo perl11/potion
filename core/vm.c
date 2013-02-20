@@ -154,7 +154,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
       CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))// write a register value into a local
       CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))// read an upvalue (upper scope)
       CASE_OP(SETUPVAL, (P, f, &asmb, pos, lregs))// write to an upvalue
-      CASE_OP(GLOBAL, (P, f, &asmb, pos, need))	//? globally define a value (set?)
+      CASE_OP(GLOBAL, (P, f, &asmb, pos, need))	// returns a global (for get or set)
       CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))// create tuple
       CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))// write register into tuple key
       CASE_OP(SETTABLE, (P, f, &asmb, pos, need))// write register into a table entry
