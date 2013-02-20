@@ -774,10 +774,10 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
 }
 
 // TODO: load from a stream
-#ifndef P2
 PN potion_source_load(Potion *P, PN cl, PN buf) {
   u8 *ptr;
   vPN(BHeader) h = (struct PNBHeader *)PN_STR_PTR(buf);
+  // check for compiled binary first
   if ((size_t)PN_STR_LEN(buf) <= sizeof(struct PNBHeader) || 
       strncmp((char *)h->sig, POTION_SIG, 4) != 0)
     return PN_NIL;
@@ -785,18 +785,6 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
   ptr = h->proto;
   return potion_proto_load(P, PN_NIL, h->pn, &ptr);
 }
-#else
-PN p2_source_load(Potion *P, PN cl, PN buf) {
-  u8 *ptr;
-  vPN(BHeader) h = (struct PNBHeader *)PN_STR_PTR(buf);
-  if ((size_t)PN_STR_LEN(buf) <= sizeof(struct PNBHeader) ||
-      strncmp((char *)h->sig, P2_SIG, 4) != 0)
-    return PN_NIL;
-
-  ptr = h->proto;
-  return potion_proto_load(P, PN_NIL, h->pn, &ptr);
-}
-#endif
 
 #define WRITE_U8(un, ptr) ({*ptr = (u8)un; ptr += sizeof(u8);})
 #define WRITE_PN(pn, ptr) ({*(PN *)ptr = pn; ptr += sizeof(PN);})
