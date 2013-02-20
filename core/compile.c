@@ -47,7 +47,11 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   PN_SIZE num = 1;
   PN_SIZE numcols;
   PN out = potion_byte_str(P, "; function definition");
-  pn_printf(P, out, ": %p ; %u bytes\n", t, PN_FLEX_SIZE(t->asmb));
+  #ifdef JIT_DEBUG
+  pn_printf(P, out, ": %p; %u bytes\n", t, PN_FLEX_SIZE(t->asmb));
+  #else
+  pn_printf(P, out, ": %u bytes\n", PN_FLEX_SIZE(t->asmb));
+  #endif
   pn_printf(P, out, "; (");
   PN_TUPLE_EACH(t->sig, i, v, {
     if (PN_IS_NUM(v)) {
@@ -125,6 +129,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
     pn_printf(P, out, "\n");
     num++;
   }
+  //pn_printf(P, out, "\n");
   pn_printf(P, out, "; function end\n");
   return PN_STR_B(out);
 }

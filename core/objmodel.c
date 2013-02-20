@@ -213,8 +213,8 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   PN_TOUCH(self);
 
 #ifdef JIT_MCACHE
-  // TODO: make this more flexible, store in fixed gc, see ivfunc TODO also
-  // this is disabled until method weakrefs can be stored in fixed memory
+  // TODO: make JIT_MCACHE more flexible, store in fixed gc, see ivfunc TODO also
+  // TODO: this is disabled until method weakrefs can be stored in fixed memory
   if (P->target.mcache != NULL) {
     PNAsm * volatile asmb = potion_asm_new(P);
     P->target.mcache(P, vt, &asmb);

@@ -1,2 +1,18 @@
-(9 + 1) * (6 - 4)
-#=> 20
+# ./potion -B -V test/numbers/parens.pn
+# -- parsed --
+# code (times (expr (table (plus (expr (value (9 nil nil)) expr (value (1 nil nil))))) 
+#                   expr (table (minus (expr (value (6 nil nil)) expr (value (4 nil nil)))))))
+# -- compiled --
+# ; function definition: 0x103021cc8 ; 32 bytes
+# ; () 3 registers
+# [1] loadpn   0 19   ; 9
+# [2] loadpn   1 3    ; 1
+# [3] add      0 1    
+# [4] loadpn   1 13   ; 6
+# [5] loadpn   2 9    ; 4
+# [6] sub      1 2    
+# [7] mult     0 1    
+# [8] return   0      
+# ; function end
+
+(9 + 1) * (6 - 4)    #=> 20
