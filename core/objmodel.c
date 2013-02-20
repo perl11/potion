@@ -382,16 +382,16 @@ PN potion_about(Potion *P, PN cl, PN self) {
   PN about = potion_table_empty(P);
   potion_table_put(P, PN_NIL, about, potion_str(P, "_why"),
     potion_str(P, "“I love _why, but learning Ruby from him is like trying to learn to pole vault "
-      "by having Salvador Dali punch you in the face.” - Steven Frank"));
+	           "by having Salvador Dali punch you in the face.” - Steven Frank"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "minimalism"),
     potion_str(P, "“The sad thing about ‘minimalism’ is that it has a name.” "
-      "- Steve Dekorte"));
+	          "- Steve Dekorte"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "stage fright"),
     potion_str(P, "“Recently no move on Potion. I git pull everyday.” "
-      "- matz"));
+	          "- matz"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "terms of use"),
     potion_str(P, "“Setting up my new anarchist bulletin board so that during registration, if you accept "
-      "the terms and conditions, you are banned forever.” - Dr. Casey Hall"));
+	          "the terms and conditions, you are banned forever.” - Dr. Casey Hall"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "help"),
     potion_str(P, "`man which` - Evan Weaver"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "ts"),
