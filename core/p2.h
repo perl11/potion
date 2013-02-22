@@ -15,9 +15,14 @@
 
 #include "potion.h"
 
-#define EXEC_COMPILE 0
-#define EXEC_VM      1
-#define EXEC_JIT     2
+typedef enum {
+  EXEC_VM, // bytecode
+  EXEC_JIT,
+  EXEC_CHECK,
+  EXEC_COMPILE,
+  EXEC_COMPILE_C,
+  EXEC_COMPILE_NATIVE,
+} exec_mode_t;
 
 #ifdef P2
 #  undef NIL_NAME

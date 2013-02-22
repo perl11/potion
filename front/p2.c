@@ -53,11 +53,12 @@ static void p2_cmd_usage(Potion *P) {
 #endif
 #endif
       "  -Idirectory        add library search path\n"
-//    "  -c                 check script and exit\n"          // TODO:
+      "  -c                 check script and exit\n" // compile-time checks only
 //    "  -d                 run program under the debugger\n" // TODO: run p2d or do it internally?
+//    "  -D[options]?       debugging flags\n"
       "  -e code            execute code\n"
       "  -E code            execute code with extended features enabled\n"
-      "  -V, --verbose      print bytecode and ast info\n"
+      "  -V, --verbose      print bytecode and ast info\n" // TODO: replace by -D
       "  -h, --help         print this usage info and exit\n"
       "  -v, --version      print version, patchlevel, features and exit\n"
       "  --inspect          print the return value\n"
@@ -83,7 +84,7 @@ static void p2_cmd_version(Potion *P) {
   printf(p2_banner, POTION_JIT);
 }
 
-static PN p2_cmd_exec(Potion *P, PN buf, char *filename, int exec, int verbose) {
+static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec, int verbose) {
   PN code = p2_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
     if (verbose > 1)
@@ -125,10 +126,12 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, int exec, int verbose) 
     fprintf(stderr, "** p2 built without JIT support\n");
 #endif
   }
+  else if (exec == EXEC_CHECK) {
+  }
   return code;
 }
 
-static void p2_cmd_compile(Potion *P, char *filename, int exec, int verbose) {
+static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec, int verbose) {
   PN buf;
   int fd = -1;
   struct stat stats;
@@ -153,24 +156,40 @@ static void p2_cmd_compile(Potion *P, char *filename, int exec, int verbose) {
     if (!code || PN_TYPE(code) == PN_TERROR)
       goto done;
 
-    if (exec == EXEC_COMPILE) {
-      char pnbpath[255];
-      FILE *pnb;
-      sprintf(pnbpath, "%sc", filename); // .plc and .pmc
-      pnb = fopen(pnbpath, "wb");
-      if (!pnb) {
-	fprintf(stderr, "** could not open %s for writing. check permissions.", pnbpath);
+    if (exec >= EXEC_COMPILE) { // needs an inputfile. TODO: -e"" -ofile
+      char plcpath[255];
+      FILE *plc;
+      if (exec == EXEC_COMPILE)
+	sprintf(plcpath, "%sc", filename);  // .plc and .pmc
+      else if (exec == EXEC_COMPILE_C)
+	sprintf(plcpath, "%s.c", filename); // .pl.c and .pm.c
+      else if (exec == EXEC_COMPILE_NATIVE) {
+	sprintf(plcpath, "%s.out", filename);   // TODO: strip ext
+      }
+      plc = fopen(plcpath, "wb");
+      if (!plc) {
+	fprintf(stderr, "** could not open %s for writing. check permissions.", plcpath);
 	goto done;
       }
 
-      code = potion_source_dump(P, PN_NIL, code);
-      if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code)) {
-	printf("** compiled code saved to %s\n", pnbpath);
-        printf("** run it with: p2 %s\n", pnbpath);
-        fclose(pnb);
-      } else {
-        fprintf(stderr, "** could not write all bytecode.");
+      if (exec == EXEC_COMPILE)
+	code = potion_source_dump(P, PN_NIL, code);
+      else if (exec == EXEC_COMPILE_C) {
+	//code = potion_compile_c(P, PN_NIL, code);
+	potion_fatal("--compile-c not yet implemented\n");
       }
+      else if (exec == EXEC_COMPILE_NATIVE) {
+	//code = potion_compile_native(P, PN_NIL, code);
+	potion_fatal("--compile-native not yet implemented\n");
+      }
+      if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), plc) == PN_STR_LEN(code)) {
+	printf("** compiled code saved to %s\n", plcpath);
+        fclose(plc);
+      } else {
+        fprintf(stderr, "** could not write all compiled code.");
+      }
+      if (exec == EXEC_COMPILE)
+        printf("** run it with: p2 %s\n", plcpath);
     }
 
 #if 0 && defined(DEBUG)
@@ -255,6 +274,10 @@ int main(int argc, char *argv[]) {
       exec = EXEC_COMPILE;
       continue;
     }
+    if (strcmp(argv[i], "-c") == 0) {
+      exec = EXEC_CHECK;
+      continue;
+    }
     if (strcmp(argv[i], "-B") == 0 ||
         strcmp(argv[i], "--bytecode") == 0) {
       exec = EXEC_VM;
@@ -322,7 +345,7 @@ int main(int argc, char *argv[]) {
       "  } else {" \
       "    say '=> ', $obj;" \
       "  }"
-      "}"), exec - 1); // 1/2 => 0/1
+      "}"), exec == EXEC_JIT ? 1 : 0);
   }
 END:
   if (P != NULL)

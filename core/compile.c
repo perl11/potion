@@ -835,7 +835,8 @@ long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
   return (char *)ptr - start;
 }
 
-// TODO: dump to a stream
+// Low TODO: dump to a stream (if we have not enough memory)
+// TODO: proto dump methods, for pnb, c and native compilers
 PN potion_source_dump(Potion *P, PN cl, PN proto) {
   PN pnb = potion_bytes(P, 8192);
   struct PNBHeader h;
