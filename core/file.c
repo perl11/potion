@@ -126,13 +126,18 @@ void potion_file_init(Potion *P) {
   PN file_vt = PN_VTABLE(PN_TFILE);
   char **env = environ, *key;
   PN pe = potion_table_empty(P);
+#ifdef P2
+  PN PN_env = potion_str(P, "%ENV");
+#else
+  PN PN_env = potion_str(P, "Env");
+#endif
   while (*env != NULL) {
     for (key = *env; *key != '='; key++);
     potion_table_put(P, PN_NIL, pe, potion_str2(P, *env, key - *env),
       potion_str(P, key + 1));
     env++;
   }
-  potion_send(P->lobby, PN_def, potion_str(P, "Env"), pe);
+  potion_send(P->lobby, PN_def, PN_env, pe);
   potion_method(P->lobby, "read", potion_lobby_read, 0);
   
   potion_type_constructor_is(file_vt, PN_FUNC(potion_file_new, "path=S,mode=S"));
