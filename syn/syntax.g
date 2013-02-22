@@ -149,7 +149,7 @@ block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 
-path = '/' < utfw+ > -      { $$ = potion_str2(P, yytext, yyleng); }
+path = '/' < utfw+ > -       { $$ = potion_str2(P, yytext, yyleng); }
 message = < utfw+ '?'? > -   { $$ = potion_str2(P, yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
@@ -298,6 +298,9 @@ PN potion_parse(Potion *P, PN code) {
   P->input = code;
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
+#ifdef YY_DEBUG
+  G->verbose = PN_INT(potion_send(P->lobby, potion_str(P, "integer"), potion_str(P, "$P2::verbose")));
+#endif
 
   G->pos = G->limit = 0;
   if (!YY_NAME(parse)(G))

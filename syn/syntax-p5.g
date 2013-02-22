@@ -619,6 +619,12 @@ PN p2_parse(Potion *P, PN code) {
   P->input = code;
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
+#ifdef YY_DEBUG
+  {
+      PN v = potion_send(P->lobby, potion_str(P, "integer"), potion_str(P, "$P2::verbose"));
+      G->verbose = PN_INT(v);
+  }
+#endif
 
   G->pos = G->limit = 0;
   if (!YY_NAME(parse)(G))

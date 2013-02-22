@@ -386,7 +386,7 @@ static char *preamble= "\
 #define YY_END		( G->end= G->pos, 1)\n\
 #endif\n\
 #ifdef YY_DEBUG\n\
-# define yyprintf(args)	fprintf args\n\
+# define yyprintf(args)	if (G->verbose) fprintf args\n\
 #else\n\
 # define yyprintf(args)\n\
 #endif\n\
@@ -423,6 +423,9 @@ typedef struct _GREG {\n\
   YYSTYPE *vals;\n\
   int valslen;\n\
   YY_XTYPE data;\n\
+#ifdef YY_DEBUG\n\
+  int verbose;\n\
+#endif\n\
 } GREG;\n\
 \n\
 YY_LOCAL(int) yyrefill(GREG *G)\n\

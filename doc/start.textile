@@ -179,7 +179,7 @@ h2. Licks
 </code>
 </pre>
 
-Lastly, here we have a *lick*. This is the data language brought up earlier in the section about Special Things. This code will print 'window' since that's the name of the first item in the lick.
+Lastly, here we have a *lick*. This is the data language brought up earlier in the section about Special Things. This code will print @'window'@ since that's the name of the first item in the lick.
 
 Two languages in one? What for? I mean you can do anything you want from code, right?
 
