@@ -265,15 +265,25 @@ int main(int argc, char *argv[]) {
       exec = EXEC_JIT;
       continue;
     }
-    if (strcmp(argv[i], "-e") == 0 ||
-        strcmp(argv[i], "-E") == 0) {
-      if (i <= argc) {
-	if (strcmp(argv[i], "-E") == 0) {
-	  buf = potion_str(P, "use p2;\n");
-	  buf = potion_bytes_append(P, 0, buf, potion_str(P, argv[i+1]));
-	} else {
-	  buf = potion_str(P, argv[i+1]);
-	}
+    if (argv[i][0] == '-' &&
+	(argv[i][1] == 'e' || argv[i][1] == 'E')) {
+      char *arg;
+      interactive = 0;
+      if (strlen(argv[i]) == 2) {
+	arg = argv[i+1];
+      } else if (i <= argc) {
+	arg = argv[i]+2;
+      } else { // or go into interactive mode as -de0?
+	potion_fatal("** Missing argument for -e");
+	goto END;
+      }
+      if (argv[i][1] == 'E') {
+	potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-E"));
+	buf = potion_str(P, "use p2;\n");
+	buf = potion_bytes_append(P, 0, buf, potion_str(P, arg));
+      } else {
+	potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-e"));
+	buf = potion_str(P, arg);
       }
       continue;
     }
@@ -283,7 +293,13 @@ int main(int argc, char *argv[]) {
     }
     fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
   }
-  
+
+  potion_define_global(P, potion_str(P, "$P2::execmode"), PN_INT(exec));
+  potion_define_global(P, potion_str(P, "$P2::verbose"),
+		       verbose ? PN_INT(verbose) : PN_NIL);
+  potion_define_global(P, potion_str(P, "$P2::interactive"),
+		       interactive ? PN_INT(interactive) : PN_NIL);
+
   if (!interactive) {
     if (buf != PN_NIL) {
       PN code = p2_cmd_exec(P, buf, "-e", exec, verbose);
@@ -291,6 +307,7 @@ int main(int argc, char *argv[]) {
 	goto END;
     }
     else {
+      potion_define_global(P, potion_str(P, "$0"), potion_str(P, argv[argc-1]));
       p2_cmd_compile(P, argv[argc-1], exec, verbose);
     }
   } else {
