@@ -16,10 +16,11 @@
 #include "potion.h"
 
 typedef enum {
-  EXEC_VM, // bytecode
+  EXEC_VM,      // bytecode (switch or cgoto)
   EXEC_JIT,
+  EXEC_DEBUG,   // -d: instrumented bytecode or just slow runloop?
   EXEC_CHECK,
-  EXEC_COMPILE,
+  EXEC_COMPILE, // to bytecode
   EXEC_COMPILE_C,
   EXEC_COMPILE_NATIVE,
 } exec_mode_t;

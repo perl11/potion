@@ -125,7 +125,7 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
         goto done;
       }
 
-      code = potion_source_dump(P, PN_NIL, code);
+      code = potion_source_dumpbc(P, PN_NIL, code);
       if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code)) {
         printf("** compiled code saved to %s\n", pnbpath);
         printf("** run it with: potion %s\n", pnbpath);

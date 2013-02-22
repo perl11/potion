@@ -786,6 +786,7 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
   return potion_proto_load(P, PN_NIL, h->pn, &ptr);
 }
 
+// TODO: switch to dump methods
 #define WRITE_U8(un, ptr) ({*ptr = (u8)un; ptr += sizeof(u8);})
 #define WRITE_PN(pn, ptr) ({*(PN *)ptr = pn; ptr += sizeof(PN);})
 #define WRITE_CONST(val, ptr) ({ \
@@ -813,11 +814,11 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
     WRITE_TUPLE(tup, ptr) WRITE_CONST(PN_TUPLE_AT(tup, i), ptr); \
   })
 #define WRITE_PROTOS(tup, ptr) ({ \
-    WRITE_TUPLE(tup, ptr) ptr += potion_proto_dump(P, PN_TUPLE_AT(tup, i), \
+    WRITE_TUPLE(tup, ptr) ptr += potion_proto_dumpbc(P, PN_TUPLE_AT(tup, i), \
         out, (char *)ptr - PN_STR_PTR(out)); \
   })
 
-long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
+long potion_proto_dumpbc(Potion *P, PN proto, PN out, long pos) {
   vPN(Proto) f = (struct PNProto *)proto;
   char *start = PN_STR_PTR(out) + pos;
   u8 *ptr = (u8 *)start;
@@ -836,8 +837,8 @@ long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
 }
 
 // Low TODO: dump to a stream (if we have not enough memory)
-// TODO: proto dump methods, for pnb, c and native compilers
-PN potion_source_dump(Potion *P, PN cl, PN proto) {
+// TODO: proto dump methods, for bc, c and bin, also dump as ascci
+PN potion_source_dumpbc(Potion *P, PN cl, PN proto) {
   PN pnb = potion_bytes(P, 8192);
   struct PNBHeader h;
   PN_MEMCPY_N(h.sig, POTION_SIG, u8, 4);
@@ -848,7 +849,7 @@ PN potion_source_dump(Potion *P, PN cl, PN proto) {
 
   PN_MEMCPY(PN_STR_PTR(pnb), &h, struct PNBHeader);
   PN_STR_LEN(pnb) = (long)sizeof(struct PNBHeader) +
-    potion_proto_dump(P, proto, pnb, sizeof(struct PNBHeader));
+    potion_proto_dumpbc(P, proto, pnb, sizeof(struct PNBHeader));
   return pnb;
 }
 

@@ -173,13 +173,15 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec, int verb
       }
 
       if (exec == EXEC_COMPILE)
-	code = potion_source_dump(P, PN_NIL, code);
+	//TODO: use source dumpbc,dumpc,dumpbin,dump (ascii) methods
+	//code = potion_send(P, code, "dumpbc");
+	code = potion_source_dumpbc(P, PN_NIL, code);
       else if (exec == EXEC_COMPILE_C) {
-	//code = potion_compile_c(P, PN_NIL, code);
+	//code = potion_send(P, code, "dumpc");
 	potion_fatal("--compile-c not yet implemented\n");
       }
       else if (exec == EXEC_COMPILE_NATIVE) {
-	//code = potion_compile_native(P, PN_NIL, code);
+	//code = potion_send(P, code, "dumpbin");
 	potion_fatal("--compile-native not yet implemented\n");
       }
       if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), plc) == PN_STR_LEN(code)) {
