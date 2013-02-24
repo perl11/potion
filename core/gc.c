@@ -27,6 +27,7 @@ PN_SIZE potion_stack_len(Potion *P, _PN **p) {
 
 #define HAS_REAL_TYPE(v) (P->vts == NULL || (((struct PNFwd *)v)->fwd == POTION_COPIED || PN_TYPECHECK(PN_VTYPE(v))))
 
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int forward) {
   _PN v;
   PN_SIZE i = 0;
@@ -60,6 +61,7 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
   return i;
 }
 
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN_SIZE potion_mark_stack(Potion *P, int forward) {
   PN_SIZE n;
   struct PNMemory *M = P->mem;

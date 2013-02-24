@@ -55,7 +55,7 @@ static void p2_cmd_usage(Potion *P) {
       "  -Idirectory        add library search path\n"
       "  -c                 check script and exit\n" // compile-time checks only
 //    "  -d                 run program under the debugger\n" // TODO: run p2d or do it internally?
-//    "  -D[options]?       debugging flags\n"
+      "  -D[itpvGJ]         debugging flags\n"
       "  -e code            execute code\n"
       "  -E code            execute code with extended features enabled\n"
       "  -V, --verbose      print bytecode and ast info\n" // TODO: replace by -D
@@ -84,8 +84,9 @@ static void p2_cmd_version(Potion *P) {
   printf(p2_banner, POTION_JIT);
 }
 
-static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec, int verbose) {
+static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
   PN code = p2_source_load(P, PN_NIL, buf);
+  int verbose = P->debug_flags;
   if (PN_IS_PROTO(code)) {
     if (verbose > 1)
       printf("\n\n-- loaded --\n");
@@ -131,10 +132,11 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec, int v
   return code;
 }
 
-static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec, int verbose) {
+static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
   PN buf;
   int fd = -1;
   struct stat stats;
+  //int verbose = P->debug_flags & DEBUG_VERBOSE;
 
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
@@ -152,7 +154,7 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec, int verb
     PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
 
-    code = p2_cmd_exec(P, buf, filename, exec, verbose);
+    code = p2_cmd_exec(P, buf, filename, exec);
     if (!code || PN_TYPE(code) == PN_TERROR)
       goto done;
 
@@ -194,24 +196,27 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec, int verb
         printf("** run it with: p2 %s\n", plcpath);
     }
 
-#if 0 && defined(DEBUG)
-    // GC check
-    void *scanptr = (void *)((char *)P->mem->old_lo + (sizeof(PN) * 2));
-    while ((PN)scanptr < (PN)P->mem->old_cur) {
-          printf("%p.vt = %lx (%u)\n",
-            scanptr, ((struct PNObject *)scanptr)->vt,
-            potion_type_size(P, scanptr));
-      if (((struct PNFwd *)scanptr)->fwd != POTION_FWD && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
-        if (((struct PNObject *)scanptr)->vt < 0 || ((struct PNObject *)scanptr)->vt > PN_TUSER) {
-          printf("wrong type for allocated object: %p.vt = %lx\n",
-            scanptr, ((struct PNObject *)scanptr)->vt);
-          break;
-        }
-      }
-      scanptr = (void *)((char *)scanptr + potion_type_size(P, scanptr));
-      if ((PN)scanptr > (PN)P->mem->old_cur) {
-        printf("allocated object goes beyond GC pointer\n");
-        break;
+#if defined(DEBUG)
+    if (P->debug_flags & DEBUG_GC) { // GC sanity check
+      void *scanptr = (void *)((char *)P->mem->old_lo + (sizeof(PN) * 2));
+      while ((PN)scanptr < (PN)P->mem->old_cur) {
+	printf("%p.vt = %lx (%u)\n",
+	       scanptr, ((struct PNObject *)scanptr)->vt,
+	       potion_type_size(P, scanptr));
+	if (((struct PNFwd *)scanptr)->fwd != POTION_FWD
+	    && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
+	  if ((signed long)(((struct PNObject *)scanptr)->vt) < 0
+	      || ((struct PNObject *)scanptr)->vt > PN_TUSER) {
+	    printf("wrong type for allocated object: %p.vt = %lx\n",
+		   scanptr, ((struct PNObject *)scanptr)->vt);
+	    break;
+	  }
+	}
+	scanptr = (void *)((char *)scanptr + potion_type_size(P, scanptr));
+	if ((PN)scanptr > (PN)P->mem->old_cur) {
+	  printf("allocated object goes beyond GC pointer\n");
+	  break;
+	}
       }
     }
 #endif
@@ -251,13 +256,34 @@ int main(int argc, char *argv[]) {
     }
     if (strcmp(argv[i], "--inspect") == 0) {
       verbose = 1;
+      P->debug_flags |= DEBUG_INSPECT;
       continue;
     }
     if (strcmp(argv[i], "-V") == 0 ||
         strcmp(argv[i], "--verbose") == 0) {
+      P->debug_flags |= DEBUG_VERBOSE;
       verbose = 2;
       continue;
     }
+#ifdef DEBUG
+    if (argv[i][0] == '-' && argv[i][1] == 'D') {
+      if (strchr(&argv[i][2], 'i'))
+	P->debug_flags |= DEBUG_INSPECT;
+      if (strchr(&argv[i][2], 'v'))
+	P->debug_flags |= DEBUG_VERBOSE;
+      if (strchr(&argv[i][2], 't')) {
+	P->debug_flags |= DEBUG_TRACE;
+	verbose = 2;
+      }
+      if (strchr(&argv[i][2], 'p'))
+	P->debug_flags |= DEBUG_PARSE;
+      if (strchr(&argv[i][2], 'J'))
+	P->debug_flags |= DEBUG_JIT;
+      if (strchr(&argv[i][2], 'G'))
+	P->debug_flags |= DEBUG_GC;
+      continue;
+    }
+#endif
     if (strcmp(argv[i], "-v") == 0 ||
         strcmp(argv[i], "--version") == 0) {
       p2_cmd_version(P);
@@ -269,7 +295,7 @@ int main(int argc, char *argv[]) {
       goto END;
     }
     if (strcmp(argv[i], "--stats") == 0) {
-      p2_cmd_stats(P);
+      p2_cmd_stats(P); // TODO: afterwards
       goto END;
     }
     if (strcmp(argv[i], "--compile") == 0) {
@@ -327,13 +353,13 @@ int main(int argc, char *argv[]) {
 
   if (!interactive) {
     if (buf != PN_NIL) {
-      PN code = p2_cmd_exec(P, buf, "-e", exec, verbose);
+      PN code = p2_cmd_exec(P, buf, "-e", exec);
       if (!code || PN_TYPE(code) == PN_TERROR)
 	goto END;
     }
     else {
       potion_define_global(P, potion_str(P, "$0"), potion_str(P, argv[argc-1]));
-      p2_cmd_compile(P, argv[argc-1], exec, verbose);
+      p2_cmd_compile(P, argv[argc-1], exec);
     }
   } else {
     if (!exec || verbose) potion_fatal("no filename given");

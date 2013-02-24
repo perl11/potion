@@ -23,6 +23,11 @@
 
 #define _XSTR(s) _STR(s)
 #define _STR(s)  #s
+#if defined(__clang__) || defined (__GNUC__)
+# define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS __attribute__((no_address_safety_analysis))
+#else
+# define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+#endif
 
 //
 // types
@@ -351,13 +356,15 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
+#if 0
   while (1) {
     struct PNFwd *o = (struct PNFwd *)obj;
     if (o->fwd != POTION_FWD)
       return ((struct PNObject *)o)->vt;
     obj = o->ptr;
   }
-  //return ((struct PNObject *)potion_fwd(obj))->vt;
+#endif
+  return ((struct PNObject *)potion_fwd(obj))->vt;
 }
 
 // macro for doing a single fwd check after a possible realloc
@@ -420,6 +427,18 @@ struct Potion_State {
   PN call, callset; /* generic call and callset */
   int prec; /* decimal precision */
   struct PNMemory *mem; /* allocator/gc */
+  int debug_flags;
+};
+
+enum {
+  DEBUG_INSPECT = 1,
+  DEBUG_VERBOSE,
+#ifdef DEBUG
+  DEBUG_TRACE,
+  DEBUG_PARSE,
+  DEBUG_GC,
+  DEBUG_JIT,
+#endif
 };
 
 //

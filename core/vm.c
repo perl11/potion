@@ -27,6 +27,14 @@
 #  endif
 #endif
 
+#if DEBUG
+extern const struct {
+  const char *name;
+  const u8 args;
+} potion_ops[];
+#endif
+
+
 #ifdef POTION_JIT_TARGET
 #if (POTION_JIT_TARGET == POTION_X86)
 extern PNTarget potion_target_x86;
@@ -145,8 +153,9 @@ PN_F potion_jit_proto(Potion *P, PN proto, int verbose) {
       }
     }
 
-    // see http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
+    // See http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
     // or http://www.lua.org/doc/jucs05.pdf
+    // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
     switch (PN_OP_AT(f->asmb, pos).code) {
       CASE_OP(MOVE, (P, f, &asmb, pos))		// copy value between registers
       CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
@@ -262,8 +271,23 @@ reentry:
     }
   }
 
+#ifdef DEBUG
+    if (P->debug_flags & DEBUG_TRACE) {
+      fprintf (stderr, "-- run-time --\n");
+    }
+#endif
   while (pos < PN_OP_LEN(f->asmb)) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
+#ifdef DEBUG
+    static int i = 0;
+    if (P->debug_flags & DEBUG_TRACE) {
+      fprintf (stderr, "[%2d] %-8s %d", i++, potion_ops[op.code].name, op.a);
+      if (potion_ops[op.code].args > 1)
+	fprintf (stderr, " %d", op.b);
+      fprintf (stderr, "\n");
+    }
+#endif
+    // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
     switch (op.code) {
       case OP_MOVE:
         reg[op.a] = reg[op.b];
