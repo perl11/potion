@@ -32,8 +32,9 @@ extern const struct {
   const char *name;
   const u8 args;
 } potion_ops[];
-#endif
 
+#define STRINGIFY(_obj) PN_STR_PTR(potion_send(_obj, PN_string))
+#endif
 
 #ifdef POTION_JIT_TARGET
 #if (POTION_JIT_TARGET == POTION_X86)
@@ -272,19 +273,18 @@ reentry:
   }
 
 #ifdef DEBUG
-    if (P->flags & DEBUG_TRACE) {
-      fprintf (stderr, "-- run-time --\n");
-    }
+    if (P->flags & DEBUG_TRACE)
+      fprintf(stderr, "-- run-time --\n");
 #endif
+
   while (pos < PN_OP_LEN(f->asmb)) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
 #ifdef DEBUG
     static int i = 0;
     if (P->flags & DEBUG_TRACE) {
-      fprintf (stderr, "[%2d] %-8s %d", i++, potion_ops[op.code].name, op.a);
+      fprintf(stderr, "[%2d] %-8s %d", i++, potion_ops[op.code].name, op.a);
       if (potion_ops[op.code].args > 1)
-	fprintf (stderr, " %d", op.b);
-      fprintf (stderr, "\n");
+	fprintf(stderr, " %d", op.b);
     }
 #endif
     // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
@@ -510,6 +510,10 @@ reentry:
         reg[op.a] = potion_vm_class(P, reg[op.b], reg[op.a]);
       break;
     }
+#ifdef DEBUG
+    if (P->flags & DEBUG_TRACE)
+      fprintf(stderr, "\t; %s\n", STRINGIFY(reg[op.a]));
+#endif
     pos++;
   }
 

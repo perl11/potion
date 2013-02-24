@@ -73,8 +73,12 @@ static void potion_cmd_compile(char *filename, int exec, int verbose, void *sp) 
   buf = potion_bytes(P, stats.st_size);
   if (verbose == 1)
     P->flags |= DEBUG_INSPECT;
-  if (verbose > 1)
+  if (verbose > 1) {
     P->flags |= DEBUG_VERBOSE;
+#ifdef DEBUG
+    P->flags |= DEBUG_TRACE;
+#endif
+  }
   // TODO: mmap instead of read all
   if (read(fd, PN_STR_PTR(buf), stats.st_size) == stats.st_size) {
     PN code;

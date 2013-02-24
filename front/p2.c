@@ -140,7 +140,6 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
   PN buf;
   int fd = -1;
   struct stat stats;
-  //int verbose = P->flags & DEBUG_VERBOSE;
 
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);

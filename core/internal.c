@@ -43,8 +43,8 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TLICK, obj_vt);
   potion_type_new(P, PN_TERROR, obj_vt);
   potion_type_new(P, PN_TCONT, obj_vt);
-  potion_str_hash_init(P);
 
+  potion_str_hash_init(P);
   PN_allocate = potion_str(P, "allocate");
   PN_break = potion_str(P, "break");
   PN_call = potion_str(P, "call");
