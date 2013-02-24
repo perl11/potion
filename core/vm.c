@@ -211,7 +211,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
 
   fn = PN_ALLOC_FUNC(asmb->len);
 #if defined(JIT_DEBUG)
-  if (P->debug_flags & DEBUG_JIT) {
+  if (P->flags & DEBUG_JIT) {
     #include "vm-dis.c"
   }
 #endif
@@ -272,7 +272,7 @@ reentry:
   }
 
 #ifdef DEBUG
-    if (P->debug_flags & DEBUG_TRACE) {
+    if (P->flags & DEBUG_TRACE) {
       fprintf (stderr, "-- run-time --\n");
     }
 #endif
@@ -280,7 +280,7 @@ reentry:
     PN_OP op = PN_OP_AT(f->asmb, pos);
 #ifdef DEBUG
     static int i = 0;
-    if (P->debug_flags & DEBUG_TRACE) {
+    if (P->flags & DEBUG_TRACE) {
       fprintf (stderr, "[%2d] %-8s %d", i++, potion_ops[op.code].name, op.a);
       if (potion_ops[op.code].args > 1)
 	fprintf (stderr, " %d", op.b);

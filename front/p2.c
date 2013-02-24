@@ -54,7 +54,7 @@ static void p2_cmd_usage(Potion *P) {
 #endif
       "  -Idirectory        add library search path\n"
       "  -c                 check script and exit\n" // compile-time checks only
-//    "  -d                 run program under the debugger\n" // TODO: run p2d or do it internally?
+//    "  -d                 run program under the debugger\n" // TODO: we want to debug over sockets, instrument bytecode and use p2d frontend
       "  -D[itpvGJ]         debugging flags\n"
       "  -e code            execute code\n"
       "  -E code            execute code with extended features enabled\n"
@@ -63,7 +63,9 @@ static void p2_cmd_usage(Potion *P) {
       "  -v, --version      print version, patchlevel, features and exit\n"
       "  --inspect          print the return value\n"
       "  --stats            print statistics and exit\n"
-      "  --compile          compile the script to bytecode and exit\n"
+// Traditionally compilers are "compile" methods of O packages (B::C, jvm, exec)
+// But B pollutes our namespace, so prefer native methods to avoid B/DynaLoader deps being pulled in
+      "  --compile          compile the script to bytecode and exit\n" // ie native B::ByteCode
 //    "  --compile-c        compile the script to C and exit\n" // TODO: or use p2c?
 #if POTION_JIT
 //    "  --compile-exec     compile the script to native executable and exit\n" // TODO: 2st via C, then direct
@@ -87,7 +89,7 @@ static void p2_cmd_version(Potion *P) {
 static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
   PN code = p2_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
-    if (P->debug_flags & DEBUG_VERBOSE)
+    if (P->flags & DEBUG_VERBOSE)
       printf("\n\n-- loaded --\n");
   } else {
     code = p2_parse(P, buf);
@@ -95,23 +97,23 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
       potion_p(P, code);
       return code;
     }
-    if (P->debug_flags & DEBUG_VERBOSE) {
+    if (P->flags & DEBUG_VERBOSE) {
       printf("\n-- parsed --\n");
       potion_p(P, code);
     }
     code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
-    if (P->debug_flags & DEBUG_VERBOSE)
+    if (P->flags & DEBUG_VERBOSE)
       printf("\n-- compiled --\n");
   }
-  if (P->debug_flags & DEBUG_VERBOSE)
+  if (P->flags & DEBUG_VERBOSE)
     potion_p(P, code);
   if (exec == EXEC_VM) {
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-    if (P->debug_flags & DEBUG_VERBOSE)
+    if (P->flags & DEBUG_VERBOSE)
       printf("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
 	     PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
 	     PN_INT(potion_gc_reserved(P, 0, 0)));
-    if (P->debug_flags & (DEBUG_INSPECT|DEBUG_VERBOSE))
+    if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE))
       potion_p(P, code);
   } else if (exec == EXEC_JIT) {
 #ifdef POTION_JIT_TARGET
@@ -119,11 +121,11 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
     PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = code;
     val = PN_PROTO(code)->jit(P, cl, P->lobby);
-    if (P->debug_flags & DEBUG_VERBOSE)
+    if (P->flags & DEBUG_VERBOSE)
       printf("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
 	     PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
 	     PN_INT(potion_gc_reserved(P, 0, 0)));
-    if (P->debug_flags & (DEBUG_INSPECT|DEBUG_VERBOSE))
+    if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE))
       potion_p(P, val);
 #else
     fprintf(stderr, "** p2 built without JIT support\n");
@@ -138,7 +140,7 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
   PN buf;
   int fd = -1;
   struct stat stats;
-  //int verbose = P->debug_flags & DEBUG_VERBOSE;
+  //int verbose = P->flags & DEBUG_VERBOSE;
 
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
@@ -199,7 +201,7 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
     }
 
 #if defined(DEBUG)
-    if (P->debug_flags & DEBUG_GC) { // GC sanity check
+    if (P->flags & DEBUG_GC) { // GC sanity check
       printf("\n-- gc check --\n");
       void *scanptr = (void *)((char *)P->mem->old_lo + (sizeof(PN) * 2));
       while ((PN)scanptr < (PN)P->mem->old_cur) {
@@ -259,31 +261,31 @@ int main(int argc, char *argv[]) {
     }
     if (strcmp(argv[i], "--inspect") == 0) {
       verbose = 1;
-      P->debug_flags |= DEBUG_INSPECT;
+      P->flags |= DEBUG_INSPECT;
       continue;
     }
     if (strcmp(argv[i], "-V") == 0 ||
         strcmp(argv[i], "--verbose") == 0) {
-      P->debug_flags |= DEBUG_VERBOSE;
+      P->flags |= DEBUG_VERBOSE;
       verbose = 2;
       continue;
     }
 #ifdef DEBUG
     if (argv[i][0] == '-' && argv[i][1] == 'D') {
       if (strchr(&argv[i][2], 'i'))
-	P->debug_flags |= DEBUG_INSPECT;
+	P->flags |= DEBUG_INSPECT;
       if (strchr(&argv[i][2], 'v'))
-	P->debug_flags |= DEBUG_VERBOSE;
+	P->flags |= DEBUG_VERBOSE;
       if (strchr(&argv[i][2], 't')) {
-	P->debug_flags |= DEBUG_TRACE;
+	P->flags |= DEBUG_TRACE;
 	verbose = 2;
       }
       if (strchr(&argv[i][2], 'p'))
-	P->debug_flags |= DEBUG_PARSE;
+	P->flags |= DEBUG_PARSE;
       if (strchr(&argv[i][2], 'J'))
-	P->debug_flags |= DEBUG_JIT;
+	P->flags |= DEBUG_JIT;
       if (strchr(&argv[i][2], 'G'))
-	P->debug_flags |= DEBUG_GC;
+	P->flags |= DEBUG_GC;
       continue;
     }
 #endif

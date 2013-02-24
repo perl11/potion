@@ -15,16 +15,6 @@
 
 #include "potion.h"
 
-typedef enum {
-  EXEC_VM = 0,  // bytecode (switch or cgoto)
-  EXEC_JIT,
-  EXEC_DEBUG,   // -d: instrumented bytecode or just slow runloop?
-  EXEC_CHECK,
-  EXEC_COMPILE, // to bytecode
-  EXEC_COMPILE_C,
-  EXEC_COMPILE_NATIVE,
-} exec_mode_t;
-
 #ifdef P2
 #  undef NIL_NAME
 #  define NIL_NAME "undef" // nil => undef
