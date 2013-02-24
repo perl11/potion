@@ -42,7 +42,8 @@
      i.e. classes are immutable and final by default.
      See <http://web.archive.org/web/20040207072905/http://www.yetanother.org/damian/Perl5+i/>
 
-   * libp2 should be usable as a fast backend for nqp/perl6.
+   * libp2 is usable as a fast backend for nqp/perl6, parsing p6
+     natively should also be possible.
 
    * Native and fast calling convention, no XS stack args on the heap.
      XS is replaced by dlcall (dynamic ffi), and/or shared libraries
@@ -76,14 +77,14 @@
      }
      instead.
 
-   * p6model: :multi, roles, type-optimizer. Like Moose, just better
+   * p6model: via scoped mixins, :multi, roles. Like Moose, just better
      and much faster. (roughly estimated 800x faster)
 
    * smartmatch works because all data are typed objects.
      A destructuring-bind alike new match operator which matches
      structures (list, trees, hashes of hashes) against structures.
 
-   * Just-in-time compilation for x86, x86-64 and ppc done.
+   * Just-in-time compilation for x86, x86-64 and ppc done. arm later.
 
    * Intermediate bytecode format and VM. Load and dump code.  Decent
      speed and cross-architecture. Heavily based on Lua's VM.
@@ -92,13 +93,18 @@
      work on Qish.  <http://starynkevitch.net/Basile/qishintro.html>
      The compiler will add hooks for objects leaving scope and add
      DESTROY method calls if they are visible at
-     compile-time. Run-time created DESTROY method will not be
+     compile-time. Run-time created DESTROY methods will not be
      automatically called.
 
    * Bootstrapped "id" object model, based on Ian Piumarta's soda
      languages.  This means everything in the language, including
-     object allocation and interpreter state are part of the object
-     model.  (See COPYING for citations.)
+     object allocation, parser, compiler and interpreter state are
+     part of the object model.  (See COPYING for citations.)
+     In fact are all objects and classes closures, which simplifies
+     scoping, and makes p2 a functional vm.
+
+   * Planned is an extensibe parser to implement macros and scoped
+     syntax blocks (for ffi, p6, and other languages).
 
    * Interpreter is thread-safe and reentrant.  I hope this will
      facilitate coroutines, parallel interpreters and sandboxing.
@@ -108,10 +114,10 @@
 
    * Reified AST and bytecode structures. This is very important to
      me. By giving access to the parser and compiler, it allows people
-     to target other platforms, write code analysis tools and even
-     fully bootstrapped VMs. I'm not as concerned about the Potion VM
-     being fully bootstrapped, especially as it is tied into the JIT
-     so closely.
+     to target other platforms, write compilers, debuggers, code analysis
+     tools and even fully bootstrapped VMs. I'm not as concerned about
+     the Potion VM being fully bootstrapped, especially as it is tied
+     into the JIT so closely.
 
    * Memory-efficient classes. Stored like C structs. (Although the
      method lookup table can be used like a hash for storing arbitrary
@@ -124,24 +130,24 @@
   However, some warnings:
 
    * Strings are immutable (like Lua) and byte arrays are used for I/O
-     buffers.
+     buffers. All strings and symbols are utf8 internally.
 
-   * Limited floating point support yet.
+   * Limited floating point support, no bigums yet. ints cannot hold
+     pointers and need to be boxed. This should be transparent though.
 
-   * No error handling yet.
+   * Limited error handling.
 
-   * No signal handling yet.
+   * No signal handling, ffi, thread-safe GC, asynchronuous IO yet.
 
 
   ~ thankyous ~
 
   why the lucky stiff left the ruby community. potion was his last
   public project. It's a work of art and mastership. I could not
-  think of anything better. I think it is better than go, if potion
-  would have had added autothreads and channels, float support and
-  exception handling.
+  think of anything better. I think it is better than Go, if potion
+  would have had added auto-threads and channels.
 
-  Rob Pike for go, and the parrot community for parrot.
+  Rob Pike for Go, and the parrot community for parrot.
 
   Larry Wall for perl5. We miss his leadership and technical excellence.
   Without him nothing got done, and if something was done it was wrong.
