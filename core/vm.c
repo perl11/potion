@@ -92,7 +92,7 @@ PN potion_vm_class(Potion *P, PN cl, PN self) {
 
 #define CASE_OP(name, args) case OP_##name: target->op[OP_##name]args; break;
 
-PN_F potion_jit_proto(Potion *P, PN proto, int verbose) {
+PN_F potion_jit_proto(Potion *P, PN proto) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
   PN_SIZE pos;
   PNJumps jmps[JUMPS_MAX]; size_t offs[JUMPS_MAX]; int jmpc = 0, jmpi = 0;
@@ -114,7 +114,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, int verbose) {
         });
       }
       if (f2->jit == NULL)
-        potion_jit_proto(P, proto2, verbose);
+        potion_jit_proto(P, proto2);
       if (p2args > protoargs)
         protoargs = p2args;
     });
@@ -211,7 +211,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, int verbose) {
 
   fn = PN_ALLOC_FUNC(asmb->len);
 #if defined(JIT_DEBUG)
-  if (verbose > 1) {
+  if (P->debug_flags & DEBUG_JIT) {
     #include "vm-dis.c"
   }
 #endif

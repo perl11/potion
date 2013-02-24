@@ -432,12 +432,12 @@ struct Potion_State {
 
 enum {
   DEBUG_INSPECT = 1,
-  DEBUG_VERBOSE,
+  DEBUG_VERBOSE = 2,
 #ifdef DEBUG
-  DEBUG_TRACE,
-  DEBUG_PARSE,
-  DEBUG_GC,
-  DEBUG_JIT,
+  DEBUG_TRACE = 4,
+  DEBUG_PARSE = 8,
+  DEBUG_GC    = 16,
+  DEBUG_JIT   = 32,
 #endif
 };
 
@@ -666,6 +666,6 @@ PN potion_vm_class(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
 PN potion_eval(Potion *, PN, int);
 PN potion_run(Potion *, PN, int);
-PN_F potion_jit_proto(Potion *, PN, int);
+PN_F potion_jit_proto(Potion *, PN);
 
 #endif

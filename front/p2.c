@@ -86,9 +86,8 @@ static void p2_cmd_version(Potion *P) {
 
 static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
   PN code = p2_source_load(P, PN_NIL, buf);
-  int verbose = P->debug_flags;
   if (PN_IS_PROTO(code)) {
-    if (verbose > 1)
+    if (P->debug_flags & DEBUG_VERBOSE)
       printf("\n\n-- loaded --\n");
   } else {
     code = p2_parse(P, buf);
@@ -96,33 +95,36 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
       potion_p(P, code);
       return code;
     }
-    if (verbose > 1) {
+    if (P->debug_flags & DEBUG_VERBOSE) {
       printf("\n-- parsed --\n");
       potion_p(P, code);
     }
     code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
-    if (verbose > 1)
+    if (P->debug_flags & DEBUG_VERBOSE)
       printf("\n-- compiled --\n");
   }
-  if (verbose > 1) potion_p(P, code);
+  if (P->debug_flags & DEBUG_VERBOSE)
+    potion_p(P, code);
   if (exec == EXEC_VM) {
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-    if (verbose > 1)
+    if (P->debug_flags & DEBUG_VERBOSE)
       printf("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
 	     PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
 	     PN_INT(potion_gc_reserved(P, 0, 0)));
-    if (verbose) potion_p(P, code);
+    if (P->debug_flags & (DEBUG_INSPECT|DEBUG_VERBOSE))
+      potion_p(P, code);
   } else if (exec == EXEC_JIT) {
 #ifdef POTION_JIT_TARGET
     PN val;
-    PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code, verbose), PN_NIL, 1);
+    PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = code;
     val = PN_PROTO(code)->jit(P, cl, P->lobby);
-    if (verbose > 1)
+    if (P->debug_flags & DEBUG_VERBOSE)
       printf("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
 	     PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
 	     PN_INT(potion_gc_reserved(P, 0, 0)));
-    if (verbose) potion_p(P, val);
+    if (P->debug_flags & (DEBUG_INSPECT|DEBUG_VERBOSE))
+      potion_p(P, val);
 #else
     fprintf(stderr, "** p2 built without JIT support\n");
 #endif
@@ -198,16 +200,17 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
 
 #if defined(DEBUG)
     if (P->debug_flags & DEBUG_GC) { // GC sanity check
+      printf("\n-- gc check --\n");
       void *scanptr = (void *)((char *)P->mem->old_lo + (sizeof(PN) * 2));
       while ((PN)scanptr < (PN)P->mem->old_cur) {
-	printf("%p.vt = %lx (%u)\n",
+	printf("%p.vt = %x (%u)\n",
 	       scanptr, ((struct PNObject *)scanptr)->vt,
 	       potion_type_size(P, scanptr));
 	if (((struct PNFwd *)scanptr)->fwd != POTION_FWD
 	    && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
 	  if ((signed long)(((struct PNObject *)scanptr)->vt) < 0
 	      || ((struct PNObject *)scanptr)->vt > PN_TUSER) {
-	    printf("wrong type for allocated object: %p.vt = %lx\n",
+	    printf("wrong type for allocated object: %p.vt = %x\n",
 		   scanptr, ((struct PNObject *)scanptr)->vt);
 	    break;
 	  }
@@ -232,7 +235,7 @@ done:
 
 int main(int argc, char *argv[]) {
   POTION_INIT_STACK(sp);
-  int i, verbose = 0, exec = 1 + POTION_JIT, interactive = 1;
+  int i, verbose = 0, exec = POTION_JIT ? EXEC_JIT : EXEC_VM, interactive = 1;
   Potion *P = potion_create(sp);
   PN buf = PN_NIL;
 
@@ -350,6 +353,7 @@ int main(int argc, char *argv[]) {
 		       verbose ? PN_INT(verbose) : PN_NIL);
   potion_define_global(P, potion_str(P, "$P2::interactive"),
 		       interactive ? PN_INT(interactive) : PN_NIL);
+  potion_define_global(P, potion_str(P, "$^X"), potion_str(P, argv[0]));
 
   if (!interactive) {
     if (buf != PN_NIL) {

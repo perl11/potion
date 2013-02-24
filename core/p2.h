@@ -16,7 +16,7 @@
 #include "potion.h"
 
 typedef enum {
-  EXEC_VM,      // bytecode (switch or cgoto)
+  EXEC_VM = 0,  // bytecode (switch or cgoto)
   EXEC_JIT,
   EXEC_DEBUG,   // -d: instrumented bytecode or just slow runloop?
   EXEC_CHECK,
