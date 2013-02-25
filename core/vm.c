@@ -255,7 +255,7 @@ reentry:
   if (pos == 0) {
     reg[-1] = reg[0] = self;
     if (f->localsize)
-      memset((void*)locals, 0, sizeof(*locals) * f->localsize);
+      memset((void*)locals, 0, sizeof(PN) * f->localsize);
     if (upc > 0 && upargs != NULL) {
       PN_SIZE i;
       for (i = 0; i < upc; i++) {
@@ -282,9 +282,8 @@ reentry:
   while (pos < PN_OP_LEN(f->asmb)) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
 #ifdef DEBUG
-    static int i = 0;
     if (P->flags & DEBUG_TRACE) {
-      fprintf(stderr, "[%2d] %-8s %d", i++, potion_ops[op.code].name, op.a);
+      fprintf(stderr, "[%2d] %-8s %d", pos+1, potion_ops[op.code].name, op.a);
       if (potion_ops[op.code].args > 1)
 	fprintf(stderr, " %d", op.b);
     }
@@ -513,8 +512,12 @@ reentry:
       break;
     }
 #ifdef DEBUG
-    if (P->flags & DEBUG_TRACE)
-      fprintf(stderr, "\t; %s\n", STRINGIFY(reg[op.a]));
+    if (P->flags & DEBUG_TRACE) {
+      if (op.code == OP_JMP || op.code == OP_NOTJMP || op.code == OP_TESTJMP)
+	fprintf(stderr, "\n");
+      else
+	fprintf(stderr, "\t; %s\n", STRINGIFY(reg[op.a]));
+    }
 #endif
     pos++;
   }
