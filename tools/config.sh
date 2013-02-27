@@ -188,6 +188,14 @@ else
       HAVE_ASAN="0"
   fi
 
+  if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
+    echo "#define POTION_JIT_TARGET POTION_X86"
+  elif [ "$JIT_PPC" != "" ]; then
+    echo "#define POTION_JIT_TARGET POTION_PPC"
+  elif [ "$JIT_ARM" != "" ]; then
+    echo "#define POTION_JIT_TARGET POTION_ARM"
+    # TODO: ARM needs to check abi, thumb, extend, vfp, neon
+  fi
   echo "#define POTION_PLATFORM   \"$TARGET\""
   echo "#define POTION_LIBEXT     \"$LIBEXT\""
   echo
