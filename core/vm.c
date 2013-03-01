@@ -242,7 +242,7 @@ reentry:
   if (pos == 0) {
     reg[-1] = reg[0] = self;
     if (f->localsize)
-      memset((void*)locals, 0, sizeof(*locals) * f->localsize);
+      memset((void*)locals, 0, sizeof(PN) * f->localsize);
     if (upc > 0 && upargs != NULL) {
       PN_SIZE i;
       for (i = 0; i < upc; i++) {
