@@ -78,15 +78,14 @@ config:
 	@${ECHO} MAKE -f config.mak $@
 	@${MAKE} -s -f config.mak
 
-# Force sync with config.inc
+# bootstrap config.inc
+config.inc: tools/config.sh config.mak
+	@${MAKE} -s -f config.mak $@
+
 core/config.h: config.inc core/version.h tools/config.sh config.mak
 	@${MAKE} -s -f config.mak $@
 
-core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
-	@${MAKE} -s -f config.mak $@
-
-# bootstrap config.inc
-config.inc: tools/config.sh config.mak
+core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
 DEFS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE

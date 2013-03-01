@@ -1,7 +1,7 @@
 #!/bin/sh
 # helper to generate config.inc and core/config.h
 
-CC=$1
+CC=${1:-cc}
 AC="tools/config.c"
 AOUT="tools/config.out"
 CCEX="$CC $AC -o $AOUT"
