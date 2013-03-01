@@ -1,4 +1,5 @@
 #!/bin/sh
+# helper to generate config.inc and core/config.h
 
 CC=${1:-cc}
 AC="tools/config.c"
@@ -19,6 +20,7 @@ JIT_X86=`echo "$TARGET" | sed "/86/!d"`
 JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
 JIT_I686=`echo "$TARGET" | sed "/i686/!d"`
 JIT_AMD64=`echo "$TARGET" | sed "/amd64/!d"`
+JIT_ARM=`echo "$TARGET" | sed "/arm/!d"`
 
 if [ $MINGW -eq 0 ]; then
   EXE=""
@@ -65,6 +67,14 @@ elif [ "$2" = "version" ]; then
   cat core/potion.h | sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//"
 elif [ "$2" = "p2version" ]; then
   cat core/p2.h | sed "/P2_VERSION/!d; s/\\\"$//; s/.*\\\"//"
+elif [ "$2" = "jit" ]; then
+  if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
+    echo "X86"
+  elif [ "$JIT_PPC" != "" ]; then
+    echo "PPC"
+  elif [ "$JIT_ARM" != "" ]; then
+    echo "ARM"
+  fi
 elif [ "$2" = "strip" ]; then
   if [ $MINGW -eq 0 ]; then
     if [ $CYGWIN -eq 0 ]; then
@@ -109,25 +119,7 @@ else
       ARGDIR="1"
   fi
 
-  if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
-    echo "#define POTION_JIT_TARGET POTION_X86"
-    echo "#define POTION_JIT_NAME x86"
-  elif [ "$JIT_PPC" != "" ]; then
-    echo "#define POTION_JIT_TARGET POTION_PPC"
-    echo "#define POTION_JIT_NAME ppc"
-  elif [ "$JIT_ARM" != "" ]; then
-    echo "#define POTION_JIT_TARGET POTION_ARM"
-    echo "#define POTION_JIT_NAME arm"
-  else
-    # defined upwards
-    echo "#undef POTION_JIT"
-    echo "#define POTION_JIT      0"
-  fi
   echo "#define POTION_PLATFORM   \"$TARGET\""
-  echo "#define POTION_WIN32      $MINGW"
-  echo "#define POTION_EXE        \"$EXE\""
-  echo "#define POTION_DLL        \"$DLL\""
-  echo "#define POTION_LOADEXT    \"$LOADEXT\""
   echo "#define POTION_LIBEXT     \"$LIBEXT\""
   echo
   echo "#define PN_SIZE_T         $LONG"

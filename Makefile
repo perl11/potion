@@ -218,8 +218,9 @@ libp2${DLL}: ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ}) core/config.h co
 	@${CC} ${DEBUGFLAGS} -o $@ $(subst potion,p2,${LDDLLFLAGS}) \
 	  ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ}) ${LIBS} > /dev/null
 
-lib/readline${LOADEXT}: config.inc lib/readline/Makefile \
-  lib/readline/linenoise.c lib/readline/linenoise.h
+lib/readline${LOADEXT}: core/config.h core/potion.h \
+  lib/readline/Makefile lib/readline/linenoise.c \
+  lib/readline/linenoise.h
 	@${ECHO} MAKE $@ -fpic
 	@${MAKE} -s -C lib/readline
 	@cp lib/readline/readline${LOADEXT} $@
