@@ -8,10 +8,12 @@ LDDLLFLAGS = -shared -fpic
 INCS = -Icore
 LIBS = -lm
 AR ?= ar
-JIT ?= 1
 DEBUG ?= 0
-EXE  =
-APPLE =
+WIN32 = 0
+CLANG = 0
+JIT = 0
+EXE =
+APPLE = 0
 
 CAT  = /bin/cat
 ECHO = /bin/echo
@@ -19,8 +21,13 @@ SED  = sed
 EXPR = expr
 GREG = tools/greg${EXE}
 
-STRIP ?= `./tools/config.sh ${CC} strip`
+STRIP ?= `./tools/config.sh "${CC}" strip`
+JIT_TARGET ?= `./tools/config.sh "${CC}" jit`
+ifneq (${JIT_TARGET},)
+  JIT = 1
+endif
 
+ifeq (${JIT_TARGET},X86)
 ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/ x86 16,32,64 bit
 # port install udis86
@@ -63,8 +70,9 @@ endif
 endif
 endif
 endif
+endif
 
-ifneq ($(shell ./tools/config.sh ${CC} clang),0)
+ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	CFLAGS += -Wno-unused-value
 endif
@@ -86,11 +94,11 @@ endif
 
 # CFLAGS += \${DEFINES} \${DEBUGFLAGS}
 
-ifneq ($(shell ./tools/config.sh ${CC} bsd),1)
+ifneq ($(shell ./tools/config.sh "${CC}" bsd),1)
 	LIBS += -ldl
 endif
 # cygwin is not WIN32
-ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
+ifeq ($(shell ./tools/config.sh "${CC}" mingw),1)
 	WIN32 = 1
 	LDDLLFLAGS = -shared
 	EXE  = .exe
@@ -100,7 +108,7 @@ ifeq ($(shell ./tools/config.sh ${CC} mingw),1)
 	LIBS += -Ltools/dlfcn-win32/lib
 	RUNPOTION = potion.exe
 else
-ifeq ($(shell ./tools/config.sh ${CC} cygwin),1)
+ifeq ($(shell ./tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
 	LDDLLFLAGS = -shared
 	EXE  = .exe
@@ -108,7 +116,7 @@ ifeq ($(shell ./tools/config.sh ${CC} cygwin),1)
 	DLL  = .dll
 	RUNPOTION = ./potion
 else
-ifeq ($(shell ./tools/config.sh ${CC} apple),1)
+ifeq ($(shell ./tools/config.sh "${CC}" apple),1)
         APPLE    = 1
 	DLL      = .dylib
 	LOADEXT  = .bundle
@@ -138,10 +146,7 @@ config.inc.echo:
 	@${ECHO} "CC      = ${CC}"
 	@${ECHO} "DEFINES = ${DEFINES}"
 	@${ECHO} "DEBUGFLAGS = ${DEBUGFLAGS}"
-	@${ECHO} -n "CFLAGS  = ${CFLAGS} "
-	@${ECHO} -n "\$$"
-	@${ECHO} -n "{DEFINES} \$$"
-	@${ECHO} "{DEBUGFLAGS}"
+	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS}
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "LDEXEFLAGS = ${LDEXEFLAGS}"
 	@${ECHO} "LIBS    = ${LIBS}"
@@ -150,10 +155,10 @@ config.inc.echo:
 	@${ECHO} "WIN32   = ${WIN32}"
 	@${ECHO} "CLANG   = ${CLANG}"
 	@${ECHO} "JIT     = ${JIT}"
+	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
 	@${ECHO} "RUNPOTION = ${RUNPOTION}"
-	@${ECHO} -n "REVISION  = "
-	@${ECHO} $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
+	@${ECHO} "REVISION  = " $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
 
 config.h.echo:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
@@ -161,6 +166,12 @@ config.h.echo:
 	@${ECHO} "#define POTION_JIT    ${JIT}"
 	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
 	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
+	@${ECHO} "#define POTION_WIN32  ${WIN32}"
+	@${ECHO} "#define POTION_EXE    \"${EXE}\""
+	@${ECHO} "#define POTION_DLL    \"${DLL}\""
+	@${ECHO} "#define POTION_LOADEXT \"${LOADEXT}\""
+	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_TARGET POTION_${JIT_TARGET}"
+	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_NAME " $(shell echo ${JIT_TARGET} | tr A-Z a-z)
 	@${ECHO} ${DEFINES} | ${SED} "s,-D\(\w*\),\n#define \1 1,g; s,-I[a-z/:]* ,,g"
 	@${ECHO}
 	@./tools/config.sh ${CC}
@@ -171,12 +182,12 @@ config.inc: tools/config.sh config.mak
 	@${ECHO} "# -*- makefile -*-" > config.inc
 	@${ECHO} "# created by ${MAKE} -f config.mak" >> config.inc
 	@${MAKE} -s -f config.mak config.inc.echo >> $@
-	@${MAKE} -s -f config.mak -B core/config.h
-	@${CAT} core/config.h | ${SED} "/POTION_JIT_TARGET /!d;" | \
-	  ${SED} "s,\(.*JIT_TARGET \)POTION_\(.*\),JIT_\2 = 1," >> $@
+	#@${MAKE} -s -f config.mak core/config.h
+	#@${CAT} core/config.h | ${SED} "/POTION_JIT_TARGET /!d;" | \
+	#  ${SED} "s,\(.*JIT_TARGET \)POTION_\(.*\),JIT_\2 = 1," >> $@
 
 # Force sync with config.inc
-core/config.h: core/version.h tools/config.sh config.mak
+core/config.h: config.inc core/version.h tools/config.sh config.mak
 	@${ECHO} MAKE $@
 	@${CAT} core/version.h > core/config.h
 	@${MAKE} -s -f config.mak config.h.echo >> core/config.h

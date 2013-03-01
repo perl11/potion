@@ -79,8 +79,7 @@ config:
 	@${MAKE} -s -f config.mak
 
 # Force sync with config.inc
-core/config.h: core/version.h tools/config.sh config.mak
-	@${ECHO} MAKE -f config.mak $@
+core/config.h: config.inc core/version.h tools/config.sh config.mak
 	@${MAKE} -s -f config.mak $@
 
 core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
@@ -88,7 +87,6 @@ core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 
 # bootstrap config.inc
 config.inc: tools/config.sh config.mak
-	@${ECHO} MAKE -f config.mak $@
 	@${MAKE} -s -f config.mak $@
 
 DEFS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
@@ -157,18 +155,19 @@ potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
 	  ${STRIP} $@; \
 	fi
 
-libpotion.a: ${OBJ}
+libpotion.a: ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ core/*.o > /dev/null
 
-libpotion${DLL}: ${PIC_OBJ}
+libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
 	  ${PIC_OBJ} ${LIBS} > /dev/null
 
-lib/readline${LOADEXT}: config.inc lib/readline/Makefile lib/readline/linenoise.c \
+lib/readline${LOADEXT}: core/config.h core/potion.h \
+  lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
 	@${ECHO} MAKE $@ -fpic
 	@${MAKE} -s -C lib/readline
