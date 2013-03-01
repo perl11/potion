@@ -91,17 +91,14 @@ config:
 	@${ECHO} MAKE -f config.mak $@
 	@${MAKE} -s -f config.mak
 
-# Force sync with config.inc
-core/config.h: core/version.h tools/config.sh config.mak
-	@${ECHO} MAKE -f config.mak $@
-	@${MAKE} -s -f config.mak $@
-
-core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
-	@${MAKE} -s -f config.mak $@
-
 # bootstrap config.inc
 config.inc: tools/config.sh config.mak
-	@${ECHO} MAKE -f config.mak $@
+	@${MAKE} -s -f config.mak $@
+
+core/config.h: config.inc core/version.h tools/config.sh config.mak
+	@${MAKE} -s -f config.mak $@
+
+core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
 DEFS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
@@ -199,23 +196,23 @@ ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
-libpotion.a: ${OBJ_SYN} ${OBJ}
+libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_SYN} ${OBJ} > /dev/null
 
-libpotion${DLL}: ${PIC_OBJ_SYN} ${PIC_OBJ}
+libpotion${DLL}: ${PIC_OBJ_SYN} ${PIC_OBJ} core/config.h core/potion.h
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
 	  ${PIC_OBJ_SYN} ${PIC_OBJ} ${LIBS} > /dev/null
 
-libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ})
+libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
 
-libp2${DLL}: ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ})
+libp2${DLL}: ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ}) core/config.h core/potion.h
 	@${ECHO} LD $@ -fpic
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ $(subst potion,p2,${LDDLLFLAGS}) \
