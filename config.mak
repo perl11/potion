@@ -77,11 +77,7 @@ ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CFLAGS += -Wno-unused-value
 endif
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -fno-stack-protector
-# -O or -O2 is unstable with JIT, test/closures/long.pn
-  ifneq (${JIT},1)
-	DEBUGFLAGS += -O2
-  endif
+	DEBUGFLAGS += -O3 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
 	STRIP = echo
