@@ -326,7 +326,7 @@ static void Rule_compile_c2(Node *node)
 	{
 	  label(ko);
 	  restore(0);
-	  fprintf(output, "  yyprintf((stderr, \"  fail %%s @ %%s\\n\", \"%s\", G->buf+G->pos));\n", node->rule.name);
+	  fprintf(output, "  yyprintfv((stderr, \"  fail %%s @ %%s\\n\", \"%s\", G->buf+G->pos));\n", node->rule.name);
 	  fprintf(output, "\n  return 0;");
 	}
       fprintf(output, "\n}");
@@ -386,9 +386,11 @@ static char *preamble= "\
 #define YY_END		( G->end= G->pos, 1)\n\
 #endif\n\
 #ifdef YY_DEBUG\n\
-# define yyprintf(args)	if (G->verbose) fprintf args\n\
+# define yyprintf(args)	if (G->debug & DEBUG_PARSE) fprintf args\n\
+# define yyprintfv(args) if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) fprintf args\n\
 #else\n\
 # define yyprintf(args)\n\
+# define yyprintfv(args)\n\
 #endif\n\
 #ifndef YYSTYPE\n\
 #define YYSTYPE	int\n\
@@ -424,7 +426,7 @@ typedef struct _GREG {\n\
   int valslen;\n\
   YY_XTYPE data;\n\
 #ifdef YY_DEBUG\n\
-  int verbose;\n\
+  int debug;\n\
 #endif\n\
 } GREG;\n\
 \n\
@@ -459,7 +461,7 @@ YY_LOCAL(int) yymatchChar(GREG *G, int c)\n\
       yyprintf((stderr, \"  ok   yymatchChar(%c) @ %s\\n\", c, G->buf+G->pos));\n\
       return 1;\n\
     }\n\
-  yyprintf((stderr, \"  fail yymatchChar(%c) @ %s\\n\", c, G->buf+G->pos));\n\
+  yyprintfv((stderr, \"  fail yymatchChar(%c) @ %s\\n\", c, G->buf+G->pos));\n\
   return 0;\n\
 }\n\
 \n\
@@ -491,7 +493,7 @@ YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits)\n\
       yyprintf((stderr, \"  ok   yymatchClass @ %s\\n\", G->buf+G->pos));\n\
       return 1;\n\
     }\n\
-  yyprintf((stderr, \"  fail yymatchClass @ %s\\n\", G->buf+G->pos));\n\
+  yyprintfv((stderr, \"  fail yymatchClass @ %s\\n\", G->buf+G->pos));\n\
   return 0;\n\
 }\n\
 \n\
@@ -533,7 +535,7 @@ YY_LOCAL(void) yyDone(GREG *G)\n\
     {\n\
       yythunk *thunk= &G->thunks[pos];\n\
       int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;\n\
-      yyprintf((stderr, \"DO [%d] %p %s\\n\", pos, thunk->action, G->text));\n\
+      yyprintfv((stderr, \"DO [%d] %p %s\\n\", pos, thunk->action, G->text));\n\
       thunk->action(G, G->text, yyleng, G->data);\n\
     }\n\
   G->thunkpos= 0;\n\
@@ -733,7 +735,7 @@ void Rule_compile_c(Node *node)
       char *block = n->action.text;
       fprintf(output, "YY_ACTION(void) yy%s(GREG *G, char *yytext, int yyleng, YY_XTYPE YY_XVAR)\n{\n", n->action.name);
       defineVariables(n->action.rule->rule.variables);
-      fprintf(output, "  yyprintf((stderr, \"do yy%s\\n\"));\n", n->action.name);
+      fprintf(output, "  yyprintfv((stderr, \"do yy%s\\n\"));\n", n->action.name);
       while (*block == 0x20) block++;
       fprintf(output, "  %s;\n", block);
       undefineVariables(n->action.rule->rule.variables);

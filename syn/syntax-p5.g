@@ -620,10 +620,7 @@ PN p2_parse(Potion *P, PN code) {
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
 #ifdef YY_DEBUG
-  {
-      PN v = potion_send(P->lobby, potion_str(P, "integer"), potion_str(P, "$P2::verbose"));
-      G->verbose = PN_INT(v);
-  }
+  G->debug = P->flags & (DEBUG_PARSE | DEBUG_VERBOSE);
 #endif
 
   G->pos = G->limit = 0;
