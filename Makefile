@@ -137,7 +137,7 @@ ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
 # on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
-ifdef APPLE
+ifeq (${APPLE},1)
 LIBHACK = ../lib/libpotion.dylib
 else
 LIBHACK =
