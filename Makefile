@@ -164,7 +164,7 @@ core/vm.o core/vm.opic: core/vm-dis.c
 
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
 # on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
-ifdef APPLE
+ifeq (${APPLE},1)
 LIBHACK = ../lib/libpotion.dylib ../lib/libp2.dylib
 else
 LIBHACK =
