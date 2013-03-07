@@ -78,7 +78,7 @@ perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
 #lexsubrout = 'my' - 'sub' n:subname p:proto? a:subattrlist? b:subbody
 #        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
 #
-#proto = table
+#proto = list
 #subname = arg-name
 #subbody = block
 #subattrlist = ':' -? arg-name
@@ -96,11 +96,11 @@ stmt =
       "package" -- arg-name ';' {} # TODO: set namespace
     | "if" expr stmt ';' {}        # TODO: simple AND op
     | "if" expr stmt ('else' stmt)? ';' {} # TODO: tricky TEST op
-    | expr
     | s:sets ';'
         ( or x:sets ';'      { s = PN_OP(AST_OR, s, x); }
         | and x:sets ';'     { s = PN_OP(AST_AND, s, x); })*
                              { $$ = s; }
+    | expr
 
 sets = e:eqs
        ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
@@ -162,7 +162,7 @@ power = e:expr
         { $$ = e; }
 
 expr = ( not a:expr           { a = PN_AST(NOT, a); }
-       | bitnot a:expr          { a = PN_AST(WAVY, a); }
+       | bitnot a:expr        { a = PN_AST(WAVY, a); }
        | l:atom times !times r:atom { a = PN_OP(AST_TIMES, l, r); }
        | l:atom div   !div r:atom   { a = PN_OP(AST_DIV,  l, r); }
        | l:atom minus !minus r:atom { a = PN_OP(AST_MINUS, l, r); }
@@ -174,10 +174,10 @@ expr = ( not a:expr           { a = PN_AST(NOT, a); }
          (c:call { a = PN_PUSH(a, c) })*
        { $$ = PN_AST(EXPR, a); }
 
-atom = e:value | e:anonsub | e:table | e:call
+atom = e:value | e:anonsub | e:list | e:call
 
-call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? (b:block | b:anonsub)? |
-       (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
+call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:anonsub)? |
+       (v:value | v:list) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
          { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
 name = p:path           { $$ = PN_AST(PATH, p); }
@@ -191,21 +191,21 @@ lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1); }
              sep?
            | ''               { $$ = PN_NIL; }
 
-lick-item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
-          | m:message t:table { $$ = PN_AST3(LICK, m, PN_NIL, t); }
-          | m:message v:loose t:table { $$ = PN_AST3(LICK, m, v, t); }
+lick-item = m:message t:list v:loose { $$ = PN_AST3(LICK, m, v, t); }
+          | m:message t:list { $$ = PN_AST3(LICK, m, PN_NIL, t); }
+          | m:message v:loose t:list { $$ = PN_AST3(LICK, m, v, t); }
           | m:message v:loose { $$ = PN_AST2(LICK, m, v); }
           | m:message         { $$ = PN_AST(LICK, m); }
 
 loose = value
       | v:unquoted { $$ = PN_AST(VALUE, v); }
 
-# anonymous sub, w or w/o proto (aka table)
-anonsub = 'sub' - t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
-#sub = 'sub' - n:arg-name - t:table? b:block { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)); }
-table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
+# anonymous sub, w or w/o proto (aka list)
+anonsub = 'sub' - t:list? b:block { $$ = PN_AST2(PROTO, t, b); }
+#sub = 'sub' - n:arg-name - t:list? b:block { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)); }
+list = list-start s:statements list-end { $$ = PN_AST(LIST, s); }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
-lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
+lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i); }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 
 path = '/' < utfw+ > -      { $$ = potion_str2(P, yytext, yyleng); }
@@ -242,8 +242,8 @@ utf8 = [\t\n\r\40-\176]
 comma = ','
 block-start = '{'
 block-end = ';'? space '}'
-table-start = '(' --
-table-end = ')' -
+list-start = '(' --
+list-end = ')' -
 lick-start = '[' --
 lick-end = ']' -
 group-start = '{'

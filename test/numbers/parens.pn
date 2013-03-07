@@ -1,7 +1,7 @@
 # ./potion -B -V test/numbers/parens.pn
 # -- parsed --
-# code (times (expr (table (plus (expr (value (9 nil nil)) expr (value (1 nil nil))))) 
-#                   expr (table (minus (expr (value (6 nil nil)) expr (value (4 nil nil)))))))
+# code (times (expr (list (plus (expr (value (9 nil nil)) expr (value (1 nil nil))))) 
+#                   expr (list (minus (expr (value (6 nil nil)) expr (value (4 nil nil)))))))
 # -- compiled --
 # ; function definition: 0x103021cc8 ; 32 bytes
 # ; () 3 registers

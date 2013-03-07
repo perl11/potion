@@ -3,6 +3,7 @@ See the "pamphlet":start.html for an overview of the potion syntax and data stru
 - <a name="tuple">tuple</a> := an ordered list
 
 - <a name="table">table</a> := a hash
+  but with list syntax
 
 - <a name="lick">lick</a> :=  a nested data structure, i.e. named hash. the keys are called @path@.
 
