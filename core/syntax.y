@@ -126,10 +126,10 @@ expr = ( not a:expr           { a = PN_AST(NOT, a); }
          (c:call { a = PN_PUSH(a, c) })*
        { $$ = PN_AST(EXPR, a); }
 
-atom = e:value | e:closure | e:table | e:call
+atom = e:value | e:closure | e:list | e:call
 
-call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:table)? (b:block | b:closure)? |
-       (v:value | v:table) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
+call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:closure)? |
+       (v:value | v:list) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
          { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
 name = p:path           { $$ = PN_AST(PATH, p); }
@@ -143,19 +143,19 @@ lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1); }
              sep?
            | ''               { $$ = PN_NIL; }
 
-lick-item = m:message t:table v:loose { $$ = PN_AST3(LICK, m, v, t); }
-          | m:message t:table { $$ = PN_AST3(LICK, m, PN_NIL, t); }
-          | m:message v:loose t:table { $$ = PN_AST3(LICK, m, v, t); }
+lick-item = m:message t:list v:loose { $$ = PN_AST3(LICK, m, v, t); }
+          | m:message t:list { $$ = PN_AST3(LICK, m, PN_NIL, t); }
+          | m:message v:loose t:list { $$ = PN_AST3(LICK, m, v, t); }
           | m:message v:loose { $$ = PN_AST2(LICK, m, v); }
           | m:message         { $$ = PN_AST(LICK, m); }
 
 loose = value
       | v:unquoted { $$ = PN_AST(VALUE, v); }
 
-closure = t:table? b:block { $$ = PN_AST2(PROTO, t, b); }
-table = table-start s:statements table-end { $$ = PN_AST(TABLE, s); }
+closure = t:list? b:block { $$ = PN_AST2(PROTO, t, b); }
+list = list-start s:statements list-end { $$ = PN_AST(LIST, s); }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
-lick = lick-start i:lick-items lick-end { $$ = PN_AST(TABLE, i); }
+lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i); }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 
 path = '/' < utfw+ > -      { $$ = potion_str2(P, yytext, yyleng); }
@@ -189,8 +189,8 @@ utf8 = [\t\n\r\40-\176]
 comma = ','
 block-start = ':' --
 block-end = '.' -
-table-start = '(' --
-table-end = ')' -
+list-start = '(' --
+list-end = ')' -
 lick-start = '[' --
 lick-end = ']' -
 group-start = '|' --

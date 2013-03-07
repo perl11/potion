@@ -1,0 +1,34 @@
+See the "pamphlet":start.html for an overview of the potion syntax and data structures.
+
+- <a name="tuple">tuple</a> := an ordered list
+
+- <a name="table">table</a> := a hash
+  but with list syntax
+
+- <a name="lick">lick</a> :=  a nested data structure, i.e. named hash. the keys are called @path@.
+
+Every lick can have a name, a table of attributes, and a list of
+children. The list of children can, instead, be a Potion data
+type, such as a number or string or something.
+
+- <a name="path">path</a> :=  key of a @lick@, an instance variable of an object.
+
+Paths cannot be randomly added to the object after the object
+is created. Each object has a strict set of paths. Every path
+which is used in the constructor is added to the object upon
+creation.
+
+- <a name="upvalue">upvalue</a> := A variable in an upper scope.
+
+Since a closure doesn't have access to the registers
+of another function, these variables are passed
+as pointers (the @PNWeakRef@ struct.)
+
+- <a name="lobby">Lobby</a> := potion named the main interp object @Lobby@, which holds the
+methods @about@, @here@, @exit@, @self@, ...
+p2 renames it to @"P2"@
+
+- <a name="mop">mop</a> := potion/p2 uses the "cola mop":http://piumarta.com/software/cola/objmodel2.pdf
+with 5 core functions: @addMethod@, @lookup@, @allocate@, @delegated@ and @intern@.
+And 4 native (and jitted) VM ops: @SELF@, @CLASS@, @BIND@ and @MESSAGE@.
+!p2-mop.png(p2-mop)!

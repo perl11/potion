@@ -44,7 +44,7 @@ enum PN_AST {
   AST_QUERY,
   AST_PATHQ,
   AST_EXPR,
-  AST_TABLE,
+  AST_LIST, /* was TABLE: () lua hash */
   AST_BLOCK,
   AST_LICK,
   AST_PROTO
