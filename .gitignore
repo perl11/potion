@@ -45,6 +45,9 @@ readline.bundle
 /libp2.dll
 /libp2.dylib
 /history.txt
-/TAGS
 /pkg
 /doc/*.html
+/TAGS
+/GPATH
+/GRTAGS
+/GTAGS
