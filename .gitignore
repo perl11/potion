@@ -30,6 +30,9 @@ readline.bundle
 /libpotion.dll
 /libpotion.dylib
 /history.txt
-/TAGS
 /pkg
 /doc/*.html
+/TAGS
+/GPATH
+/GRTAGS
+/GTAGS
