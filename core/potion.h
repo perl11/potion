@@ -28,6 +28,9 @@
 #else
 # define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 #endif
+#ifdef DEBUG
+#define YY_DEBUG
+#endif
 
 //
 // types
