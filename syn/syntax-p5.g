@@ -90,17 +90,21 @@ perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
 statements =
     s1:stmt          { $$ = s1 = PN_TUP(s1); }
         (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })* sep?
-    | ''         { $$ = PN_NIL; }
+    | ''             { $$ = PN_NIL; }
 
 stmt =
-      "package" -- arg-name ';' {} # TODO: set namespace
-    | "if" expr stmt ';' {}        # TODO: simple AND op
-    | "if" expr stmt ('else' stmt)? ';' {} # TODO: tricky TEST op
+      "package" - arg-name ';' {} # TODO: set namespace
+    | "if" e:ifexpr s:block          { s  = PN_OP(AST_AND, e, s); }
+    | "if" e:ifexpr s1:block         { s1 = PN_AST(MESSAGE, PN_if); }
+       ('elsif' e1:ifexpr f:block )* { f = PN_AST(MESSAGE, PN_elsif); }
+       ('else'  s2:block )?          { s2 = PN_AST(MESSAGE, PN_else); }
     | s:sets ';'
         ( or x:sets ';'      { s = PN_OP(AST_OR, s, x); }
         | and x:sets ';'     { s = PN_OP(AST_AND, s, x); })*
                              { $$ = s; }
     | expr
+
+ifexpr = - '(' - expr - ')'
 
 sets = e:eqs
        ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
