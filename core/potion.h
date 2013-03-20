@@ -21,6 +21,14 @@
 #include <fcntl.h>
 #include "config.h"
 
+#define _XSTR(s) _STR(s)
+#define _STR(s)  #s
+#if defined(__clang__) || defined (__GNUC__)
+# define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS __attribute__((no_address_safety_analysis))
+#else
+# define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+#endif
+
 //
 // types
 //
