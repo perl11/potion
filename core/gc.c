@@ -17,12 +17,12 @@
 #include "table.h"
 
 #if defined(DEBUG)
-#define info(P,x,...)	       \
+#define info(P,...)	       \
     if (P->flags & DEBUG_GC) { \
-      printf(x,__VA_ARGS__);   \
+      printf(__VA_ARGS__);   \
     }
 #else
-#define info(x, ...)
+#define info(...)
 #endif
 
 PN_SIZE potion_stack_len(Potion *P, _PN **p) {
@@ -72,8 +72,8 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
 ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN_SIZE potion_mark_stack(Potion *P, int forward) {
   PN_SIZE n;
+  _PN *end, *start = P->mem->cstack;
   struct PNMemory *M = P->mem;
-  _PN *end, *start = M->cstack;
   POTION_ESP(&end);
 #if POTION_STACK_DIR > 0
   n = end - start;
@@ -269,8 +269,16 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
   }
 
   if (ptr->vt > PN_TUSER) {
-    if (PN_VTABLE(ptr->vt) && PN_TYPECHECK(ptr->vt))
-      sz = sizeof(struct PNObject) + (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen * sizeof(PN));
+    if (P->vts && PN_VTABLE(ptr->vt) && PN_TYPECHECK(ptr->vt))
+      sz = sizeof(struct PNObject) +
+	(((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen * sizeof(PN));
+    else if (P->flags & (DEBUG_VERBOSE
+#ifdef DEBUG
+			 |DEBUG_GC
+#endif
+			 ))
+      fprintf(stderr, "** Invalid User Object 0x%lx vt: 0x%lx\n",
+	      (unsigned long)ptr, (unsigned long)ptr->vt);
     goto done;
   }
 
