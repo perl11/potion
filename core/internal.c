@@ -221,9 +221,15 @@ void potion_esp(void **esp) {
   *esp = (void *)&x;
 }
 
+#ifdef DEBUG
+void potion_dump(Potion *P, PN data) {
+  puts(PN_STR_PTR(potion_send(data, PN_string)));
+}
+
 void potion_dump_stack(Potion *P) {
   PN_SIZE n;
   PN *end, *ebp, *start = P->mem->cstack;
+  struct PNMemory *M = P->mem;
   POTION_ESP(&end);
   POTION_EBP(&ebp);
 #if POTION_STACK_DIR > 0
@@ -237,13 +243,22 @@ void potion_dump_stack(Potion *P) {
   printf("-- dumping %u from %p to %p --\n", n, start, end);
   printf("   ebp = %p, *ebp = %lx\n", ebp, *ebp);
   while (n--) {
-    printf("   stack(%u) = %lx\n", n, *start);
+    printf("   stack(%u) = %lx", n, *start);
+    if (IS_GC_PROTECTED(*start))
+      printf(" gc ");
+    else if (IN_BIRTH_REGION(*start))
+      printf(" gc(0) ");
+    else if (IN_OLDER_REGION(*start))
+      printf(" gc(1) ");
+    if (*start == 0)
+      printf(" nil\n");
+    else if (*start & 1)
+      printf(" %ld\n", PN_INT(*start));
+    else if (*start & 2)
+      printf(" %s\n", *start == 2 ? "false" : "true");
+    else
+      printf("\n");
     start++;
   }
-}
-
-#ifdef DEBUG
-void potion_dump(Potion *P, PN data) {
-  puts(PN_STR_PTR(potion_send(data, PN_string)));
 }
 #endif

@@ -67,7 +67,7 @@ usage:
 	@${ECHO} " "
 	@${ECHO} " Dump the AST and bytecode inspection for a script. "
 	@${ECHO} " "
-	@${ECHO} "   $$ ./p2 -V example/fib.pl"
+	@${ECHO} "   $$ ./p2 --verbose example/fib.pl"
 	@${ECHO} " "
 	@${ECHO} " Compiling to bytecode."
 	@${ECHO} " "
@@ -76,7 +76,7 @@ usage:
 	@${ECHO} " "
 	@${ECHO} " Potion builds its JIT compiler by default, but"
 	@${ECHO} " you can use the bytecode VM by running scripts"
-	@${ECHO} " with the -B flag."
+	@${ECHO} " with the -B or --bytecode flag."
 	@${ECHO} " If you built with JIT=0, then the bytecode VM"
 	@${ECHO} " will run by default."
 	@${ECHO} " "
@@ -171,10 +171,10 @@ LIBHACK =
 endif
 ../lib/libpotion.dylib:
 	-mkdir ../lib
-	-ln -s `pwd`/libpotion.dylib ../lib/
+	-ln -sf `pwd`/libpotion.dylib ../lib/
 ../lib/libp2.dylib:
 	-mkdir ../lib
-	-ln -s `pwd`/libp2.dylib ../lib/
+	-ln -sf `pwd`/libp2.dylib ../lib/
 
 potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
 	@${ECHO} LINK $@

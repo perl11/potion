@@ -27,7 +27,8 @@ ifneq (${JIT_TARGET},)
   JIT = 1
 endif
 
-ifeq (${JIT_TARGET},X86)
+ifeq (${JIT},1)
+#ifeq (${JIT_TARGET},X86)
 ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/ x86 16,32,64 bit
 # port install udis86
@@ -178,9 +179,9 @@ config.inc: tools/config.sh config.mak
 	@${ECHO} "# -*- makefile -*-" > config.inc
 	@${ECHO} "# created by ${MAKE} -f config.mak" >> config.inc
 	@${MAKE} -s -f config.mak config.inc.echo >> $@
-	#@${MAKE} -s -f config.mak core/config.h
-	#@${CAT} core/config.h | ${SED} "/POTION_JIT_TARGET /!d;" | \
-	#  ${SED} "s,\(.*JIT_TARGET \)POTION_\(.*\),JIT_\2 = 1," >> $@
+#	@${MAKE} -s -f config.mak core/config.h
+#	@${CAT} core/config.h | ${SED} "/POTION_JIT_TARGET /!d;" | \
+#	  ${SED} "s,\(.*JIT_TARGET \)POTION_\(.*\),JIT_\2 = 1," >> $@
 
 # Force sync with config.inc
 core/config.h: config.inc core/version.h tools/config.sh config.mak

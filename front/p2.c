@@ -55,10 +55,12 @@ static void p2_cmd_usage(Potion *P) {
       "  -Idirectory        add library search path\n"
       "  -c                 check script and exit\n" // compile-time checks only
 //    "  -d                 run program under the debugger\n" // TODO: we want to debug over sockets, instrument bytecode and use p2d frontend
+#ifdef DEBUG
       "  -D[itpvGJ]         debugging flags\n"
+#endif
       "  -e code            execute code\n"
       "  -E code            execute code with extended features enabled\n"
-      "  -V, --verbose      print bytecode and ast info\n" // TODO: replace by -D
+      "  -V, --verbose      print bytecode and ast info\n"
       "  -h, --help         print this usage info and exit\n"
       "  -v, --version      print version, patchlevel, features and exit\n"
       "  --inspect          print the return value\n"
