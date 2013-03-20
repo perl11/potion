@@ -298,6 +298,9 @@ PN potion_parse(Potion *P, PN code) {
   P->input = code;
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
+#ifdef YY_DEBUG
+  G->debug = P->flags & (DEBUG_PARSE | DEBUG_VERBOSE);
+#endif
 
   G->pos = G->limit = 0;
   if (!YY_NAME(parse)(G))

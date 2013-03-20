@@ -402,9 +402,34 @@ typedef struct {
 // the interpreter
 // (one per thread, houses its own garbage collector)
 //
+typedef enum {
+  EXEC_VM = 0,  // bytecode (switch or cgoto)
+  EXEC_JIT,
+  EXEC_DEBUG,   // -d: instrumented bytecode (line stepping) or just slow runloop?
+  EXEC_CHECK,
+  EXEC_COMPILE, // to bytecode
+  EXEC_COMPILE_C,
+  EXEC_COMPILE_NATIVE,
+} exec_mode_t;
+
+typedef enum {
+  MODE_P5       = 0,  // plain p5
+  MODE_P2       = 1,  // use p2
+  MODE_P6       = 2,  // syntax p6. other via use syntax <string>
+
+  DEBUG_INSPECT = 1<<8,
+  DEBUG_VERBOSE = 1<<9,
+#ifdef DEBUG
+  DEBUG_TRACE  = 1<<10,
+  DEBUG_PARSE  = 1<<11,
+  DEBUG_GC     = 1<<12,
+  DEBUG_JIT    = 1<<13,
+#endif
+} Potion_Flags;
+
 struct Potion_State {
   PN_OBJECT_HEADER
-  PNTarget targets[POTION_TARGETS];
+  PNTarget target;
   struct PNTable *strings; /* table of all strings */
   PN lobby; /* root namespace */
   PNFlex * volatile vts; /* built in types */
@@ -415,6 +440,7 @@ struct Potion_State {
   PN call, callset; /* generic call and callset */
   int prec; /* decimal precision */
   struct PNMemory *mem; /* allocator/gc */
+  Potion_Flags flags;
 };
 
 //
@@ -628,6 +654,7 @@ void potion_file_init(Potion *);
 void potion_loader_init(Potion *);
 void potion_cont_init(Potion *);
 void potion_dump_stack(Potion *);
+void potion_loader_add(Potion *, PN path);
 
 PN potion_any_is_nil(Potion *, PN, PN);
 PN potion_num_string(Potion *, PN, PN);
@@ -641,6 +668,6 @@ PN potion_vm_class(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
 PN potion_eval(Potion *, PN, int);
 PN potion_run(Potion *, PN, int);
-PN_F potion_jit_proto(Potion *, PN, PN, int);
+PN_F potion_jit_proto(Potion *, PN);
 
 #endif

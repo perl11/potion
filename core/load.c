@@ -181,3 +181,7 @@ void potion_loader_init(Potion *P) {
   potion_define_global(P, potion_str(P, "LOADER_PATH"), pn_loader_path);
   potion_method(P->lobby, "load", potion_load, "file=S");
 }
+
+void potion_loader_add(Potion *P, PN path) {
+  PN_PUSH(pn_loader_path, path);
+}

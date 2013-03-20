@@ -77,14 +77,14 @@ ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CFLAGS += -Wno-unused-value
 endif
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -O3 -fno-stack-protector
+	DEBUGFLAGS += -O3 -fno-omit-frame-pointer -fno-stack-protector
 else
 	DEFINES += -DDEBUG
 	STRIP = echo
   ifneq (${CLANG},1)
 	DEBUGFLAGS += -g3 -fstack-protector
   else
-	DEBUGFLAGS += -g -fstack-protector
+	DEBUGFLAGS += -g -fno-omit-frame-pointer -fstack-protector
   endif
 endif
 

@@ -16,25 +16,47 @@
 #include "khash.h"
 #include "table.h"
 
-#if defined(JIT_DEBUG)
+#if defined(POTION_JIT_TARGET) && defined(JIT_DEBUG)
 #  if defined(HAVE_LIBDISASM)
 #    include <libdis.h>
 #  else
 #    if defined(HAVE_LIBUDIS86)
 #      include <udis86.h>
 #    endif
+// libdistorm64 has no usable headers yet
 #  endif
 #endif
 
-#ifdef POTION_JIT
-extern PNTarget
+#if DEBUG
+extern const struct {
+  const char *name;
+  const u8 args;
+} potion_ops[];
+
+#define STRINGIFY(_obj) PN_STR_PTR(potion_send(_obj, PN_string))
+#endif
+
+#ifdef POTION_JIT_TARGET
 #if (POTION_JIT_TARGET == POTION_X86)
-  potion_target_x86
+extern PNTarget potion_target_x86;
 #elif (POTION_JIT_TARGET == POTION_PPC)
-  potion_target_ppc
+extern PNTarget potion_target_ppc;
+#elif (POTION_JIT_TARGET == POTION_ARM)
+extern PNTarget potion_target_arm;
 #endif
-  ;
 #endif
+
+void potion_vm_init(Potion *P) {
+#ifdef POTION_JIT_TARGET
+#if (POTION_JIT_TARGET == POTION_X86)
+  P->target = potion_target_x86;
+#elif (POTION_JIT_TARGET == POTION_PPC)
+  P->target = potion_target_ppc;
+#elif (POTION_JIT_TARGET == POTION_ARM)
+  P->target = potion_target_arm;
+#endif
+#endif
+}
 
 PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   PN ary = PN_NIL;
@@ -69,19 +91,9 @@ PN potion_vm_class(Potion *P, PN cl, PN self) {
 #define STACK_MAX 4096
 #define JUMPS_MAX 1024
 
-void potion_vm_init(Potion *P) {
-#ifdef POTION_JIT
-#if (POTION_JIT_TARGET == POTION_X86)
-  P->targets[POTION_X86] = potion_target_x86;
-#elif (POTION_JIT_TARGET == POTION_PPC)
-  P->targets[POTION_PPC] = potion_target_ppc;
-#endif
-#endif
-}
-
 #define CASE_OP(name, args) case OP_##name: target->op[OP_##name]args; break;
 
-PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
+PN_F potion_jit_proto(Potion *P, PN proto) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
   PN_SIZE pos;
   PNJumps jmps[JUMPS_MAX]; size_t offs[JUMPS_MAX]; int jmpc = 0, jmpi = 0;
@@ -89,7 +101,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
   int upc = PN_TUPLE_LEN(f->upvals);
   PNAsm * volatile asmb = potion_asm_new(P);
   u8 *fn;
-  PNTarget *target = &P->targets[target_id];
+  PNTarget *target = &P->target;
   target->setup(P, f, &asmb);
 
   if (PN_TUPLE_LEN(f->protos) > 0) {
@@ -103,7 +115,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
         });
       }
       if (f2->jit == NULL)
-        potion_jit_proto(P, proto2, target_id, verbose);
+        potion_jit_proto(P, proto2);
       if (p2args > protoargs)
         protoargs = p2args;
     });
@@ -142,8 +154,9 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
       }
     }
 
-    // see http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
+    // See http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
     // or http://www.lua.org/doc/jucs05.pdf
+    // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
     switch (PN_OP_AT(f->asmb, pos).code) {
       CASE_OP(MOVE, (P, f, &asmb, pos))		// copy value between registers
       CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
@@ -199,7 +212,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id, int verbose) {
 
   fn = PN_ALLOC_FUNC(asmb->len);
 #if defined(JIT_DEBUG)
-  if (verbose > 1) {
+  if (P->flags & DEBUG_JIT) {
     #include "vm-dis.c"
   }
 #endif
@@ -261,8 +274,21 @@ reentry:
     }
   }
 
+#ifdef DEBUG
+    if (P->flags & DEBUG_TRACE)
+      fprintf(stderr, "-- run-time --\n");
+#endif
+
   while (pos < PN_OP_LEN(f->asmb)) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
+#ifdef DEBUG
+    if (P->flags & DEBUG_TRACE) {
+      fprintf(stderr, "[%2d] %-8s %d", pos+1, potion_ops[op.code].name, op.a);
+      if (potion_ops[op.code].args > 1)
+	fprintf(stderr, " %d", op.b);
+    }
+#endif
+    // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
     switch (op.code) {
       case OP_MOVE:
         reg[op.a] = reg[op.b];
@@ -485,6 +511,14 @@ reentry:
         reg[op.a] = potion_vm_class(P, reg[op.b], reg[op.a]);
       break;
     }
+#ifdef DEBUG
+    if (P->flags & DEBUG_TRACE) {
+      if (op.code == OP_JMP || op.code == OP_NOTJMP || op.code == OP_TESTJMP)
+	fprintf(stderr, "\n");
+      else
+	fprintf(stderr, "\t; %s\n", STRINGIFY(reg[op.a]));
+    }
+#endif
     pos++;
   }
 

@@ -141,11 +141,11 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
 
 PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
   struct PNVtable *vt = (struct PNVtable *)self;
-#if POTION_JIT == 1
+#ifdef POTION_JIT_TARGET
   // TODO: allocate assembled instructions together into single pages
   // since many times these tables are <100 bytes.
   PNAsm * volatile asmb = potion_asm_new(P);
-  P->targets[POTION_JIT_TARGET].ivars(P, ivars, &asmb);
+  P->target.ivars(P, ivars, &asmb);
   vt->ivfunc = PN_ALLOC_FUNC(asmb->len);
   PN_MEMCPY_N(vt->ivfunc, asmb->ptr, u8, asmb->len);
 #endif
@@ -213,11 +213,11 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   PN_TOUCH(self);
 
 #ifdef JIT_MCACHE
-  // TODO: make this more flexible, store in fixed gc, see ivfunc TODO also
-  // this is disabled until method weakrefs can be stored in fixed memory
-  if (P->targets[POTION_JIT_TARGET].mcache != NULL) {
+  // TODO: make JIT_MCACHE more flexible, store in fixed gc, see ivfunc TODO also
+  // TODO: this is disabled until method weakrefs can be stored in fixed memory
+  if (P->target.mcache != NULL) {
     PNAsm * volatile asmb = potion_asm_new(P);
-    P->targets[POTION_JIT_TARGET].mcache(P, vt, &asmb);
+    P->target.mcache(P, vt, &asmb);
     if (asmb->len <= 4096) {
       if (vt->mcache == NULL)
         vt->mcache = PN_ALLOC_FUNC(4096);

@@ -6,7 +6,6 @@ SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/fil
 # bootstrap config.inc with make -f config.mak
 include config.inc
 
-ifeq (${JIT},1)
 ifeq (${JIT_X86},1)
 SRC += core/vm-x86.c
 else
@@ -15,7 +14,6 @@ SRC += core/vm-ppc.c
 endif
 ifeq (${JIT_ARM},1)
 SRC += core/vm-arm.c # not yet ready
-endif
 endif
 endif
 OBJ = ${SRC:.c=.o}
@@ -258,7 +256,7 @@ release:
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 %.html: %.textile
-	@${ECHO} DOC $<
+	@${ECHO} DOC $@
 	@${ECHO} "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"DTD/xhtml1-transitional.dtd\">" > $@
 	@${ECHO} "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">" >> $@
 	@${ECHO} "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" >> $@

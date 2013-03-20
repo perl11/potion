@@ -16,7 +16,14 @@
 #include "khash.h"
 #include "table.h"
 
+#if defined(DEBUG)
+#define info(P,x,...)	       \
+    if (P->flags & DEBUG_GC) { \
+      printf(x,__VA_ARGS__);   \
+    }
+#else
 #define info(x, ...)
+#endif
 
 PN_SIZE potion_stack_len(Potion *P, _PN **p) {
   _PN *esp, *c = P->mem->cstack;
@@ -113,7 +120,7 @@ static int potion_gc_minor(Potion *P, int sz) {
     return POTION_NO_MEM;
 
   scanptr = (void *) M->old_cur;
-  info("running gc_minor\n"
+  info(P,"running gc_minor\n"
     "(young: %p -> %p = %ld)\n"
     "(old: %p -> %p = %ld)\n"
     "(storeptr len = %ld)\n",
@@ -142,7 +149,7 @@ static int potion_gc_minor(Potion *P, int sz) {
   sz = NEW_BIRTH_REGION(M, wb, sz);
   M->minors++;
 
-  info("(new young: %p -> %p = %d)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
+  info(P,"(new young: %p -> %p = %ld)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
   return POTION_OK;
 }
 
@@ -169,7 +176,7 @@ static int potion_gc_major(Potion *P, int siz) {
   prevoldhi = (void *)M->old_hi;
   prevoldcur = (void *)M->old_cur;
 
-  info("running gc_major\n"
+  info(P,"running gc_major\n"
     "(young: %p -> %p = %ld)\n"
     "(old: %p -> %p = %ld)\n",
     M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
@@ -179,7 +186,7 @@ static int potion_gc_major(Potion *P, int siz) {
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
   newold = pngc_page_new(&newoldsiz, 0);
   M->old_cur = scanptr = newold + (sizeof(PN) * 2);
-  info("(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
+  info(P,"(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
 
   potion_mark_stack(P, 2);
 
