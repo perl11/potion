@@ -269,8 +269,8 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
   }
 
   if (ptr->vt > PN_TUSER) {
-    sz = sizeof(struct PNObject) +
-      (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen * sizeof(PN));
+    if (PN_VTABLE(ptr->vt) && PN_TYPECHECK(ptr->vt))
+      sz = sizeof(struct PNObject) + (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen * sizeof(PN));
     goto done;
   }
 
