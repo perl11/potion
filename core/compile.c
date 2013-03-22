@@ -873,7 +873,7 @@ PN potion_run(Potion *P, PN code, int jit) {
     jit = 0;
   }
 #endif
-  if (jit) {
+ if (jit) {
     PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = code;
     return PN_PROTO(code)->jit(P, cl, P->lobby);
