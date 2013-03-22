@@ -383,7 +383,9 @@ int main(int argc, char *argv[]) {
       "}"), exec == EXEC_JIT ? 1 : 0);
   }
 END:
+#if !defined(POTION_JIT_TARGET) || defined(DEBUG)
   if (P != NULL)
     potion_destroy(P);
+#endif
   return 0;
 }
