@@ -85,6 +85,9 @@ else
 	DEBUGFLAGS += -g3 -fstack-protector
   else
 	DEBUGFLAGS += -g -fno-omit-frame-pointer -fstack-protector
+  ifeq (${ASAN},1)
+	DEBUGFLAGS += -fsanitize=address
+  endif
   endif
 endif
 
@@ -130,6 +133,9 @@ else
 endif
 endif
 endif
+
+# let an existing config.inc overwrite everything
+include config.inc
 
 config: config.inc
 

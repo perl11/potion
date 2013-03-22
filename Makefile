@@ -18,7 +18,7 @@ endif
 endif
 OBJ = ${SRC:.c=.o}
 PIC_OBJ = ${SRC:.c=.opic}
-OBJ_POTION = core/potion.o
+OBJ_POTION = core/potion.opic
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
@@ -151,6 +151,10 @@ potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
 	fi
+
+potion-s${EXE}: core/potion.o libpotion.a ${LIBHACK}
+	@${ECHO} LINK $@
+	@${CC} ${CFLAGS} core/potion.o -o $@ ${LDEXEFLAGS} libpotion.a ${LIBS}
 
 libpotion.a: ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
