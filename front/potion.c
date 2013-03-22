@@ -106,7 +106,7 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
       if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE))
 	potion_p(P, code);
     } else if (exec == EXEC_JIT) {
-#if POTION_JIT == 1
+#ifdef POTION_JIT_TARGET
       PN val;
       PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
       PN_CLOSURE(cl)->data[0] = code;
@@ -289,7 +289,9 @@ int main(int argc, char *argv[]) {
       "."), exec == EXEC_JIT ? 1 : 0);
   }
  END:
+#if !defined(POTION_JIT_TARGET) || defined(DEBUG)
   if (P != NULL)
     potion_destroy(P);
+#endif
   return 0;
 }
