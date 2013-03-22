@@ -1,11 +1,14 @@
 /potion
-/tools/greg
 /potion.exe
+/potion-s
+/potion-s.exe
+/tools/greg
 /tools/greg.exe
 /tools/config.c
 /config.inc
 /core/config.h
 /core/version.h
+/core/vm-arm.c
 /core/pn-scan.c
 /core/pn-gram.[ch]
 /core/pn-gram.out
@@ -18,6 +21,7 @@
 /test/api/gc-test.exe
 /test/api/*.o
 /config.inc
+/.gdbinit
 syntax.c
 *.pnb
 ._*
