@@ -122,7 +122,7 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
 #endif
 
 // avoid wrong asan stack underflow, caught in memcpy
-#if defined(__clang__) && defined(ASAN)
+#if defined(__clang__) && defined(__SANITIZE_ADDRESS__)
   {
     PN *s = start + 1;
     PN *d = cc->stack + 4 + PN_SAVED_REGS;
