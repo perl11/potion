@@ -85,9 +85,9 @@ else
 	DEBUGFLAGS += -g3 -fstack-protector
   else
 	DEBUGFLAGS += -g -fno-omit-frame-pointer -fstack-protector
-  ifeq (${ASAN},1)
-	DEBUGFLAGS += -fsanitize=address
-  endif
+    ifeq (${ASAN},1)
+	DEBUGFLAGS += -fsanitize=address -DASAN
+    endif
   endif
 endif
 

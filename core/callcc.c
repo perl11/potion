@@ -120,7 +120,19 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
            "mov %%ebx, 0x18(%0)"::"r"(cc->stack));
 #endif
 #endif
+
+// avoid wrong asan stack underflow, caught in memcpy
+#if defined(__clang__) && defined(ASAN)
+  {
+    PN *s = start + 1;
+    PN *d = cc->stack + 4 + PN_SAVED_REGS;
+    for (int i=0; i < n - 1; i++) {
+      *d++ = *s++;
+    }
+  }
+#else
   PN_MEMCPY_N((char *)(cc->stack + 4 + PN_SAVED_REGS), start + 1, PN, n - 1);
+#endif
   return (PN)cc;
 }
 
