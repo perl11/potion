@@ -11,7 +11,6 @@
 #include "p2.h"
 #include "internal.h"
 
-ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   struct PNCont *cc = (struct PNCont *)self;
   PN *start, *end, *sp1 = P->mem->cstack;
@@ -86,7 +85,6 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   return self;
 }
 
-ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
   PN_SIZE n;
