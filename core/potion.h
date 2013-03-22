@@ -418,7 +418,6 @@ typedef struct {
 // (one per thread, houses its own garbage collector)
 //
 
-
 typedef enum {
   EXEC_VM = 0,  // bytecode (switch or cgoto)
   EXEC_JIT,

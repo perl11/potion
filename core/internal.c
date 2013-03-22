@@ -237,7 +237,7 @@ void potion_dump_stack(Potion *P) {
 #else
   n = start - end + 1;
   start = end;
-  end = P->mem->cstack;
+  end = M->cstack;
 #endif
 
   printf("-- dumping %u from %p to %p --\n", n, start, end);

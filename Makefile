@@ -25,7 +25,7 @@ SRC_P2     = front/p2.c
 OBJ = ${SRC:.c=.o}
 OBJ_SYN = ${SRC_SYN:.c=.o}
 OBJ_POTION = ${SRC_POTION:.c=.o}
-OBJ_P2 = ${SRC_P2:.c=.o}
+OBJ_P2 = ${SRC_P2:.c=.opic}
 OBJ_P2_SYN = ${SRC_P2_SYN:.c=.o}
 PIC_OBJ = ${SRC:.c=.opic}
 PIC_OBJ_SYN = ${SRC_SYN:.c=.opic}
@@ -176,9 +176,9 @@ endif
 	-mkdir ../lib
 	-ln -sf `pwd`/libp2.dylib ../lib/
 
-potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
+potion${EXE}: ${PIC_OBJ_POTION} libpotion${DLL} ${LIBHACK}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LDEXEFLAGS} -lpotion ${LIBS}
+	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LDEXEFLAGS} -lpotion ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
@@ -195,6 +195,14 @@ p2${EXE}: ${OBJ_P2} libp2${DLL} ${LIBHACK}
 ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@${ECHO} CC $@
 	@${CC} -O3 -DNDEBUG -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
+
+potion-s${EXE}: ${OBJ_POTION} libpotion.a ${LIBHACK}
+	@${ECHO} LINK $@
+	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LDEXEFLAGS} libpotion.a ${LIBS}
+
+p2-s${EXE}: ${OBJ_P2} libp2.a ${LIBHACK}
+	@${ECHO} LINK $@
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LDEXEFLAGS} libp2.a ${LIBS}
 
 libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
