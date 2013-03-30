@@ -77,19 +77,19 @@ ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CFLAGS += -Wno-unused-value
 endif
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -O3 -fno-omit-frame-pointer -fno-stack-protector
+	DEBUGFLAGS += -O3 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
 	STRIP = echo
   ifneq (${CLANG},1)
 	DEBUGFLAGS += -g3 -fstack-protector
   else
-	DEBUGFLAGS += -g -fno-omit-frame-pointer -fstack-protector
-    ifeq (${ASAN},1)
-	DEBUGFLAGS += -fsanitize=address
-	DEFINES += -D__SANITIZE_ADDRESS__
-    endif
+	DEBUGFLAGS += -g -fstack-protector
   endif
+endif
+ifeq (${ASAN},1)
+	DEBUGFLAGS += -fsanitize=address -fno-omit-frame-pointer
+	DEFINES += -D__SANITIZE_ADDRESS__
 endif
 
 # CFLAGS += \${DEFINES} \${DEBUGFLAGS}
@@ -185,9 +185,6 @@ config.inc: tools/config.sh config.mak
 	@${ECHO} "# -*- makefile -*-" > config.inc
 	@${ECHO} "# created by ${MAKE} -f config.mak" >> config.inc
 	@${MAKE} -s -f config.mak config.inc.echo >> $@
-	#@${MAKE} -s -f config.mak core/config.h
-	#@${CAT} core/config.h | ${SED} "/POTION_JIT_TARGET /!d;" | \
-	#  ${SED} "s,\(.*JIT_TARGET \)POTION_\(.*\),JIT_\2 = 1," >> $@
 
 # Force sync with config.inc
 core/config.h: config.inc core/version.h tools/config.sh config.mak
