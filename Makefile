@@ -101,14 +101,13 @@ core/config.h: config.inc core/version.h tools/config.sh config.mak
 core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
-DEFS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
 core/callcc.o core/callcc.o2: core/callcc.c
 	@${ECHO} CC $< +frame-pointer
-	@${CC} -c ${DEFS} -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/callcc.opic core/callcc.opic2: core/callcc.c
 	@${ECHO} CC -fPIC $< +frame-pointer
-	@${CC} -c ${DEFS} -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c ${CFLAGS} -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/vm.o core/vm.opic: core/vm-dis.c
 
