@@ -153,7 +153,7 @@ static void Node_compile_c_ko(Node *node, int ko)
       break;
 
     case Class:
-      fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), ko);
+      fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", (const char*)\"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), *node->cclass.value == '"' ? "dquote" : (const char*)node->cclass.value, ko);
       break;
 
     case Action:
@@ -318,7 +318,9 @@ static void Rule_compile_c2(Node *node)
 	fprintf(output, "  yyDo(G, yyPush, %d, 0);\n", countVariables(node->rule.variables));
       fprintf(output, "  yyprintf((stderr, \"%%s\\n\", \"%s\"));\n", node->rule.name);
       Node_compile_c_ko(node->rule.expression, ko);
-      fprintf(output, "  yyprintf((stderr, \"  ok   %%s @ %%s\\n\", \"%s\", G->buf+G->pos));\n", node->rule.name);
+      fprintf(output, "  yyprintf((stderr, \"  ok   %s\"));\n", node->rule.name);
+      fprintf(output, "  yyprintfv((stderr, \"@ \\\"%%s\\\"\", G->buf+G->pos));\n");
+      fprintf(output, "  yyprintf((stderr, \"\\n\"));\n");
       if (node->rule.variables)
 	fprintf(output, "  yyDo(G, yyPop, %d, 0);", countVariables(node->rule.variables));
       fprintf(output, "\n  return 1;");
@@ -326,7 +328,7 @@ static void Rule_compile_c2(Node *node)
 	{
 	  label(ko);
 	  restore(0);
-	  fprintf(output, "  yyprintfv((stderr, \"  fail %%s @ %%s\\n\", \"%s\", G->buf+G->pos));\n", node->rule.name);
+	  fprintf(output, "  yyprintfv((stderr, \"  fail %%s @ \\\"%%s\\\"\\n\", \"%s\", G->buf+G->pos));\n", node->rule.name);
 	  fprintf(output, "\n  return 0;");
 	}
       fprintf(output, "\n}");
@@ -458,10 +460,14 @@ YY_LOCAL(int) yymatchChar(GREG *G, int c)\n\
   if ((unsigned char)G->buf[G->pos] == c)\n\
     {\n\
       ++G->pos;\n\
-      yyprintf((stderr, \"  ok   yymatchChar(%c) @ %s\\n\", c, G->buf+G->pos));\n\
+      yyprintf((stderr, \"  ok   yymatchChar(%c)\", c));\n\
+      yyprintfv((stderr, \" @ \\\"%s\\\"\\n\", G->buf+G->pos));\n\
+      yyprintf((stderr, \"\\n\"));\n\
       return 1;\n\
     }\n\
-  yyprintfv((stderr, \"  fail yymatchChar(%c) @ %s\\n\", c, G->buf+G->pos));\n\
+  yyprintfv((stderr, \"  fail yymatchChar(%c)\", c));\n\
+  yyprintfv((stderr, \" @ \\\"%s\\\"\\n\", G->buf+G->pos));\n\
+  yyprintfv((stderr, \"\\n\"));\n\
   return 0;\n\
 }\n\
 \n\
@@ -482,7 +488,7 @@ YY_LOCAL(int) yymatchString(GREG *G, char *s)\n\
   return 1;\n\
 }\n\
 \n\
-YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits)\n\
+YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, const char *name)\n\
 {\n\
   int c;\n\
   if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
@@ -490,10 +496,14 @@ YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits)\n\
   if (bits[c >> 3] & (1 << (c & 7)))\n\
     {\n\
       ++G->pos;\n\
-      yyprintf((stderr, \"  ok   yymatchClass @ %s\\n\", G->buf+G->pos));\n\
+      yyprintf((stderr, \"  ok   yymatchClass [%s]\", name));\n\
+      yyprintfv((stderr, \" @ \\\"%s\\\"\", G->buf+G->pos));\n\
+      yyprintf((stderr, \"\\n\"));\n\
       return 1;\n\
     }\n\
-  yyprintfv((stderr, \"  fail yymatchClass @ %s\\n\", G->buf+G->pos));\n\
+  yyprintfv((stderr, \"  fail yymatchClass [%s]\", name));\n	\
+  yyprintfv((stderr, \" @ \\\"%s\\\"\", G->buf+G->pos));\n\
+  yyprintfv((stderr, \"\\n\"));\n\
   return 0;\n\
 }\n\
 \n\
