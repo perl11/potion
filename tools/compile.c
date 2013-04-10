@@ -576,7 +576,7 @@ YY_LOCAL(void) yyDone(GREG *G)\n\
     {\n\
       yythunk *thunk= &G->thunks[pos];\n\
       int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;\n\
-      yyprintfv((stderr, \"DO [%d] %p %s\\n\", pos, thunk->action, G->text));\n\
+      yyprintfv((stderr, \"DO [%d] %p @ \\\"%s\\\"\\n\", pos, thunk->action, G->text));\n\
       thunk->action(G, G->text, yyleng, G->data);\n\
     }\n\
   G->thunkpos= 0;\n\
@@ -776,7 +776,7 @@ void Rule_compile_c(Node *node)
       char *block = n->action.text;
       fprintf(output, "YY_ACTION(void) yy%s(GREG *G, char *yytext, int yyleng, YY_XTYPE YY_XVAR)\n{\n", n->action.name);
       defineVariables(n->action.rule->rule.variables);
-      fprintf(output, "  yyprintfv((stderr, \"do yy%s\\n\"));\n", n->action.name);
+      fprintf(output, "  yyprintf((stderr, \"do yy%s\\n\"));\n", n->action.name);
       while (*block == 0x20) block++;
       fprintf(output, "  %s;\n", block);
       undefineVariables(n->action.rule->rule.variables);
