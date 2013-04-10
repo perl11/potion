@@ -52,6 +52,14 @@ Some side-effect-only functions will be changed to return the
 changed argument.
 E.g. chop, chomp, ...
 
+The parser will be different. Most statements will return values.
+E.g. *if* returns the value of the executed branch or
+*undef* if no branch is choosen.
+
+bc. {
+    $a = if (1) { $c }; #same as: $a = $c;
+}
+
 h2. order of destruction
 
 If you don't use explicit DESTROY calls at the end of blocks, the compiler 
