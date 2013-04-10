@@ -13,7 +13,7 @@
  * 
  * THE SOFTWARE IS PROVIDED 'AS IS'.  USE ENTIRELY AT YOUR OWN RISK.
  * 
- * Last edited: 2007-08-31 13:55:23 by piumarta on emilia.local
+ * Last edited: 2013-04-10 11:15:49 rurban
  */
 
 #include <stdio.h>
@@ -145,15 +145,23 @@ static void Node_compile_c_ko(Node *node, int ko)
     case String:
       {
 	int len= strlen(node->string.value);
-	if (1 == len || (2 == len && '\\' == node->string.value[0]))
-	  fprintf(output, "  if (!yymatchChar(G, '%s')) goto l%d;\n", node->string.value, ko);
+	if (1 == len)
+	  {
+	    if ('\'' == node->string.value[0])
+	      fprintf(output, "  if (!yymatchChar(G, '\\'')) goto l%d;\n", ko);
+	    else
+	      fprintf(output, "  if (!yymatchChar(G, '%s')) goto l%d;\n", node->string.value, ko);
+	  }
 	else
-	  fprintf(output, "  if (!yymatchString(G, \"%s\")) goto l%d;\n", node->string.value, ko);
+	  if (2 == len && '\\' == node->string.value[0])
+	    fprintf(output, "  if (!yymatchChar(G, '%s')) goto l%d;\n", node->string.value, ko);
+	  else
+	    fprintf(output, "  if (!yymatchString(G, \"%s\")) goto l%d;\n", node->string.value, ko);
       }
       break;
 
     case Class:
-      fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), ko);
+      fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", (const char*)\"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), *node->cclass.value == '"' ? "dquote" : (const char*)node->cclass.value, ko);
       break;
 
     case Action:
@@ -318,7 +326,9 @@ static void Rule_compile_c2(Node *node)
 	fprintf(output, "  yyDo(G, yyPush, %d, 0);\n", countVariables(node->rule.variables));
       fprintf(output, "  yyprintf((stderr, \"%%s\\n\", \"%s\"));\n", node->rule.name);
       Node_compile_c_ko(node->rule.expression, ko);
-      fprintf(output, "  yyprintf((stderr, \"  ok   %%s @ %%s\\n\", \"%s\", G->buf+G->pos));\n", node->rule.name);
+      fprintf(output, "  yyprintf((stderr, \"  ok   %s\"));\n", node->rule.name);
+      fprintf(output, "  yyprintfcontext;\n");
+      fprintf(output, "  yyprintf((stderr, \"\\n\"));\n");
       if (node->rule.variables)
 	fprintf(output, "  yyDo(G, yyPop, %d, 0);", countVariables(node->rule.variables));
       fprintf(output, "\n  return 1;");
@@ -326,7 +336,9 @@ static void Rule_compile_c2(Node *node)
 	{
 	  label(ko);
 	  restore(0);
-	  fprintf(output, "  yyprintfv((stderr, \"  fail %%s @ %%s\\n\", \"%s\", G->buf+G->pos));\n", node->rule.name);
+	  fprintf(output, "  yyprintfv((stderr, \"  fail %%s\", \"%s\"));\n", node->rule.name);
+	  fprintf(output, "  yyprintfvcontext;\n");
+	  fprintf(output, "  yyprintfv((stderr, \"\\n\"));\n");
 	  fprintf(output, "\n  return 0;");
 	}
       fprintf(output, "\n}");
@@ -388,9 +400,13 @@ static char *preamble= "\
 #ifdef YY_DEBUG\n\
 # define yyprintf(args)	if (G->debug & DEBUG_PARSE) fprintf args\n\
 # define yyprintfv(args) if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) fprintf args\n\
+# define yyprintfcontext if (G->debug == (DEBUG_PARSE))                yyprinterrcontext(G,stderr)\n\
+# define yyprintfvcontext if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprinterrcontext(G,stderr)\n\
 #else\n\
 # define yyprintf(args)\n\
 # define yyprintfv(args)\n\
+# define yyprintfcontext\n\
+# define yyprintfvcontext\n\
 #endif\n\
 #ifndef YYSTYPE\n\
 #define YYSTYPE	int\n\
@@ -452,16 +468,37 @@ YY_LOCAL(int) yymatchDot(GREG *G)\n\
   return 1;\n\
 }\n\
 \n\
+#ifdef YY_DEBUG\n\
+YY_LOCAL(void) yyprinterrcontext(GREG *G, FILE *stream)\n\
+{\n\
+  char *s = G->buf + G->pos;\n\
+  char *context = s;\n\
+  char *nl = strchr(context, 10);\n\
+  if (nl) {\n\
+    context = (char*)malloc(nl-s+1);\n\
+    strncpy(context, s, nl-s);\n\
+    context[nl-s] = '\\0'; /* replace nl by 0 */\n\
+  }\n\
+  fprintf(stderr, \" @ \\\"%s\\\"\", context);\n\
+}\n\
+#endif\n\
+\n\
 YY_LOCAL(int) yymatchChar(GREG *G, int c)\n\
 {\n\
   if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
   if ((unsigned char)G->buf[G->pos] == c)\n\
     {\n\
       ++G->pos;\n\
-      yyprintf((stderr, \"  ok   yymatchChar(%c) @ %s\\n\", c, G->buf+G->pos));\n\
+      if (c<32) { yyprintf((stderr, \"  ok   yymatchChar '0x%x'\", c));}\n\
+      else      { yyprintf((stderr, \"  ok   yymatchChar '%c'\", c));}\n\
+      yyprintfcontext;\n\
+      yyprintf((stderr, \"\\n\"));\n\
       return 1;\n\
     }\n\
-  yyprintfv((stderr, \"  fail yymatchChar(%c) @ %s\\n\", c, G->buf+G->pos));\n\
+  if (c<32) { yyprintfv((stderr, \"  fail yymatchChar '0x%x'\", c));}\n\
+  else      { yyprintfv((stderr, \"  fail yymatchChar '%c'\", c));}\n\
+  yyprintfvcontext;\n\
+  yyprintfv((stderr, \"\\n\"));\n\
   return 0;\n\
 }\n\
 \n\
@@ -482,7 +519,7 @@ YY_LOCAL(int) yymatchString(GREG *G, char *s)\n\
   return 1;\n\
 }\n\
 \n\
-YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits)\n\
+YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, const char *cclass)\n\
 {\n\
   int c;\n\
   if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
@@ -490,10 +527,14 @@ YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits)\n\
   if (bits[c >> 3] & (1 << (c & 7)))\n\
     {\n\
       ++G->pos;\n\
-      yyprintf((stderr, \"  ok   yymatchClass @ %s\\n\", G->buf+G->pos));\n\
+      yyprintf((stderr, \"  ok   yymatchClass [%s]\", cclass));\n\
+      yyprintfcontext;\n\
+      yyprintf((stderr, \"\\n\"));\n\
       return 1;\n\
     }\n\
-  yyprintfv((stderr, \"  fail yymatchClass @ %s\\n\", G->buf+G->pos));\n\
+  yyprintfv((stderr, \"  fail yymatchClass [%s]\", cclass));\n	\
+  yyprintfvcontext;\n\
+  yyprintfv((stderr, \"\\n\"));\n\
   return 0;\n\
 }\n\
 \n\
