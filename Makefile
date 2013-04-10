@@ -181,9 +181,8 @@ bench: potion${EXE} test/api/gc-bench${EXE}
 test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running API tests; \
-	LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH \
 	DYLD_LIBRARY_PATH=`pwd`:$DYLD_LIBRARY_PATH \
-	export LD_LIBRARY_PATH; export DYLD_LIBRARY_PATH; \
+	export DYLD_LIBRARY_PATH; \
 	test/api/potion-test; \
 	${ECHO} running GC tests; \
 	test/api/gc-test; \
