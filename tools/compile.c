@@ -776,7 +776,9 @@ void Rule_compile_c(Node *node)
       char *block = n->action.text;
       fprintf(output, "YY_ACTION(void) yy%s(GREG *G, char *yytext, int yyleng, YY_XTYPE YY_XVAR)\n{\n", n->action.name);
       defineVariables(n->action.rule->rule.variables);
-      fprintf(output, "  yyprintf((stderr, \"do yy%s\\n\"));\n", n->action.name);
+      fprintf(output, "  yyprintf((stderr, \"do yy%s\"));\n", n->action.name);
+      fprintf(output, "  yyprintf((stderr, \" @ \\\"%%s\\\"\", yytext));\n");
+      fprintf(output, "  yyprintf((stderr, \"\\n\"));\n");
       while (*block == 0x20) block++;
       fprintf(output, "  %s;\n", block);
       undefineVariables(n->action.rule->rule.variables);
