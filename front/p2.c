@@ -56,7 +56,7 @@ static void p2_cmd_usage(Potion *P) {
       "  -c                 check script and exit\n" // compile-time checks only
 //    "  -d                 run program under the debugger\n" // TODO: we want to debug over sockets, instrument bytecode and use p2d frontend
 #ifdef DEBUG
-      "  -D[itpvGJ]         debugging flags\n"
+      "  -D[itpPvGJ]        debugging flags, try -D?\n"
 #endif
       "  -e code            execute code\n"
       "  -E code            execute code with extended features enabled\n"
@@ -273,6 +273,17 @@ int main(int argc, char *argv[]) {
     }
 #ifdef DEBUG
     if (argv[i][0] == '-' && argv[i][1] == 'D') {
+      if (strchr(&argv[i][2], '?')) {
+	printf("-D debugging flags:\n");
+	printf("  i  inspect\n");
+	printf("  v  verbose\n");
+	printf("  t  trace\n");
+	printf("  p  parse\n");
+	printf("  P  parse_verbose\n");
+	printf("  J  Jit\n");
+	printf("  G  GC\n");
+	goto END;
+      }
       if (strchr(&argv[i][2], 'i'))
 	P->flags |= DEBUG_INSPECT;
       if (strchr(&argv[i][2], 'v'))
@@ -283,6 +294,8 @@ int main(int argc, char *argv[]) {
       }
       if (strchr(&argv[i][2], 'p'))
 	P->flags |= DEBUG_PARSE;
+      if (strchr(&argv[i][2], 'P'))
+	P->flags |= DEBUG_PARSE_VERBOSE;
       if (strchr(&argv[i][2], 'J'))
 	P->flags |= DEBUG_JIT;
       if (strchr(&argv[i][2], 'G'))
