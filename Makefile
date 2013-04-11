@@ -41,6 +41,7 @@ DOCHTML = ${DOC:.textile=.html}
 
 CAT  = /bin/cat
 ECHO = /bin/echo
+MV   = /bin/mv
 SED  = sed
 EXPR = expr
 GREG = syn/greg${EXE}
@@ -100,6 +101,14 @@ core/config.h: config.inc core/version.h tools/config.sh config.mak
 
 core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
+
+# bootstrap syn/greg.c, syn/compile.c not yet
+syn/greg.c: syn/greg.greg syn/compile.c syn/tree.c
+	@${ECHO} GREG $<
+	${GREG} syn/greg.greg > syn/greg-new.c
+	${CC} -O3 -DNDEBUG -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn
+	${MV} syn/greg-new.c syn/greg.c
+	${MV} syn/greg-new syn/greg
 
 core/callcc.o core/callcc.o2: core/callcc.c
 	@${ECHO} CC $< +frame-pointer

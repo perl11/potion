@@ -107,7 +107,7 @@ if = "if" e:ifexpr - s:block           { s  = PN_OP(AST_AND, e, s); }
 
 ifexpr = - '(' - expr - ')'
 
-sets = e:eqs
+sets = e:eqs?
        ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
        | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
        | and assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
@@ -601,7 +601,7 @@ space = ' ' | '\f' | '\v' | '\t' | end-of-line
 end-of-line = '\r\n' | '\n' | '\r'
 end-of-file = !'\0'
 
-$ sig = args+ end-of-file
+sig = args+ end-of-file
 args = arg-list (arg-sep arg-list)*
 arg-list = arg-set (optional arg-set)?
          | optional arg-set

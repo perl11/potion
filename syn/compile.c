@@ -476,11 +476,13 @@ static char *preamble= "\
 # define yyprintfv(args)  if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) fprintf args\n\
 # define yyprintfGcontext  if (G->debug & DEBUG_PARSE)         yyprintcontext(G,stderr,G->buf+G->pos)\n\
 # define yyprintfvGcontext if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(G,stderr,G->buf+G->pos)\n\
+# define yyprintfvTcontext(text) if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(G,stderr,text)\n\
 #else\n\
 # define yyprintf(args)\n\
 # define yyprintfv(args)\n\
 # define yyprintfGcontext\n\
 # define yyprintfvGcontext\n\
+# define yyprintfvTcontext(text)\n\
 #endif\n\
 #ifndef YYSTYPE\n\
 #define YYSTYPE	int\n\
@@ -489,7 +491,7 @@ static char *preamble= "\
 #define YY_XTYPE void *\n\
 #endif\n\
 #ifndef YY_XVAR\n\
-#define YY_XVAR yydata\n\
+#define YY_XVAR yyxvar\n\
 #endif\n\
 \n\
 #ifndef YY_STACK_SIZE\n\
@@ -617,7 +619,7 @@ YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, char *cclass)\n\
       yyprintf((stderr, \"\\n\"));\n\
       return 1;\n\
     }\n\
-  yyprintfv((stderr, \"  fail yymatchClass [%s]\", cclass));\n	\
+  yyprintfv((stderr, \"  fail yymatchClass [%s]\", cclass));\n\
   yyprintfvGcontext;\n\
   yyprintfv((stderr, \"\\n\"));\n\
   return 0;\n\
@@ -644,7 +646,7 @@ YY_LOCAL(int) yyText(GREG *G, int begin, int end)\n\
     yyleng= 0;\n\
   else\n\
     {\n\
-      while (G->textlen < (yyleng + 1))\n\
+      while (G->textlen < (yyleng - 1))\n\
         {\n\
           G->textlen *= 2;\n\
           G->text= (char*)YY_REALLOC(G->text, G->textlen, G->data);\n\
@@ -663,9 +665,7 @@ YY_LOCAL(void) yyDone(GREG *G)\n\
       yythunk *thunk= &G->thunks[pos];\n\
       int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;\n\
       yyprintf((stderr, \"DO [%d] %s\", pos, thunk->name));\n\
-#ifdef YY_DEBUG\n\
-      if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(G,stderr,G->text);\n\
-#endif\n\
+      yyprintfvTcontext(G->text);\n\
       yyprintf((stderr, \"\\n\"));\n\
       thunk->action(G, G->text, yyleng, thunk, G->data);\n\
     }\n\
@@ -880,11 +880,9 @@ void Rule_compile_c(Node *node)
       char *block = n->action.text;
       fprintf(output, "YY_ACTION(void) yy%s(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)\n{\n", n->action.name);
       defineVariables(n->action.rule->rule.variables);
-      while (*block == 0x20) block++;
+      while (*block == 0x20 || *block == 0x9) block++;
       fprintf(output, "  yyprintf((stderr, \"do yy%s\"));\n", n->action.name);
-      fprintf(output, "#ifdef YY_DEBUG\n");
-      fprintf(output, "  if (G->debug & DEBUG_PARSE) yyprintcontext(G,stderr,yytext);\n");
-      fprintf(output, "#endif\n");
+      fprintf(output, "  yyprintfvTcontext(yytext);\n");
       fprintf(output, "  yyprintf((stderr, \"\\n  {%s}\\n\"));\n", yyqq(block));
       fprintf(output, "  %s;\n", block);
       undefineVariables(n->action.rule->rule.variables);
