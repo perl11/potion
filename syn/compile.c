@@ -664,7 +664,7 @@ YY_LOCAL(void) yyDone(GREG *G)\n\
       int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;\n\
       yyprintf((stderr, \"DO [%d] %s\", pos, thunk->name));\n\
 #ifdef YY_DEBUG\n\
-      if (G->debug & DEBUG_PARSE) yyprintcontext(G,stderr,G->text);\n\
+      if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(G,stderr,G->text);\n\
 #endif\n\
       yyprintf((stderr, \"\\n\"));\n\
       thunk->action(G, G->text, yyleng, thunk, G->data);\n\
