@@ -80,17 +80,15 @@ static char *yyqq(char* src) {
   int sl = 0, dl = 0;
   while (*src++) {
     dl++; sl++;
-    if (*src == 34||*src==9||*src==13||*src==92) { // escape with \
-      dl++;
-    } else if (*src < 32 || *src > 128 || *src == 10) {
-      dl += 4; // octal \000
-    }
+    if (*src==34||*src==9||*src==13||*src==92) { dl++; } // escape with	\
+    else if (*src==10) { dl += 3; }          // \n\^J
+    else if (*src<32||*src>128) { dl += 4; } // octal \000
   }
   if (dl == sl) return s;
   src = s;
   dst = s = (char *)malloc(dl+1);
   while (*src) {
-    if (*src == 34) {
+    if (*src == 34) { // '"'
       *s++ = '\\'; *s++ = *src++;
     } else if (*src == 10) { // \n\^J
       *s++ = '\\'; *s++ = 'n'; *s++ = '\\'; *s++ = 10; src++;
@@ -98,16 +96,16 @@ static char *yyqq(char* src) {
       *s++ = '\\'; *s++ = 't'; src++;
     } else if (*src == 13) { // \r
       *s++ = '\\'; *s++ = 'r'; src++;
-    } else if (*src == 92) {
+    } else if (*src == 92) { // '\'
       *s++ = '\\'; *s++ = '\\'; src++;
-    }
-    else if (*src < 32 || *src > 128) {
+    } else if (*src < 32 || *src > 128) {
       sprintf(s, "\\%03o", *src); // octal \000
       s += 4; src++;
-    }
-    else
+    } else {
       *s++ = *src++;
+    }
   }
+  *s = 0;
   return dst;
 }
 
@@ -436,9 +434,9 @@ static char *preamble= "\
 #endif\n\
 #ifdef YY_DEBUG\n\
 # define yyprintf(args)	if (G->debug & DEBUG_PARSE) fprintf args\n\
-# define yyprintfv(args) if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) fprintf args\n\
-# define yyprintfcontext if (G->debug & DEBUG_PARSE)                yyprinterrcontext(G,stderr)\n\
-# define yyprintfvcontext if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) yyprinterrcontext(G,stderr)\n\
+# define yyprintfv(args) if (G->debug & DEBUG_PARSE_VERBOSE) fprintf args\n\
+# define yyprintfcontext if (G->debug & DEBUG_PARSE)         yyprinterrcontext(G,stderr)\n\
+# define yyprintfvcontext if (G->debug & DEBUG_PARSE_VERBOSE) yyprinterrcontext(G,stderr)\n\
 #else\n\
 # define yyprintf(args)\n\
 # define yyprintfv(args)\n\
@@ -483,17 +481,16 @@ typedef struct _GREG {\n\
 #endif\n\
 } GREG;\n\
 \n\
+#ifdef YY_DEBUG\n\
 YY_LOCAL(char *) yyqq(char* src) {\n\
   char *s = src;\n\
   char *dst;\n\
   int sl = 0, dl = 0;\n\
   while (*src++) {\n\
     dl++; sl++;\n\
-    if (*src==34||*src==9||*src==13||*src==92) {\n\
-      dl++;\n\
-    } else if (*src<32||*src>128||*src==10) {\n\
-      dl += 4;\n\
-    }\n\
+    if (*src==34||*src==9||*src==13||*src==92) { dl++; }\n\
+    else if (*src==10) { dl += 3; }\n\
+    else if (*src<32||*src>128) { dl += 4; }\n\
   }\n\
   if (dl == sl) return s;\n\
   src = s;\n\
@@ -501,24 +498,25 @@ YY_LOCAL(char *) yyqq(char* src) {\n\
   while (*src) {\n\
     if (*src == 34) {\n\
       *s++ = 92; *s++ = *src++;\n\
-    } else if (*src == 10) {\n\
-      *s++ = 92; *s++ = 'n'; *s++ = 92; *s++ = 10; src++;\n\
     } else if (*src == 9) {\n\
       *s++ = 92; *s++ = 't'; src++;\n\
     } else if (*src == 13) {\n\
       *s++ = 92; *s++ = 'r'; src++;\n\
     } else if (*src == 92) {\n\
       *s++ = 92; *s++ = 92; src++;\n\
-    }\n\
-    else if (*src < 32 || *src > 128) {\n\
+    } else if (*src == 10) {\n\
+      *s++ = 92; *s++ = 'n'; *s++ = 92; *s++ = 10; src++;\n\
+    } else if (*src < 32 || *src > 128) {\n\
       sprintf(s, \"\\%03o\", *src);\n\
       s += 4; src++;\n\
-    }\n\
-    else\n\
+    } else {\n\
       *s++ = *src++;\n\
+    }\n\
   }\n\
+  *s = 0;\n\
   return dst;\n\
 }\n\
+#endif\n\
 \n\
 YY_LOCAL(int) yyrefill(GREG *G)\n\
 {\n\

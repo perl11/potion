@@ -309,10 +309,10 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   G->debug = P->flags;
 #endif
 
-  G->filename = filename;
+  G->pos = G->limit = 0;
+  //G->filename = filename;
   if (!YY_NAME(parse)(G)) {
-    YY_ERROR(G, "** Syntax error!");
-    fprintf(stderr, "%s", PN_STR_PTR(code));
+    fprintf(stderr, "** Syntax error!");
   }
   YY_NAME(parse_free)(G);
 
@@ -342,13 +342,7 @@ PN potion_sig(Potion *P, char *fmt) {
 
   G->pos = G->limit = 0;
   if (!YY_NAME(parse_from)(G, yy_sig))
-<<<<<<< HEAD:core/syntax.y
-    printf("** Syntax error!\n");
-||||||| parent of 4147f96... signature default param:=value
-    YY_ERROR(G, "** Signature Syntax error!");
-=======
-    YY_ERROR(G, "** Syntax error in signature");
->>>>>>> 4147f96... signature default param:=value:syn/syntax.y
+    fprintf(stderr, "** Syntax error in signature");
   YY_NAME(parse_free)(G);
 
   out = P->source;
