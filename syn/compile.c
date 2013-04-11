@@ -39,7 +39,7 @@ static int readChar(unsigned char **cp)
   unsigned char *cclass = *cp;
   int c= *cclass++, i = 0;
   if ('\\' == c && *cclass)
-	{
+  {
     c= *cclass++;
     if (c >= '0' && c <= '9')
       {
@@ -67,11 +67,48 @@ static int readChar(unsigned char **cp)
       case 'v':  c= '\v'; break;	/* vt */
       default:		break;
       }
-	}
+  }
 
 done:
   *cp = cclass;
   return c;
+}
+
+static char *yyqq(char* src) {
+  char *s = src;
+  char *dst;
+  int sl = 0, dl = 0;
+  while (*src++) {
+    dl++; sl++;
+    if (*src == 34||*src==9||*src==13||*src==92) { // escape with \
+      dl++;
+    } else if (*src < 32 || *src > 128 || *src == 10) {
+      dl += 4; // octal \000
+    }
+  }
+  if (dl == sl) return s;
+  src = s;
+  dst = s = (char *)malloc(dl+1);
+  while (*src) {
+    if (*src == 34) {
+      *s++ = '\\'; *s++ = *src++;
+    } else if (*src == 10) { // \n\^J
+      *s++ = '\\'; *s++ = 'n'; *s++ = '\\'; *s++ = 10; src++;
+    } else if (*src == 9) {  // \t
+      *s++ = '\\'; *s++ = 't'; src++;
+    } else if (*src == 13) { // \r
+      *s++ = '\\'; *s++ = 'r'; src++;
+    } else if (*src == 92) {
+      *s++ = '\\'; *s++ = '\\'; src++;
+    }
+    else if (*src < 32 || *src > 128) {
+      sprintf(s, "\\%03o", *src); // octal \000
+      s += 4; src++;
+    }
+    else
+      *s++ = *src++;
+  }
+  return dst;
 }
 
 static char *makeCharClass(unsigned char *cclass)
@@ -161,7 +198,7 @@ static void Node_compile_c_ko(Node *node, int ko)
       break;
 
     case Class:
-      fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", (const char*)\"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), *node->cclass.value == '"' ? "dquote" : (const char*)node->cclass.value, ko);
+      fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", \"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), yyqq((char*)node->cclass.value), ko);
       break;
 
     case Action:
@@ -324,7 +361,7 @@ static void Rule_compile_c2(Node *node)
       if (!safe) save(0);
       if (node->rule.variables)
 	fprintf(output, "  yyDo(G, yyPush, %d, 0);\n", countVariables(node->rule.variables));
-      fprintf(output, "  yyprintf((stderr, \"%%s\\n\", \"%s\"));\n", node->rule.name);
+      fprintf(output, "  yyprintfv((stderr, \"%%s\\n\", \"%s\"));\n", node->rule.name);
       Node_compile_c_ko(node->rule.expression, ko);
       fprintf(output, "  yyprintf((stderr, \"  ok   %s\"));\n", node->rule.name);
       fprintf(output, "  yyprintfcontext;\n");
@@ -446,6 +483,43 @@ typedef struct _GREG {\n\
 #endif\n\
 } GREG;\n\
 \n\
+YY_LOCAL(char *) yyqq(char* src) {\n\
+  char *s = src;\n\
+  char *dst;\n\
+  int sl = 0, dl = 0;\n\
+  while (*src++) {\n\
+    dl++; sl++;\n\
+    if (*src==34||*src==9||*src==13||*src==92) {\n\
+      dl++;\n\
+    } else if (*src<32||*src>128||*src==10) {\n\
+      dl += 4;\n\
+    }\n\
+  }\n\
+  if (dl == sl) return s;\n\
+  src = s;\n\
+  dst = s = (char *)malloc(dl+1);\n\
+  while (*src) {\n\
+    if (*src == 34) {\n\
+      *s++ = 92; *s++ = *src++;\n\
+    } else if (*src == 10) {\n\
+      *s++ = 92; *s++ = 'n'; *s++ = 92; *s++ = 10; src++;\n\
+    } else if (*src == 9) {\n\
+      *s++ = 92; *s++ = 't'; src++;\n\
+    } else if (*src == 13) {\n\
+      *s++ = 92; *s++ = 'r'; src++;\n\
+    } else if (*src == 92) {\n\
+      *s++ = 92; *s++ = 92; src++;\n\
+    }\n\
+    else if (*src < 32 || *src > 128) {\n\
+      sprintf(s, \"\\%03o\", *src);\n\
+      s += 4; src++;\n\
+    }\n\
+    else\n\
+      *s++ = *src++;\n\
+  }\n\
+  return dst;\n\
+}\n\
+\n\
 YY_LOCAL(int) yyrefill(GREG *G)\n\
 {\n\
   int yyn;\n\
@@ -519,7 +593,7 @@ YY_LOCAL(int) yymatchString(GREG *G, char *s)\n\
   return 1;\n\
 }\n\
 \n\
-YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, const char *cclass)\n\
+YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, char *cclass)\n\
 {\n\
   int c;\n\
   if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
@@ -776,10 +850,9 @@ void Rule_compile_c(Node *node)
       char *block = n->action.text;
       fprintf(output, "YY_ACTION(void) yy%s(GREG *G, char *yytext, int yyleng, YY_XTYPE YY_XVAR)\n{\n", n->action.name);
       defineVariables(n->action.rule->rule.variables);
-      fprintf(output, "  yyprintf((stderr, \"do yy%s\"));\n", n->action.name);
-      fprintf(output, "  yyprintf((stderr, \" @ \\\"%%s\\\"\", yytext));\n");
-      fprintf(output, "  yyprintf((stderr, \"\\n\"));\n");
       while (*block == 0x20) block++;
+      fprintf(output, "  yyprintf((stderr, \"do yy%s @ \\\"%%s\\\"\\n\", yyqq(yytext)));\n", n->action.name);
+      fprintf(output, "  yyprintf((stderr, \"  {%s}\\n\"));\n", yyqq(block));
       fprintf(output, "  %s;\n", block);
       undefineVariables(n->action.rule->rule.variables);
       fprintf(output, "}\n");
