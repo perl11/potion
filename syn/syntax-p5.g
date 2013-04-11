@@ -245,7 +245,7 @@ utf8 = [\t\n\r\40-\176]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 
 comma = ','
-block-start = '{'
+block-start = '{' space*
 block-end = ';'? space '}'
 list-start = '(' --
 list-end = ')' -
@@ -625,7 +625,7 @@ PN p2_parse(Potion *P, PN code) {
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
 #ifdef YY_DEBUG
-  G->debug = P->flags & (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
+  G->debug = P->flags & (DEBUG_PARSE | DEBUG_VERBOSE);
 #endif
 
   G->pos = G->limit = 0;

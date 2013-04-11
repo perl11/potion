@@ -279,7 +279,7 @@ int main(int argc, char *argv[]) {
 	printf("  v  verbose\n");
 	printf("  t  trace\n");
 	printf("  p  parse\n");
-	printf("  P  parse_verbose\n");
+	printf("  P  verbose + parse\n");
 	printf("  J  Jit\n");
 	printf("  G  GC\n");
 	goto END;
@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
       if (strchr(&argv[i][2], 'p'))
 	P->flags |= DEBUG_PARSE;
       if (strchr(&argv[i][2], 'P'))
-	P->flags |= DEBUG_PARSE_VERBOSE;
+	P->flags |= (DEBUG_PARSE | DEBUG_VERBOSE);
       if (strchr(&argv[i][2], 'J'))
 	P->flags |= DEBUG_JIT;
       if (strchr(&argv[i][2], 'G'))
