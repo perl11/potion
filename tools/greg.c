@@ -109,7 +109,7 @@ struct _GREG;
 #define yy G->ss
 
 typedef void (*yyaction)(struct _GREG *G, char *yytext, int yyleng, YY_XTYPE YY_XVAR);
-typedef struct _yythunk { int begin, end;  yyaction  action;  struct _yythunk *next; } yythunk;
+typedef struct _yythunk { int begin, end;  yyaction  action;  char *name; struct _yythunk *next; } yythunk;
 
 typedef struct _GREG {
   char *buf;
@@ -234,7 +234,7 @@ YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits)
   return 0;
 }
 
-YY_LOCAL(void) yyDo(GREG *G, yyaction action, int begin, int end)
+YY_LOCAL(void) yyDo(GREG *G, yyaction action, int begin, int end /* , const char *name */)
 {
   while (G->thunkpos >= G->thunkslen)
     {
@@ -244,6 +244,7 @@ YY_LOCAL(void) yyDo(GREG *G, yyaction action, int begin, int end)
   G->thunks[G->thunkpos].begin=  begin;
   G->thunks[G->thunkpos].end=    end;
   G->thunks[G->thunkpos].action= action;
+  //G->thunks[G->thunkpos].name= name;
   ++G->thunkpos;
 }
 
@@ -272,7 +273,7 @@ YY_LOCAL(void) yyDone(GREG *G)
     {
       yythunk *thunk= &G->thunks[pos];
       int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;
-      yyprintf((stderr, "DO [%d] %p %s\n", pos, thunk->action, G->text));
+      yyprintf((stderr, "DO [%d] %s %s\n", pos, thunk->name, G->text));
       thunk->action(G, G->text, yyleng, G->data);
     }
   G->thunkpos= 0;

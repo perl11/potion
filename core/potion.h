@@ -461,10 +461,9 @@ typedef enum {
 #ifdef DEBUG
   DEBUG_TRACE  = 1<<10,
   DEBUG_PARSE  = 1<<11,
-  DEBUG_PARSE_VERBOSE  = 1<<12,
-  DEBUG_COMPILE= 1<<13,
-  DEBUG_GC     = 1<<14,
-  DEBUG_JIT    = 1<<15,
+  DEBUG_COMPILE= 1<<12,
+  DEBUG_GC     = 1<<13,
+  DEBUG_JIT    = 1<<14,
 #endif
 } Potion_Flags;
 
