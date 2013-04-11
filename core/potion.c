@@ -348,7 +348,7 @@ int main(int argc, char *argv[]) {
       if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE;
 	exec = exec==EXEC_JIT ? EXEC_VM : exec; }
       if (strchr(&argv[i][2], 'p')) P->flags |= DEBUG_PARSE;
-      if (strchr(&argv[i][2], 'P')) P->flags |= (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
+      if (strchr(&argv[i][2], 'P')) P->flags |= (DEBUG_PARSE | DEBUG_VERBOSE);
       if (strchr(&argv[i][2], 'c')) P->flags |= DEBUG_COMPILE;
       if (strchr(&argv[i][2], 'J')) P->flags |= DEBUG_JIT;
       if (strchr(&argv[i][2], 'G')) P->flags |= DEBUG_GC;
