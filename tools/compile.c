@@ -662,7 +662,11 @@ YY_LOCAL(void) yyDone(GREG *G)\n\
     {\n\
       yythunk *thunk= &G->thunks[pos];\n\
       int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;\n\
-      yyprintfv((stderr, \"DO [%d] %s @ \\\"%s\\\"\\n\", pos, thunk->name, G->text));\n\
+      yyprintf((stderr, \"DO [%d] %s\", pos, thunk->name));\n\
+#ifdef YY_DEBUG\n\
+      if (G->debug & DEBUG_PARSE) yyprintcontext(G,stderr,G->text);\n\
+#endif\n\
+      yyprintf((stderr, \"\\n\"));\n\
       thunk->action(G, G->text, yyleng, thunk, G->data);\n\
     }\n\
   G->thunkpos= 0;\n\
