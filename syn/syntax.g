@@ -13,7 +13,7 @@
 #include "asm.h"
 #include "ast.h"
 
-#define YY_INPUT(buf, result, max) { \
+#define YY_INPUT(buf, result, max, D) { \
   if (P->yypos < PN_STR_LEN(P->input)) { \
     result = max; \
     if (P->yypos + max > PN_STR_LEN(P->input)) \

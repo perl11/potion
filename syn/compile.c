@@ -1,4 +1,6 @@
 /* Copyright (c) 2007 by Ian Piumarta
+ * Copyright (c) 2011 by Amos Wenger nddrylliog@gmail.com
+ * Copyright (c) 2013 by perl11 org
  * All rights reserved.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -74,38 +76,48 @@ done:
   return c;
 }
 
-static char *yyqq(char* src) {
-  char *s = src;
+static char *yyqq(char* s) {
+  char *d = s;
   char *dst;
   int sl = 0, dl = 0;
-  while (*src++) {
+  while (*s++) {
     dl++; sl++;
-    if (*src==34||*src==9||*src==13||*src==92) { dl++; } // escape with	\
-    else if (*src==10) { dl += 3; }          // \n\^J
-    else if (*src<32||*src>128) { dl += 4; } // octal \000
+    if (*s==7||*s==8||*s==9||*s==11||*s==12||*s==13||*s==27||*s==34||*s==92) { dl++; } // escape with '\'
+    else if (*s==10) { dl += 3; }        // \n\^J
+    else if (*s<32||*s>128) { dl += 4; } // octal \000
   }
-  if (dl == sl) return s;
-  src = s;
-  dst = s = (char *)malloc(dl+1);
-  while (*src) {
-    if (*src == 34) { // '"'
-      *s++ = '\\'; *s++ = *src++;
-    } else if (*src == 10) { // \n\^J
-      *s++ = '\\'; *s++ = 'n'; *s++ = '\\'; *s++ = 10; src++;
-    } else if (*src == 9) {  // \t
-      *s++ = '\\'; *s++ = 't'; src++;
-    } else if (*src == 13) { // \r
-      *s++ = '\\'; *s++ = 'r'; src++;
-    } else if (*src == 92) { // '\'
-      *s++ = '\\'; *s++ = '\\'; src++;
-    } else if (*src < 32 || *src > 128) {
-      sprintf(s, "\\%03o", *src); // octal \000
-      s += 4; src++;
+  if (dl == sl) return d;
+  s = d;
+  dst = d = (char *)malloc(dl+1);
+  while (*s) {
+    if (*s == '"') {
+      *d++ = '\\'; *d++ = *s++;
+    } else if (*s == '\n') { // \n\^J
+      *d++ = '\\'; *d++ = 'n'; *d++ = '\\'; *d++ = 10; s++;
+    } else if (*s == '\t') { //ht
+      *d++ = '\\'; *d++ = 't'; s++;
+    } else if (*s == '\r') { //cr
+      *d++ = '\\'; *d++ = 'r'; s++;
+    } else if (*s == '\a') { //bel
+      *d++ = '\\'; *d++ = 'a'; s++;
+    } else if (*s == '\b') { //bs
+      *d++ = '\\'; *d++ = 'b'; s++;
+    } else if (*s == '\e') { //esc
+      *d++ = '\\'; *d++ = 'e'; s++;
+    } else if (*s == '\f') { //ff
+      *d++ = '\\'; *d++ = 'f'; s++;
+    } else if (*s == '\v') { //vt
+      *d++ = '\\'; *d++ = 'v'; s++;
+    } else if (*s == 92) { // '\'
+      *d++ = '\\'; *d++ = '\\'; s++;
+    } else if (*s<32||*s>128) {
+      sprintf(d,"\\%03o", *s); // octal \000
+      d += 4; s++;
     } else {
-      *s++ = *src++;
+      *d++ = *s++;
     }
   }
-  *s = 0;
+  *d = 0;
   return dst;
 }
 
@@ -156,6 +168,10 @@ static void jump(int n)		{ fprintf(output, "  goto l%d;", n); }
 static void save(int n)		{ fprintf(output, "  int yypos%d= G->pos, yythunkpos%d= G->thunkpos;\n", n, n); }
 static void restore(int n)	{ fprintf(output,     "  G->pos= yypos%d; G->thunkpos= yythunkpos%d;\n", n, n); }
 
+static void callErrBlock(Node * node) {
+    fprintf(output, " { YY_XTYPE YY_XVAR = (YY_XTYPE) G->data; int yyindex = G->offset + G->pos; %s; }", ((struct Any*) node)->errblock);
+}
+
 static void Node_compile_c_ko(Node *node, int ko)
 {
   assert(node);
@@ -171,7 +187,14 @@ static void Node_compile_c_ko(Node *node, int ko)
       break;
 
     case Name:
-      fprintf(output, "  if (!yy_%s(G)) goto l%d;\n", node->name.rule->rule.name, ko);
+      fprintf(output, "  if (!yy_%s(G)) ", node->name.rule->rule.name);
+      if(((struct Any*) node)->errblock) {
+	fprintf(output, "{ ");
+	callErrBlock(node);
+	fprintf(output, " goto l%d; }\n", ko);
+      } else {
+	fprintf(output, " goto l%d;\n", ko);
+      }
       if (node->name.variable)
 	fprintf(output, "  yyDo(G, yySet, %d, 0);\n", node->name.variable->variable.offset);
       break;
@@ -419,9 +442,10 @@ static char *preamble= "\
 #define YY_NAME(N) yy##N\n\
 #endif\n\
 #ifndef YY_INPUT\n\
-#define YY_INPUT(buf, result, max_size)			\\\n\
+#define YY_INPUT(buf, result, max_size, D)		\\\n\
   {							\\\n\
     int yyc= getchar();					\\\n\
+    if ('\\n' == c || '\\r' == c) ++lineNumber;	        \\\n\
     result= (EOF == yyc) ? 0 : (*(buf)= yyc, 1);	\\\n\
     yyprintf((stderr, \"<%c>\", yyc));			\\\n\
   }\n\
@@ -453,17 +477,28 @@ static char *preamble= "\
 #define YY_XVAR yydata\n\
 #endif\n\
 \n\
+#ifndef YY_STACK_SIZE\n\
+#define YY_STACK_SIZE 128\n\
+#endif\n\
+\n\
+#ifndef YY_BUFFER_START_SIZE\n\
+#define YY_BUFFER_START_SIZE 1024\n\
+#endif\n\
+\n\
 #ifndef YY_PART\n\
+#define yydata G->data\n\
 #define yy G->ss\n\
 \n\
-typedef void (*yyaction)(struct _GREG *G, char *yytext, int yyleng, YY_XTYPE YY_XVAR);\n\
+struct _yythunk; // forward declaration\n\
+typedef void (*yyaction)(struct _GREG *G, char *yytext, int yyleng, struct _yythunk *thunkpos, YY_XTYPE YY_XVAR);\n\
 typedef struct _yythunk { int begin, end;  yyaction  action;  struct _yythunk *next; } yythunk;\n\
 \n\
 typedef struct _GREG {\n\
   char *buf;\n\
   int buflen;\n\
-  int	pos;\n\
-  int	limit;\n\
+  int   offset;\n\
+  int   pos;\n\
+  int   limit;\n\
   char *text;\n\
   int	textlen;\n\
   int	begin;\n\
@@ -481,38 +516,48 @@ typedef struct _GREG {\n\
 #endif\n\
 } GREG;\n\
 \n\
-YY_LOCAL(char *) yyqq(char* src) {\n\
-  char *s = src;\n\
+YY_LOCAL(char *) yyqq(char* s) {\n\
+  char *d = s;\n\
   char *dst;\n\
   int sl = 0, dl = 0;\n\
-  while (*src++) {\n\
+  while (*s++) {\n\
     dl++; sl++;\n\
-    if (*src==34||*src==9||*src==13||*src==92) { dl++; }\n\
-    else if (*src==10) { dl += 3; }\n\
-    else if (*src<32||*src>128) { dl += 4; }\n\
+    if (*s==7||*s==8||*s==9||*s==11||*s==12||*s==13||*s==27||*s==34||*s==92) { dl++; }\n\
+    else if (*s==10) { dl += 3; }       // \\n\\^J\n\
+    else if (*s<32||*s>128) { dl += 4; }// octal \\000 \n\
   }\n\
   if (dl == sl) return s;\n\
-  src = s;\n\
-  dst = s = (char *)malloc(dl+1);\n\
-  while (*src) {\n\
-    if (*src == 34) {\n\
-      *s++ = 92; *s++ = *src++;\n\
-    } else if (*src == 9) {\n\
-      *s++ = 92; *s++ = 't'; src++;\n\
-    } else if (*src == 13) {\n\
-      *s++ = 92; *s++ = 'r'; src++;\n\
-    } else if (*src == 92) {\n\
-      *s++ = 92; *s++ = 92; src++;\n\
-    } else if (*src == 10) {\n\
-      *s++ = 92; *s++ = 'n'; *s++ = 92; *s++ = 10; src++;\n\
-    } else if (*src < 32 || *src > 128) {\n\
-      sprintf(s, \"\\%03o\", *src);\n\
-      s += 4; src++;\n\
+  s = d;\n\
+  dst = d = (char *)malloc(dl+1);\n\
+  while (*s) {\n\
+    if (*s == 34) {\n\
+      *d++ = 92; *d++ = *s++;\n\
+    } else if (*s == '\\n') { // \\n\\^J\n\
+      *d++ = 92; *d++ = 'n'; *d++ = 92; *d++ = 10; s++;\n\
+    } else if (*s == '\\t') {\n\
+      *d++ = 92; *d++ = 't'; s++;\n\
+    } else if (*s == '\\r') { //cr\n\
+      *d++ = 92; *d++ = 'r'; s++;\n\
+    } else if (*s == '\\a') { //bel\n\
+      *d++ = 92; *d++ = 'a'; s++;\n\
+    } else if (*s == '\\b') { //bs\n\
+      *d++ = 92; *d++ = 'b'; s++;\n\
+    } else if (*s == '\\e') { //esc\n\
+      *d++ = 92; *d++ = 'e'; s++;\n\
+    } else if (*s == '\\f') { //ff\n\
+      *d++ = 92; *d++ = 'f'; s++;\n\
+    } else if (*s == '\\v') { //vt\n\
+      *d++ = 92; *d++ = 'v'; s++;\n\
+    } else if (*s == 92) {\n\
+      *d++ = 92; *d++ = 92; s++;\n\
+    } else if (*s<32||*s>128) {\n\
+      sprintf(d, \"\\%03o\", *s);\n\
+      d += 4; s++;\n\
     } else {\n\
-      *s++ = *src++;\n\
+      *d++ = *s++;\n\
     }\n\
   }\n\
-  *s = 0;\n\
+  *d = 0;\n\
   return dst;\n\
 }\n\
 \n\
@@ -523,9 +568,9 @@ YY_LOCAL(int) yyrefill(GREG *G)\n\
   while (G->buflen - G->pos < 512)\n\
     {\n\
       G->buflen *= 2;\n\
-      G->buf= YY_REALLOC(G->buf, G->buflen, G->data);\n\
+      G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);\n\
     }\n\
-  YY_INPUT((G->buf + G->pos), yyn, (G->buflen - G->pos));\n\
+  YY_INPUT((G->buf + G->pos), yyn, (G->buflen - G->pos), G->data);\n\
   if (!yyn) return 0;\n\
   G->limit += yyn;\n\
   return 1;\n\
@@ -572,7 +617,7 @@ YY_LOCAL(int) yymatchChar(GREG *G, int c)\n\
   return 0;\n\
 }\n\
 \n\
-YY_LOCAL(int) yymatchString(GREG *G, char *s)\n\
+YY_LOCAL(int) yymatchString(GREG *G, const char *s)\n\
 {\n\
   int yysav= G->pos;\n\
   while (*s)\n\
@@ -613,7 +658,7 @@ YY_LOCAL(void) yyDo(GREG *G, yyaction action, int begin, int end)\n\
   while (G->thunkpos >= G->thunkslen)\n\
     {\n\
       G->thunkslen *= 2;\n\
-      G->thunks= YY_REALLOC(G->thunks, sizeof(yythunk) * G->thunkslen, G->data);\n\
+      G->thunks= (yythunk*)YY_REALLOC(G->thunks, sizeof(yythunk) * G->thunkslen, G->data);\n\
     }\n\
   G->thunks[G->thunkpos].begin=  begin;\n\
   G->thunks[G->thunkpos].end=    end;\n\
@@ -628,11 +673,11 @@ YY_LOCAL(int) yyText(GREG *G, int begin, int end)\n\
     yyleng= 0;\n\
   else\n\
     {\n\
-      while (G->textlen < (yyleng - 1))\n\
-	{\n\
-	  G->textlen *= 2;\n\
-	  G->text= YY_REALLOC(G->text, G->textlen, G->data);\n\
-	}\n\
+      while (G->textlen < (yyleng + 1))\n\
+        {\n\
+          G->textlen *= 2;\n\
+          G->text= (char*)YY_REALLOC(G->text, G->textlen, G->data);\n\
+        }\n\
       memcpy(G->text, G->buf + begin, yyleng);\n\
     }\n\
   G->text[yyleng]= '\\0';\n\
@@ -647,7 +692,7 @@ YY_LOCAL(void) yyDone(GREG *G)\n\
       yythunk *thunk= &G->thunks[pos];\n\
       int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;\n\
       yyprintfv((stderr, \"DO [%d] %p @ \\\"%s\\\"\\n\", pos, thunk->action, G->text));\n\
-      thunk->action(G, G->text, yyleng, G->data);\n\
+      thunk->action(G, G->text, yyleng, thunk, G->data);\n\
     }\n\
   G->thunkpos= 0;\n\
 }\n\
@@ -658,6 +703,7 @@ YY_LOCAL(void) yyCommit(GREG *G)\n\
     {\n\
       memmove(G->buf, G->buf + G->pos, G->limit);\n\
     }\n\
+  G->offset += G->pos;\n\
   G->begin -= G->pos;\n\
   G->end -= G->pos;\n\
   G->pos= G->thunkpos= 0;\n\
@@ -678,19 +724,19 @@ YY_LOCAL(int) yyAccept(GREG *G, int tp0)\n\
   return 1;\n\
 }\n\
 \n\
-YY_LOCAL(void) yyPush(GREG *G, char *text, int count, YY_XTYPE YY_XVAR)	{\n\
+YY_LOCAL(void) yyPush(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR)	{\n\
   size_t off = (G->val - G->vals) + count;\n\
   if (off > G->valslen) {\n\
     while (G->valslen < off + 1)\n\
       G->valslen *= 2;\n\
-    G->vals= YY_REALLOC((void *)G->vals, sizeof(YYSTYPE) * G->valslen, G->data);\n\
+    G->vals= (YYSTYPE*)YY_REALLOC((void *)G->vals, sizeof(YYSTYPE) * G->valslen, G->data);\n\
     G->val= G->vals + off;\n\
   } else {\n\
     G->val += count;\n\
   }\n\
 }\n\
-YY_LOCAL(void) yyPop(GREG *G, char *text, int count, YY_XTYPE YY_XVAR)	{ G->val -= count; }\n\
-YY_LOCAL(void) yySet(GREG *G, char *text, int count, YY_XTYPE YY_XVAR)	{ G->val[count]= G->ss; }\n\
+YY_LOCAL(void) yyPop(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR)	{ G->val -= count; }\n\
+YY_LOCAL(void) yySet(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR)	{ G->val[count]= G->ss; }\n\
 \n\
 #endif /* YY_PART */\n\
 \n\
@@ -709,16 +755,17 @@ YY_PARSE(int) YY_NAME(parse_from)(GREG *G, yyrule yystart)\n\
   int yyok;\n\
   if (!G->buflen)\n\
     {\n\
-      G->buflen= 1024;\n\
-      G->buf= YY_ALLOC(G->buflen, G->data);\n\
-      G->textlen= 1024;\n\
-      G->text= YY_ALLOC(G->textlen, G->data);\n\
-      G->thunkslen= 32;\n\
-      G->thunks= YY_ALLOC(sizeof(yythunk) * G->thunkslen, G->data);\n\
-      G->valslen= 32;\n\
-      G->vals= YY_ALLOC(sizeof(YYSTYPE) * G->valslen, G->data);\n\
+      G->buflen= YY_BUFFER_START_SIZE;\n\
+      G->buf= (char*)YY_ALLOC(G->buflen, G->data);\n\
+      G->textlen= YY_BUFFER_START_SIZE;\n\
+      G->text= (char*)YY_ALLOC(G->textlen, G->data);\n\
+      G->thunkslen= YY_STACK_SIZE;\n\
+      G->thunks= (yythunk*)YY_ALLOC(sizeof(yythunk) * G->thunkslen, G->data);\n\
+      G->valslen= YY_STACK_SIZE;\n\
+      G->vals= (YYSTYPE*)YY_ALLOC(sizeof(YYSTYPE) * G->valslen, G->data);\n\
       G->begin= G->end= G->pos= G->limit= G->thunkpos= 0;\n\
     }\n\
+  G->pos = 0;\n\
   G->begin= G->end= G->pos;\n\
   G->thunkpos= 0;\n\
   G->val= G->vals;\n\
@@ -746,6 +793,17 @@ YY_PARSE(int) YY_NAME(parse)(GREG *G)\n\
   return YY_NAME(parse_from)(G, yy_%s);\n\
 }\n\
 \n\
+YY_PARSE(void) YY_NAME(init)(GREG *G)\n\
+{\n\
+    memset(G, 0, sizeof(GREG));\n\
+}\n\
+YY_PARSE(void) YY_NAME(deinit)(GREG *G)\n\
+{\n\
+    if (G->buf) YY_FREE(G->buf);\n\
+    if (G->text) YY_FREE(G->text);\n\
+    if (G->thunks) YY_FREE(G->thunks);\n\
+    if (G->vals) YY_FREE((void*)G->vals);\n\
+}\n\
 YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)\n\
 {\n\
   GREG *G = (GREG *)YY_CALLOC(1, sizeof(GREG), G->data);\n\
@@ -755,6 +813,7 @@ YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)\n\
 \n\
 YY_PARSE(void) YY_NAME(parse_free)(GREG *G)\n\
 {\n\
+  YY_NAME(deinit)(G);\n\
   YY_FREE(G);\n\
 }\n\
 \n\
@@ -844,7 +903,7 @@ void Rule_compile_c(Node *node)
   for (n= actions;  n;  n= n->action.list)
     {
       char *block = n->action.text;
-      fprintf(output, "YY_ACTION(void) yy%s(GREG *G, char *yytext, int yyleng, YY_XTYPE YY_XVAR)\n{\n", n->action.name);
+      fprintf(output, "YY_ACTION(void) yy%s(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)\n{\n", n->action.name);
       defineVariables(n->action.rule->rule.variables);
       while (*block == 0x20) block++;
       fprintf(output, "  yyprintf((stderr, \"do yy%s @ \\\"%%s\\\"\\n\", yyqq(yytext)));\n", n->action.name);

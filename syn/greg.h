@@ -1,4 +1,8 @@
 /* Copyright (c) 2007 by Ian Piumarta
+ * Copyright (c) 2011 by Amos Wenger nddrylliog@gmail.com
+ * Copyright (c) 2013 by perl11 org
+
+ * Copyright (c) 2013 by perl11 org
  * All rights reserved.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -13,14 +17,14 @@
  * 
  * THE SOFTWARE IS PROVIDED 'AS IS'.  USE ENTIRELY AT YOUR OWN RISK.
  * 
- * Last edited: 2007-05-15 10:32:05 by piumarta on emilia
+ * Last edited: 2013-04-11 11:10:34 rurban
  */
 
 #include <stdio.h>
 
 #define GREG_MAJOR	0
-#define GREG_MINOR	3
-#define GREG_LEVEL	0
+#define GREG_MINOR	4
+#define GREG_LEVEL	4
 
 enum { Unknown= 0, Rule, Variable, Name, Dot, Character, String, Class, Action, Predicate, Alternate, Sequence, PeekFor, PeekNot, Query, Star, Plus };
 
@@ -31,23 +35,25 @@ enum {
 
 typedef union Node Node;
 
-struct Rule	 { int type;  Node *next;   char *name;	 Node *variables;  Node *expression;  int id;  int flags;	};
-struct Variable	 { int type;  Node *next;   char *name;  Node *value;  int offset;					};
-struct Name	 { int type;  Node *next;   Node *rule;  Node *variable;						};
-struct Dot	 { int type;  Node *next;										};
-struct Character { int type;  Node *next;   char *value;								};
-struct String	 { int type;  Node *next;   char *value;								};
-struct Class	 { int type;  Node *next;   unsigned char *value;							};
-struct Action	 { int type;  Node *next;   char *text;	  Node *list;  char *name;  Node *rule;				};
-struct Predicate { int type;  Node *next;   char *text;									};
-struct Alternate { int type;  Node *next;   Node *first;  Node *last;							};
-struct Sequence	 { int type;  Node *next;   Node *first;  Node *last;							};
-struct PeekFor	 { int type;  Node *next;   Node *element;								};
-struct PeekNot	 { int type;  Node *next;   Node *element;								};
-struct Query	 { int type;  Node *next;   Node *element;								};
-struct Star	 { int type;  Node *next;   Node *element;								};
-struct Plus	 { int type;  Node *next;   Node *element;								};
-struct Any	 { int type;  Node *next;										};
+#define NODE_COMMON int type;  Node *next; char *errblock
+struct Rule	 { NODE_COMMON; char *name; Node *variables;  Node *expression;  int id;  int flags;	};
+struct Variable	 { NODE_COMMON; char *name; Node *value;  int offset;					};
+struct Name	 { NODE_COMMON; Node *rule; Node *variable;						};
+struct Dot	 { NODE_COMMON;										};
+struct Character { NODE_COMMON; char *value;								};
+struct String	 { NODE_COMMON; char *value;								};
+struct Class	 { NODE_COMMON; unsigned char *value;							};
+struct Action	 { NODE_COMMON; char *text;  Node *list;  char *name;  Node *rule;			};
+struct Predicate { NODE_COMMON; char *text;								};
+struct Alternate { NODE_COMMON; Node *first;  Node *last;						};
+struct Sequence	 { NODE_COMMON; Node *first;  Node *last;						};
+struct PeekFor	 { NODE_COMMON; Node *element;								};
+struct PeekNot	 { NODE_COMMON; Node *element;								};
+struct Query	 { NODE_COMMON; Node *element;								};
+struct Star	 { NODE_COMMON; Node *element;								};
+struct Plus	 { NODE_COMMON; Node *element;								};
+struct Any	 { NODE_COMMON;										};
+#undef NODE_COMMON
 
 union Node
 {

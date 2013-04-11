@@ -38,6 +38,7 @@ static inline Node *_newNode(int type, int size)
 {
   Node *node= calloc(1, size);
   node->type= type;
+  ((struct Any *) node)->errblock= NULL;
   return node;
 }
 
