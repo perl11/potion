@@ -2,7 +2,7 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC ?= gcc
-CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
+CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -Wno-unused-label -D_GNU_SOURCE
 LDEXEFLAGS = -L. -Wl,-rpath=. -Wl,-rpath=../lib
 LDDLLFLAGS = -shared -fpic
 INCS = -Icore
