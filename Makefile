@@ -98,9 +98,9 @@ core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
 # bootstrap tools/greg.c, tools/compile.c not yet
-tools/greg.c: tools/greg.greg tools/compile.c tools/tree.c
+tools/greg.c: tools/greg.h tools/greg.y tools/compile.c tools/tree.c
 	@${ECHO} GREG $<
-	${GREG} tools/greg.greg > tools/greg-new.c
+	${GREG} tools/greg.y > tools/greg-new.c
 	${CC} -O3 -DNDEBUG -o tools/greg-new tools/greg.c tools/compile.c tools/tree.c -Itools
 	${MV} tools/greg-new.c tools/greg.c
 	${MV} tools/greg-new tools/greg

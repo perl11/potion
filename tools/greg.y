@@ -1,4 +1,4 @@
-# -*- tab-width:8 -*-
+# -*- mode: antlr; tab-width:8 -*-
 # LE Grammar for LE Grammars
 # 
 # Copyright (c) 2007 by Ian Piumarta
@@ -41,25 +41,21 @@
 
   int   verboseFlag= 0;
 
-  static int	 lineNumber= 0;
-  static char	*fileName= 0;
   static char	*trailer= 0;
   static Header	*headers= 0;
 
   void makeHeader(char *text);
   void makeTrailer(char *text);
 
-  void yyerror(struct _GREG *, char *message);
-
-# define YY_INPUT(buf, result, max, D)		\
-  {						\
-    int c= getc(input);				\
-    if ('\n' == c || '\r' == c) ++lineNumber;	\
-    result= (EOF == c) ? 0 : (*(buf)= c, 1);	\
-  }
-
 # define YY_LOCAL(T)	static T
 # define YY_RULE(T)	static T
+# define YY_INPUT(G, buf, result, max_size)		\
+  {							\
+    int yyc= getc(input);				\
+    if ('\n' == yyc || '\r' == yyc) ++G->lineno;        \
+    result= (EOF == yyc) ? 0 : (*(buf)= yyc, 1);	\
+  }
+
 %}
 
 # Hierarchical syntax
@@ -151,31 +147,6 @@ end-of-file=	!.
 
 %%
 
-void yyerror(struct _GREG *G, char *message)
-{
-  fprintf(stderr, "%s:%d: %s", fileName, lineNumber, message);
-  if (G->text[0]) fprintf(stderr, " near token '%s'", G->text);
-  if (G->pos < G->limit || !feof(input))
-    {
-      G->buf[G->limit]= '\0';
-      fprintf(stderr, " before text \"");
-      while (G->pos < G->limit)
-	{
-	  if ('\n' == G->buf[G->pos] || '\r' == G->buf[G->pos]) break;
-	  fputc(G->buf[G->pos++], stderr);
-	}
-      if (G->pos == G->limit)
-	{
-	  int c;
-	  while (EOF != (c= fgetc(input)) && '\n' != c && '\r' != c)
-	    fputc(c, stderr);
-	}
-      fputc('\"', stderr);
-    }
-  fprintf(stderr, "\n");
-  exit(1);
-}
-
 void makeHeader(char *text)
 {
   Header *header= (Header *)malloc(sizeof(Header));
@@ -216,8 +187,6 @@ int main(int argc, char **argv)
 
   output= stdout;
   input= stdin;
-  lineNumber= 1;
-  fileName= "<stdin>";
 
   while (-1 != (c= getopt(argc, argv, "Vho:v")))
     {
@@ -252,6 +221,8 @@ int main(int argc, char **argv)
   argv += optind;
 
   G = yyparse_new(NULL);
+  G->lineno= 1;
+  G->filename= "<stdin>";
 #ifdef YY_DEBUG
   if (verboseFlag)
     G->debug = 1;
@@ -261,30 +232,24 @@ int main(int argc, char **argv)
     {
       for (;  argc;  --argc, ++argv)
 	{
-	  if (!strcmp(*argv, "-"))
+	  if (strcmp(*argv, "-"))
 	    {
-	      input= stdin;
-	      fileName= "<stdin>";
-	    }
-	  else
-	    {
-	      if (!(input= fopen(*argv, "r")))
+	      G->filename= *argv;
+	      if (!(input= fopen(G->filename, "r")))
 		{
-		  perror(*argv);
+		  perror(G->filename);
 		  exit(1);
 		}
-	      fileName= *argv;
 	    }
-	  lineNumber= 1;
 	  if (!yyparse(G))
-	    yyerror(G, "syntax error");
+	    YY_ERROR(G, "syntax error");
 	  if (input != stdin)
 	    fclose(input);
 	}
     }
   else
     if (!yyparse(G))
-      yyerror(G, "syntax error");
+      YY_ERROR(G, "syntax error");
   yyparse_free(G);
 
   if (verboseFlag)

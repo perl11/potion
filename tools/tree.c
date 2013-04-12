@@ -1,4 +1,5 @@
 /* Copyright (c) 2007 by Ian Piumarta
+ * Copyright (c) 2013 by perl11 org
  * All rights reserved.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -13,7 +14,7 @@
  * 
  * THE SOFTWARE IS PROVIDED 'AS IS'.  USE ENTIRELY AT YOUR OWN RISK.
  * 
- * Last edited: 2007-05-15 10:32:09 by piumarta on emilia
+ * Last edited: 2013-04-15 09:55:07 rurban
  */
 
 #include <stdio.h>
@@ -34,7 +35,7 @@ int actionCount= 0;
 int ruleCount= 0;
 int lastToken= -1;
 
-static inline Node *_newNode(int type, int size)
+static inline Node *_newNode(NodeType type, int size)
 {
   Node *node= calloc(1, size);
   node->type= type;
@@ -297,7 +298,9 @@ static void Node_fprint(FILE *stream, Node *node)
   assert(node);
   switch (node->type)
     {
+    case Freed:		return;
     case Rule:		fprintf(stream, " %s", node->rule.name);				break;
+    case Variable:	fprintf(stream, " %s", node->variable.name);				break;
     case Name:		fprintf(stream, " %s", node->name.rule->rule.name);			break;
     case Dot:		fprintf(stream, " .");							break;
     case Character:	fprintf(stream, " '%s'", node->character.value);			break;
@@ -351,3 +354,113 @@ static void Rule_fprint(FILE *stream, Node *node)
 }
 
 void Rule_print(Node *node)	{ Rule_fprint(stderr, node); }
+
+void Rule_free(Node *node)
+{
+  switch (node->type)
+    {
+    case Freed:		return;
+    case Rule:
+      {
+	Node *var= node->rule.variables;
+#ifdef DEBUG
+	//Rule_print(node);
+	fprintf(stderr, "free Rule %s.%d\n", node->rule.name, node->rule.id);
+#endif
+	free(node->rule.name);
+	while (var) {
+	  Node *tmp= var->any.next; Rule_free(var); var= tmp;
+	}
+	if (node->rule.expression)
+	  Rule_free(node->rule.expression);
+	break;
+      }
+    case Name:		break;
+    case Variable:	free(node->variable.name);		break;
+    case Dot:		break;
+    case Character:	free(node->character.value);		break;
+    case String:	free(node->string.value);		break;
+    case Class:		free(node->cclass.value);		break;
+    case Action:
+#ifdef DEBUG
+	fprintf(stderr, "free Action %s\n", node->action.name);
+#endif
+	free(node->action.text); free(node->action.name); 	break;
+    case Predicate:	free(node->predicate.text);		break;
+    case Alternate:
+      {
+	Node *root= node;
+#ifdef DEBUG
+	fprintf(stderr, "free Alternate %p\n", node);
+#endif
+	node= node->alternate.first;
+	while (node->any.next) {
+	  Node *tmp= node->any.next; Rule_free(node); node= tmp;
+	}
+	Rule_free(node);
+	node= root;
+	break;
+      }
+    case Sequence:
+      {
+	Node *root= node;
+#ifdef DEBUG
+	fprintf(stderr, "free Sequence %p\n", node);
+#endif
+	node= node->sequence.first;
+	while (node->any.next) {
+	  Node *tmp= node->any.next; Rule_free(node); node= tmp;
+	}
+	Rule_free(node);
+	node= root;
+	break;
+      }
+    case PeekFor:	break;
+    case PeekNot:	break;
+    case Query:		break;
+    case Star:		break;
+    case Plus:		break;
+    default:
+      fprintf(stderr, "\nunknown node type %d\n", node->type);
+      return;
+    }
+  assert(node);
+  node->type = Freed;
+  if (((struct Any *)node)->errblock)
+    free(((struct Any *)node)->errblock);
+#ifndef DD_CYCLE
+  free(node);
+#endif
+}
+
+void freeRules (void) {
+  Node *n;
+  for (n= rules; n; ) {
+    if (n->type > 0) {
+      Node *tmp= n->any.next;
+      Rule_free(n);
+      if (tmp)
+	n= tmp->any.next;
+      else
+	n= NULL;
+    }
+    else {
+      n= n->any.next;
+    }
+  }
+#ifdef DD_CYCLE
+  for (n= rules; n; ) {
+    if (n->type == Freed) {
+      Node *tmp= n->any.next;
+      free(n);
+      if (tmp)
+	n= tmp->any.next;
+      else
+	n= NULL;
+    }
+    else {
+      n= n->any.next;
+    }
+  }
+#endif
+}

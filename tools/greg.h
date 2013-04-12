@@ -1,8 +1,6 @@
 /* Copyright (c) 2007 by Ian Piumarta
  * Copyright (c) 2011 by Amos Wenger nddrylliog@gmail.com
  * Copyright (c) 2013 by perl11 org
-
- * Copyright (c) 2013 by perl11 org
  * All rights reserved.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,9 +22,9 @@
 
 #define GREG_MAJOR	0
 #define GREG_MINOR	4
-#define GREG_LEVEL	4
+#define GREG_LEVEL	5
 
-enum { Unknown= 0, Rule, Variable, Name, Dot, Character, String, Class, Action, Predicate, Alternate, Sequence, PeekFor, PeekNot, Query, Star, Plus };
+typedef enum { Freed = -1, Unknown= 0, Rule, Variable, Name, Dot, Character, String, Class, Action, Predicate, Alternate, Sequence, PeekFor, PeekNot, Query, Star, Plus, Any } NodeType;
 
 enum {
   RuleUsed	= 1<<0,
@@ -57,7 +55,7 @@ struct Any	 { NODE_COMMON;										};
 
 union Node
 {
-  int			type;
+  NodeType		type;
   struct Rule		rule;
   struct Variable	variable;
   struct Name		name;
@@ -116,3 +114,5 @@ extern void  Rule_compile_c(Node *node);
 
 extern void  Node_print(Node *node);
 extern void  Rule_print(Node *node);
+extern void  Rule_free(Node *node);
+extern void  freeRules(void);
