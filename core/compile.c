@@ -883,7 +883,7 @@ PN potion_run(Potion *P, PN code, int jit) {
 }
 
 PN potion_eval(Potion *P, PN bytes, int jit) {
-  PN code = potion_parse(P, bytes);
+  PN code = potion_parse(P, bytes, "<eval>");
   if (PN_TYPE(code) != PN_TSOURCE) return code;
   code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
   return potion_run(P, code, jit);
