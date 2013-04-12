@@ -173,6 +173,9 @@ static void usage(char *name)
   fprintf(stderr, "  -h          print this help information\n");
   fprintf(stderr, "  -o <ofile>  write output to <ofile>\n");
   fprintf(stderr, "  -v          be verbose\n");
+#ifdef YY_DEBUG
+  fprintf(stderr, "  -vv         be more verbose\n");
+#endif
   fprintf(stderr, "  -V          print version number and exit\n");
   fprintf(stderr, "if no <file> is given, input is read from stdin\n");
   fprintf(stderr, "if no <ofile> is given, output is written to stdout\n");
@@ -209,7 +212,7 @@ int main(int argc, char **argv)
 	  break;
 
 	case 'v':
-	  verboseFlag= 1;
+	  verboseFlag++;
 	  break;
 
 	default:
@@ -224,8 +227,11 @@ int main(int argc, char **argv)
   G->lineno= 1;
   G->filename= "<stdin>";
 #ifdef YY_DEBUG
-  if (verboseFlag)
-    G->debug = 1;
+  if (verboseFlag > 0) {
+    G->debug = DEBUG_PARSE;
+    if (verboseFlag > 1)
+      G->debug = DEBUG_PARSE + DEBUG_VERBOSE;
+  }
 #endif
 
   if (argc)
