@@ -678,7 +678,7 @@ PN potion_gc_reserved(Potion *, PN, PN);
 PN potion_gc_actual(Potion *, PN, PN);
 PN potion_gc_fixed(Potion *, PN, PN);
 
-PN potion_parse(Potion *, PN);
+PN potion_parse(Potion *, PN, char*);
 PN potion_vm_proto(Potion *, PN, PN, ...);
 PN potion_vm_class(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);

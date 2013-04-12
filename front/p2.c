@@ -94,7 +94,7 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
     if (P->flags & DEBUG_VERBOSE)
       printf("\n\n-- loaded --\n");
   } else {
-    code = p2_parse(P, buf);
+    code = p2_parse(P, buf, filename);
     if (!code || PN_TYPE(code) == PN_TERROR) {
       potion_p(P, code);
       return code;

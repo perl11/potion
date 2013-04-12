@@ -28,7 +28,7 @@
 //
 
 PN p2_source_load(Potion *P, PN cl, PN buf);
-PN p2_parse(Potion *, PN);
+PN p2_parse(Potion *, PN, char*);
 PN p2_run(Potion *, PN, int);
 PN p2_eval(Potion *, PN, int);
 // not yet, because its the same

@@ -1,3 +1,4 @@
+# -*- mode: antlr; tab-width:8 -*-
 #
 # syntax.g
 # Potion tokens and grammar
@@ -13,7 +14,12 @@
 #include "asm.h"
 #include "ast.h"
 
-#define YY_INPUT(buf, result, max, D) { \
+#define YYSTYPE PN
+#define YY_XTYPE Potion *
+#define YY_XVAR P
+
+#define YY_INPUT(G, buf, result, max) { \
+  YY_XTYPE P = G->data; \
   if (P->yypos < PN_STR_LEN(P->input)) { \
     result = max; \
     if (P->yypos + max > PN_STR_LEN(P->input)) \
@@ -25,9 +31,6 @@
   } \
 }
 
-#define YYSTYPE PN
-#define YY_XTYPE Potion *
-#define YY_XVAR P
 #define YY_NAME(N) potion_code_##N
 
 #define YY_TNUM 3
@@ -292,7 +295,7 @@ arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
 %%
 
-PN potion_parse(Potion *P, PN code) {
+PN potion_parse(Potion *P, PN code, char *filename) {
   GREG *G = YY_NAME(parse_new)(P);
   P->yypos = 0;
   P->input = code;
@@ -303,8 +306,11 @@ PN potion_parse(Potion *P, PN code) {
 #endif
 
   G->pos = G->limit = 0;
-  if (!YY_NAME(parse)(G))
-    printf("** Syntax error!\n%s", PN_STR_PTR(code));
+  G->filename = filename;
+  if (!YY_NAME(parse)(G)) {
+    YY_ERROR(G, "** Syntax error!");
+    fprintf(stderr, "%s", PN_STR_PTR(code));
+  }
   YY_NAME(parse_free)(G);
 
   code = P->source;
@@ -325,7 +331,7 @@ PN potion_sig(Potion *P, char *fmt) {
 
   G->pos = G->limit = 0;
   if (!YY_NAME(parse_from)(G, yy_sig))
-    printf("** Syntax error!\n");
+    YY_ERROR(G, "** Signature Syntax error!");
   YY_NAME(parse_free)(G);
 
   out = P->source;

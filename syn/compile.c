@@ -82,9 +82,9 @@ static char *yyqq(char* s) {
   int sl = 0, dl = 0;
   while (*s++) {
     dl++; sl++;
-    if (*s==7||*s==8||*s==9||*s==11||*s==12||*s==13||*s==27||*s==34||*s==92) { dl++; } // escape with '\'
+    if (*s==7||*s==8||*s==9||*s==11||*s==12||*s==13||*s==27||*s==34||*s==92||*s=='%') { dl++; } // escape with '\'
     else if (*s==10) { dl += 3; }        // \n\^J
-    else if (*s<32||*s>128) { dl += 4; } // octal \000
+    else if (*(signed char *)s<32) { dl += 4; } // octal \000
   }
   if (dl == sl) return d;
   s = d;
@@ -110,7 +110,9 @@ static char *yyqq(char* s) {
       *d++ = '\\'; *d++ = 'v'; s++;
     } else if (*s == 92) { // '\'
       *d++ = '\\'; *d++ = '\\'; s++;
-    } else if (*s<32||*s>128) {
+    } else if (*s == '%') { // % => %%
+      *d++ = '%'; *d++ = '%'; s++;
+    } else if (*(signed char *)s<32) {
       sprintf(d,"\\%03o", *s); // octal \000
       d += 4; s++;
     } else {
@@ -407,7 +409,7 @@ static void Rule_compile_c2(Node *node)
 }
 
 #ifdef YY_DEBUG
-static void yyprintcontext(GREG *G, FILE *stream, char *s)
+static void yyprintcontext(FILE *stream, char *s)
 {
   char *context = s;
   char *nl = strchr(context, 10);
@@ -457,13 +459,16 @@ static char *preamble= "\
 #define YY_NAME(N) yy##N\n\
 #endif\n\
 #ifndef YY_INPUT\n\
-#define YY_INPUT(buf, result, max_size, D)		\\\n\
+#define YY_INPUT(G, buf, result, max_size)		\\\n\
   {							\\\n\
-    int yyc= getchar();					\\\n\
-    if ('\\n' == c || '\\r' == c) ++lineNumber;	        \\\n\
+    int yyc= fgetc(G->input);				\\\n\
+    if ('\\n' == yyc || '\\r' == yyc) ++G->lineno;      \\\n\
     result= (EOF == yyc) ? 0 : (*(buf)= yyc, 1);	\\\n\
-    yyprintf((stderr, \"<%c>\", yyc));			\\\n\
+    yyprintfv((stderr, \"<%c>\", yyc));			\\\n\
   }\n\
+#endif\n\
+#ifndef YY_ERROR\n\
+#define YY_ERROR(G, message) yyerror(G, message)\n\
 #endif\n\
 #ifndef YY_BEGIN\n\
 #define YY_BEGIN	( G->begin= G->pos, 1)\n\
@@ -472,11 +477,17 @@ static char *preamble= "\
 #define YY_END		( G->end= G->pos, 1)\n\
 #endif\n\
 #ifdef YY_DEBUG\n\
+# ifndef DEBUG_PARSE\n\
+#  define DEBUG_PARSE 1\n\
+# endif\n\
+# ifndef DEBUG_VERBOSE\n\
+#  define DEBUG_VERBOSE 2\n\
+# endif\n\
 # define yyprintf(args)	  if (G->debug & DEBUG_PARSE)         fprintf args\n\
 # define yyprintfv(args)  if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) fprintf args\n\
-# define yyprintfGcontext  if (G->debug & DEBUG_PARSE)         yyprintcontext(G,stderr,G->buf+G->pos)\n\
-# define yyprintfvGcontext if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(G,stderr,G->buf+G->pos)\n\
-# define yyprintfvTcontext(text) if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(G,stderr,text)\n\
+# define yyprintfGcontext  if (G->debug & DEBUG_PARSE)         yyprintcontext(stderr,G->buf+G->pos)\n\
+# define yyprintfvGcontext if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(stderr,G->buf+G->pos)\n\
+# define yyprintfvTcontext(text) if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(stderr,text)\n\
 #else\n\
 # define yyprintf(args)\n\
 # define yyprintfv(args)\n\
@@ -512,7 +523,7 @@ typedef struct _yythunk { int begin, end;  yyaction  action; const char *name; s
 \n\
 typedef struct _GREG {\n\
   char *buf;\n\
-  int buflen;\n\
+  int   buflen;\n\
   int   offset;\n\
   int   pos;\n\
   int   limit;\n\
@@ -522,7 +533,10 @@ typedef struct _GREG {\n\
   int	end;\n\
   yythunk *thunks;\n\
   int	thunkslen;\n\
-  int thunkpos;\n\
+  int   thunkpos;\n\
+  int	lineno;\n\
+  char	*filename;\n\
+  FILE  *input;\n\
   YYSTYPE ss;\n\
   YYSTYPE *val;\n\
   YYSTYPE *vals;\n\
@@ -536,13 +550,12 @@ typedef struct _GREG {\n\
 YY_LOCAL(int) yyrefill(GREG *G)\n\
 {\n\
   int yyn;\n\
-  YY_XTYPE YY_XVAR = (YY_XTYPE)G->data;\n\
   while (G->buflen - G->pos < 512)\n\
     {\n\
       G->buflen *= 2;\n\
       G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);\n\
     }\n\
-  YY_INPUT((G->buf + G->pos), yyn, (G->buflen - G->pos), G->data);\n\
+  YY_INPUT(G, (G->buf + G->pos), yyn, (G->buflen - G->pos));\n\
   if (!yyn) return 0;\n\
   G->limit += yyn;\n\
   return 1;\n\
@@ -556,7 +569,7 @@ YY_LOCAL(int) yymatchDot(GREG *G)\n\
 }\n\
 \n\
 #ifdef YY_DEBUG\n\
-YY_LOCAL(void) yyprintcontext(GREG *G, FILE *stream, char *s)\n\
+YY_LOCAL(void) yyprintcontext(FILE *stream, char *s)\n\
 {\n\
   char *context = s;\n\
   char *nl = strchr(context, 10);\n\
@@ -569,6 +582,31 @@ YY_LOCAL(void) yyprintcontext(GREG *G, FILE *stream, char *s)\n\
   if (nl) free(context);\n\
 }\n\
 #endif\n\
+\n\
+YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
+{\n\
+  fprintf(stderr, \"%s:%d: %s\", G->filename, G->lineno, message);\n\
+  if (G->text[0]) fprintf(stderr, \" near token '%s'\", G->text);\n\
+  if (G->pos < G->limit || !feof(G->input))\n\
+    {\n\
+      G->buf[G->limit]= '\\0';\n\
+      fprintf(stderr, \" before text \\\"\");\n\
+      while (G->pos < G->limit)\n\
+	{\n\
+	  if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
+	  fputc(G->buf[G->pos++], stderr);\n\
+	}\n\
+      if (G->pos == G->limit)\n\
+	{\n\
+	  int c;\n\
+	  while (EOF != (c= fgetc(G->input)) && '\\n' != c && '\\r' != c)\n\
+	    fputc(c, stderr);\n\
+	}\n\
+      fputc('\\\"', stderr);\n\
+    }\n\
+  fprintf(stderr, \"\\n\");\n\
+  exit(1);\n\
+}\n\
 \n\
 YY_LOCAL(int) yymatchChar(GREG *G, int c)\n\
 {\n\
@@ -646,7 +684,7 @@ YY_LOCAL(int) yyText(GREG *G, int begin, int end)\n\
     yyleng= 0;\n\
   else\n\
     {\n\
-      while (G->textlen < (yyleng - 1))\n\
+      while (G->textlen < (yyleng + 1))\n\
         {\n\
           G->textlen *= 2;\n\
           G->text= (char*)YY_REALLOC(G->text, G->textlen, G->data);\n\
@@ -781,8 +819,11 @@ YY_PARSE(void) YY_NAME(deinit)(GREG *G)\n\
 }\n\
 YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)\n\
 {\n\
-  GREG *G = (GREG *)YY_CALLOC(1, sizeof(GREG), G->data);\n\
-  G->data = data;\n\
+  GREG *G= (GREG *)YY_CALLOC(1, sizeof(GREG), G->data);\n\
+  G->data= data;\n\
+  G->input= stdin;\n\
+  G->lineno= 1;\n\
+  G->filename= \"<stdin>\";\n\
   return G;\n\
 }\n\
 \n\

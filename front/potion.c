@@ -83,7 +83,7 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
       if (P->flags & DEBUG_VERBOSE)
         fprintf(stderr, "\n\n-- loaded --\n");
     } else {
-      code = potion_parse(P, buf);
+      code = potion_parse(P, buf, filename);
       if (!code || PN_TYPE(code) == PN_TERROR) {
 	potion_p(P, code);
         goto done;

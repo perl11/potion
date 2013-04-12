@@ -1,8 +1,6 @@
 /* Copyright (c) 2007 by Ian Piumarta
  * Copyright (c) 2011 by Amos Wenger nddrylliog@gmail.com
  * Copyright (c) 2013 by perl11 org
-
- * Copyright (c) 2013 by perl11 org
  * All rights reserved.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,7 +22,7 @@
 
 #define GREG_MAJOR	0
 #define GREG_MINOR	4
-#define GREG_LEVEL	4
+#define GREG_LEVEL	5
 
 enum { Unknown= 0, Rule, Variable, Name, Dot, Character, String, Class, Action, Predicate, Alternate, Sequence, PeekFor, PeekNot, Query, Star, Plus };
 

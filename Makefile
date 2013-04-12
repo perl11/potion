@@ -103,7 +103,7 @@ core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
 # bootstrap syn/greg.c, syn/compile.c not yet
-syn/greg.c: syn/greg.greg syn/compile.c syn/tree.c
+syn/greg.c: syn/greg.h syn/greg.greg syn/compile.c syn/tree.c
 	@${ECHO} GREG $<
 	${GREG} syn/greg.greg > syn/greg-new.c
 	${CC} -O3 -DNDEBUG -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn
