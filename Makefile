@@ -250,14 +250,12 @@ check: test.pn test.p2
 
 test: test.pn test.p2
 
-test.pn: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
+test.pn: potion${EXE} test/api/potion-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
 	DYLD_LIBRARY_PATH=`pwd`:$DYLD_LIBRARY_PATH \
 	export DYLD_LIBRARY_PATH; \
 	test/api/potion-test; \
-	${ECHO} running GC tests; \
-	test/api/gc-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
