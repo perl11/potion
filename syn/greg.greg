@@ -225,7 +225,7 @@ int main(int argc, char **argv)
 
   G = yyparse_new(NULL);
   G->lineno= 1;
-  G->filename= "<stdin>";
+  G->filename= "-";
 #ifdef YY_DEBUG
   if (verboseFlag > 0) {
     G->debug = DEBUG_PARSE;
