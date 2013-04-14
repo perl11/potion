@@ -39,6 +39,7 @@ OBJ_GC_BENCH = test/api/gc-bench.o
 DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/design-decisions.textile
 DOCHTML = ${DOC:.textile=.html}
 
+GREGCFLAGS = -O3 -DNDEBUG
 CAT  = /bin/cat
 ECHO = /bin/echo
 MV   = /bin/mv
@@ -103,10 +104,10 @@ core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
 # bootstrap syn/greg.c, syn/compile.c not yet
-syn/greg.c: syn/greg.h syn/greg.greg syn/compile.c syn/tree.c
+syn/greg.c: syn/greg.greg syn/greg.h syn/compile.c syn/tree.c
 	@${ECHO} GREG $<
-	${GREG} syn/greg.greg > syn/greg-new.c
-	${CC} -O3 -DNDEBUG -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn
+	test -f ${GREG} && ${GREG} syn/greg.greg > syn/greg-new.c
+	${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn
 	${MV} syn/greg-new.c syn/greg.c
 	${MV} syn/greg-new syn/greg
 
@@ -165,10 +166,12 @@ core/vm.o core/vm.opic: core/vm-dis.c
 
 %.c: %.g ${GREG}
 	@${ECHO} GREG $<
-	@${GREG} $< > $@
+	@${GREG} $< > $@-new
+	${MV} $@-new $@
 .g.c: ${GREG}
 	@${ECHO} GREG $<
-	@${GREG} $< > $@
+	@${GREG} $< > $@-new
+	${MV} $@-new $@
 
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
 # on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
@@ -202,7 +205,7 @@ p2${EXE}: ${OBJ_P2} libp2${DLL} ${LIBHACK}
 
 ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@${ECHO} CC $@
-	@${CC} -O3 -DNDEBUG -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
+	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
 potion-s${EXE}: ${OBJ_POTION} libpotion.a ${LIBHACK}
 	@${ECHO} LINK $@

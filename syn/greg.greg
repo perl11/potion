@@ -66,7 +66,7 @@ declaration=	'%{' < ( !'%}' . )* > RPERCENT		{ makeHeader(yytext); }						#{YYAC
 
 trailer=	'%%' < .* >				{ makeTrailer(yytext); }					#{YYACCEPT}
 
-definition=	s:identifier 				{ if (push(beginRule(findRule(yytext, s)))->rule.expression)
+definition=	s:identifier 				{ if (push(beginRule(findRule(yytext,s)))->rule.expression)
 							    fprintf(stderr, "rule '%s' redefined\n", yytext); }
 		EQUAL expression			{ Node *e= pop();  Rule_setExpression(pop(), e); }
 		SEMICOLON?												#{YYACCEPT}
@@ -89,8 +89,8 @@ suffix=		primary (QUESTION			{ push(makeQuery(pop())); }
 
 primary=	(
                 identifier				{ push(makeVariable(yytext)); }
-		COLON identifier !EQUAL			{ Node *name= makeName(findRule(yytext, 0));  name->name.variable= pop();  push(name); }
-|		identifier !EQUAL			{ push(makeName(findRule(yytext, 0))); }
+		COLON identifier !EQUAL			{ Node *name= makeName(findRule(yytext,0));  name->name.variable= pop();  push(name); }
+|		identifier !EQUAL			{ push(makeName(findRule(yytext,0))); }
 |		OPEN expression CLOSE
 |		literal					{ push(makeString(yytext)); }
 |		class					{ push(makeClass(yytext)); }

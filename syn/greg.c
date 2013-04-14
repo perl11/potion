@@ -457,15 +457,15 @@ YY_ACTION(void) yy_3_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, 
 {
   yyprintf((stderr, "do yy_3_primary"));
   yyprintfvTcontext(yytext);
-  yyprintf((stderr, "\n  {push(makeName(findRule(yytext, 0))); }\n"));
-  push(makeName(findRule(yytext, 0))); ;
+  yyprintf((stderr, "\n  {push(makeName(findRule(yytext,0))); }\n"));
+  push(makeName(findRule(yytext,0))); ;
 }
 YY_ACTION(void) yy_2_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_2_primary"));
   yyprintfvTcontext(yytext);
-  yyprintf((stderr, "\n  {Node *name= makeName(findRule(yytext, 0));  name->name.variable= pop();  push(name); }\n"));
-  Node *name= makeName(findRule(yytext, 0));  name->name.variable= pop();  push(name); ;
+  yyprintf((stderr, "\n  {Node *name= makeName(findRule(yytext,0));  name->name.variable= pop();  push(name); }\n"));
+  Node *name= makeName(findRule(yytext,0));  name->name.variable= pop();  push(name); ;
 }
 YY_ACTION(void) yy_1_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
@@ -544,9 +544,9 @@ YY_ACTION(void) yy_1_definition(GREG *G, char *yytext, int yyleng, yythunk *thun
 #define s G->val[-1]
   yyprintf((stderr, "do yy_1_definition"));
   yyprintfvTcontext(yytext);
-  yyprintf((stderr, "\n  {if (push(beginRule(findRule(yytext, s)))->rule.expression)\n\
+  yyprintf((stderr, "\n  {if (push(beginRule(findRule(yytext,s)))->rule.expression)\n\
 \t\t\t\t\t\t\t    fprintf(stderr, \"rule '%%s' redefined\\n\", yytext); }\n"));
-  if (push(beginRule(findRule(yytext, s)))->rule.expression)
+  if (push(beginRule(findRule(yytext,s)))->rule.expression)
 							    fprintf(stderr, "rule '%s' redefined\n", yytext); ;
 #undef s
 }
