@@ -92,6 +92,8 @@ static char *yyqq(char* s) {
   while (*s) {
     if (*s == '"') {
       *d++ = '\\'; *d++ = *s++;
+    } else if (*s == '%') { // % => %%
+      *d++ = '%'; *d++ = *s++;
     } else if (*s == '\n') { // \n\^J
       *d++ = '\\'; *d++ = 'n'; *d++ = '\\'; *d++ = 10; s++;
     } else if (*s == '\t') { //ht
@@ -109,9 +111,7 @@ static char *yyqq(char* s) {
     } else if (*s == '\v') { //vt
       *d++ = '\\'; *d++ = 'v'; s++;
     } else if (*s == 92) { // '\'
-      *d++ = '\\'; *d++ = '\\'; s++;
-    } else if (*s == '%') { // % => %%
-      *d++ = '%'; *d++ = '%'; s++;
+      *d++ = '\\'; *d++ = *s++;
     } else if (*(signed char *)s<32) {
       sprintf(d,"\\%03o", *s); // octal \000
       d += 4; s++;
@@ -478,12 +478,12 @@ static char *preamble= "\
 #endif\n\
 #ifdef YY_DEBUG\n\
 # ifndef DEBUG_PARSE\n\
-#  define DEBUG_PARSE 1\n\
+#  define DEBUG_PARSE   1\n\
 # endif\n\
 # ifndef DEBUG_VERBOSE\n\
 #  define DEBUG_VERBOSE 2\n\
 # endif\n\
-# define yyprintf(args)	  if (G->debug & DEBUG_PARSE)         fprintf args\n\
+# define yyprintf(args)	  if (G->debug & DEBUG_PARSE)          fprintf args\n\
 # define yyprintfv(args)  if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) fprintf args\n\
 # define yyprintfGcontext  if (G->debug & DEBUG_PARSE)         yyprintcontext(G,stderr,G->buf+G->pos)\n\
 # define yyprintfvGcontext if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) yyprintcontext(G,stderr,G->buf+G->pos)\n\
@@ -823,7 +823,7 @@ YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)\n\
   G->data= data;\n\
   G->input= stdin;\n\
   G->lineno= 1;\n\
-  G->filename= \"<stdin>\";\n\
+  G->filename= \"-\";\n\
   return G;\n\
 }\n\
 \n\

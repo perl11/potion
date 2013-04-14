@@ -89,12 +89,12 @@ struct _GREG;
 #endif
 #ifdef YY_DEBUG
 # ifndef DEBUG_PARSE
-#  define DEBUG_PARSE 1
+#  define DEBUG_PARSE   1
 # endif
 # ifndef DEBUG_VERBOSE
 #  define DEBUG_VERBOSE 2
 # endif
-# define yyprintf(args)	  if (G->debug & DEBUG_PARSE)         fprintf args
+# define yyprintf(args)	  if (G->debug & DEBUG_PARSE)          fprintf args
 # define yyprintfv(args)  if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) fprintf args
 # define yyprintfGcontext  if (G->debug & DEBUG_PARSE)         yyprintcontext(G,stderr,G->buf+G->pos)
 # define yyprintfvGcontext if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) yyprintcontext(G,stderr,G->buf+G->pos)
@@ -1765,7 +1765,7 @@ YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)
   G->data= data;
   G->input= stdin;
   G->lineno= 1;
-  G->filename= "<stdin>";
+  G->filename= "-";
   return G;
 }
 
@@ -1856,7 +1856,7 @@ int main(int argc, char **argv)
 
   G = yyparse_new(NULL);
   G->lineno= 1;
-  G->filename= "<stdin>";
+  G->filename= "-";
 #ifdef YY_DEBUG
   if (verboseFlag > 0) {
     G->debug = DEBUG_PARSE;
