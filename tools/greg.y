@@ -264,14 +264,22 @@ int main(int argc, char **argv)
 
   Rule_compile_c_header();
 
-  for (; headers;  headers= headers->next)
+  while (headers) {
+    Header *tmp = headers;
     fprintf(output, "%s\n", headers->text);
+    free(headers->text);
+    tmp= headers->next;
+    free(headers);
+    headers= tmp;
+  }
 
   if (rules)
     Rule_compile_c(rules);
 
-  if (trailer)
+  if (trailer) {
     fprintf(output, "%s\n", trailer);
+    free(trailer);
+  }
 
   return 0;
 }
