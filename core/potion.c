@@ -261,8 +261,7 @@ done:
 
 int main(int argc, char *argv[]) {
   POTION_INIT_STACK(sp);
-  int i;
-  int interactive = 1;
+  int i, interactive = 1;
   exec_mode_t exec = POTION_JIT ? EXEC_JIT : EXEC_VM;
   Potion *P = potion_create(sp);
   PN buf = PN_NIL;
@@ -343,6 +342,9 @@ int main(int argc, char *argv[]) {
 	printf("  G  GC\n");
 	goto END;
       }
+      if (strchr(&argv[i][2], 'i')) P->flags |= DEBUG_INSPECT;
+      if (strchr(&argv[i][2], 'v')) P->flags |= DEBUG_VERBOSE;
+      if (strchr(&argv[i][2], 't')) P->flags |= DEBUG_TRACE;
       if (strchr(&argv[i][2], 'i')) P->flags |= DEBUG_INSPECT;
       if (strchr(&argv[i][2], 'v')) P->flags |= DEBUG_VERBOSE;
       if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE;

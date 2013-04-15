@@ -225,9 +225,9 @@ int main(int argc, char **argv)
   G->filename= "-";
 #ifdef YY_DEBUG
   if (verboseFlag > 0) {
-    yydebug = DEBUG_PARSE;
+    yydebug = YYDEBUG_PARSE;
     if (verboseFlag > 1)
-      yydebug = DEBUG_PARSE + DEBUG_VERBOSE;
+      yydebug = YYDEBUG_PARSE + YYDEBUG_VERBOSE;
   }
 #endif
 

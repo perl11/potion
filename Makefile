@@ -106,7 +106,7 @@ grammar: tools/greg.y
 tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	@${ECHO} GREG $<
 	@if test -f ${GREG}; then ${GREG} tools/greg.y > tools/greg-new.c && \
-	  ${CC} ${GREGCFLAGS} -o tools/greg-new tools/greg.c tools/compile.c tools/tree.c -Itools && \
+	  ${CC} ${GREGCFLAGS} -o tools/greg-new tools/greg-new.c tools/compile.c tools/tree.c -Itools && \
 	  ${MV} tools/greg-new.c tools/greg.c && \
 	  ${MV} tools/greg-new tools/greg; \
 	fi
@@ -157,7 +157,7 @@ endif
 	@${ECHO} GREG $@
 	@${GREG} $< > $@-new && ${MV} $@-new $@
 
-${GREG}: tools/greg.c tools/compile.c tools/tree.c
+${GREG}: tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} ${GREGCFLAGS} -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
