@@ -110,9 +110,9 @@ grammar: syn/greg.greg
 
 syn/greg.c: syn/greg.greg
 	@${ECHO} GREG $<
-	if test -f ${GREG}; then ${GREG} syn/greg.greg > syn/greg-new.c; && \
-	  ${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn; && \
-	  ${MV} syn/greg-new.c syn/greg.c; && \
+	if test -f ${GREG}; then ${GREG} syn/greg.greg > syn/greg-new.c && \
+	  ${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn && \
+	  ${MV} syn/greg-new.c syn/greg.c && \
 	  ${MV} syn/greg-new syn/greg; \
         fi
 
