@@ -25,6 +25,8 @@
 
 #include "greg.h"
 
+static int indent= 0;
+
 static int yyl(void)
 {
   static int prev= 0;
@@ -163,12 +165,14 @@ static char *makeCharClass(unsigned char *cclass)
   return string;
 }
 
-static void begin(void)		{ fprintf(output, "\n  {"); }
-static void end(void)		{ fprintf(output, "\n  }"); }
-static void label(int n)	{ fprintf(output, "\n  l%d:;\n", n); }
-static void jump(int n)		{ fprintf(output, "  goto l%d;", n); }
-static void save(int n)		{ fprintf(output, "  int yypos%d= G->pos, yythunkpos%d= G->thunkpos;\n", n, n); }
-static void restore(int n)	{ fprintf(output,     "  G->pos= yypos%d; G->thunkpos= yythunkpos%d;\n", n, n); }
+static void nl(void)	        { fprintf(output, "\n"); }
+static void pindent(void)	{ fprintf(output, "%*s", 2*indent, ""); }
+static void begin(void)		{ indent++; pindent(); fprintf(output, "{"); }
+static void save(int n)		{ nl(); pindent(); fprintf(output, "  int yypos%d= G->pos, yythunkpos%d= G->thunkpos;\n", n, n); }
+static void label(int n)	{ nl(); pindent(); fprintf(output, "  l%d:;\n", n); }
+static void jump(int n)		{ pindent(); fprintf(output, "  goto l%d;", n); }
+static void restore(int n)	{ pindent(); fprintf(output, "  G->pos= yypos%d; G->thunkpos= yythunkpos%d;\n", n, n); }
+static void end(void)		{ pindent(); indent--; fprintf(output, "}\n"); }
 
 static void callErrBlock(Node * node) {
     fprintf(output, " { YY_XTYPE YY_XVAR = (YY_XTYPE) G->data; int yyindex = G->offset + G->pos; %s; }", ((struct Any*) node)->errblock);
@@ -185,25 +189,32 @@ static void Node_compile_c_ko(Node *node, int ko)
       break;
 
     case Dot:
+      pindent();
       fprintf(output, "  if (!yymatchDot(G)) goto l%d;\n", ko);
       break;
 
     case Name:
+      pindent();
       fprintf(output, "  if (!yy_%s(G)) ", node->name.rule->rule.name);
       if(((struct Any*) node)->errblock) {
-	fprintf(output, "{ ");
+	fprintf(output, "{  "); indent++;
 	callErrBlock(node);
-	fprintf(output, " goto l%d; }\n", ko);
+	pindent();
+	fprintf(output, "  goto l%d; }\n", ko); indent--;
       } else {
-	fprintf(output, " goto l%d;\n", ko);
+	pindent();
+	fprintf(output, "  goto l%d;\n", ko);
       }
-      if (node->name.variable)
+      if (node->name.variable) {
+	pindent();
 	fprintf(output, "  yyDo(G, yySet, %d, 0, \"yySet\");\n", node->name.variable->variable.offset);
+      }
       break;
 
     case Character:
     case String:
       {
+	pindent();
 	int len= strlen(node->string.value);
 	if (1 == len)
 	  {
@@ -222,6 +233,7 @@ static void Node_compile_c_ko(Node *node, int ko)
 
     case Class:
       {
+	pindent();
 	char *tmp = yyqq((char*)node->cclass.value);
 	fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", \"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), tmp, ko);
 	if (tmp != (char*)node->cclass.value) free(tmp);
@@ -229,10 +241,12 @@ static void Node_compile_c_ko(Node *node, int ko)
       break;
 
     case Action:
+      pindent();
       fprintf(output, "  yyDo(G, yy%s, G->begin, G->end, \"yy%s\");\n", node->action.name, node->action.name);
       break;
 
     case Predicate:
+      pindent();
       fprintf(output, "  yyText(G, G->begin, G->end);\n  if (!(%s)) goto l%d;\n", node->action.text, ko);
       break;
 
@@ -352,7 +366,8 @@ static void defineVariables(Node *node)
   int count= 0;
   while (node)
     {
-      fprintf(output, "#define %s G->val[%d]\n", node->variable.name, --count);
+      pindent();
+      fprintf(output, "  #define %s G->val[%d]\n", node->variable.name, --count);
       node->variable.offset= count;
       node= node->variable.next;
     }
@@ -362,7 +377,8 @@ static void undefineVariables(Node *node)
 {
   while (node)
     {
-      fprintf(output, "#undef %s\n", node->variable.name);
+      pindent();
+      fprintf(output, "  #undef %s\n", node->variable.name);
       node= node->variable.next;
     }
 }
@@ -394,8 +410,8 @@ static void Rule_compile_c2(Node *node)
       fprintf(output, "  yyprintfGcontext;\n");
       fprintf(output, "  yyprintf((stderr, \"\\n\"));\n");
       if (node->rule.variables)
-	fprintf(output, "  yyDo(G, yyPop, %d, 0, \"yyPop\");", countVariables(node->rule.variables));
-      fprintf(output, "\n  return 1;");
+	fprintf(output, "  yyDo(G, yyPop, %d, 0, \"yyPop\");\n", countVariables(node->rule.variables));
+      fprintf(output, "  return 1;");
       if (!safe)
 	{
 	  label(ko);
@@ -403,7 +419,7 @@ static void Rule_compile_c2(Node *node)
 	  fprintf(output, "  yyprintfv((stderr, \"  fail %%s\", \"%s\"));\n", node->rule.name);
 	  fprintf(output, "  yyprintfvGcontext;\n");
 	  fprintf(output, "  yyprintfv((stderr, \"\\n\"));\n");
-	  fprintf(output, "\n  return 0;");
+	  fprintf(output, "  return 0;");
 	}
       fprintf(output, "\n}");
     }
@@ -466,7 +482,7 @@ static char *preamble= "\
 #define YY_INPUT(G, buf, result, max_size)		\\\n\
   {							\\\n\
     int yyc= fgetc(G->input);				\\\n\
-    if ('\\n' == yyc || '\\r' == yyc) ++G->lineno;      \\\n\
+    if ('\\n' == yyc) ++G->lineno;      		\\\n\
     result= (EOF == yyc) ? 0 : (*(buf)= yyc, 1);	\\\n\
     yyprintfv((stderr, \"<%c>\", yyc));			\\\n\
   }\n\
@@ -481,11 +497,12 @@ static char *preamble= "\
 #define YY_END		( G->end= G->pos, 1)\n\
 #endif\n\
 #ifdef YY_DEBUG\n\
-# ifndef DEBUG_PARSE\n\
-#  define DEBUG_PARSE   1\n\
+# define yydebug G->debug\n\
+# ifndef YYDEBUG_PARSE\n\
+#  define YYDEBUG_PARSE   1\n\
 # endif\n\
-# ifndef DEBUG_VERBOSE\n\
-#  define DEBUG_VERBOSE 2\n\
+# ifndef YYDEBUG_VERBOSE\n\
+#  define YYDEBUG_VERBOSE 2\n\
 # endif\n\
 # define yyprintf(args)	  if (G->debug & DEBUG_PARSE)          fprintf args\n\
 # define yyprintfv(args)  if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) fprintf args\n\
@@ -493,6 +510,7 @@ static char *preamble= "\
 # define yyprintfvGcontext if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) yyprintcontext(G,stderr,G->buf+G->pos)\n\
 # define yyprintfvTcontext(text) if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) yyprintcontext(G,stderr,text)\n\
 #else\n\
+# define yydebug 0\n\
 # define yyprintf(args)\n\
 # define yyprintfv(args)\n\
 # define yyprintfGcontext\n\
@@ -510,11 +528,11 @@ static char *preamble= "\
 #endif\n\
 \n\
 #ifndef YY_STACK_SIZE\n\
-#define YY_STACK_SIZE 128\n\
+#define YY_STACK_SIZE 1024\n\
 #endif\n\
 \n\
 #ifndef YY_BUFFER_START_SIZE\n\
-#define YY_BUFFER_START_SIZE 1024\n\
+#define YY_BUFFER_START_SIZE 16384\n\
 #endif\n\
 \n\
 #ifndef YY_PART\n\
@@ -677,7 +695,7 @@ YY_LOCAL(void) yyDo(GREG *G, yyaction action, int begin, int end, const char *na
   G->thunks[G->thunkpos].begin=  begin;\n\
   G->thunks[G->thunkpos].end=    end;\n\
   G->thunks[G->thunkpos].action= action;\n\
-  G->thunks[G->thunkpos].name= name;\n\
+  G->thunks[G->thunkpos].name=   name;\n\
   ++G->thunkpos;\n\
 }\n\
 \n\
