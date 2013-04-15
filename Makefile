@@ -104,7 +104,11 @@ core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
 # bootstrap syn/greg.c, syn/compile.c not yet
-syn/greg.c: syn/greg.greg syn/greg.h syn/compile.c syn/tree.c
+grammar: syn/greg.greg
+	touch syn/greg.greg
+	${MAKE} syn/greg.c
+
+syn/greg.c: syn/greg.greg
 	@${ECHO} GREG $<
 	test -f ${GREG} && ${GREG} syn/greg.greg > syn/greg-new.c
 	${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn
@@ -167,11 +171,11 @@ core/vm.o core/vm.opic: core/vm-dis.c
 %.c: %.g ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@-new
-	${MV} $@-new $@
+	@${MV} $@-new $@
 .g.c: ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@-new
-	${MV} $@-new $@
+	@${MV} $@-new $@
 
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
 # on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
@@ -438,4 +442,4 @@ clean:
 realclean: clean
 	@rm -f config.inc
 
-.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release install
+.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release install grammar
