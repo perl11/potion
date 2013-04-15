@@ -32,7 +32,7 @@ static void potion_cmd_usage(Potion *P) {
       "      --check        check the script syntax and exit\n"
       "  -h, --help         show this helpful stuff\n"
 #ifdef DEBUG
-      "  -D[itpvGJ]         debugging flags\n"
+      "  -D[itPpvGJ?]       debugging flags, try -D?\n"
 #endif
       "  -v, --version      show version\n"
       "(default: %s)\n",
@@ -246,6 +246,17 @@ int main(int argc, char *argv[]) {
     }
 #ifdef DEBUG
     if (argv[i][0] == '-' && argv[i][1] == 'D') {
+      if (strchr(&argv[i][2], '?')) {
+	printf("-D debugging flags:\n");
+	printf("  i  inspect\n");
+	printf("  v  verbose\n");
+	printf("  t  trace\n");
+	printf("  p  parse\n");
+	printf("  P  parse verbose\n");
+	printf("  J  Jit\n");
+	printf("  G  GC\n");
+	goto END;
+      }
       if (strchr(&argv[i][2], 'i'))
 	P->flags |= DEBUG_INSPECT;
       if (strchr(&argv[i][2], 'v'))
@@ -256,6 +267,8 @@ int main(int argc, char *argv[]) {
       }
       if (strchr(&argv[i][2], 'p'))
 	P->flags |= DEBUG_PARSE;
+      if (strchr(&argv[i][2], 'p'))
+	P->flags |= DEBUG_PARSE_VERBOSE;
       if (strchr(&argv[i][2], 'J'))
 	P->flags |= DEBUG_JIT;
       if (strchr(&argv[i][2], 'G'))

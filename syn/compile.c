@@ -725,9 +725,9 @@ YY_LOCAL(void) yyDone(GREG *G)\n\
     {\n\
       yythunk *thunk= &G->thunks[pos];\n\
       int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;\n\
-      yyprintf((stderr, \"DO [%d] %s\", pos, thunk->name));\n\
+      yyprintfv((stderr, \"DO [%d] %s %d\", pos, thunk->name, thunk->begin));\n\
       yyprintfvTcontext(G->text);\n\
-      yyprintf((stderr, \"\\n\"));\n\
+      yyprintfv((stderr, \"\\n\"));\n\
       thunk->action(G, G->text, yyleng, thunk, G->data);\n\
     }\n\
   G->thunkpos= 0;\n\
@@ -761,6 +761,7 @@ YY_LOCAL(int) yyAccept(GREG *G, int tp0)\n\
 }\n\
 \n\
 YY_LOCAL(void) yyPush(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR)	{\n\
+  yyprintfv((stderr, \"yyPush %d\\n\", count));\n\
   size_t off = (G->val - G->vals) + count;\n\
   if (off > G->valslen) {\n\
     while (G->valslen < off + 1)\n\
@@ -771,8 +772,14 @@ YY_LOCAL(void) yyPush(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE Y
     G->val += count;\n\
   }\n\
 }\n\
-YY_LOCAL(void) yyPop(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR)	{ G->val -= count; }\n\
-YY_LOCAL(void) yySet(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR)	{ G->val[count]= G->ss; }\n\
+YY_LOCAL(void) yyPop(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR) {\n\
+  yyprintfv((stderr, \"yyPop %d\\n\", count));\n\
+  G->val -= count;\n\
+}\n\
+YY_LOCAL(void) yySet(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR)	{\n\
+  yyprintf((stderr, \"yySet %d %p\\n\", count, (void*)yy));\n\
+  G->val[count]= yy;\n\
+}\n\
 \n\
 #endif /* YY_PART */\n\
 \n\

@@ -279,7 +279,7 @@ int main(int argc, char *argv[]) {
 	printf("  v  verbose\n");
 	printf("  t  trace\n");
 	printf("  p  parse\n");
-	printf("  P  verbose + parse\n");
+	printf("  P  parse verbose\n");
 	printf("  J  Jit\n");
 	printf("  G  GC\n");
 	goto END;
