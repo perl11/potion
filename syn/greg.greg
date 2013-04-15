@@ -23,10 +23,7 @@
 %{
 # include "greg.h"
 
-# include <stdio.h>
-# include <stdlib.h>
 # include <unistd.h>
-# include <string.h>
 # include <libgen.h>
 # include <assert.h>
 
@@ -51,8 +48,8 @@
 # define YY_RULE(T)	static T
 # define YY_INPUT(G, buf, result, max_size)		\
   {							\
-    int yyc= getc(input);				\
-    if ('\n' == yyc || '\r' == yyc) ++G->lineno;        \
+    int yyc= fgetc(input);				\
+    if ('\n' == yyc) ++G->lineno;                       \
     result= (EOF == yyc) ? 0 : (*(buf)= yyc, 1);	\
   }
 
@@ -228,9 +225,9 @@ int main(int argc, char **argv)
   G->filename= "-";
 #ifdef YY_DEBUG
   if (verboseFlag > 0) {
-    G->debug = DEBUG_PARSE;
+    yydebug = DEBUG_PARSE;
     if (verboseFlag > 1)
-      G->debug = DEBUG_PARSE + DEBUG_VERBOSE;
+      yydebug = DEBUG_PARSE + DEBUG_VERBOSE;
   }
 #endif
 

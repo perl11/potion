@@ -8,8 +8,6 @@
 #
 
 %{
-#include <stdio.h>
-#include <stdlib.h>
 #include "p2.h"
 #include "internal.h"
 #include "asm.h"
@@ -36,6 +34,8 @@
 
 #define YY_TNUM 3
 #define YY_TDEC 13
+#define YYDEBUG_PARSE   DEBUG_PARSE
+#define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
 
 //const char *Nullch = '\0';
 %}
@@ -188,11 +188,7 @@ call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:anon
        (v:value | v:list) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
          { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
-name = p:path           { $$ = PN_AST(PATH, p); }
-     | query ( m:message { $$ = PN_AST(QUERY, m); }
-             | p:path    { $$ = PN_AST(PATHQ, p); })
-     | !keyword
-       m:message        { $$ = PN_AST(MESSAGE, m); }
+name = !keyword m:message     { $$ = PN_AST(MESSAGE, m); }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1); }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2); })*
@@ -216,11 +212,14 @@ block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i); }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 
-path = '/' < utfw+ > -      { $$ = potion_str2(P, yytext, yyleng); }
-message = < utfw+ '?'? > -   { $$ = potion_str2(P, yytext, yyleng); }
+#path = '/' < utfw+ > -       { $$ = potion_str2(P, yytext, yyleng); }
+#path    = < utfw+ > -   { $$ = potion_str2(P, yytext, yyleng); }
+message = < utfw+ > -   { $$ = potion_str2(P, yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
       | s:scalar  { $$ = PN_AST(VALUE, s); }
+      | h:hashvar { $$ = PN_AST(VALUE, h); } # flattened to list?
+      | l:listvar { $$ = PN_AST(VALUE, l); } # flattened?
       | lick
       | group
 
@@ -235,9 +234,11 @@ immed = undef { $$ = PN_NIL; }
               } }
       | str1 | str2
 
-scalar = '$' < utf8+ > { $$ = potion_str2(P, yytext, yyleng); }
+scalar  = < '$' utf8+ >
+listvar = < '@' utf8+ >
+hashvar = < '%' utf8+ >
 
-utfw = [A-Za-z0-9_$@;`{}]
+utfw = [A-Za-z0-9_]
      | '\304' [\250-\277]
      | [\305-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
@@ -256,7 +257,6 @@ lick-start = '[' --
 lick-end = ']' -
 group-start = '{'
 group-end = '}'
-query = '?' --
 bitnot = '~' --
 assign = '=' --
 pplus = "++" -
@@ -628,10 +628,9 @@ PN p2_parse(Potion *P, PN code, char *filename) {
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
 #ifdef YY_DEBUG
-  G->debug = P->flags & (DEBUG_PARSE | DEBUG_VERBOSE);
+  yydebug = P->flags & (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
 #endif
 
-  G->pos = G->limit = 0;
   G->filename = filename;
   if (!YY_NAME(parse)(G)) {
     YY_ERROR(G, "** Syntax error!");
@@ -655,7 +654,6 @@ PN potion_sig(Potion *P, char *fmt) {
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
 
-  G->pos = G->limit = 0;
   if (!YY_NAME(parse_from)(G, yy_sig))
     YY_ERROR(G, "** Signature Syntax error!");
   YY_NAME(parse_free)(G);

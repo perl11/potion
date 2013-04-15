@@ -7,8 +7,6 @@
 #
 
 %{
-#include <stdio.h>
-#include <stdlib.h>
 #include "potion.h"
 #include "internal.h"
 #include "asm.h"
@@ -35,6 +33,8 @@
 
 #define YY_TNUM 3
 #define YY_TDEC 13
+#define YYDEBUG_PARSE   DEBUG_PARSE
+#define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
 
 %}
 
@@ -302,10 +302,9 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
 #ifdef YY_DEBUG
-  G->debug = P->flags & (DEBUG_PARSE | DEBUG_VERBOSE);
+  yydebug = P->flags & (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
 #endif
 
-  G->pos = G->limit = 0;
   G->filename = filename;
   if (!YY_NAME(parse)(G)) {
     YY_ERROR(G, "** Syntax error!");
@@ -329,7 +328,6 @@ PN potion_sig(Potion *P, char *fmt) {
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
 
-  G->pos = G->limit = 0;
   if (!YY_NAME(parse_from)(G, yy_sig))
     YY_ERROR(G, "** Signature Syntax error!");
   YY_NAME(parse_free)(G);

@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
       if (strchr(&argv[i][2], 'p'))
 	P->flags |= DEBUG_PARSE;
       if (strchr(&argv[i][2], 'P'))
-	P->flags |= (DEBUG_PARSE | DEBUG_VERBOSE);
+	P->flags |= (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
       if (strchr(&argv[i][2], 'J'))
 	P->flags |= DEBUG_JIT;
       if (strchr(&argv[i][2], 'G'))

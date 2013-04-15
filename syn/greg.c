@@ -8,10 +8,7 @@ struct _GREG;
 
 # include "greg.h"
 
-# include <stdio.h>
-# include <stdlib.h>
 # include <unistd.h>
-# include <string.h>
 # include <libgen.h>
 # include <assert.h>
 
@@ -36,8 +33,8 @@ struct _GREG;
 # define YY_RULE(T)	static T
 # define YY_INPUT(G, buf, result, max_size)		\
   {							\
-    int yyc= getc(input);				\
-    if ('\n' == yyc || '\r' == yyc) ++G->lineno;        \
+    int yyc= fgetc(input);				\
+    if ('\n' == yyc) ++G->lineno;                       \
     result= (EOF == yyc) ? 0 : (*(buf)= yyc, 1);	\
   }
 
@@ -88,18 +85,20 @@ struct _GREG;
 #define YY_END		( G->end= G->pos, 1)
 #endif
 #ifdef YY_DEBUG
+# define yydebug G->debug
 # ifndef DEBUG_PARSE
 #  define DEBUG_PARSE   1
 # endif
 # ifndef DEBUG_VERBOSE
 #  define DEBUG_VERBOSE 2
 # endif
-# define yyprintf(args)	   if (G->debug & DEBUG_PARSE)         fprintf args
-# define yyprintfv(args)   if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) fprintf args
-# define yyprintfGcontext  if (G->debug & DEBUG_PARSE)         yyprintcontext(stderr,G->buf+G->pos)
-# define yyprintfvGcontext if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(stderr,G->buf+G->pos)
-# define yyprintfvTcontext(text) if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(stderr,text)
+# define yyprintf(args)	   if (yydebug & DEBUG_PARSE)         fprintf args
+# define yyprintfv(args)   if (yydebug == (DEBUG_PARSE|DEBUG_VERBOSE)) fprintf args
+# define yyprintfGcontext  if (yydebug & DEBUG_PARSE)         yyprintcontext(stderr,G->buf+G->pos)
+# define yyprintfvGcontext if (yydebug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(stderr,G->buf+G->pos)
+# define yyprintfvTcontext(text) if (yydebug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprintcontext(stderr,text)
 #else
+# define yydebug 0
 # define yyprintf(args)
 # define yyprintfv(args)
 # define yyprintfGcontext
@@ -1859,9 +1858,9 @@ int main(int argc, char **argv)
   G->filename= "-";
 #ifdef YY_DEBUG
   if (verboseFlag > 0) {
-    G->debug = DEBUG_PARSE;
+    yydebug = DEBUG_PARSE;
     if (verboseFlag > 1)
-      G->debug = DEBUG_PARSE + DEBUG_VERBOSE;
+      yydebug = DEBUG_PARSE + DEBUG_VERBOSE;
   }
 #endif
 
