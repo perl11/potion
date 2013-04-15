@@ -407,9 +407,7 @@ static void Rule_compile_c2(Node *node)
 	fprintf(output, "  yyDo(G, yyPush, %d, 0, \"yyPush\");\n", countVariables(node->rule.variables));
       fprintf(output, "  yyprintfv((stderr, \"%%s\\n\", \"%s\"));\n", node->rule.name);
       Node_compile_c_ko(node->rule.expression, ko);
-      fprintf(output, "  yyprintf((stderr, \"  ok   %s\"));\n", node->rule.name);
-      fprintf(output, "  yyprintfGcontext;\n");
-      fprintf(output, "  yyprintf((stderr, \"\\n\"));\n");
+      fprintf(output, "  yyprintfokrule(\"%s\");\n", node->rule.name);
       if (node->rule.variables)
 	fprintf(output, "  yyDo(G, yyPop, %d, 0, \"yyPop\");\n", countVariables(node->rule.variables));
       fprintf(output, "  return 1;");
@@ -417,9 +415,7 @@ static void Rule_compile_c2(Node *node)
 	{
 	  label(ko);
 	  restore(0);
-	  fprintf(output, "  yyprintfv((stderr, \"  fail %%s\", \"%s\"));\n", node->rule.name);
-	  fprintf(output, "  yyprintfvGcontext;\n");
-	  fprintf(output, "  yyprintfv((stderr, \"\\n\"));\n");
+	  fprintf(output, "  yyprintfvfailrule(\"%s\");\n", node->rule.name);
 	  fprintf(output, "  return 0;");
 	}
       fprintf(output, "\n}");
@@ -510,6 +506,19 @@ static char *preamble= "\
 # define yyprintfGcontext  if (yydebug & YYDEBUG_PARSE)         yyprintcontext(stderr,G->buf+G->pos)\n\
 # define yyprintfvGcontext if (yydebug == (YYDEBUG_PARSE|YYDEBUG_VERBOSE)) yyprintcontext(stderr,G->buf+G->pos)\n\
 # define yyprintfvTcontext(text) if (yydebug == (YYDEBUG_PARSE|YYDEBUG_VERBOSE)) yyprintcontext(stderr,text)\n\
+# define yyprintfokrule(rule) if (yydebug & YYDEBUG_PARSE) {\\\n\
+  if (G->buf[G->pos]) {\\\n\
+    fprintf(stderr, \"  ok   %s\", rule);\\\n\
+    yyprintcontext(stderr,G->buf+G->pos);\\\n\
+    fprintf(stderr, \"\\n\");\\\n\
+  } else {\\\n\
+    yyprintfv((stderr, \"  ok   %s @ \\\"\\\"\\n\", rule));\\\n\
+  }}\n\
+# define yyprintfvfailrule(rule) if (yydebug == (YYDEBUG_PARSE|YYDEBUG_VERBOSE)) {\\\n\
+    fprintf(stderr, \"  fail %s\", rule);\\\n\
+    yyprintcontext(stderr,G->buf+G->pos);\\\n\
+    fprintf(stderr, \"\\n\");\\\n\
+  }\n\
 #else\n\
 # define yydebug 0\n\
 # define yyprintf(args)\n\
@@ -517,6 +526,8 @@ static char *preamble= "\
 # define yyprintfGcontext\n\
 # define yyprintfvGcontext\n\
 # define yyprintfvTcontext(text)\n\
+# define yyprintfokrule(rule)\n\
+# define yyprintfvfailrule(rule)\n\
 #endif\n\
 #ifndef YYSTYPE\n\
 #define YYSTYPE	int\n\
@@ -636,11 +647,17 @@ YY_LOCAL(int) yymatchChar(GREG *G, int c)\n\
   if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
   if ((unsigned char)G->buf[G->pos] == c)\n\
     {\n\
+#ifdef YY_DEBUG\n\
+      if (c) {\n\
+        if (c<32) { yyprintf((stderr, \"  ok   yymatchChar '0x%x'\", c));}\n\
+        else      { yyprintf((stderr, \"  ok   yymatchChar '%c'\", c));}\n\
+        yyprintfGcontext;\n\
+        yyprintf((stderr, \"\\n\"));\n\
+      } else {\n\
+        yyprintfv((stderr, \"  ok   yymatchChar '0x0' @ \\\"\\\"\\n\"));\n\
+      }\n\
+#endif\n\
       ++G->pos;\n\
-      if (c<32) { yyprintf((stderr, \"  ok   yymatchChar '0x%x'\", c));}\n\
-      else      { yyprintf((stderr, \"  ok   yymatchChar '%c'\", c));}\n\
-      yyprintfGcontext;\n\
-      yyprintf((stderr, \"\\n\"));\n\
       return 1;\n\
     }\n\
   if (c<32) { yyprintfv((stderr, \"  fail yymatchChar '0x%x'\", c));}\n\
@@ -674,10 +691,16 @@ YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, char *cclass)\n\
   c= (unsigned char)G->buf[G->pos];\n\
   if (bits[c >> 3] & (1 << (c & 7)))\n\
     {\n\
+#ifdef YY_DEBUG\n\
+      if (G->buf[G->pos]) {\n\
+        yyprintf((stderr, \"  ok   yymatchClass [%s]\", cclass));\n\
+        yyprintfGcontext;\n\
+        yyprintf((stderr, \"\\n\"));\n\
+      } else {\n\
+        yyprintfv((stderr, \"  ok   yymatchClass [%s] @ \\\"\\\"\\n\", cclass));\n\
+      }\n\
+#endif\n\
       ++G->pos;\n\
-      yyprintf((stderr, \"  ok   yymatchClass [%s]\", cclass));\n\
-      yyprintfGcontext;\n\
-      yyprintf((stderr, \"\\n\"));\n\
       return 1;\n\
     }\n\
   yyprintfv((stderr, \"  fail yymatchClass [%s]\", cclass));\n\
