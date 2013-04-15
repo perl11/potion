@@ -33,7 +33,7 @@ enum {
 
 typedef union Node Node;
 
-#define NODE_COMMON int type;  Node *next; char *errblock
+#define NODE_COMMON NodeType type;  Node *next; char *errblock
 struct Rule	 { NODE_COMMON; char *name; Node *variables;  Node *expression;  int id;  int flags;	};
 struct Variable	 { NODE_COMMON; char *name; Node *value;  int offset;					};
 struct Name	 { NODE_COMMON; Node *rule; Node *variable;						};
