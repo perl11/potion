@@ -273,8 +273,10 @@ int main(int argc, char **argv)
     headers= tmp;
   }
 
-  if (rules)
+  if (rules) {
     Rule_compile_c(rules);
+    freeRules();
+  }
 
   if (trailer) {
     fprintf(output, "%s\n", trailer);

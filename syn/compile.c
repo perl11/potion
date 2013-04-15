@@ -221,7 +221,11 @@ static void Node_compile_c_ko(Node *node, int ko)
       break;
 
     case Class:
-      fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", \"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), yyqq((char*)node->cclass.value), ko);
+      {
+	char *tmp = yyqq((char*)node->cclass.value);
+	fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", \"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), tmp, ko);
+	if (tmp != (char*)node->cclass.value) free(tmp);
+      }
       break;
 
     case Action:
@@ -919,12 +923,15 @@ void Rule_compile_c(Node *node)
   for (n= actions;  n;  n= n->action.list)
     {
       char *block = n->action.text;
+      char *tmp;
       fprintf(output, "YY_ACTION(void) yy%s(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)\n{\n", n->action.name);
       defineVariables(n->action.rule->rule.variables);
       while (*block == 0x20 || *block == 0x9) block++;
       fprintf(output, "  yyprintf((stderr, \"do yy%s\"));\n", n->action.name);
       fprintf(output, "  yyprintfvTcontext(yytext);\n");
-      fprintf(output, "  yyprintf((stderr, \"\\n  {%s}\\n\"));\n", yyqq(block));
+      tmp = yyqq(block);
+      fprintf(output, "  yyprintf((stderr, \"\\n  {%s}\\n\"));\n", tmp);
+      if (tmp != block) free(tmp);
       fprintf(output, "  %s;\n", block);
       undefineVariables(n->action.rule->rule.variables);
       fprintf(output, "}\n");
