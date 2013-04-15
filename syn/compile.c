@@ -169,7 +169,7 @@ static void nl(void)	        { fprintf(output, "\n"); }
 static void pindent(void)	{ fprintf(output, "%*s", 2*indent, ""); }
 static void begin(void)		{ indent++; pindent(); fprintf(output, "{"); }
 static void save(int n)		{ nl(); pindent(); fprintf(output, "  int yypos%d= G->pos, yythunkpos%d= G->thunkpos;\n", n, n); }
-static void label(int n)	{ nl(); pindent(); fprintf(output, "  l%d:;\n", n); }
+static void label(int n)	{ nl(); pindent(); fprintf(output, "  l%d:\n", n); }
 static void jump(int n)		{ pindent(); fprintf(output, "  goto l%d;", n); }
 static void restore(int n)	{ pindent(); fprintf(output, "  G->pos= yypos%d; G->thunkpos= yythunkpos%d;\n", n, n); }
 static void end(void)		{ pindent(); indent--; fprintf(output, "}\n"); }
@@ -311,6 +311,7 @@ static void Node_compile_c_ko(Node *node, int ko)
 	restore(qko);
 	end();
 	label(qok);
+	pindent(); fprintf(output, "  ;\n");
       }
       break;
 
