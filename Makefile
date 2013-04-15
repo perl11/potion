@@ -110,10 +110,11 @@ grammar: syn/greg.greg
 
 syn/greg.c: syn/greg.greg
 	@${ECHO} GREG $<
-	test -f ${GREG} && ${GREG} syn/greg.greg > syn/greg-new.c
-	${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn
-	${MV} syn/greg-new.c syn/greg.c
-	${MV} syn/greg-new syn/greg
+	if test -f ${GREG}; then ${GREG} syn/greg.greg > syn/greg-new.c; && \
+	  ${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn; && \
+	  ${MV} syn/greg-new.c syn/greg.c; && \
+	  ${MV} syn/greg-new syn/greg; \
+        fi
 
 core/callcc.o core/callcc.o2: core/callcc.c
 	@${ECHO} CC $< +frame-pointer
@@ -346,7 +347,7 @@ test.p2: p2${EXE} test/api/p2-test${EXE} test/api/gc-test${EXE}
 			${RUNP2} --compile $$f > /dev/null; \
 			fb="$$f"c; \
 			for=`${RUNP2} --inspect -B $$fb | ${SED} "s/\n$$//"`; \
-			rm -rf $$fc; \
+			rm -rf $$fb; \
 		else \
 			for=`${RUNP2} --inspect -J $$f | ${SED} "s/\n$$//"`; \
 		fi; \
