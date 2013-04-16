@@ -225,6 +225,7 @@ void potion_esp(void **esp) {
 void potion_dump(Potion *P, PN data) {
   puts(PN_STR_PTR(potion_send(data, PN_string)));
 }
+#define pdump(data) potion_dump(P, data)
 
 void potion_dump_stack(Potion *P) {
   PN_SIZE n;
