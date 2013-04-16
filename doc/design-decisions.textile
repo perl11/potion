@@ -46,19 +46,36 @@ There should be a translator of old XS code to check the stack
 (argument + return values) handling macros and convert them to direct
 calls.
 
-h2. functional programming support
+h2. functional programming
 
-Some side-effect-only functions will be changed to return the
+p2 is pretty obscene in being a pure functional language, certainly more functional
+than LISP.
+Internally any non-lexical variable (GV in perl5) is a function, a closure, which means
+it is an object, which means getting the value is done by sending it a message with
+an empty name,
+and setting the value is done by sending it the "def" message.
+
+  (message %ENV) => return value of %ENV
+  (message %ENV "def" &env) => set new value of %ENV
+
+Yes, you smell Smalltalk.
+This is needed to be able to support a proper object system, types and esp.
+proper multi-threading.
+
+On the user-side some side-effect-only functions will be changed to return the
 changed argument.
 E.g. chop, chomp, ...
+return $s =~ s///r as default if the left hand side (wantarray) is no list.
 
-The parser will be different. Most statements will return values.
+The parser simplier and different. All statements return values. Everything can be on a
+right hand side of something.
 E.g. *if* returns the value of the executed branch or
 *undef* if no branch is choosen.
 
 bc. {
     $a = if (1) { $c }; #same as: $a = $c;
 }
+
 
 h2. order of destruction
 
