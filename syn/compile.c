@@ -801,8 +801,12 @@ YY_LOCAL(void) yyPop(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY
   G->val -= count;\n\
 }\n\
 YY_LOCAL(void) yySet(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR)	{\n\
-  yyprintf((stderr, \"yySet %d %p\\n\", count, (void*)yy));\n\
+#ifdef YY_SET\n\
+  YY_SET(G,text,count,thunk,YY_XVAR);\n\
+#else\n\
+  yyprintf((stderr, \"%s %d %p\\n\", thunk->name, count, (void *)yy));\n\
   G->val[count]= yy;\n\
+#endif\n\
 }\n\
 \n\
 #endif /* YY_PART */\n\

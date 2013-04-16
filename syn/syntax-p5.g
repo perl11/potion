@@ -34,8 +34,15 @@
 
 #define YY_TNUM 3
 #define YY_TDEC 13
-#define YYDEBUG_PARSE   DEBUG_PARSE
-#define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
+
+#ifdef YY_DEBUG
+# define YYDEBUG_PARSE   DEBUG_PARSE
+# define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
+# define YY_SET(G, text, count, thunk, P) \
+  yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
+           PN_STR_PTR(potion_send(yy, PN_string))));\
+  G->val[count]= yy;
+#endif
 
 //const char *Nullch = '\0';
 %}
