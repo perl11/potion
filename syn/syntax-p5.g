@@ -95,18 +95,24 @@ statements =
         (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })* sep?
     | ''             { $$ = PN_NIL; }
 
-stmt = "package" - arg-name ';' {} # TODO: set namespace
-    | if
+stmt = PACKAGE - arg-name ';' {} # TODO: set namespace
+    | ifstmt
     | s:sets ';'
         ( or x:sets ';'      { s = PN_OP(AST_OR, s, x); }
         | and x:sets ';'     { s = PN_OP(AST_AND, s, x); })*
                              { $$ = s; }
     | expr
 
-if = "if" e:ifexpr - s:block           { s  = PN_OP(AST_AND, e, s); }
-    | "if" e:ifexpr - s1:block         { s1 = PN_AST(MESSAGE, PN_if); }
-       ('elsif' e1:ifexpr - f:block )* { f = PN_AST(MESSAGE, PN_elsif); }
-       ('else' - s2:block )?          { s2 = PN_AST(MESSAGE, PN_else); }
+PACKAGE = "package"
+
+ifstmt = IF e:ifexpr - s:block - !"els" { s  = PN_OP(AST_AND, e, s); }
+       | IF e:ifexpr - s1:block         { s1 = PN_AST(MESSAGE, PN_if); }
+         (ELSIF e1:ifexpr - f:block )*  { f = PN_AST(MESSAGE, PN_elsif); }
+         (ELSE - s2:block )?            { s2 = PN_AST(MESSAGE, PN_else); }
+
+IF     = "if"
+ELSIF  = "elsif"
+ELSE   = "else"
 
 ifexpr = - '(' - expr - ')'
 
@@ -217,9 +223,7 @@ group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 message = < utfw+ > -   { $$ = potion_str2(P, yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
-      | s:scalar  { $$ = PN_AST(VALUE, s); }
-      | h:hashvar { $$ = PN_AST(VALUE, h); } # flattened to list?
-      | l:listvar { $$ = PN_AST(VALUE, l); } # flattened?
+      | global
       | lick
       | group
 
@@ -234,9 +238,10 @@ immed = undef { $$ = PN_NIL; }
               } }
       | str1 | str2
 
-scalar  = < '$' utf8+ >
-listvar = < '@' utf8+ >
-hashvar = < '%' utf8+ >
+# send the value a message, every global is a closure
+global  = < [$@%] utf8+ > { $$ = PN_AST(MESSAGE, potion_str2(P, yytext, yyleng)); }
+# listvar = < '@' utf8+ > { $$ = PN_AST(MESSAGE, potion_str2(P, yytext, yyleng)); }
+# hashvar = < '%' utf8+ > { $$ = PN_AST(MESSAGE, potion_str2(P, yytext, yyleng)); }
 
 utfw = [A-Za-z0-9_]
      | '\304' [\250-\277]
