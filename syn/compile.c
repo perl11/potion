@@ -207,7 +207,8 @@ static void Node_compile_c_ko(Node *node, int ko)
       }
       if (node->name.variable) {
 	pindent();
-	fprintf(output, "  yyDo(G, yySet, %d, 0, \"yySet\");\n", node->name.variable->variable.offset);
+	fprintf(output, "  yyDo(G, yySet, %d, 0, \"yySet %s\");\n",
+		node->name.variable->variable.offset, node->name.rule->rule.name);
       }
       break;
 
