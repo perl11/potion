@@ -610,6 +610,7 @@ PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
 PN potion_str2(Potion *, char *, size_t);
+PN potion_strcat(Potion *P, char *str, char *str2);
 PN potion_str_format(Potion *, const char *, ...);
 PN potion_byte_str(Potion *, const char *);
 PN potion_byte_str2(Potion *, const char *, size_t len);

@@ -59,6 +59,22 @@ PN potion_str2(Potion *P, char *str, size_t len) {
   return exist;
 }
 
+PN potion_strcat(Potion *P, char *str, char *str2) {
+  PN exist = PN_NIL;
+  int len = strlen(str);
+  int len2 = strlen(str2);
+  vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len+len2+1);
+  PN_MEMCPY_N(s->chars, str,  char, len);
+  PN_MEMCPY_N(s->chars+len, str2, char, len2);
+  s->chars[len+len2] = '\0';
+  exist = potion_lookup_str(P, s->chars);
+  if (exist == PN_NIL) {
+    potion_add_str(P, (PN)s);
+    exist = (PN)s;
+  }
+  return exist;
+}
+
 PN potion_str_format(Potion *P, const char *format, ...) {
   vPN(String) s;
   PN_SIZE len;
