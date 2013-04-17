@@ -34,7 +34,12 @@ PN potion_closure_code(Potion *P, PN cl, PN self) {
 
 PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   int x = 0;
-  PN out = potion_byte_str(P, "function(");
+#ifdef P2
+# define FUNCNAME "sub"
+#else
+# define FUNCNAME "function"
+#endif
+  PN out = potion_byte_str(P, FUNCNAME"(");
   if (PN_IS_TUPLE(PN_CLOSURE(self)->sig)) {
     PN_TUPLE_EACH(PN_CLOSURE(self)->sig, i, v, {
       if (PN_IS_STR(v)) {
