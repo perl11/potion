@@ -104,6 +104,7 @@ statements =
 
 stmt = PACKAGE - arg-name ';' {} # TODO: set namespace
     | ifstmt
+    | assigndecl ';'
     | s:sets ';'
         ( or x:sets ';'      { s = PN_OP(AST_OR, s, x); }
         | and x:sets ';'     { s = PN_OP(AST_AND, s, x); })*
@@ -122,6 +123,14 @@ ELSIF  = "elsif"
 ELSE   = "else"
 
 ifexpr = - '(' - expr - ')'
+
+assigndecl =
+        l:global - assign e:expr       { $$ = PN_AST2(ASSIGN, l, e); }
+      | MY - l:lexical - assign e:expr { $$ = PN_AST2(ASSIGN, l, e); }
+      # no list assignment yet my () = expr
+
+MY = "my"
+lexical = global
 
 sets = e:eqs?
        ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
@@ -245,11 +254,22 @@ immed = undef { $$ = PN_NIL; }
               } }
       | str1 | str2
 
+global  = scalar | listvar | hashvar | listel | hashel
+id = < utfws utfw* > { $$ = potion_str2(P, yytext, yyleng); }
 # send the value a message, every global is a closure
-global  = < [$@%] utf8+ > { $$ = PN_AST(MESSAGE, potion_str2(P, yytext, yyleng)); }
-# listvar = < '@' utf8+ > { $$ = PN_AST(MESSAGE, potion_str2(P, yytext, yyleng)); }
-# hashvar = < '%' utf8+ > { $$ = PN_AST(MESSAGE, potion_str2(P, yytext, yyleng)); }
+scalar  = < '$' i:id > { $$ = PN_AST(MESSAGE, $$); }
+listvar = < '@' i:id > { $$ = PN_AST(MESSAGE, $$); }
+hashvar = < '%' i:id > { $$ = PN_AST(MESSAGE, $$); }
+listel  = < '$' l:id '[' i:value ']' >
+        { $$ = PN_AST2(LICK, potion_strcat(P,"@",PN_STR_PTR(l)), i); }
+hashel  = < '$' h:id '{' i:value '}' >
+        { $$ = PN_AST2(LICK, potion_strcat(P,"%",PN_STR_PTR(h)), i); }
 
+utfws = [A-Za-z_]
+     | '\304' [\250-\277]
+     | [\305-\337] [\200-\277]
+     | [\340-\357] [\200-\277] [\200-\277]
+     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 utfw = [A-Za-z0-9_]
      | '\304' [\250-\277]
      | [\305-\337] [\200-\277]
@@ -263,31 +283,31 @@ utf8 = [\t\n\r\40-\176]
 comma = ','
 block-start = '{' space*
 block-end = ';'? space '}'
-list-start = '(' --
+list-start = '(' -
 list-end = ')' -
-lick-start = '[' --
+lick-start = '[' -
 lick-end = ']' -
 group-start = '{'
 group-end = '}'
-bitnot = '~' --
-assign = '=' --
+bitnot = '~' -
+assign = '=' -
 pplus = "++" -
 mminus = "--" -
-minus = '-' --
-plus = '+' --
-times = '*' --
-div = '/' --
-rem = '%' --
-pow = "**" --
-bitl = "<<" --
-bitr = ">>" --
-amp = '&' --
-caret = '^' --
-pipe = '|' --
-lt = '<' --
-lte = "<=" --
-gt = '>' --
-gte = ">=" --
+minus = '-' -
+plus = '+' -
+times = '*' -
+div = '/' -
+rem = '%' -
+pow = "**" -
+bitl = "<<" -
+bitr = ">>" -
+amp = '&' -
+caret = '^' -
+pipe = '|' -
+lt = '<' -
+lte = "<=" -
+gt = '>' -
+gte = ">=" -
 neq = ("!=" | "ne" !utfw) --
 eq = ("==" | "eq" !utfw) --
 cmp = "<=>" --
