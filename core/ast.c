@@ -44,15 +44,28 @@ PN potion_source_name(Potion *P, PN cl, PN self) {
 }
 
 PN potion_source_string(Potion *P, PN cl, PN self) {
-  int i, n;
+  int i, n, cut = 0;
   vPN(Source) t = (struct PNSource *)self;
   PN out = potion_byte_str(P, potion_ast_names[t->part]);
   n = potion_ast_sizes[t->part];
   for (i = 0; i < n; i++) {
     pn_printf(P, out, " ");
     if (i == 0 && n > 1) pn_printf(P, out, "(");
+    else if (i > 0) {
+      if (t->a[i] == PN_NIL) { // omit subsequent nil
+	if (!cut) cut = PN_STR_LEN(out);
+      }
+      else cut = 0;
+    }
     potion_bytes_obj_string(P, out, t->a[i]);
-    if (i == n - 1 && n > 1) pn_printf(P, out, ")");
+    if (i == n - 1 && n > 1) {
+      if (cut > 0) {
+	vPN(Bytes) b = (struct PNBytes *)potion_fwd(out);
+	b->len = cut;
+	b->chars[cut] = '\0';
+      }
+      pn_printf(P, out, ")");
+    }
   }
   return PN_STR_B(out);
 }
