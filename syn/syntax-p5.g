@@ -726,7 +726,7 @@ PN p2_sig(Potion *P, char *fmt) {
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
-G->debug=2;
+
   if (!YY_NAME(parse_from)(G, yy_sig_p2))
     YY_ERROR(G, "** Signature Syntax error!");
   YY_NAME(parse_free)(G);
