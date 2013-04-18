@@ -179,7 +179,9 @@ PN potion_load(Potion *P, PN cl, PN self, PN file) {
   free(filename);
   return PN_NIL;
 }
+
 #else
+
 PN p2_load(Potion *P, PN cl, PN self, PN file) {
   char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
   if (filename == NULL) {

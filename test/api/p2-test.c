@@ -10,8 +10,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "p2.h"
-#include "potion.h"
-#include "internal.h"
+//#include "potion.h"
+//#include "internal.h"
 #include "CuTest.h"
 
 PN num = PN_NUM(490);
@@ -89,15 +89,15 @@ void p2_test_tuple(CuTest *T) {
 }
 
 void p2_test_sig(CuTest *T) {
-  PN sig = potion_sig(P, "num1=N,num2=N");
+  PN sig = p2_sig(P, "Num num1, Num num2");
   CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
 
-  sig = potion_sig(P, "x=N,y=N|r=N");
+  sig = p2_sig(P, "$x,$y|$r");
   CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
 }
 
 void p2_test_eval(CuTest *T) {
-  PN add = p2_eval(P, potion_str(P, "sub(x,y){x+y}"), POTION_JIT);
+  PN add = p2_eval(P, potion_str(P, "sub($x,$y){$x+$y}"), POTION_JIT);
   PN_F addfn = PN_CLOSURE_F(add); // TODO FAIL
   PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func failed",

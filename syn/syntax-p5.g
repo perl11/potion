@@ -8,6 +8,7 @@
 #
 
 %{
+#define P2
 #include "p2.h"
 #include "internal.h"
 #include "asm.h"
@@ -38,6 +39,7 @@
 #ifdef YY_DEBUG
 # define YYDEBUG_PARSE   DEBUG_PARSE
 # define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
+
 # define YY_SET(G, text, count, thunk, P) \
   yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
            PN_STR_PTR(potion_send(yy, PN_string))));\
@@ -81,18 +83,6 @@ perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
 #formname =	w:WORD		{ $$ = w; }
 #	| '' 	            { $$ = PN_NIL; }
 
-# so far no difference in global or lex assignment
-#subrout = 'sub' n:subname p:proto? a:subattrlist? b:subbody 
-#        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
-#
-#lexsubrout = 'my' - 'sub' n:subname p:proto? a:subattrlist? b:subbody
-#        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
-#
-#proto = list
-#subname = arg-name
-#subbody = block
-#subattrlist = ':' -? arg-name
-#
 # AST BLOCK needs to capture lexicals, not block_start()
 # Note that if/else blocks (mblock) do not capture lexicals
 # block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s); }
@@ -102,7 +92,9 @@ statements =
         (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })* sep?
     | ''             { $$ = PN_NIL; }
 
-stmt = PACKAGE - arg-name ';' {} # TODO: set namespace
+stmt = PACKAGE arg-name ';' {} # TODO: set namespace
+    | subrout
+    | use
     | ifstmt
     | assigndecl ';'
     | s:sets ';'
@@ -111,25 +103,37 @@ stmt = PACKAGE - arg-name ';' {} # TODO: set namespace
                              { $$ = s; }
     | expr
 
-PACKAGE = "package"
+SUB     = "sub" space+
+PACKAGE = "package" space+
+USE     = "use" space+
+IF      = "if" space+
+ELSIF   = "elsif" space+
+ELSE    = "else" space+
+MY      = "my" space+
 
-ifstmt = IF e:ifexpr - s:block - !"els" { s  = PN_OP(AST_AND, e, s); }
-       | IF e:ifexpr - s1:block         { s1 = PN_AST(MESSAGE, PN_if); }
-         (ELSIF e1:ifexpr - f:block )*  { f = PN_AST(MESSAGE, PN_elsif); }
-         (ELSE - s2:block )?            { s2 = PN_AST(MESSAGE, PN_else); }
+subrout = SUB n:id - ( '(' p:sig_p2 ')' )? b:block
+        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
+# so far no difference in global or lex assignment
+#subrout = SUB n:id - ( '(' p:sig_p2 ')' )? a:subattrlist? b:block
+#lexsubrout = MY - SUB n:subname p:proto? a:subattrlist? b:subbody
+#        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
+#subattrlist = ':' -? arg-name
 
-IF     = "if"
-ELSIF  = "elsif"
-ELSE   = "else"
+# TODO: compile-time sideeffs (BEGIN block)
+use = USE n:id - ';'    { $$ = PN_AST2(MESSAGE, PN_use, n); }
 
-ifexpr = - '(' - expr - ')'
+ifstmt = IF e:ifexpr s:block - !"els" { s  = PN_OP(AST_AND, e, s); }
+       | IF e:ifexpr s1:block         { s1 = PN_AST(MESSAGE, PN_if); }
+         (ELSIF e1:ifexpr f:block )*  { f = PN_AST(MESSAGE, PN_elsif); }
+         (ELSE s2:block )?            { s2 = PN_AST(MESSAGE, PN_else); }
+
+ifexpr = '(' - expr - ')' -
 
 assigndecl =
         l:global - assign e:expr       { $$ = PN_AST2(ASSIGN, l, e); }
       | MY - l:lexical - assign e:expr { $$ = PN_AST2(ASSIGN, l, e); }
       # no list assignment yet my () = expr
 
-MY = "my"
 lexical = global
 
 sets = e:eqs?
@@ -636,6 +640,7 @@ space = ' ' | '\f' | '\v' | '\t' | end-of-line
 end-of-line = '\r\n' | '\n' | '\r'
 end-of-file = !'\0'
 
+# for potion_sig (pre-compiled functions)
 sig = args+ end-of-file
 args = arg-list (arg-sep arg-list)*
 arg-list = arg-set (optional arg-set)?
@@ -650,6 +655,20 @@ arg = n:arg-name assign t:arg-type
     | t:arg-type       { P->source = PN_PUSH(P->source, t); }
 optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')); }
 arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
+
+# used by the seperate p2_sig
+sig_p2 = args2+ end-of-file
+args2 = arg2-list (arg-sep arg2-list)*
+arg2-list = arg2-set (optional arg2-set)?
+         | optional arg2-set
+arg2-set = arg2 (comma - arg)*
+
+arg2-name = ( scalar | listvar | hashvar ) -
+arg2-type = id -
+arg2 = n:arg2-name
+          { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), potion_str(P,"O")), PN_NIL); }
+    | t:arg2-type n:arg2-name
+          { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), t), PN_NIL); }
 
 %%
 
@@ -675,7 +694,28 @@ PN p2_parse(Potion *P, PN code, char *filename) {
   return code;
 }
 
+// duplicate but still needed to compile internal methods
 PN potion_sig(Potion *P, char *fmt) {
+  PN out = PN_NIL;
+  if (fmt == NULL) return PN_NIL;
+  if (fmt[0] == '\0') return PN_FALSE;
+
+  GREG *G = YY_NAME(parse_new)(P);
+  P->yypos = 0;
+  P->input = potion_byte_str(P, fmt);
+  P->source = out = PN_TUP0();
+  P->pbuf = NULL;
+
+  if (!YY_NAME(parse_from)(G, yy_sig))
+    YY_ERROR(G, "** Signature Syntax error!");
+  YY_NAME(parse_free)(G);
+
+  out = P->source;
+  P->source = PN_NIL;
+  return out;
+}
+
+PN p2_sig(Potion *P, char *fmt) {
   PN out = PN_NIL;
   if (fmt == NULL) return PN_NIL; // no signature, arg check off
   if (fmt[0] == '\0') return PN_FALSE; // empty signature, no args
@@ -686,7 +726,7 @@ PN potion_sig(Potion *P, char *fmt) {
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
 
-  if (!YY_NAME(parse_from)(G, yy_sig))
+  if (!YY_NAME(parse_from)(G, yy_sig_p2))
     YY_ERROR(G, "** Signature Syntax error!");
   YY_NAME(parse_free)(G);
 

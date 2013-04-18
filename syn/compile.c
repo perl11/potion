@@ -620,7 +620,7 @@ YY_LOCAL(void) yyprintcontext(FILE *stream, char *s)\n\
 \n\
 YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
 {\n\
-  fprintf(stderr, \"%s:%d: %s\", G->filename, G->lineno, message);\n\
+  fprintf(stderr, \"%s at %s:%d \", message, G->filename, G->lineno);\n\
   if (G->text[0]) fprintf(stderr, \" near token '%s'\", G->text);\n\
   if (G->pos < G->limit || !feof(G->input))\n\
     {\n\
@@ -631,12 +631,14 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
 	  if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
 	  fputc(G->buf[G->pos++], stderr);\n\
 	}\n\
+#if 0\n\
       if (G->pos == G->limit)\n\
 	{\n\
 	  int c;\n\
 	  while (EOF != (c= fgetc(G->input)) && '\\n' != c && '\\r' != c)\n\
 	    fputc(c, stderr);\n\
 	}\n\
+#endif\n\
       fputc('\\\"', stderr);\n\
     }\n\
   fprintf(stderr, \"\\n\");\n\

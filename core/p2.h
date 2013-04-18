@@ -21,6 +21,9 @@
 #  undef POTION_SIG // do not mix compiled potion with p2 bytecode,
                     // though it should be compatible for now
 #  define POTION_SIG P2_SIG
+
+extern PN PN_use;
+
 #endif
 
 //
@@ -31,11 +34,12 @@ PN p2_source_load(Potion *P, PN cl, PN buf);
 PN p2_parse(Potion *, PN, char*);
 PN p2_run(Potion *, PN, int);
 PN p2_eval(Potion *, PN, int);
-// not yet, because its the same
-//PN p2_vm_proto(Potion *, PN, PN, ...);
-//PN p2_vm_class(Potion *, PN, PN);
-//PN p2_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
-//PN_F p2_jit_proto(Potion *, PN, PN);
+
+// signature syntax is different.
+// Internally for PN_FUNC we still use the better strongly-typed potion
+// sigs. i.e "name=S,block=&"
+// p2_sig should be really p5_sig or p6_sig
+#define P2_FUNC(f, s)   potion_closure_new(P, (PN_F)f, p2_sig(P, s), 0)
 
 #ifdef P2
 PN potion_any_is_defined(Potion *, PN, PN);
@@ -46,9 +50,6 @@ PN potion_any_is_defined(Potion *, PN, PN);
 #define potion_parse       p2_parse
 #define potion_run         p2_run
 #define potion_eval        p2_eval
-//#define potion_vm_proto    p2_vm_proto
-//#define potion_vm_class    p2_vm_class
-//#define potion_vm          p2_vm
 #endif
 
 #endif
