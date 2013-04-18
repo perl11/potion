@@ -635,7 +635,10 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
         fputc('\\\"', stderr);\n\
       }\n\
     }\n\
-  fprintf(stderr, \" at %s:%d.\\n\", G->filename, G->lineno);\n\
+  if (!strcmp(\"-\", G->filename))\n\
+    fprintf(stderr, \" at line %d\\n\", G->lineno);\n\
+  else\n\
+    fprintf(stderr, \" at %s:%d\\n\", G->filename, G->lineno);\n\
   exit(1);\n\
 }\n\
 \n\
