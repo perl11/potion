@@ -419,9 +419,12 @@ TAGS: ${SRC} core/*.h
 	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
-	@cp syn/syntax.g syn/syntax-g.c
+	@cp syn/syntax.g syn/syntax.y
+	@cp syn/syntax-p5.g syn/syntax-p5.y
+	@mv syn/greg.c syn/greg-c.tmp
 	@sloccount core syn front
-	@rm -f syn/syntax-g.c
+	@rm -f syn/syntax*.y
+	@mv syn/greg-c.tmp syn/greg.c
 
 todo:
 	@grep -rInso 'TODO: \(.\+\)' core syn front
