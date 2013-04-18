@@ -34,6 +34,7 @@ PN p2_source_load(Potion *P, PN cl, PN buf);
 PN p2_parse(Potion *, PN, char*);
 PN p2_run(Potion *, PN, int);
 PN p2_eval(Potion *, PN, int);
+PN p2_sig(Potion *, char *);
 
 // signature syntax is different.
 // Internally for PN_FUNC we still use the better strongly-typed potion
