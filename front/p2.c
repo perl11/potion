@@ -88,35 +88,40 @@ static void p2_cmd_version(Potion *P) {
   printf(p2_banner, POTION_JIT);
 }
 
+#define dumpv_str(str) \
+    if (P->flags & DEBUG_VERBOSE) \
+      fprintf(stderr, str)
+#define dumpv_p(p) \
+    if (P->flags & DEBUG_VERBOSE) \
+      potion_p(P, p)
+#define dumpvi_p(p) \
+    if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE)) \
+      potion_p(P, p)
+
 static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
   PN code = p2_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
     if (P->flags & DEBUG_VERBOSE)
-      printf("\n\n-- loaded --\n");
+      fprintf(stderr, "\n\n-- loaded --\n");
   } else {
     code = p2_parse(P, buf, filename);
     if (!code || PN_TYPE(code) == PN_TERROR) {
       potion_p(P, code);
       return code;
     }
-    if (P->flags & DEBUG_VERBOSE) {
-      printf("\n-- parsed --\n");
-      potion_p(P, code);
-    }
+    dumpv_str("\n-- parsed --\n");
+    dumpv_p(code);
     code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
-    if (P->flags & DEBUG_VERBOSE)
-      printf("\n-- compiled --\n");
+    dumpv_str("\n-- compiled --\n");
   }
-  if (P->flags & DEBUG_VERBOSE)
-    potion_p(P, code);
+  dumpv_p(code);
   if (exec == EXEC_VM) {
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
     if (P->flags & DEBUG_VERBOSE)
-      printf("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
-	     PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-	     PN_INT(potion_gc_reserved(P, 0, 0)));
-    if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE))
-      potion_p(P, code);
+      fprintf(stderr, "\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
+	      PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+	      PN_INT(potion_gc_reserved(P, 0, 0)));
+    dumpvi_p(code);
   } else if (exec == EXEC_JIT) {
 #ifdef POTION_JIT_TARGET
     PN val;
@@ -124,11 +129,10 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
     PN_CLOSURE(cl)->data[0] = code;
     val = PN_PROTO(code)->jit(P, cl, P->lobby);
     if (P->flags & DEBUG_VERBOSE)
-      printf("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
-	     PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-	     PN_INT(potion_gc_reserved(P, 0, 0)));
-    if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE))
-      potion_p(P, val);
+      fprintf(stderr, "\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
+	      PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+	      PN_INT(potion_gc_reserved(P, 0, 0)));
+    dumpvi_p(val);
 #else
     fprintf(stderr, "** p2 built without JIT support\n");
 #endif
@@ -188,39 +192,46 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
 	potion_fatal("--compile-c not yet implemented\n");
       }
       else if (exec == EXEC_COMPILE_NATIVE) {
-	//code = potion_send(P, code, "dumpbin");
+	//code = potion_send(P, code, "dumpexec");
 	potion_fatal("--compile-native not yet implemented\n");
       }
+
       if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), plc) == PN_STR_LEN(code)) {
 	printf("** compiled code saved to %s\n", plcpath);
         fclose(plc);
+
+	if (exec == EXEC_COMPILE)
+	  printf("** run it with: potion %s\n", plcpath);
+	else if (exec == EXEC_COMPILE_C)
+	  printf("** compile it with: %s %s %s\n", POTION_CC, POTION_CFLAGS, plcpath);
+	else if (exec == EXEC_COMPILE_NATIVE)
+	  printf("** run it with: ./%s\n", plcpath);
+
       } else {
         fprintf(stderr, "** could not write all compiled code.");
       }
-      if (exec == EXEC_COMPILE)
-        printf("** run it with: p2 %s\n", plcpath);
     }
 
 #if defined(DEBUG)
     if (P->flags & DEBUG_GC) { // GC sanity check
-      printf("\n-- gc check --\n");
+      fprintf(stderr, "\n-- gc check --\n");
       void *scanptr = (void *)((char *)P->mem->old_lo + (sizeof(PN) * 2));
       while ((PN)scanptr < (PN)P->mem->old_cur) {
-	printf("%p.vt = %x (%u)\n",
-	       scanptr, ((struct PNObject *)scanptr)->vt,
-	       potion_type_size(P, scanptr));
+	fprintf(stderr, "%p.vt = %x (%u)\n",
+		scanptr, ((struct PNObject *)scanptr)->vt,
+		potion_type_size(P, scanptr));
 	if (((struct PNFwd *)scanptr)->fwd != POTION_FWD
 	    && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
 	  if ((signed long)(((struct PNObject *)scanptr)->vt) < 0
 	      || ((struct PNObject *)scanptr)->vt > PN_TUSER) {
-	    printf("wrong type for allocated object: %p.vt = %x\n",
-		   scanptr, ((struct PNObject *)scanptr)->vt);
+	    fprintf(stderr, "** wrong type for allocated object: %p.vt = %x\n",
+		    scanptr, ((struct PNObject *)scanptr)->vt);
 	    break;
 	  }
 	}
 	scanptr = (void *)((char *)scanptr + potion_type_size(P, scanptr));
 	if ((PN)scanptr > (PN)P->mem->old_cur) {
-	  printf("allocated object goes beyond GC pointer\n");
+	  fprintf(stderr, "** allocated object goes beyond GC pointer\n");
 	  break;
 	}
       }
@@ -282,23 +293,13 @@ int main(int argc, char *argv[]) {
 	printf("  G  GC\n");
 	goto END;
       }
-      if (strchr(&argv[i][2], 'i')) {
-	P->flags |= DEBUG_INSPECT;
-      }
-      if (strchr(&argv[i][2], 'v')) {
-	P->flags |= DEBUG_VERBOSE;
-      }
-      if (strchr(&argv[i][2], 't')) {
-	P->flags |= DEBUG_TRACE;
-      }
-      if (strchr(&argv[i][2], 'p'))
-	P->flags |= DEBUG_PARSE;
-      if (strchr(&argv[i][2], 'P'))
-	P->flags |= (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
-      if (strchr(&argv[i][2], 'J'))
-	P->flags |= DEBUG_JIT;
-      if (strchr(&argv[i][2], 'G'))
-	P->flags |= DEBUG_GC;
+      if (strchr(&argv[i][2], 'i')) P->flags |= DEBUG_INSPECT;
+      if (strchr(&argv[i][2], 'v')) P->flags |= DEBUG_VERBOSE;
+      if (strchr(&argv[i][2], 't')) P->flags |= DEBUG_TRACE;
+      if (strchr(&argv[i][2], 'p')) P->flags |= DEBUG_PARSE;
+      if (strchr(&argv[i][2], 'P')) P->flags |= (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
+      if (strchr(&argv[i][2], 'J')) P->flags |= DEBUG_JIT;
+      if (strchr(&argv[i][2], 'G')) P->flags |= DEBUG_GC;
       continue;
     }
 #endif
@@ -374,9 +375,8 @@ int main(int argc, char *argv[]) {
 
   if (!interactive) {
     if (buf != PN_NIL) {
-      PN code = p2_cmd_exec(P, buf, "-e", exec);
-      if (!code || PN_TYPE(code) == PN_TERROR)
-	goto END;
+      potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-e"));
+      p2_cmd_exec(P, buf, "-e", exec);
     }
     else {
       potion_define_global(P, potion_str(P, "$0"), potion_str(P, argv[argc-1]));
@@ -384,6 +384,7 @@ int main(int argc, char *argv[]) {
     }
   } else {
     if (!exec || P->flags & DEBUG_VERBOSE) potion_fatal("no filename given");
+    potion_define_global(P, potion_str(P, "$0"), potion_str(P, ""));
     // TODO: p5 not yet parsed
     p2_eval(P, potion_byte_str(P,
       "p2::load 'readline';" \
