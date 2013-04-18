@@ -111,10 +111,10 @@ ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
 
-subrout = SUB n:id - ( '(' p:sig_p2 ')' )? - b:block -
+subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
         { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
 # so far no difference in global or lex assignment
-#subrout = SUB n:id - ( '(' p:sig_p2 ')' )? a:subattrlist? b:block
+#subrout = SUB n:id - ( '(' p:sig_p5 ')' )? a:subattrlist? b:block
 #lexsubrout = MY - SUB n:subname p:proto? a:subattrlist? b:subbody
 #        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
 #subattrlist = ':' -? arg-name
@@ -259,8 +259,9 @@ immed = undef { $$ = PN_NIL; }
       | str1 | str2
 
 global  = scalar | listvar | hashvar | listel | hashel
-id = < utfws utfw* > { $$ = potion_str2(P, yytext, yyleng); }
-# send the value a message, every global is a closure
+# FIXME: starting wordchar (no numbers) + wordchars
+id = < IDFIRST utfw* > { $$ = potion_str2(P, yytext, yyleng); }
+# send the value a message, every global is a closure (see name)
 scalar  = < '$' i:id > { $$ = PN_AST(MESSAGE, $$); }
 listvar = < '@' i:id > { $$ = PN_AST(MESSAGE, $$); }
 hashvar = < '%' i:id > { $$ = PN_AST(MESSAGE, $$); }
@@ -269,16 +270,28 @@ listel  = < '$' l:id '[' i:value ']' >
 hashel  = < '$' h:id '{' i:value '}' >
         { $$ = PN_AST2(LICK, potion_strcat(P,"%",PN_STR_PTR(h)), i); }
 
-utfws = [A-Za-z_]
+# isWORDCHAR && IDFIRST, no numbers
+IDFIRST = [A-Za-z_]
      | '\304' [\250-\277]
      | [\305-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
+# isWORDCHAR? \w and [:word:]
 utfw = [A-Za-z0-9_]
-     | '\304' [\250-\277]
+     | '\304' [\252-\277]
      | [\305-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
+# isWORDCHAR && XID_Continue
+#IDCONT = [A-Za-z0-9_ ():\240-]
+#     | '\304' [\250-\277]
+#     | [\305-\337] [\200-\277]
+#     | [\340-\357] [\200-\277] [\200-\277]
+#     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
+#IDPRINT = [\40-\176]
+#     | [\302-\337] [\200-\277]
+#     | [\340-\357] [\200-\277] [\200-\277]
+#     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 utf8 = [\t\n\r\40-\176]
      | [\302-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
@@ -637,11 +650,14 @@ unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = potion_str2(P, yytext, yyle
 -- = (space | comment | semi)*
 sep = semi (space | comment | semi)*
 comment	= '#' (!end-of-line utf8)*
-space = ' ' | '\f' | '\v' | '\t' | end-of-line
+# PSXSPC
+# \240 U+A0 NO-BREAK SPACE
+# \205 U+85 NEL
+space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
 end-of-line = '\r\n' | '\n' | '\r'
 end-of-file = !'\0'
 
-# for potion_sig (pre-compiled functions)
+# for potion_sig used in the rt
 sig = args+ end-of-file
 args = arg-list (arg-sep arg-list)*
 arg-list = arg-set (optional arg-set)?
@@ -649,6 +665,7 @@ arg-list = arg-set (optional arg-set)?
 arg-set = arg (comma - arg)*
 
 arg-name = < utfw+ > - { $$ = potion_str2(P, yytext, yyleng); }
+# types are numbers
 arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
        { $$ = PN_NUM(yytext[0]); }
 arg = n:arg-name assign t:arg-type
@@ -657,14 +674,15 @@ arg = n:arg-name assign t:arg-type
 optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')); }
 arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
-# used by the seperate p2_sig
-sig_p2 = args2+ end-of-file
+# p5 sigs. used by the seperate p2_sig
+sig_p5 = args2+ end-of-file
 args2 = arg2-list (arg-sep arg2-list)*
 arg2-list = arg2-set (optional arg2-set)?
          | optional arg2-set
 arg2-set = arg2 (comma - arg)*
 
 arg2-name = < [$@%] id > - { $$ = potion_str2(P, yytext, yyleng); }
+# types are classes
 arg2-type = i:id -         { $$ = potion_bind(P, i, PN_lookup);
                              if (!$$) yyerror(G,"Invalid type"); }
 arg2 = n:arg2-name  { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), potion_str(P,"O")), PN_NIL); }
@@ -727,7 +745,7 @@ PN p2_sig(Potion *P, char *fmt) {
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
 
-  if (!YY_NAME(parse_from)(G, yy_sig_p2))
+  if (!YY_NAME(parse_from)(G, yy_sig_p5))
     YY_ERROR(G, "** Signature Syntax error!");
   YY_NAME(parse_free)(G);
 

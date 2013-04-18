@@ -625,21 +625,15 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
   if (G->pos < G->limit || !feof(G->input))\n\
     {\n\
       G->buf[G->limit]= '\\0';\n\
-      fprintf(stderr, \" before text \\\"\");\n\
-      while (G->pos < G->limit)\n\
+      if (G->pos < G->limit) {\n\
+        fprintf(stderr, \" before text \\\"\");\n\
+        while (G->pos < G->limit)\n\
 	{\n\
 	  if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
 	  fputc(G->buf[G->pos++], stderr);\n\
 	}\n\
-#if 0\n\
-      if (G->pos == G->limit)\n\
-	{\n\
-	  int c;\n\
-	  while (EOF != (c= fgetc(G->input)) && '\\n' != c && '\\r' != c)\n\
-	    fputc(c, stderr);\n\
-	}\n\
-#endif\n\
-      fputc('\\\"', stderr);\n\
+        fputc('\\\"', stderr);\n\
+      }\n\
     }\n\
   fprintf(stderr, \" at %s:%d.\\n\", G->filename, G->lineno);\n\
   exit(1);\n\
