@@ -61,8 +61,8 @@ perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
 #
 #line = 	l:label c:cond       { $$ = PN_AST2(BLOCK, l, c); }
 #	|	loop	{} # loops add their own labels
-#	|	l:label ';'          { $$ = PN_AST2(BLOCK, l, PN_NIL); }
-#	|	l:label s:sideff ';' { $$ = PN_AST2(BLOCK, l, s); }
+#	|	l:label semi          { $$ = PN_AST2(BLOCK, l, PN_NIL); }
+#	|	l:label s:sideff semi { $$ = PN_AST2(BLOCK, l, s); }
 #
 #sideff = stmt
 #    | expr
@@ -92,14 +92,14 @@ statements =
         (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })* sep?
     | ''             { $$ = PN_NIL; }
 
-stmt = PACKAGE arg-name ';' {} # TODO: set namespace
+stmt = PACKAGE arg-name semi {} # TODO: set namespace
     | subrout
     | use
     | ifstmt
-    | assigndecl ';'
-    | s:sets ';'
-        ( or x:sets ';'      { s = PN_OP(AST_OR, s, x); }
-        | and x:sets ';'     { s = PN_OP(AST_AND, s, x); })*
+    | assigndecl semi
+    | s:sets semi
+        ( or x:sets semi      { s = PN_OP(AST_OR, s, x); }
+        | and x:sets semi     { s = PN_OP(AST_AND, s, x); })*
                              { $$ = s; }
     | expr
 
@@ -111,7 +111,7 @@ ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
 
-subrout = SUB n:id - ( '(' p:sig_p2 ')' )? b:block
+subrout = SUB n:id - ( '(' p:sig_p2 ')' )? - b:block -
         { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
 # so far no difference in global or lex assignment
 #subrout = SUB n:id - ( '(' p:sig_p2 ')' )? a:subattrlist? b:block
@@ -120,7 +120,7 @@ subrout = SUB n:id - ( '(' p:sig_p2 ')' )? b:block
 #subattrlist = ':' -? arg-name
 
 # TODO: compile-time sideeffs (BEGIN block)
-use = USE n:id - ';'    { $$ = PN_AST2(MESSAGE, PN_use, n); }
+use = USE n:id - semi    { $$ = PN_AST2(MESSAGE, PN_use, n); }
 
 ifstmt = IF e:ifexpr s:block - !"els" { s  = PN_OP(AST_AND, e, s); }
        | IF e:ifexpr s1:block         { s1 = PN_AST(MESSAGE, PN_if); }
@@ -284,9 +284,10 @@ utf8 = [\t\n\r\40-\176]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 
+semi = ';'
 comma = ','
 block-start = '{' space*
-block-end = ';'? space '}'
+block-end = semi? space* '}'
 list-start = '(' -
 list-end = ')' -
 lick-start = '[' -
@@ -633,8 +634,8 @@ unq-sep = sep !'{' !'[' !'('
 unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = potion_str2(P, yytext, yyleng); }
 
 - = (space | comment)*
--- = (space | comment | ';')*
-sep = ';' (space | comment | ';')*
+-- = (space | comment | semi)*
+sep = semi (space | comment | semi)*
 comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t' | end-of-line
 end-of-line = '\r\n' | '\n' | '\r'
@@ -663,12 +664,12 @@ arg2-list = arg2-set (optional arg2-set)?
          | optional arg2-set
 arg2-set = arg2 (comma - arg)*
 
-arg2-name = ( scalar | listvar | hashvar ) -
-arg2-type = id -
-arg2 = n:arg2-name
-          { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), potion_str(P,"O")), PN_NIL); }
+arg2-name = < [$@%] id > - { $$ = potion_str2(P, yytext, yyleng); }
+arg2-type = i:id -         { $$ = potion_bind(P, i, PN_lookup);
+                             if (!$$) yyerror(G,"Invalid type"); }
+arg2 = n:arg2-name  { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), potion_str(P,"O")), PN_NIL); }
     | t:arg2-type n:arg2-name
-          { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), t), PN_NIL); }
+  { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), t), PN_NIL); }
 
 %%
 
@@ -725,7 +726,7 @@ PN p2_sig(Potion *P, char *fmt) {
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
-
+G->debug=2;
   if (!YY_NAME(parse_from)(G, yy_sig_p2))
     YY_ERROR(G, "** Signature Syntax error!");
   YY_NAME(parse_free)(G);
