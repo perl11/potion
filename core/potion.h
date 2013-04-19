@@ -6,9 +6,8 @@
 #ifndef POTION_H
 #define POTION_H
 
-#define POTION_VERSION  "0.0"
-#define POTION_MINOR    0
 #define POTION_MAJOR    0
+#define POTION_MINOR    1
 #define POTION_SIG      "p\07\10n"
 #define POTION_VMID     0x79
 
@@ -23,13 +22,17 @@
 
 #define _XSTR(s) _STR(s)
 #define _STR(s)  #s
+#define POTION_VERSION  _XSTR(POTION_MAJOR) "." _XSTR(POTION_MINOR)
+
 #if defined(__clang__) || defined (__GNUC__)
 # define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS __attribute__((no_address_safety_analysis))
 #else
 # define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 #endif
 #ifdef DEBUG
-#define YY_DEBUG
+# ifndef YY_DEBUG
+#  define YY_DEBUG
+# endif
 #endif
 
 //
@@ -435,8 +438,9 @@ typedef enum {
 #ifdef DEBUG
   DEBUG_TRACE  = 1<<10,
   DEBUG_PARSE  = 1<<11,
-  DEBUG_GC     = 1<<12,
-  DEBUG_JIT    = 1<<13,
+  DEBUG_PARSE_VERBOSE = 1<<12,
+  DEBUG_GC     = 1<<13,
+  DEBUG_JIT    = 1<<14,
 #endif
 } Potion_Flags;
 
@@ -675,7 +679,7 @@ PN potion_gc_reserved(Potion *, PN, PN);
 PN potion_gc_actual(Potion *, PN, PN);
 PN potion_gc_fixed(Potion *, PN, PN);
 
-PN potion_parse(Potion *, PN);
+PN potion_parse(Potion *, PN, char *);
 PN potion_vm_proto(Potion *, PN, PN, ...);
 PN potion_vm_class(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);

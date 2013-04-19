@@ -292,17 +292,17 @@ arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
 %%
 
-PN potion_parse(Potion *P, PN code) {
+PN potion_parse(Potion *P, PN code, char *filename) {
   GREG *G = YY_NAME(parse_new)(P);
   P->yypos = 0;
   P->input = code;
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
 #ifdef YY_DEBUG
-  G->debug = P->flags & (DEBUG_PARSE | DEBUG_VERBOSE);
+  G->debug = P->flags & (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
 #endif
 
-  G->pos = G->limit = 0;
+  //G->filename = filename;
   if (!YY_NAME(parse)(G))
     printf("** Syntax error!\n%s", PN_STR_PTR(code));
   YY_NAME(parse_free)(G);
