@@ -69,7 +69,7 @@ struct PNVtable;
 /* end patch for issue #1 */
 
 #define PN_TNIL         0x250000
-#define PN_TNUMBER      (1+PN_TNIL)
+#define PN_TNUMBER      (1+PN_TNIL) // Int
 #define PN_TBOOLEAN     (2+PN_TNIL)
 #define PN_TSTRING      (3+PN_TNIL)
 #define PN_TWEAK        (4+PN_TNIL)
@@ -89,7 +89,8 @@ struct PNVtable;
 #define PN_TSTRINGS     (18+PN_TNIL)
 #define PN_TERROR       (19+PN_TNIL)
 #define PN_TCONT        (20+PN_TNIL)
-#define PN_TUSER        (21+PN_TNIL)
+#define PN_TDECIMAL     (21+PN_TNIL) // Num. for p2 class definitions only, unused within potion (yet)
+#define PN_TUSER        (22+PN_TNIL)
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))

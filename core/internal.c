@@ -46,6 +46,9 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TLICK, obj_vt);
   potion_type_new(P, PN_TERROR, obj_vt);
   potion_type_new(P, PN_TCONT, obj_vt);
+#ifdef P2
+  potion_type_new(P, PN_TDECIMAL, obj_vt);
+#endif
 
   potion_str_hash_init(P);
   PN_allocate = potion_str(P, "allocate");

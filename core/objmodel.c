@@ -427,19 +427,23 @@ void potion_object_init(Potion *P) {
 void potion_lobby_init(Potion *P) {
 
 # ifdef P2
-#   define LOBBY_NAME "P2"
+#   define LOBBY_NAME   "P2"
 #   define NILKIND_NAME "Undef"
+#   define NUMBER_NAME  "Int"
+#   define STRING_NAME  "Str"
 # else
-#   define LOBBY_NAME "Lobby"
+#   define LOBBY_NAME   "Lobby"
 #   define NILKIND_NAME "NilKind"
+#   define NUMBER_NAME  "Number"
+#   define STRING_NAME  "String"
 # endif
   potion_init_class_reference(P, potion_str(P, LOBBY_NAME),     P->lobby);
   potion_init_class_reference(P, potion_str(P, "Mixin"),        PN_VTABLE(PN_TVTABLE));
   potion_init_class_reference(P, potion_str(P, "Object"),       PN_VTABLE(PN_TOBJECT));
   potion_init_class_reference(P, potion_str(P, NILKIND_NAME),   PN_VTABLE(PN_TNIL));
-  potion_init_class_reference(P, potion_str(P, "Number"),       PN_VTABLE(PN_TNUMBER));
+  potion_init_class_reference(P, potion_str(P, NUMBER_NAME),    PN_VTABLE(PN_TNUMBER));
   potion_init_class_reference(P, potion_str(P, "Boolean"),      PN_VTABLE(PN_TBOOLEAN));
-  potion_init_class_reference(P, potion_str(P, "String"),       PN_VTABLE(PN_TSTRING));
+  potion_init_class_reference(P, potion_str(P, STRING_NAME),    PN_VTABLE(PN_TSTRING));
   potion_init_class_reference(P, potion_str(P, "Table"),        PN_VTABLE(PN_TTABLE));
   potion_init_class_reference(P, potion_str(P, "Function"),     PN_VTABLE(PN_TCLOSURE));
   potion_init_class_reference(P, potion_str(P, "Tuple"),        PN_VTABLE(PN_TTUPLE));
@@ -452,6 +456,9 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Lick"),         PN_VTABLE(PN_TLICK));
   potion_init_class_reference(P, potion_str(P, "Error"),        PN_VTABLE(PN_TERROR));
   potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
+#if defined(P2)
+  potion_init_class_reference(P, potion_str(P, "Num"),        PN_VTABLE(PN_TDECIMAL));
+#endif
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
   

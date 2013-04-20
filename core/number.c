@@ -154,6 +154,9 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
 
 void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
+#if defined(P2)
+  PN dbl_vt = PN_VTABLE(PN_TDECIMAL);
+#endif
   potion_method(num_vt, "+", potion_add, "value=N");
   potion_method(num_vt, "-", potion_sub, "value=N");
   potion_method(num_vt, "*", potion_mult, "value=N");
@@ -174,4 +177,7 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "float?", potion_num_is_float, 0);
   potion_method(num_vt, "integer", potion_num_integer, 0);
   potion_method(num_vt, "abs", potion_abs, 0);
+#if defined(P2)
+  potion_method(dbl_vt, "string", potion_num_string, 0);
+#endif
 }
