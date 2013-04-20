@@ -439,9 +439,9 @@ clean:
 	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
 	@rm -f test/api/potion-test${EXE} test/api/gc-test${EXE} \
                test/api/gc-bench${EXE}
-	@rm -f potion${EXE} libpotion.*
+	@rm -f potion${EXE} libpotion.* potion-s
 	@rm -f test/api/p2-test${EXE}
-	@rm -f p2${EXE} libp2.* ${SRC_P2_SYN}
+	@rm -f p2${EXE} libp2.* ${SRC_P2_SYN} p2-s
 
 realclean: clean
 	@rm -f config.inc
