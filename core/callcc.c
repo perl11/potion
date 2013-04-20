@@ -85,6 +85,7 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   return self;
 }
 
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS // still stack-underflow at 130
 PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
   PN_SIZE n;

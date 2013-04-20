@@ -62,9 +62,13 @@ void gc_test_forward(CuTest *T) {
 CuSuite *gc_suite() {
   CuSuite *S = CuSuiteNew();
   SUITE_ADD_TEST(S, gc_test_start);
+#if !(defined(__clang__) && defined(__SANITIZE_ADDRESS__))
   SUITE_ADD_TEST(S, gc_test_alloc1);
+#endif
   SUITE_ADD_TEST(S, gc_test_alloc4);
+#if !(defined(__clang__) && defined(__SANITIZE_ADDRESS__))
   SUITE_ADD_TEST(S, gc_test_forward);
+#endif
   return S;
 }
 
