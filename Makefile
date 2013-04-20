@@ -1,5 +1,5 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
-.SUFFIXES: .g .c .i .o .opic .textile .html
+.SUFFIXES: .y .c .i .o .opic .textile .html
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
 
@@ -121,10 +121,10 @@ core/vm.o core/vm.opic: core/vm-dis.c
 	@${ECHO} CC -fPIC $<
 	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
 
-%.c: %.g ${GREG}
+%.c: %.y ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
-.g.c: ${GREG}
+.y.c: ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@
 
@@ -275,9 +275,7 @@ TAGS: ${SRC} core/*.h
 	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
-	@cp core/syntax.g core/syntax-g.c
 	@sloccount core
-	@rm -f core/syntax-g.c
 
 todo:
 	@grep -rInso 'TODO: \(.\+\)' core
