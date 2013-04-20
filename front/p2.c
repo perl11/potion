@@ -101,8 +101,7 @@ static void p2_cmd_version(Potion *P) {
 static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
   PN code = p2_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
-    if (P->flags & DEBUG_VERBOSE)
-      fprintf(stderr, "\n\n-- loaded --\n");
+    dumpv_str("\n-- loaded --\n");
   } else {
     code = p2_parse(P, buf, filename);
     if (!code || PN_TYPE(code) == PN_TERROR) {
@@ -383,7 +382,7 @@ int main(int argc, char *argv[]) {
       p2_cmd_compile(P, argv[argc-1], exec);
     }
   } else {
-    if (!exec || P->flags & DEBUG_VERBOSE) potion_fatal("no filename given");
+    if (!exec || P->flags & DEBUG_INSPECT) potion_fatal("no filename given");
     potion_define_global(P, potion_str(P, "$0"), potion_str(P, ""));
     // TODO: p5 not yet parsed
     p2_eval(P, potion_byte_str(P,
