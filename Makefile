@@ -116,15 +116,15 @@ syn/greg.c: syn/greg.greg
 	  ${MV} syn/greg-new syn/greg; \
         fi
 
-core/callcc.o core/callcc.o2: core/callcc.c
+core/callcc.o core/callcc.o2: core/callcc.c core/config.h
 	@${ECHO} CC $< +frame-pointer
 	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
-core/callcc.opic core/callcc.opic2: core/callcc.c
+core/callcc.opic core/callcc.opic2: core/callcc.c core/config.h
 	@${ECHO} CC -fPIC $< +frame-pointer
 	@${CC} -c ${CFLAGS} -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
 
-core/vm.o core/vm.opic: core/vm-dis.c
+core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 
 # no optimizations
 #core/vm-x86.opic: core/vm-x86.c
