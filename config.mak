@@ -180,7 +180,7 @@ config.h.echo:
 	@${ECHO} "#define POTION_LOADEXT \"${LOADEXT}\""
 	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_TARGET POTION_${JIT_TARGET}"
 	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_NAME " $(shell echo ${JIT_TARGET} | tr A-Z a-z)
-	@${ECHO} ${DEFINES} | ${SED} "s,-D\(\w*\),\n#define \1 1,g; s,-I[a-z/:]* ,,g"
+	@${ECHO} ${DEFINES} | perl -lpe's/-D(\w+)/\n#define \1 1/g; s/=/ /g; s{-I[a-z/:]* }{}g;'
 	@${ECHO}
 	@./tools/config.sh ${CC}
 
