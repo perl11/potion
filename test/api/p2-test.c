@@ -90,10 +90,10 @@ void p2_test_tuple(CuTest *T) {
 
 void p2_test_sig(CuTest *T) {
   PN sig = p2_sig(P, "Num $num1, Num $num2");
-  CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
+  CuAssert(T, "signature Num $num1, Num $num2 isn't a tuple", PN_IS_TUPLE(sig));
 
   sig = p2_sig(P, "$x,$y|$r");
-  CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
+  CuAssert(T, "signature $x,$y|$r isn't a tuple", PN_IS_TUPLE(sig));
 }
 
 void p2_test_eval(CuTest *T) {
