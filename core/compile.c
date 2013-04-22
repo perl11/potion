@@ -198,12 +198,14 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
 #define PN_ARG_TABLE(args, reg, inc) potion_arg_asmb(P, f, loop, args, &reg, inc)
 
 #define MAX_JUMPS 1024
+/// jump table for loops, for the 2 args b and c
+/// Note: only statically allocated (max 1024)
 struct PNLoop {
   int bjmps[MAX_JUMPS];
   int cjmps[MAX_JUMPS];
 
-  int bjmpc;
-  int cjmpc;
+  int bjmpc;  ///< count of b jumps (abc regs)
+  int cjmpc;  ///< count of c jumps (abc regs)
 };
 
 void potion_source_asmb(Potion *, vPN(Proto), struct PNLoop *, PN_SIZE, vPN(Source), u8);

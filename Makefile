@@ -410,7 +410,15 @@ release:
 	@redcloth $< >> $@
 	@${ECHO} "</div></body></html>" >> $@
 
-doc: ${DOCHTML}
+doc: ${DOCHTML} doc/html/files.html
+
+doxygen:
+	@${ECHO} DOXYGEN core
+	@doxygen >/dev/null
+
+doc/html/files.html: ${SRC} core/*.h Doxyfile
+	@${ECHO} DOXYGEN
+	@doxygen
 
 TAGS: ${SRC} core/*.h
 	@rm -f TAGS
@@ -441,4 +449,4 @@ clean:
 realclean: clean
 	@rm -f config.inc
 
-.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release install grammar
+.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release install grammar doxygen

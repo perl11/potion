@@ -1,0 +1,18 @@
+# Doxyfile 1.8.1.2
+PROJECT_NAME           = "p2"
+OUTPUT_DIRECTORY       = doc
+CREATE_SUBDIRS         = YES
+FULL_PATH_NAMES        = NO
+JAVADOC_AUTOBRIEF      = YES
+OPTIMIZE_OUTPUT_FOR_C  = YES
+CASE_SENSE_NAMES       = NO
+QUIET                  = YES
+WARNINGS               = NO
+WARN_IF_UNDOCUMENTED   = NO
+INPUT                  = core
+DOCSET_FEEDNAME        = "Doxygen docs"
+#TAGFILES               = TAGS
+CLASS_DIAGRAMS         = YES
+HAVE_DOT               = YES
+DOT_NUM_THREADS        = 4
+DOT_PATH               = /usr/bin/dot

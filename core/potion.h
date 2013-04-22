@@ -68,8 +68,8 @@ struct PNVtable;
 #endif
 /* end patch for issue #1 */
 
-#define PN_TNIL         0x250000
-#define PN_TNUMBER      (1+PN_TNIL) // Int
+#define PN_TNIL         0x250000    /// NIL is magic 0x250000 (type 0)
+#define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a Num (TDecimal)
 #define PN_TBOOLEAN     (2+PN_TNIL)
 #define PN_TSTRING      (3+PN_TNIL)
 #define PN_TWEAK        (4+PN_TNIL)
@@ -186,51 +186,51 @@ struct PNVtable;
   PNType vt; \
   PNUniq uniq;
 
-//
-// standard objects act like C structs
-// the fields are defined by the type
-// and it's a fixed size, not volatile.
-//
+///
+/// standard objects act like C structs
+/// the fields are defined by the type
+/// and it's a fixed size, not volatile.
+///
 struct PNObject {
   PN_OBJECT_HEADER
   PN ivars[0];
 };
 
-//
-// forwarding pointer (in case of
-// reallocation)
-//
+///
+/// forwarding pointer (in case of
+/// reallocation)
+///
 struct PNFwd {
   unsigned int fwd;
   PN_SIZE siz;
   PN ptr;
 };
 
-//
-// struct to wrap arbitrary data that
-// we may want to allocate from Potion.
-//
+///
+/// struct to wrap arbitrary data that
+/// we may want to allocate from Potion.
+///
 struct PNData {
   PN_OBJECT_HEADER
   PN_SIZE siz;
   char data[0];
 };
 
-//
-// strings are immutable UTF-8, the ID is
-// incremental and they may be garbage
-// collected. (non-volatile)
-//
+///
+/// strings are immutable UTF-8, the ID is
+/// incremental and they may be garbage
+/// collected. (non-volatile)
+///
 struct PNString {
   PN_OBJECT_HEADER
   PN_SIZE len;
   char chars[0];
 };
 
-//
-// byte strings are raw character data,
-// volatile, may be appended/changed.
-//
+///
+/// byte strings are raw character data,
+/// volatile, may be appended/changed.
+///
 struct PNBytes {
   PN_OBJECT_HEADER
   PN_SIZE len;
@@ -238,21 +238,22 @@ struct PNBytes {
   char chars[0];
 };
 
+/// PN_MANTISSA the last part of ->real
 #define PN_MANTISSA(d, n) d->real[1 + n]
 
-//
-// decimals are floating point numbers
-// stored as binary data. immutable.
-//
+///
+/// decimals are floating point numbers
+/// stored as binary data. immutable.
+///
 struct PNDecimal {
   PN_OBJECT_HEADER
   double value;
 };
 
-//
-// a file is wrapper around a file
-// descriptor, non-volatile but mutable.
-//
+///
+/// a file is wrapper around a file
+/// descriptor, non-volatile but mutable.
+///
 struct PNFile {
   PN_OBJECT_HEADER
   int fd;
@@ -262,10 +263,10 @@ struct PNFile {
 
 typedef PN (*PN_F)(Potion *, PN, PN, ...);
 
-//
-// a closure is an anonymous function,
-// non-volatile.
-//
+///
+/// a closure is an anonymous function,
+/// non-volatile.
+///
 struct PNClosure {
   PN_OBJECT_HEADER
   PN_F method;
@@ -274,58 +275,58 @@ struct PNClosure {
   PN data[0];
 };
 
-//
-// An AST fragment, non-volatile.
-//
+///
+/// An AST fragment, non-volatile.
+///
 struct PNSource {
   PN_OBJECT_HEADER
   unsigned char part;
   PN a[0];
 };
 
-//
-// a prototype is compiled source code,
-// non-volatile.
-//
+///
+/// a prototype is compiled source code,
+/// non-volatile.
+///
 struct PNProto {
   PN_OBJECT_HEADER
-  PN source; // program name or enclosing scope
-  PN sig;    // argument signature
-  PN stack;  // size of the stack
-  PN paths;  // paths (instance variables)
-  PN locals; // local variables
-  PN upvals; // variables in upper scopes
-  PN values; // numbers, strings, etc.
-  PN protos; // nested closures
-  PN tree; // abstract syntax tree
+  PN source; ///< program name or enclosing scope
+  PN sig;    ///< argument signature
+  PN stack;  ///< size of the stack
+  PN paths;  ///< paths (instance variables)
+  PN locals; ///< local variables
+  PN upvals; ///< variables in upper scopes
+  PN values; ///< numbers, strings, etc.
+  PN protos; ///< nested closures
+  PN tree;   ///< abstract syntax tree
   PN_SIZE pathsize, localsize, upvalsize;
-  PN asmb;   // assembled instructions
-  PN_F jit;  // jit function pointer
+  PN asmb;   ///< assembled instructions
+  PN_F jit;  ///< jit function pointer
 };
 
-//
-// a tuple is an ordered list,
-// volatile.
-//
+///
+/// a tuple is an ordered list,
+/// volatile.
+///
 struct PNTuple {
   PN_OBJECT_HEADER
   unsigned long len;
   PN set[0];
 };
 
-//
-// a weak ref is used for upvals, it acts as
-// a memory slot, non-volatile but mutable.
-//
+///
+/// a weak ref is used for upvals, it acts as
+/// a memory slot, non-volatile but mutable.
+///
 struct PNWeakRef {
   PN_OBJECT_HEADER
   PN data;
 };
 
-//
-// an error, including a description,
-// file location, a brief excerpt.
-//
+///
+/// an error, including a description,
+/// file location, a brief excerpt.
+///
 struct PNError {
   PN_OBJECT_HEADER
   PN parent;
@@ -334,9 +335,9 @@ struct PNError {
   PN excerpt;
 };
 
-//
-// a lick is a unit of generic tree data.
-//
+///
+/// a lick is a unit of generic tree data.
+///
 struct PNLick {
   PN_OBJECT_HEADER
   PN name;
@@ -344,10 +345,10 @@ struct PNLick {
   PN inner;
 };
 
-//
-// a continuation saves the stack and all
-// stack pointers.
-//
+///
+/// a continuation saves the stack and all
+/// stack pointers.
+///
 struct PNCont {
   PN_OBJECT_HEADER
   PN_SIZE len;
@@ -357,8 +358,10 @@ struct PNCont {
                // [3+] = full stack dump, ascending
 };
 
-// the potion type is the 't' in the vtable tuple (m,t)
+/// the potion type is the 't' in the vtable tuple (m,t)
 static inline PN potion_fwd(PN);
+
+/// either immediate (NUM,BOOL,NIL) or a fwd
 static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
@@ -374,19 +377,19 @@ static inline PNType potion_type(PN obj) {
   return ((struct PNObject *)potion_fwd(obj))->vt;
 }
 
-// macro for doing a single fwd check after a possible realloc
+/// PN_QUICK_FWD - doing a single fwd check after a possible realloc
 #define PN_QUICK_FWD(t, obj) \
   if (((struct PNFwd *)obj)->fwd == POTION_FWD) \
     obj = (t)(((struct PNFwd *)obj)->ptr);
 
-// resolve forwarding pointers for mutable types (PNTuple, PNBytes, etc.)
+/// resolve forwarding pointers for mutable types (PNTuple, PNBytes, etc.)
 static inline PN potion_fwd(PN obj) {
   while (PN_IS_PTR(obj) && ((struct PNFwd *)obj)->fwd == POTION_FWD)
     obj = ((struct PNFwd *)obj)->ptr;
   return obj;
 }
 
-// quick access to either PNString or PNByte pointer
+/// quick access to either PNString or PNByte pointer
 static inline char *potion_str_ptr(PN s) {
   if (((struct PNString *)s)->vt == PN_TSTRING)
     return ((struct PNString *)s)->chars;
@@ -397,13 +400,14 @@ static inline char *potion_str_ptr(PN s) {
 PN_FLEX(PNFlex, PN);
 PN_FLEX(PNAsm, unsigned char);
 
-//
-// the jit
-//
+///
+/// the jit
+///
 #define OP_MAX 64
 
 typedef void (*OP_F)(Potion *P, struct PNProto *, PNAsm * volatile *, ...);
 
+/// definition of the jit targets: x86 or ppc, arm later
 typedef struct {
   void (*setup)    (Potion *, struct PNProto * volatile, PNAsm * volatile *);
   void (*stack)    (Potion *, struct PNProto * volatile, PNAsm * volatile *, long);
@@ -417,25 +421,25 @@ typedef struct {
   void (*ivars)    (Potion *, PN, PNAsm * volatile *);
 } PNTarget;
 
-//
-// the interpreter
-// (one per thread, houses its own garbage collector)
-//
+///
+/// the interpreter
+/// (one per thread, houses its own garbage collector)
+///
 
 typedef enum {
-  EXEC_VM = 0,  // bytecode (switch or cgoto)
+  EXEC_VM = 0,  ///< bytecode (switch or cgoto)
   EXEC_JIT,
-  EXEC_DEBUG,   // -d: instrumented bytecode (line stepping) or just slow runloop?
-  EXEC_CHECK,
-  EXEC_COMPILE, // to bytecode
-  EXEC_COMPILE_C,
-  EXEC_COMPILE_NATIVE,
+  EXEC_DEBUG,   ///< -d: instrumented bytecode (line stepping) or just slow runloop?
+  EXEC_CHECK,          ///< -c stop after compilation
+  EXEC_COMPILE,        ///< to bytecode (dumpbc)
+  EXEC_COMPILE_C,      ///< compile-c
+  EXEC_COMPILE_NATIVE, ///< compile-exec
 } exec_mode_t;
 
 typedef enum {
-  MODE_P5       = 0,  // plain p5
-  MODE_P2       = 1,  // use p2
-  MODE_P6       = 2,  // syntax p6. other via use syntax <string>
+  MODE_P5       = 0,  ///< plain p5
+  MODE_P2       = 1,  ///< use p2
+  MODE_P6       = 2,  ///< syntax p6. other via use syntax <string>
 
   DEBUG_INSPECT = 1<<8,
   DEBUG_VERBOSE = 1<<9,
@@ -448,36 +452,37 @@ typedef enum {
 #endif
 } Potion_Flags;
 
+/// the global interpreter state P. singleton
 struct Potion_State {
   PN_OBJECT_HEADER
   PNTarget target;
-  struct PNTable *strings; /* table of all strings */
-  PN lobby; /* root namespace */
-  PNFlex * volatile vts; /* built in types */
-  PN source, input; /* parser input and output */
-  int yypos; /* parser buffer position */
-  PNAsm * volatile pbuf; /* parser buffer */
-  PN unclosed; /* used by parser for named block endings */
-  PN call, callset; /* generic call and callset */
-  int prec; /* decimal precision */
-  struct PNMemory *mem; /* allocator/gc */
-  Potion_Flags flags;
+  struct PNTable *strings; ///< table of all strings
+  PN lobby;                ///< root namespace
+  PNFlex * volatile vts;   ///< built in types
+  PN source, input;        ///< parser input and output
+  int yypos;               ///< parser buffer position
+  PNAsm * volatile pbuf;   ///< parser buffer
+  PN unclosed;             ///< used by parser for named block endings
+  PN call, callset;        ///< generic call and callset
+  int prec;                ///< decimal precision
+  struct PNMemory *mem;    ///< allocator/gc
+  Potion_Flags flags;      ///< vm flags: execution model and debug flags
 };
 
-//
-// the garbage collector
-//
+///
+/// the garbage collector
+///
 struct PNMemory {
-  // the birth region
+  /// the birth region
   volatile void *birth_lo, *birth_hi, *birth_cur;
   volatile void **birth_storeptr;
 
-  // the old region (TODO: consider making the old region common to all threads)
+  /// the old region (TODO: consider making the old region common to all threads)
   volatile void *old_lo, *old_hi, *old_cur;
 
   volatile int collecting, dirty, pass, majors, minors;
-  void *cstack; /* machine stack start */
-  void *protect; /* end of protected memory */
+  void *cstack;  ///< machine stack start
+  void *protect; ///< end of protected memory
 };
 
 #define POTION_INIT_STACK(x) \
@@ -488,7 +493,7 @@ PN_SIZE potion_type_size(Potion *, const struct PNObject *);
 unsigned long potion_rand_int();
 double potion_rand_double();
 
-// quick inline allocation
+/// quick inline allocation
 static inline void *potion_gc_alloc(Potion *P, PNType vt, int siz) {
   struct PNMemory *M = P->mem;
   struct PNObject *res = 0;
@@ -549,16 +554,16 @@ static inline struct PNData *potion_data_alloc(Potion *P, int siz) {
   return data;
 }
 
-//
-// internal errors
-//
+///
+/// internal errors
+///
 #define POTION_OK       0
 #define POTION_NO_MEM   8910
 
-//
-// method caches
-// (more great stuff from ian piumarta)
-//
+///
+/// method caches
+/// (more great stuff from ian piumarta)
+///
 #define potion_send(RCV, MSG, ARGS...) ({ \
     PN r = (PN)(RCV); \
     PN c = potion_bind(P, r, (MSG)); \
@@ -578,9 +583,9 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
    PN_while;
 extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 
-//
-// the Potion functions
-//
+///
+/// the potion API
+///
 Potion *potion_create(void *);
 void potion_destroy(Potion *);
 PN potion_error(Potion *, PN, long, long, PN);
