@@ -435,10 +435,10 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o test/api/*.o front/*.o syn/*.i syn/*.o syn/*.opic \
-	       core/*.i core/*.opic core/*.opic2 core/*.o2
+	       core/*.i core/*.opic core/*.opic2 core/*.o2 front/*.opic
 	@rm -f ${DOCHTML}
 	@rm -f ${GREG} tools/*.o core/config.h core/version.h ${SRC_SYN}
-	@rm -f tools/*~ doc/*~ example/*~
+	@rm -f tools/*~ doc/*~ example/*~ tools/config.c
 	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
 	@rm -f test/api/potion-test${EXE} test/api/gc-test${EXE} \
                test/api/gc-bench${EXE}
