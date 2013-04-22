@@ -1,5 +1,5 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
-.SUFFIXES: .g .c .i .i2 .o .opic .o2 .opic2 .textile .html
+.SUFFIXES: .y .c .i .i2 .o .opic .o2 .opic2 .textile .html
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
 
@@ -104,13 +104,13 @@ core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
 # bootstrap syn/greg.c, syn/compile.c not yet
-grammar: syn/greg.greg
-	touch syn/greg.greg
+grammar: syn/greg.y
+	touch syn/greg.y
 	${MAKE} syn/greg.c
 
-syn/greg.c: syn/greg.greg
+syn/greg.c: syn/greg.y
 	@${ECHO} GREG $<
-	if test -f ${GREG}; then ${GREG} syn/greg.greg > syn/greg-new.c && \
+	if test -f ${GREG}; then ${GREG} syn/greg.y > syn/greg-new.c && \
 	  ${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn && \
 	  ${MV} syn/greg-new.c syn/greg.c && \
 	  ${MV} syn/greg-new syn/greg; \
@@ -169,11 +169,11 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 	@${ECHO} CC -DP2 -fPIC $<
 	@${CC} -c -DP2 -fPIC ${CFLAGS} ${INCS} -o $@ $<
 
-%.c: %.g ${GREG}
+%.c: %.y ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@-new
 	@${MV} $@-new $@
-.g.c: ${GREG}
+.y.c: ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@-new
 	@${MV} $@-new $@
@@ -419,11 +419,8 @@ TAGS: ${SRC} core/*.h
 	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
-	@cp syn/syntax.g syn/syntax.y
-	@cp syn/syntax-p5.g syn/syntax-p5.y
 	@mv syn/greg.c syn/greg-c.tmp
 	@sloccount core syn front
-	@rm -f syn/syntax*.y
 	@mv syn/greg-c.tmp syn/greg.c
 
 todo:
