@@ -117,6 +117,13 @@ void potion_type_constructor_is(PN vt, PN cl) {
   ((struct PNVtable *)vt)->ctor = cl;
 }
 
+/**
+ create a user-class (i.e. type)
+
+ @param PN cl:   set the ctor
+ @param PN self: lobby or another type
+ @param PN ivars: object members
+ */
 PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   PN parent = (self == P->lobby ? PN_VTABLE(PN_TOBJECT) : self);
   PN pvars = ((struct PNVtable *)parent)->ivars;
@@ -139,7 +146,7 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   return self;
 }
 
-// find class by name. first only system metaclasses (types)
+/// find class by name. At first only system metaclasses (types), no user classes yet.
 PN potion_class_find(Potion *P, PN name) {
   int i;
   for (i=0; i < PN_FLEX_SIZE(P->vts); i++) {

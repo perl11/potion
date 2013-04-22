@@ -1,6 +1,6 @@
-//
-// internal.h
-//
+///
+/// non-API internal parts
+///
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #ifndef POTION_INTERNAL_H
@@ -64,6 +64,7 @@ typedef unsigned char u8;
   Ai; \
 })
 
+/// .pnb binary dump header
 struct PNBHeader {
   u8 sig[4];
   u8 major;

@@ -1,17 +1,20 @@
-//
-// ast.h
-// the ast for Potion code in-memory
+///
+/// ast.h
+/// the ast for Potion code in-memory
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #ifndef POTION_AST_H
 #define POTION_AST_H
 
+/// PNArg - unused
 typedef struct {
-  PN v;
-  PN b;
+  PN v; ///< value
+  PN b; ///< ??
 } PNArg;
 
+
+/// PN_AST - tree-types
 enum PN_AST {
   AST_CODE,
   AST_VALUE,

@@ -1,6 +1,6 @@
-//
-// opcodes.h
-// the Potion VM instruction set (heavily based on Lua's)
+///
+/// opcodes.h
+/// the Potion VM instruction set (heavily based on Lua's)
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -13,10 +13,11 @@
 #pragma pack(push, 1)
 #endif
 
+/// PN_OP - a compressed three-address op (as 32bit int bitfield)
 typedef struct {
-  u8 code:8;
-  int a:12;
-  int b:12;
+  u8 code:8; ///< the op. See vm.c http://www.lua.org/doc/jucs05.pdf
+  int a:12;  ///< the data (i.e the register)
+  int b:12;  ///< optional arg, the message
 } PN_OP;
 
 #if defined(__GNUC__)

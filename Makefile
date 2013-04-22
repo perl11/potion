@@ -296,8 +296,16 @@ release: dist
 	@redcloth $< >> $@
 	@${ECHO} "</div></body></html>" >> $@
 
-doc: ${DOCHTML}
+doc: ${DOCHTML} doc/html/files.html
 docall: doc GTAGS
+
+doxygen:
+	@${ECHO} DOXYGEN core
+	@doxygen >/dev/null
+
+doc/html/files.html: ${SRC} core/*.h Doxyfile
+	@${ECHO} DOXYGEN
+	@doxygen
 
 MANIFEST:
 	git ls-tree -r --name-only HEAD > $@
@@ -330,3 +338,5 @@ realclean: clean
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf HTML
 	@find . -name \*.gcov -delete
+
+.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release install grammar doxygen
