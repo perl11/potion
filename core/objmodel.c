@@ -155,7 +155,7 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
 PN potion_class_find(Potion *P, PN name) {
   int i;
   for (i=0; i < PN_FLEX_SIZE(P->vts); i++) {
-    struct PNVtable *vt = PN_FLEX_AT(P->vts, i);
+    struct PNVtable *vt = (struct PNVtable *)PN_FLEX_AT(P->vts, i);
     if (vt && vt->name == name)
       return (PN)vt;
   }
