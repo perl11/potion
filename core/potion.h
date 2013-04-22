@@ -713,4 +713,6 @@ PN potion_eval(Potion *, PN, int);
 PN potion_run(Potion *, PN, int);
 PN_F potion_jit_proto(Potion *, PN);
 
+PN potion_class_find(Potion *, PN);
+
 #endif
