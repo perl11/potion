@@ -144,6 +144,17 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   return self;
 }
 
+// find class by name. first only system metaclasses (types)
+PN potion_class_find(Potion *P, PN name) {
+  int i;
+  for (i=0; i < PN_FLEX_SIZE(P->vts); i++) {
+    struct PNVtable *vt = PN_FLEX_AT(P->vts, i);
+    if (vt && vt->name == name)
+      return (PN)vt;
+  }
+  return PN_NIL;
+}
+
 PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
   struct PNVtable *vt = (struct PNVtable *)self;
 #ifdef POTION_JIT_TARGET
