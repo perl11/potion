@@ -35,8 +35,8 @@ void potion_load_code(Potion *P, const char *filename) {
     if (!PN_IS_PROTO(code)) {
       potion_run(P, potion_send(
 	  potion_parse(P, buf, (char *)filename),
-	  PN_compile, potion_str(P, filename), PN_NIL),
-	POTION_JIT);
+          PN_compile, potion_str(P, filename), PN_NIL),
+        POTION_JIT);
     }
   } else {
     fprintf(stderr, "** could not read entire file: %s.", filename);

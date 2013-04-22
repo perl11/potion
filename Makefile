@@ -171,12 +171,10 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 
 %.c: %.y ${GREG}
 	@${ECHO} GREG $<
-	@${GREG} $< > $@-new
-	@${MV} $@-new $@
+	@${GREG} $< > $@-new && ${MV} $@-new $@
 .y.c: ${GREG}
 	@${ECHO} GREG $<
-	@${GREG} $< > $@-new
-	@${MV} $@-new $@
+	@${GREG} $< > $@-new && ${MV} $@-new $@
 
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
 # on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion

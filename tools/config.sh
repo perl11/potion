@@ -5,6 +5,7 @@ CC=${1:-cc}
 AC="tools/config.c"
 AOUT="tools/config.out"
 CCEX="$CC $AC -o $AOUT"
+LANG=C
 
 CCv=`$CC -v 2>&1`
 CLANG=`echo "$CCv" | sed "/clang/!d"`
