@@ -168,8 +168,8 @@ inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
 
 ///\memberof PNString
 /// "slice" method. supports negative indices, and end<start
-///\param start=N PNNumber
-///\param end=N   PNNumber
+///\param start PNNumber
+///\param end   PNNumber
 ///\return PNString substring
 static PN potion_str_slice(Potion *P, PN cl, PN self, PN start, PN end) {
   char *str = PN_STR_PTR(self);

@@ -875,9 +875,9 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
 
 ///\memberof PNProto
 /// compile to bytecode
-///\param PNProto
-///\param out PNBytes output buffer
-///\param pos - where to add at out
+///\param proto  PNProto
+///\param out    PNBytes output buffer
+///\param pos    long where to add at out
 ///\return char* ptr - start
 long potion_proto_dumpbc(Potion *P, PN proto, PN out, long pos) {
   vPN(Proto) f = (struct PNProto *)proto;
