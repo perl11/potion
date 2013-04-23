@@ -1,6 +1,7 @@
 ///\file table.c
+/// implement unordered hashes and ordered lists (PNTable and PNTuple)
 ///\class PNTable - unordered hash, the central table type, based on khash
-///\class PNTuple - ordered list
+///\class PNTuple - ordered list (array)
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -122,6 +123,9 @@ PN potion_table_length(Potion *P, PN cl, PN self) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   return PN_NUM(kh_size(t));
 }
+
+// TUPLE - ordered lists (arrays)
+// not autovivifying
 
 #define NEW_TUPLE(t, size) \
   vPN(Tuple) t = PN_ALLOC_N(PN_TTUPLE, struct PNTuple, size * sizeof(PN)); \
@@ -323,6 +327,9 @@ PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
   return tuple;
 }
 
+/// search for value X in an ordered PNTuple
+///\param x PN (PNUniq in fact)
+///\return long found index or -1
 long potion_tuple_binary_search(PN self, PN x) {
   struct PNTuple *t = PN_GET_TUPLE(self);
   PNUniq xu = PN_UNIQ(x);
@@ -340,6 +347,9 @@ long potion_tuple_binary_search(PN self, PN x) {
   return -1;
 }
 
+/// insertion sort to create an ordered PNTuple
+///\param x PN (PNUniq in fact)
+///\return void
 void potion_tuple_ins_sort(PN self) {
   struct PNTuple *t = PN_GET_TUPLE(self);
   unsigned long i, j, tmp;
