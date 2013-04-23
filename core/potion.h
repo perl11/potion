@@ -144,7 +144,7 @@ struct PNVtable;
 #define PN_TOUCH(x)     potion_gc_update(P, (PN)(x))
 
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
-#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER PN_SIZE len; PN_SIZE siz; T ptr[0]; } N;
+#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[0]; } N;
 #define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
 #define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
 
@@ -204,7 +204,7 @@ struct PNVtable;
 
 #define PN_OBJECT_HEADER \
   PNType vt; \
-  PNUniq uniq;
+  PNUniq uniq
 
 ///
 /// standard objects act like C structs
@@ -212,7 +212,7 @@ struct PNVtable;
 /// and it's a fixed size, not volatile.
 ///
 struct PNObject {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN ivars[0];
 };
 
@@ -231,7 +231,7 @@ struct PNFwd {
 /// we may want to allocate from Potion.
 ///
 struct PNData {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE siz;
   char data[0];
 };
@@ -242,7 +242,7 @@ struct PNData {
 /// collected. (non-volatile)
 ///
 struct PNString {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE len;
   char chars[0];
 };
@@ -252,7 +252,7 @@ struct PNString {
 /// volatile, may be appended/changed.
 ///
 struct PNBytes {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE len;
   PN_SIZE siz;
   char chars[0];
@@ -266,7 +266,7 @@ struct PNBytes {
 /// stored as binary data. immutable.
 ///
 struct PNDecimal {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   double value;
 };
 
@@ -275,7 +275,7 @@ struct PNDecimal {
 /// descriptor, non-volatile but mutable.
 ///
 struct PNFile {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   int fd;
   PN path;
   mode_t mode;
@@ -288,7 +288,7 @@ typedef PN (*PN_F)(Potion *, PN, PN, ...);
 /// non-volatile.
 ///
 struct PNClosure {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_F method;
   PN sig;
   PN_SIZE extra;
@@ -299,7 +299,7 @@ struct PNClosure {
 /// An AST fragment, non-volatile.
 ///
 struct PNSource {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   unsigned char part;
   PN a[0];
 };
@@ -309,7 +309,7 @@ struct PNSource {
 /// non-volatile.
 ///
 struct PNProto {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN source; ///< program name or enclosing scope
   PN sig;    ///< argument signature
   PN stack;  ///< size of the stack
@@ -329,7 +329,7 @@ struct PNProto {
 /// volatile.
 ///
 struct PNTuple {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   unsigned long len;
   PN set[0];
 };
@@ -339,7 +339,7 @@ struct PNTuple {
 /// a memory slot, non-volatile but mutable.
 ///
 struct PNWeakRef {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN data;
 };
 
@@ -348,7 +348,7 @@ struct PNWeakRef {
 /// file location, a brief excerpt.
 ///
 struct PNError {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN parent;
   PN message;
   PN line, chr;
@@ -359,7 +359,7 @@ struct PNError {
 /// a lick is a unit of generic tree data.
 ///
 struct PNLick {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN name;
   PN attr;
   PN inner;
@@ -370,7 +370,7 @@ struct PNLick {
 /// stack pointers.
 ///
 struct PNCont {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE len;
   PN stack[0]; // [0] = head of potion stack
                // [1] = current %rsp
@@ -474,7 +474,7 @@ typedef enum {
 
 /// the global interpreter state P. singleton
 struct Potion_State {
-  PN_OBJECT_HEADER
+  PN_OBJECT_HEADER;
   PNTarget target;
   struct PNTable *strings; ///< table of all strings
   PN lobby;                ///< root namespace

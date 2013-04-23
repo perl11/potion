@@ -37,7 +37,7 @@ typedef khint_t khiter_t;
 
 static const double __kh_HASH_UPPER = 0.77;
 
-#define PN_TABLE_HEADER PN_SIZE n_buckets, size, n_occupied, upper_bound;
+#define PN_TABLE_HEADER PN_SIZE n_buckets, size, n_occupied, upper_bound
 
 #define KHASH_INIT(name, kh_t, khkey_t, khval_t, khkey_t2, kh_is_map, __hash_func, __hash_equal, __hash_func2, __hash_equal2) \
   static inline khint_t kh_pair_##name() { return (kh_is_map ? (sizeof(khkey_t) + sizeof(khval_t)) : sizeof(khkey_t)); } \
