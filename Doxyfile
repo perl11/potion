@@ -20,7 +20,7 @@ QUIET                  = YES
 WARNINGS               = NO
 WARN_IF_UNDOCUMENTED   = NO
 INPUT                  = core
-INPUT                  += README.md INTERNALS.md INSTALL.md
+INPUT                  += README.md INTERNALS.md INSTALL.md README.p2
 SOURCE_BROWSER         = YES
 
 HTML_COLORSTYLE_HUE    = 157

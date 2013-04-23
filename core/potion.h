@@ -7,6 +7,10 @@
 \mainpage potion - _why's object- and mixin-oriented (traits) language
 
 see README.md
+
+    p2 - a perl11 project (perl 5+6=11) based on potion
+
+see README.p2
 */
 
 #ifndef POTION_H
