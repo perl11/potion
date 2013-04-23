@@ -16,3 +16,4 @@ CLASS_DIAGRAMS         = YES
 HAVE_DOT               = YES
 DOT_NUM_THREADS        = 4
 DOT_PATH               = /usr/bin/dot
+HTML_FOOTER            = doc/footer.inc
