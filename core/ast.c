@@ -1,6 +1,6 @@
-//
-// ast.c
-// the ast for Potion code in-memory
+///\file ast.c
+/// the ast for Potion code in-memory
+/// implements the \class PNSource
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -38,11 +38,15 @@ PN potion_source(Potion *P, u8 p, PN a, PN b, PN c) {
   return (PN)t;
 }
 
+///\memberof PNSource
+/// "name" method
 PN potion_source_name(Potion *P, PN cl, PN self) {
   vPN(Source) t = (struct PNSource *)self;
   return potion_str(P, potion_ast_names[t->part]);
 }
 
+///\memberof PNSource
+/// "string" method
 PN potion_source_string(Potion *P, PN cl, PN self) {
   int i, n, cut = 0;
   vPN(Source) t = (struct PNSource *)self;

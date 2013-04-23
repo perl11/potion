@@ -198,7 +198,7 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
       }
 
       if (exec == EXEC_COMPILE) { // compile to bytecode
-	code = potion_source_dump(P, PN_NIL, code);
+	code = potion_source_dumpbc(P, PN_NIL, code);
       }
       else if (exec == EXEC_COMPILE_C) {
 	//code = potion_send(P, code, "dumpc");

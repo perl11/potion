@@ -1,7 +1,8 @@
-//
-// compile.c
-// ast to bytecode
-//
+/** \file compile.c
+ * ast to bytecode.
+ *
+ * implement PNSource (AST) and PNProto (closure) methods
+ */
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 #include <stdio.h>
@@ -33,14 +34,22 @@ const struct {
   {"return", 1}, {"proto", 2}, {"class", 2}
 };
 
+///\memberof PNProto
+/// tree method of PNProto
+///\return the original PNSource AST for the closure
 PN potion_proto_tree(Potion *P, PN cl, PN self) {
   return PN_PROTO(self)->tree;
 }
 
+///\memberof PNProto
+/// call method of PNProto. i.e. apply - bind args to a closure.
+///\param args
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
   return potion_vm(P, self, P->lobby, args, 0, NULL);
 }
 
+///\memberof PNProto
+/// string method of PNProto. ascii dump of a function definition
 PN potion_proto_string(Potion *P, PN cl, PN self) {
   vPN(Proto) t = (struct PNProto *)self;
   int x = 0;
@@ -679,18 +688,11 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
 }
 
 /// Dissect the parsed and compiled parse_from()/yy_sig() AST tree
-/// of a potion/p2 signature. Name=Type, '| optional' '.' sep
-/// Types are encoded as ord. Defaults via BIND ":="
-/// Default type: O (= PN object)
-/// Encoded to AST_CODE: (name type default)
-/// p2: type name := default, ...
-///\param f    the PNProto closure to store locals
-///\param src  PNSource signature tree, parsed via yy_sig()
+/// of a potion signature. Name=Type, '| optional' '.' sep
+/// Types are encoded as ord. No handling of default values.
+///\param  f    the PNProto closure to store locals
+///\param  src  PNSource signature tree, parsed via yy_sig()
 ///\return PNProto a closure
-///
-/// (x=n,y:=1) =>
-///\code  (list (assign (expr (message (x )) expr (message (n ))),
-///              assign (expr (message (y )) value (1 ))) \endcode
 PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   PN sig = PN_TUP0();
   vPN(Source) t = (struct PNSource *)src;
@@ -730,6 +732,12 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   return sig;
 }
 
+///\memberof PNSource
+/// "compile" method for PNSource, an AST fragment. Typically to add a function definition,
+/// but also objects, blocks, ... (Almost everything is a PNClosure)
+///\param  source  PNSource AST source tree
+///\param  sig     PNSource signature tree or PN_NIL, parsed via yy_sig(), compiled with potion_sig_compile()
+///\return PNProto a closure
 PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   vPN(Proto) f;
   vPN(Source) t = (struct PNSource *)self;
@@ -821,7 +829,8 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   return (PN)f;
 }
 
-// TODO: load from a stream
+///\memberof PNSource
+// TODO: "load" from a stream
 PN potion_source_load(Potion *P, PN cl, PN buf) {
   u8 *ptr;
   vPN(BHeader) h = (struct PNBHeader *)PN_STR_PTR(buf);
@@ -860,11 +869,17 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
     WRITE_TUPLE(tup, ptr) WRITE_CONST(PN_TUPLE_AT(tup, i), ptr); \
   })
 #define WRITE_PROTOS(tup, ptr) ({ \
-    WRITE_TUPLE(tup, ptr) ptr += potion_proto_dump(P, PN_TUPLE_AT(tup, i), \
+    WRITE_TUPLE(tup, ptr) ptr += potion_proto_dumpbc(P, PN_TUPLE_AT(tup, i), \
         out, (char *)ptr - PN_STR_PTR(out)); \
   })
 
-long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
+///\memberof PNProto
+/// compile to bytecode
+///\param PNProto
+///\param out PNBytes output buffer
+///\param pos - where to add at out
+///\return char* ptr - start
+long potion_proto_dumpbc(Potion *P, PN proto, PN out, long pos) {
   vPN(Proto) f = (struct PNProto *)proto;
   char *start = PN_STR_PTR(out) + pos;
   u8 *ptr = (u8 *)start;
@@ -882,8 +897,10 @@ long potion_proto_dump(Potion *P, PN proto, PN out, long pos) {
   return (char *)ptr - start;
 }
 
-// TODO: dump to a stream
-PN potion_source_dump(Potion *P, PN cl, PN proto) {
+///\memberof PNSource
+// Low TODO: dump to a stream (if we have not enough memory)
+// TODO: proto dump methods, for bc, c and exec, also dump as serializable ascii
+PN potion_source_dumpbc(Potion *P, PN cl, PN proto) {
   PN pnb = potion_bytes(P, 8192);
   struct PNBHeader h;
   PN_MEMCPY_N(h.sig, POTION_SIG, u8, 4);
@@ -894,7 +911,7 @@ PN potion_source_dump(Potion *P, PN cl, PN proto) {
 
   PN_MEMCPY(PN_STR_PTR(pnb), &h, struct PNBHeader);
   PN_STR_LEN(pnb) = (long)sizeof(struct PNBHeader) +
-    potion_proto_dump(P, proto, pnb, sizeof(struct PNBHeader));
+    potion_proto_dumpbc(P, proto, pnb, sizeof(struct PNBHeader));
   return pnb;
 }
 
@@ -923,7 +940,7 @@ PN potion_eval(Potion *P, PN bytes, int jit) {
 
 void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
-  potion_method(pro_vt, "call", potion_proto_call, 0);
+  potion_method(pro_vt, "call", potion_proto_call, 0); // TODO: args sig missing here
   potion_method(pro_vt, "tree", potion_proto_tree, 0);
   potion_method(pro_vt, "string", potion_proto_string, 0);
 }
