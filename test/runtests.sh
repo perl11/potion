@@ -36,13 +36,13 @@ while [ $pass -lt 6 ]; do
 	if [ "$jit" = "" ]; then 
 	    pass=`expr $pass + 1`
             cmd="./p2"; t=0; EXT=pl
-	    cmdi="$cmd -Di"; cmdx="$cmdi -J";
+	    cmdi="$cmd --inspect"; cmdx="$cmdi -J";
 	    cmdc="$cmd --compile"; extc=c
 	    whattests="$cmd VM tests"
 	fi;
     elif [ $pass -eq 3 ]; then 
         cmd="./p2"; t=0; EXT=pl
-	cmdi="$cmd -Di"; cmdx="$cmdi -J";
+	cmdi="$cmd --inspect"; cmdx="$cmdi -J";
 	cmdc="$cmd --compile"; extc=c
 	whattests="$cmd VM tests"
     elif [ $pass -eq 4 ]; then 
@@ -69,7 +69,7 @@ while [ $pass -lt 6 ]; do
 	    ${ECHO} skipping potion
 	    pass=3
             cmd=./p2; t=0; EXT=pl
-	    cmdi="$cmd -Di"; cmdx="$cmdi -J";
+	    cmdi="$cmd --inspect"; cmdx="$cmdi -J";
 	    cmdc="$cmd --compile"; extc=c
 	    whattests="$cmd VM tests"
 	fi
