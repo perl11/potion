@@ -356,9 +356,9 @@ struct PNError {
 ///
 struct PNLick {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
-  PN name;
-  PN attr;
-  PN inner;
+  PN name;  ///< PNString
+  PN attr;  ///< ??
+  PN inner; ///< PNTuple, \see potion_lick_licks:"licks" method
 };
 
 ///

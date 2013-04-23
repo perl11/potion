@@ -1,6 +1,6 @@
-//
-// table.c
-// the central table type, based on khash
+///\file table.c
+///\class PNTable - unordered hash, the central table type, based on khash
+///\class PNTuple - ordered list
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -11,6 +11,9 @@
 #include "khash.h"
 #include "table.h"
 
+///\memberof PNTable
+/// "string" method
+///\return PNString
 PN potion_table_string(Potion *P, PN cl, PN self) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   PN out = potion_byte_str(P, "(");
@@ -26,10 +29,14 @@ PN potion_table_string(Potion *P, PN cl, PN self) {
   return PN_STR_B(out);
 }
 
+///\memberof PNTable
+/// "empty" method
+///\return PNTable
 PN potion_table_empty(Potion *P) {
   return (PN)PN_ALLOC_N(PN_TTABLE, struct PNTable, 0);
 }
 
+///\return self PNTable
 PN potion_table_cast(Potion *P, PN self) {
   if (PN_IS_TUPLE(self)) {
     int ret; unsigned k;
@@ -48,6 +55,10 @@ PN potion_table_cast(Potion *P, PN self) {
   return self;
 }
 
+///\memberof PNTable
+/// "at" method
+///\param key PN
+///\return PN value or PN_NIL
 PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   unsigned k = kh_get(PN, t, key);
@@ -55,6 +66,10 @@ PN potion_table_at(Potion *P, PN cl, PN self, PN key) {
   return PN_NIL;
 }
 
+///\memberof PNTable
+/// "each" method. call block on each member (hash order)
+///\param block PNClosure
+///\return self PNTable
 PN potion_table_each(Potion *P, PN cl, PN self, PN block) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   unsigned k;
@@ -65,6 +80,11 @@ PN potion_table_each(Potion *P, PN cl, PN self, PN block) {
   return self;
 }
 
+///\memberof PNTable
+/// "put" method. write to the hash
+///\param key PN
+///\param value PN
+///\return self PNTable
 PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
   int ret;
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
@@ -75,6 +95,10 @@ PN potion_table_put(Potion *P, PN cl, PN self, PN key, PN value) {
   return self;
 }
 
+///\memberof PNTable
+/// "remove" method. remove key from hash
+///\param key PN
+///\return self PNTable
 PN potion_table_remove(Potion *P, PN cl, PN self, PN key) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   unsigned k = kh_get(PN, t, key);
@@ -82,11 +106,18 @@ PN potion_table_remove(Potion *P, PN cl, PN self, PN key) {
   return self;
 }
 
+/// helper function for potion_table_put:"put"
+///\param key PN
+///\param value PN
+///\return self PNTable
 PN potion_table_set(Potion *P, PN self, PN key, PN value) {
   self = potion_fwd(self);
   return potion_table_put(P, PN_NIL, potion_table_cast(P, self), key, value);
 }
 
+///\memberof PNTable
+/// "length" method. count keys
+///\return PNNumber
 PN potion_table_length(Potion *P, PN cl, PN self) {
   vPN(Table) t = (struct PNTable *)potion_fwd(self);
   return PN_NUM(kh_size(t));
@@ -121,10 +152,17 @@ PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   return tuple;
 }
 
+///\memberof PNTuple
+/// "append" method.
+///\param value PN
+///\return PNTuple
 PN potion_tuple_append(Potion *P, PN cl, PN self, PN value) {
   return potion_tuple_push(P, self, value);
 }
 
+/// Return index of found value or -1
+///\param value PN
+///\return int
 PN_SIZE potion_tuple_find(Potion *P, PN tuple, PN value) {
   PN_TUPLE_EACH(tuple, i, v, {
     if (v == value) return i;
@@ -140,6 +178,10 @@ PN_SIZE potion_tuple_push_unless(Potion *P, PN tuple, PN value) {
   return PN_TUPLE_LEN(tuple) - 1;
 }
 
+///\memberof PNTuple
+/// "at" method.
+///\param index PNNumber
+///\return PNTuple
 PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
   long i = PN_INT(index), len = PN_TUPLE_LEN(self);
   if (i < 0) i += len;
@@ -147,6 +189,9 @@ PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
   return PN_TUPLE_AT(self, i);
 }
 
+///\memberof PNTuple
+/// "clone" method.
+///\return new PNTuple
 PN potion_tuple_clone(Potion *P, PN cl, PN self) {
   vPN(Tuple) t1 = PN_GET_TUPLE(self);
   NEW_TUPLE(t2, t1->len);
@@ -154,6 +199,10 @@ PN potion_tuple_clone(Potion *P, PN cl, PN self) {
   return (PN)t2;
 }
 
+///\memberof PNTuple
+/// "each" method. call block on each member (linear order)
+///\param block PNClosure
+///\return self PNTuple
 PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
   int with_index = potion_arity(P, block) >= 2;
   PN_TUPLE_EACH(self, i, v, {
@@ -165,11 +214,18 @@ PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
   return self;
 }
 
+///\memberof PNTuple
+/// "first" method.
+///\return first PN or PN_NIL if the PNTuple is empty
 PN potion_tuple_first(Potion *P, PN cl, PN self) {
   if (PN_TUPLE_LEN(self) < 1) return PN_NIL;
   return PN_TUPLE_AT(self, 0);
 }
 
+///\memberof PNTuple
+/// "join" method.
+///\param sep PNString
+///\return PNString
 PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
   PN out = potion_byte_str(P, "");
   PN_TUPLE_EACH(self, i, v, {
@@ -179,12 +235,18 @@ PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
   return PN_STR_B(out);
 }
 
+///\memberof PNTuple
+/// "last" method.
+///\return last PN or PN_NIL if the PNTuple is empty
 PN potion_tuple_last(Potion *P, PN cl, PN self) {
   long len = PN_TUPLE_LEN(self);
   if (len < 1) return PN_NIL;
   return PN_TUPLE_AT(self, len - 1);
 }
 
+///\memberof PNTuple
+/// "string" method. serializable ascii dump
+///\return PNString
 PN potion_tuple_string(Potion *P, PN cl, PN self) {
   int licks = 0;
   PN out = potion_byte_str(P, "(");
@@ -200,6 +262,9 @@ PN potion_tuple_string(Potion *P, PN cl, PN self) {
   return PN_STR_B(out);
 }
 
+///\memberof PNTuple
+/// "pop" method. remove the last element
+///\return last PN
 PN potion_tuple_pop(Potion *P, PN cl, PN self, PN key) {
   vPN(Tuple) t = PN_GET_TUPLE(self);
   PN obj = t->set[t->len - 1];
@@ -209,6 +274,11 @@ PN potion_tuple_pop(Potion *P, PN cl, PN self, PN key) {
   return obj;
 }
 
+///\memberof PNTuple
+/// "put" method. write value at index key
+///\param key PNNumber index
+///\param value PN
+///\return self PNTuple
 PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
   if (PN_IS_NUM(key)) {
     long i = PN_INT(key), len = PN_TUPLE_LEN(self);
@@ -223,6 +293,9 @@ PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
   return potion_table_put(P, PN_NIL, potion_table_cast(P, self), key, value);
 }
 
+///\memberof PNTuple
+/// "print" method. call print on all elements
+///\return PN_NIL
 PN potion_tuple_print(Potion *P, PN cl, PN self) {
   PN_TUPLE_EACH(self, i, v, {
     potion_send(v, PN_print);
@@ -230,10 +303,16 @@ PN potion_tuple_print(Potion *P, PN cl, PN self) {
   return PN_NIL;
 }
 
+///\memberof PNTuple
+/// "length" method. Number of elements, keys
+///\return PNNumber
 PN potion_tuple_length(Potion *P, PN cl, PN self) {
   return PN_NUM(PN_TUPLE_LEN(self));
 }
 
+///\memberof PNTuple
+/// "reverse" method.
+///\return PNTuple
 PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
   unsigned long len = PN_TUPLE_LEN(self);
   PN tuple = potion_tuple_with_size(P, len);
@@ -275,6 +354,9 @@ void potion_tuple_ins_sort(PN self) {
   }
 }
 
+///\memberof PNLobby
+/// "list" method.
+///\return PNTuple
 PN potion_lobby_list(Potion *P, PN cl, PN self, PN size) {
   return potion_tuple_with_size(P, PN_INT(size));
 }

@@ -1,6 +1,5 @@
-//
-// lick.c
-// the interleaved data format
+///\file lick.c
+///\class PNLick - the interleaved data format
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -17,26 +16,40 @@ PN potion_lick(Potion *P, PN name, PN inner, PN attr) {
   return (PN)lk;
 }
 
+///\memberof PNLick
+/// "attrs" method
 PN potion_lick_attr(Potion *P, PN cl, PN self) {
   return ((struct PNLick *)self)->attr;
 }
 
+///\memberof PNLick
+/// "licks" method
+///\return PNTuple or PN_NIL
 PN potion_lick_licks(Potion *P, PN cl, PN self) {
   PN licks = ((struct PNLick *)self)->inner;
   if (PN_IS_TUPLE(licks)) return licks;
   return PN_NIL;
 }
 
+///\memberof PNLick
+/// "name" method
+///\return PNString
 PN potion_lick_name(Potion *P, PN cl, PN self) {
   return ((struct PNLick *)self)->name;
 }
 
+///\memberof PNLick
+/// "text" method
+///\return PNString or PN_NIL
 PN potion_lick_text(Potion *P, PN cl, PN self) {
   PN text = ((struct PNLick *)self)->inner;
   if (PN_IS_STR(text)) return text;
   return PN_NIL;
 }
 
+///\memberof PNLick
+/// "string" method
+///\return PNString
 PN potion_lick_string(Potion *P, PN cl, PN self) {
   PN out = potion_byte_str(P, "");
   potion_bytes_obj_string(P, out, ((struct PNLick *)self)->name);
