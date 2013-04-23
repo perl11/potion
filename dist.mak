@@ -27,7 +27,7 @@ install: bin-dist
 
 bin-dist: pkg/${PKG}.tar.gz
 
-pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax-p5.c \
+pkg/${PKG}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
   potion${EXE} p2${EXE} \
   libpotion.a libpotion${DLL} libp2.a libp2${DLL} lib/readline${LOADEXT}
 	rm -rf dist
@@ -39,7 +39,7 @@ pkg/${PKG}.tar.gz: core/config.h core/version.h core/syntax-p5.c \
 	cp libp2.a libp2${DLL} dist/lib/
 	cp libpotion.a libpotion${DLL} dist/lib/
 	cp lib/readline${LOADEXT} dist/lib/potion/
-	cp doc/* *.md README COPYING dist/share/potion/doc/
+	-cp doc/* *.md README COPYING dist/share/potion/doc/
 	cp example/* dist/share/potion/example/
 	-mkdir -p pkg
 	(cd dist && tar czvf ../pkg/${PKG}.tar.gz * && cd ..)
@@ -49,13 +49,13 @@ src-dist: pkg/${PKG}-src.tar.gz
 
 pkg/${PKG}-src.tar.gz: tarball
 
-tarball: core/version.h core/syntax.c
+tarball: core/version.h syn/syntax.c
 	-mkdir -p pkg
 	rm -rf ${PKG}
 	git checkout-index --prefix=${PKG}/ -a
 	rm -f ${PKG}/.gitignore
 	cp core/version.h ${PKG}/core/
-	cp core/syntax-p5.c core/syntax.c ${PKG}/core/
+	cp syn/syntax*.c ${PKG}/syn/
 	tar czvf pkg/${PKG}-src.tar.gz ${PKG}
 	rm -rf ${PKG}
 
