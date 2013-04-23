@@ -301,7 +301,8 @@ docall: doc GTAGS
 
 doxygen:
 	@${ECHO} DOXYGEN core
-	doc/footer.sh > doc/footer.inc
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
+	@doc/footer.sh > doc/footer.inc
 	@doxygen
 
 doc/html/files.html: ${SRC} core/*.h Doxyfile doc/footer.sh
