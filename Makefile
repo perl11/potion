@@ -301,10 +301,12 @@ docall: doc GTAGS
 
 doxygen:
 	@${ECHO} DOXYGEN core
-	@doxygen >/dev/null
+	doc/footer.sh > doc/footer.inc
+	@doxygen
 
-doc/html/files.html: ${SRC} core/*.h Doxyfile
+doc/html/files.html: ${SRC} core/*.h Doxyfile doc/footer.sh
 	@${ECHO} DOXYGEN
+	doc/footer.sh > doc/footer.inc
 	@doxygen
 
 MANIFEST:
