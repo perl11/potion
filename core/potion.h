@@ -124,6 +124,8 @@ struct PNVtable;
 #define PN_FNUMBER      1
 #define PN_FBOOLEAN     2
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
+///\class PNBoolean
+/// Immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
 #define PN_BOOL(v)      (PN_TEST(v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_PTR(v)    (!PN_IS_NUM(v) && ((PN)(v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
@@ -138,6 +140,10 @@ struct PNVtable;
 #define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
 #define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
 
+///\class PNNumber
+/// Immediate object (no struct) 0x...1
+/// Integer: 31bit/63bit shifted off the last 1 bit
+///\see PN_NUM (int to obj), PN_INT (obj to int), PN_IS_NUM (is num obj?)
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       ((long)((long)(x))>>1)
 #define PN_DBL(num)     (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDecimal *)num)->value)

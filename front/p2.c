@@ -183,7 +183,7 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
       }
 
       if (exec == EXEC_COMPILE)
-	//TODO: use source dumpbc,dumpc,dumpbin,dump (ascii) methods
+	//TODO: use source dumpbc,dumpc,dumpexec,dump (serializable ascii) methods
 	//code = potion_send(P, code, "dumpbc");
 	code = potion_source_dumpbc(P, PN_NIL, code);
       else if (exec == EXEC_COMPILE_C) {
