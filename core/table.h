@@ -1,9 +1,8 @@
-///
-/// table.h
+///\file table.h
 /// the central table type, based on khash
-///
-/// (c) 2008 why the lucky stiff, the freelance professor
-///
+//
+// (c) 2008 why the lucky stiff, the freelance professor
+//
 #ifndef POTION_TABLE_H
 #define POTION_TABLE_H
 

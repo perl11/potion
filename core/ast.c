@@ -1,6 +1,5 @@
 ///\file ast.c
-/// the ast for Potion code in-memory
-/// implements the \class PNSource
+/// the ast for Potion code in-memory implements PNSource
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
