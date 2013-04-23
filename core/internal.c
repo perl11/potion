@@ -250,7 +250,8 @@ void potion_esp(void **esp) {
 
 #ifdef DEBUG
 void potion_dump(Potion *P, PN data) {
-  puts(PN_STR_PTR(potion_send(data, PN_string)));
+  printf("%s (%s)\n", PN_STR_PTR(potion_send(data, PN_string)),
+	 PN_STR_PTR(potion_send(PN_VTABLE(PN_TYPE(data)), PN_string)));
 }
 #define pdump(data) potion_dump(P, data)
 
@@ -281,9 +282,9 @@ void potion_dump_stack(Potion *P) {
     if (*start == 0)
       printf(" nil\n");
     else if (*start & 1)
-      printf(" %ld\n", PN_INT(*start));
+      printf(" %ld INT\n", PN_INT(*start));
     else if (*start & 2)
-      printf(" %s\n", *start == 2 ? "false" : "true");
+      printf(" %s BOOL\n", *start == 2 ? "false" : "true");
     else
       printf("\n");
     start++;
