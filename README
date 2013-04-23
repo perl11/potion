@@ -1,19 +1,20 @@
+  ~ readme ~
 
-         .ooo
-          'OOOo
-      ~ p ooOOOo tion ~
-          .OOO
-           oO      %% a little
-             Oo    fast language.
-            'O
-             `
-            (o)
-        ___/ /          
-       /`    \ 
-      /v^  `  ,
-     (...v/v^/
-      \../::/
-       \/::/ 
+           .ooo
+            'OOOo
+        ~ p ooOOOo tion ~
+            .OOO
+             oO      %% a little
+               Oo    fast language.
+              'O
+               `
+              (o)
+          ___/ /          
+         /`    \ 
+        /v^  `  ,
+       (...v/v^/
+        \../::/
+         \/::/ 
 
 
   ~ potion ~
@@ -87,23 +88,23 @@
 
   ~ a whiff of potion ~
 
-    5 times: "Odelay!" print.
+      5 times: "Odelay!" print.
 
   Or,
 
-    add = (x, y): x + y.
-    add(2, 4) string print
+      add = (x, y): x + y.
+      add(2, 4) string print
 
   Or,
 
-    hello =
-      "(x): ('hello ', x) print." eval
-    hello ('world')
+      hello =
+        "(x): ('hello ', x) print." eval
+      hello ('world')
 
 
   ~ building and installing ~
 
-    $ make
+      $ make
 
   Look inside the file called INSTALL for options.
 
@@ -183,27 +184,27 @@
 
   * It is two languages in one.
 
-    The language itself is objects and closures.
+  The language itself is objects and closures.
 
       Number add = (x): self + x.
 
-    But it also includes a data language.
+  But it also includes a data language.
 
       app = [window (width=200, height=400)
         [button "OK", button "Cancel"]]
       
-    The code and data languages can be interleaved
-    over and over again. In a way, I'm trying to find
-    a middle ground between s-expressions and stuff like
-    E4X. I like that s-expressions are a very light data
-    syntax, but I like that E4X clearly looks like data.
+  The code and data languages can be interleaved
+  over and over again. In a way, I'm trying to find
+  a middle ground between s-expressions and stuff like
+  E4X. I like that s-expressions are a very light data
+  syntax, but I like that E4X clearly looks like data.
 
-    When s-expressions appear in Lisp code, they look
-    like code. I think it is nice to distinguish the two.
+  When s-expressions appear in Lisp code, they look
+  like code. I think it is nice to distinguish the two.
 
   * Deeply nested blocks can be closed quickly.
-    I don't like significant whitespace, personally.
-    But I don't like end end end end.
+  I don't like significant whitespace, personally.
+  But I don't like end end end end.
 
       say = (phrase):
         10 times (i):
@@ -211,10 +212,10 @@
             phrase print
       _say
 
-    The closing "_ say" ends the block saved to "say" var.
+  The closing "_ say" ends the block saved to "say" var.
 
-    Normally, blocks are closed with a period. In this case
-    we'd need three periods, which looks strange.
+  Normally, blocks are closed with a period. In this case
+  we'd need three periods, which looks strange.
 
       say = ():
         10 times:
@@ -222,14 +223,15 @@
             "Odelay!" print
       ...
 
-    If you prefer, you can give it some space. Or you can
-    use a variable name introduced by the block,
+  If you prefer, you can give it some space. Or you can
+  use a variable name introduced by the block,
 
       say = (phrase):
         10 times (i):
           20 times (j):
             phrase print
       _ phrase
+
 
       say = (phrase):
         10 times (i):
@@ -238,8 +240,8 @@
         _ i
       .
 
-    Maybe it all looks strange. I don't know. I'm just trying
-    things out, okay?
+  Maybe it all looks strange. I don't know. I'm just trying
+  things out, okay?
 
   * Elimination of line noise.
 
@@ -249,13 +251,14 @@
 
   * I try to defer to English when it comes to punctuation rules.
 
-    Period means "end". (In other langs it means "method call".)
-    Comma breaks up statements.
-    Space between messages gives a noun-verb feeling.
+  Period means "end". (In other langs it means "method call".)
+  Comma breaks up statements.
+  Space between messages gives a noun-verb feeling.
 
       window open (width=400, height=500)
 
-  * Named block args.
+  * Named block args
+
 
       (1, 2, 3) map (item=x, index=i): i display, x + 1.
 

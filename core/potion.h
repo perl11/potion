@@ -3,6 +3,12 @@
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
+/**
+\mainpage potion - _why's object- and mixin-oriented (traits) language
+
+see README.md
+*/
+
 #ifndef POTION_H
 #define POTION_H
 
