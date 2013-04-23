@@ -7,10 +7,10 @@
 #ifndef POTION_AST_H
 #define POTION_AST_H
 
-/// PNArg - unused
+/// PNArg - call a function (unused). See now macro PN_S(name,1), PN_S(name,2)
 typedef struct {
-  PN v; ///< value
-  PN b; ///< ??
+  PN v; ///< args
+  PN b; ///< block
 } PNArg;
 
 
