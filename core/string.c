@@ -92,14 +92,17 @@ PN potion_str_format(Potion *P, const char *format, ...) {
   return (PN)s;
 }
 
+/// length method for PNString. number of chars
 static PN potion_str_length(Potion *P, PN cl, PN self) {
   return PN_NUM(potion_cp_strlen_utf8(PN_STR_PTR(self)));
 }
 
+/// eval method for PNString. execs the default JIT/VM, not the actual EXEC_MODE
 static PN potion_str_eval(Potion *P, PN cl, PN self) {
   return potion_eval(P, self, POTION_JIT);
 }
 
+/// number method for PNString. as atoi/atof
 static PN potion_str_number(Potion *P, PN cl, PN self) {
   char *str = PN_STR_PTR(self);
   int i = 0, dec = 0, sign = 0, len = PN_STR_LEN(self);
@@ -119,10 +122,12 @@ static PN potion_str_number(Potion *P, PN cl, PN self) {
   return potion_decimal(P, PN_STR_PTR(self), PN_STR_LEN(self));
 }
 
+/// string method for PNString
 static PN potion_str_string(Potion *P, PN cl, PN self) {
   return self;
 }
 
+/// print method for PNString. fwrite to stdout
 static PN potion_str_print(Potion *P, PN cl, PN self) {
   fwrite(PN_STR_PTR(self), 1, PN_STR_LEN(self), stdout);
   return PN_NIL;
@@ -155,25 +160,29 @@ inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
   return PN_NUM(corrected);
 }
 
+/// slice method for PNString. supports negative indices, and end<start
+///< start=N
+///< end=N
 static PN potion_str_slice(Potion *P, PN cl, PN self, PN start, PN end) {
   char *str = PN_STR_PTR(self);
   size_t len = potion_cp_strlen_utf8(str);
   size_t startoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(start, len, 0)));
-  /* patch applied by http://github.com/citizen428 */
   size_t endoffset;
   if (end < start) {
     endoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(start+end, len, len)));
   } else {
     endoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(end, len, len)));
   }
-  /* end patch */
   return potion_str2(P, str + startoffset, endoffset - startoffset);
 }
 
+/// bytes method for PNString
 static PN potion_str_bytes(Potion *P, PN cl, PN self) {
   return potion_byte_str2(P, PN_STR_PTR(self), PN_STR_LEN(self));
 }
 
+/// + method for PNString. concat two strings
+///< str=S
 static PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
   char *s = malloc(PN_STR_LEN(self) + PN_STR_LEN(x));
   PN str;
@@ -185,6 +194,7 @@ static PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
   return str;
 }
 
+/// ord method for PNString and PNBytes. return nil on strings longer than 1 char
 static PN potion_str_ord(Potion *P, PN cl, PN self) {
   self = potion_fwd(self);
   if (PN_STR_LEN(self) != 1)
@@ -192,6 +202,7 @@ static PN potion_str_ord(Potion *P, PN cl, PN self) {
   return PN_NUM(PN_STR_PTR(self)[0]);
 }
 
+/// type_call_is for PNString. (?)
 static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
   return potion_str_slice(P, cl, self, index, PN_NUM(PN_INT(index) + 1));
 }
@@ -242,6 +253,8 @@ void potion_bytes_obj_string(Potion *P, PN bytes, PN obj) {
   potion_bytes_append(P, 0, bytes, potion_send(obj, PN_string));
 }
 
+/// append method for PNBytes.
+///< str=S
 PN potion_bytes_append(Potion *P, PN cl, PN self, PN str) {
   vPN(Bytes) s = (struct PNBytes *)potion_fwd(self);
   PN fstr = potion_fwd(str);
@@ -259,6 +272,7 @@ PN potion_bytes_append(Potion *P, PN cl, PN self, PN str) {
   return self;
 }
 
+/// length method for PNBytes.
 static PN potion_bytes_length(Potion *P, PN cl, PN self) {
   PN str = potion_fwd(self);
   return PN_NUM(PN_STR_LEN(str));
@@ -278,12 +292,15 @@ PN potion_bytes_string(Potion *P, PN cl, PN self) {
   return exist;
 }
 
+/// print method for PNBytes.
 static PN potion_bytes_print(Potion *P, PN cl, PN self) {
   self = potion_fwd(self);
   fwrite(PN_STR_PTR(self), 1, PN_STR_LEN(self), stdout);
   return PN_NIL;
 }
 
+/// each method for PNBytes.
+///< block=&
 static PN potion_bytes_each(Potion *P, PN cl, PN self, PN block) {
   self = potion_fwd(self);
   char *s = PN_STR_PTR(self);
@@ -294,6 +311,7 @@ static PN potion_bytes_each(Potion *P, PN cl, PN self, PN block) {
   return PN_NIL;
 }
 
+/// type_call_is for PNBytes. (?)
 static PN potion_bytes_at(Potion *P, PN cl, PN self, PN index) {
   char c;
   self = potion_fwd(self);

@@ -122,13 +122,10 @@ void potion_type_constructor_is(PN vt, PN cl) {
   ((struct PNVtable *)vt)->ctor = cl;
 }
 
-/**
- create a user-class (i.e. type)
-
- @param PN cl:   set the ctor
- @param PN self: lobby or another type
- @param PN ivars: object members
- */
+/// create a user-class (ie type)
+///< cl:   set the ctor
+///< self: lobby or another type
+///< ivars: object members
 PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   PN parent = (self == P->lobby ? PN_VTABLE(PN_TOBJECT) : self);
   PN pvars = ((struct PNVtable *)parent)->ivars;

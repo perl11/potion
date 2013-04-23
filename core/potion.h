@@ -439,7 +439,7 @@ typedef enum {
 typedef enum {
   MODE_P5       = 0,  ///< plain p5
   MODE_P2       = 1,  ///< use p2
-  MODE_P6       = 2,  ///< syntax p6. other via use syntax <string>
+  MODE_P6       = 2,  ///< syntax p6. other via use syntax ""
 
   DEBUG_INSPECT = 1<<8,
   DEBUG_VERBOSE = 1<<9,
@@ -454,8 +454,8 @@ typedef enum {
 
 /// the global interpreter state P. singleton
 struct Potion_State {
-  PN_OBJECT_HEADER;
-  PNTarget target;
+  PN_OBJECT_HEADER;        ///< PNType vt; PNUniq uniq
+  PNTarget target;         ///< the jit
   struct PNTable *strings; ///< table of all strings
   PN lobby;                ///< root namespace
   PNFlex * volatile vts;   ///< built in types
