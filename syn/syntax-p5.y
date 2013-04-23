@@ -112,7 +112,7 @@ ELSE    = "else" space+
 MY      = "my" space+
 
 subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
-        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
+        { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_AST(MESSAGE, n)), PN_AST2(PROTO, p, b)); }
 # so far no difference in global or lex assignment
 #subrout = SUB n:id - ( '(' p:sig_p5 ')' )? a:subattrlist? b:block
 #lexsubrout = MY - SUB n:subname p:proto? a:subattrlist? b:subbody
@@ -657,7 +657,7 @@ space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
 end-of-line = '\r\n' | '\n' | '\r'
 end-of-file = !'\0'
 
-# for potion_sig used in the rt
+# for potion_sig, used in the runtime initialization
 sig = args+ end-of-file
 args = arg-list (arg-sep arg-list)*
 arg-list = arg-set (optional arg-set)?
