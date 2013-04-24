@@ -11,14 +11,15 @@ I plan significant enhancements in perl performance and features.
 
 h2. Generally
 
-I go along with _why and every lisp coder.
-Good software should be beautiful. It's also art not only technology.
-short, precise, readable. no one wants to work with a big and ugly mess,
-not even companies. a lot of code smells.
-rather restrict the usage to those who know and can be taught,
-than sacrifice your system for it.
+I go along with _why and every lisp coder.  Good software should be
+beautiful. But not too beautiful. Code is also art not only technology.
+Short, precise, readable. No one wants to work with a big and ugly
+mess, not even companies. Too much code smells.  Rather restrict the
+usage to those who know and can be taught, than sacrifice your system
+for it. On the other hand too beautiful code rarely gets out of a niche.
+Worse is better.
 
-support 90% but do not sacrifice for the rest. 
+Support 90% but do not sacrifice for the rest.
 gmake and gcc/clang are available everywhere, even on pure bsd's.
 
 Examples:
