@@ -327,7 +327,7 @@ website:
 	@${MAKE} GTAGS
 	cp -r HTML/* ${WEBSITE}/potion/ref/
 	cd ${WEBSITE}/potion/ && git add *.html html ref && git ci -m'doc: automatic update'
-	@${ECHO} need to git push
+	@${ECHO} need to cd ${WEBSITE} && git push
 
 # in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h

@@ -17,7 +17,7 @@ PN potion_lick(Potion *P, PN name, PN inner, PN attr) {
 }
 
 ///\memberof PNLick
-/// "attrs" method
+/// "attr" method
 ///\return the attached attr member PN
 PN potion_lick_attr(Potion *P, PN cl, PN self) {
   return ((struct PNLick *)self)->attr;
@@ -40,7 +40,7 @@ PN potion_lick_name(Potion *P, PN cl, PN self) {
 }
 
 ///\memberof PNLick
-/// "text" method.  attached can be a string or PNTuple
+/// "text" method. attached can be a string or PNTuple
 ///\return the attached text PNString or PN_NIL
 PN potion_lick_text(Potion *P, PN cl, PN self) {
   PN text = ((struct PNLick *)self)->inner;
