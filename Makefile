@@ -45,20 +45,20 @@ ECHO = /bin/echo
 MV   = /bin/mv
 SED  = sed
 EXPR = expr
-GREG = syn/greg${EXE}
+GREG = bin/greg${EXE}
 
 INCS = -Icore
-RUNPOTION = ./potion
-RUNP2 = ./p2
+RUNPOTION = bin/potion
+RUNP2 = bin/p2
 # perl11.org only
 WEBSITE = ../perl11.org
 
-all: pn p2${EXE}
+all: pn bin/p2${EXE}
 	+${MAKE} -s usage
 
-pn: potion${EXE} lib/readline${LOADEXT}
+pn: bin/potion${EXE} lib/potion/readline${LOADEXT}
 
-rebuild: clean potion${EXE} test
+rebuild: clean bin/potion${EXE} test
 
 usage:
 	@${ECHO} " "
@@ -66,17 +66,17 @@ usage:
 	@${ECHO} " "
 	@${ECHO} " Running a script or code."
 	@${ECHO} " "
-	@${ECHO} "   $$ ./p2 example/fib.pl"
-	@${ECHO} "   $$ ./p2 -e \"code\""
+	@${ECHO} "   $$ bin/p2 example/fib.pl"
+	@${ECHO} "   $$ bin/p2 -e \"code\""
 	@${ECHO} " "
 	@${ECHO} " Dump the AST and bytecode inspection for a script. "
 	@${ECHO} " "
-	@${ECHO} "   $$ ./p2 --verbose example/fib.pl"
+	@${ECHO} "   $$ bin/p2 --verbose example/fib.pl"
 	@${ECHO} " "
 	@${ECHO} " Compiling to bytecode."
 	@${ECHO} " "
-	@${ECHO} "   $$ ./p2 --compile example/fib.pl"
-	@${ECHO} "   $$ ./p2 example/fib.plc"
+	@${ECHO} "   $$ bin/p2 --compile example/fib.pl"
+	@${ECHO} "   $$ bin/p2 example/fib.plc"
 	@${ECHO} " "
 	@${ECHO} " Potion builds its JIT compiler by default, but"
 	@${ECHO} " you can use the bytecode VM by running scripts"
@@ -112,7 +112,7 @@ grammar: syn/greg.y
 
 syn/greg.c: syn/greg.y
 	@${ECHO} GREG $<
-	if test -f ${GREG}; then ${GREG} syn/greg.y > syn/greg-new.c && \
+	if [ -f ${GREG} ]; then ${GREG} syn/greg.y > syn/greg-new.c && \
 	  ${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn && \
 	  ${MV} syn/greg-new.c syn/greg.c && \
 	  ${MV} syn/greg-new syn/greg; \
@@ -180,35 +180,37 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
 # on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
-ifeq (${APPLE},1)
-LIBHACK  = ../lib/libpotion.dylib ../lib/potion/libsyntax.dylib
-LIBHACK2 = ../lib/libp2.dylib ../lib/potion/libsyntax-p5.dylib
-else
+#ifeq (${APPLE},1)
+#LIBHACK  = ../lib/libpotion.dylib ../lib/potion/libsyntax.dylib
+#LIBHACK2 = ../lib/libp2.dylib ../lib/potion/libsyntax-p5.dylib
+#else
 LIBHACK  =
 LIBHACK2 =
-endif
-../lib/libpotion.dylib ../lib/potion/libsyntax.dylib:
-	-mkdir -p ../lib/potion
-	-ln -sf `pwd`/libpotion.dylib ../lib/
-	-ln -sf `pwd`/lib/libsyntax.dylib ../lib/potion/
-../lib/libp2.dylib ../lib/potion/libsyntax-p5.dylib:
-	-mkdir -p ../lib/potion
-	-ln -sf `pwd`/libp2.dylib ../lib/
-	-ln -sf `pwd`/lib/libsyntax-p5.dylib ../lib/potion/
+#endif
+#../lib/libpotion.dylib ../lib/potion/libsyntax.dylib:
+#	-mkdir -p ../lib/potion
+#	-ln -sf `pwd`/libpotion.dylib ../lib/
+#	-ln -sf `pwd`/lib/potion/libsyntax.dylib ../lib/potion/
+#../lib/libp2.dylib ../lib/potion/libsyntax-p5.dylib:
+#	-mkdir -p ../lib/potion
+#	-ln -sf `pwd`/libp2.dylib ../lib/
+#	-ln -sf `pwd`/lib/potion/libsyntax-p5.dylib ../lib/potion/
 
-potion${EXE}: ${PIC_OBJ_POTION} libpotion${DLL} ${LIBHACK}
+bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LDEXEFLAGS} \
-	  -Llib -lsyntax -lpotion ${LIBS}
+	@[ -d bin ] || mkdir bin
+	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} \
+	  -lsyntax -lpotion ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
 	fi
 
-p2${EXE}: ${OBJ_P2} libp2${DLL} ${LIBHACK2}
+bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL} ${LIBHACK2}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ $(subst potion,p2,${LDEXEFLAGS}) \
-	  -Llib -lsyntax-p5 -lp2 ${LIBS}
+	@[ -d bin ] || mkdir bin
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} \
+	  -lsyntax-p5 -lp2 ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
@@ -216,72 +218,78 @@ p2${EXE}: ${OBJ_P2} libp2${DLL} ${LIBHACK2}
 
 ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@${ECHO} CC $@
+	@[ -d bin ] || mkdir bin
 	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
-potion-s${EXE}: ${OBJ_POTION} libpotion.a ${LIBHACK}
+bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${LIBHACK}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LDEXEFLAGS} libpotion.a ${LIBS}
+	@[ -d bin ] || mkdir bin
+	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} lib/libpotion.a ${LIBS}
 
-p2-s${EXE}: ${OBJ_P2} libp2.a ${LIBHACK}
+bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${LIBHACK}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LDEXEFLAGS} libp2.a ${LIBS}
+	@[ -d bin ] || mkdir bin
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS}
 
-libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
+lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_SYN} ${OBJ} > /dev/null
 
-libpotion${DLL}: ${PIC_OBJ} lib/libsyntax${DLL} core/config.h core/potion.h
+lib/libpotion${DLL}: ${PIC_OBJ} lib/potion/libsyntax${DLL} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
-	  ${PIC_OBJ} -Llib -lsyntax ${LIBS} > /dev/null
+	  ${PIC_OBJ} ${LIBPTH} -lsyntax ${LIBS} > /dev/null
 
-libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) core/config.h core/potion.h
+lib/libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
 
-libp2${DLL}: $(subst .opic,.opic2,${PIC_OBJ}) lib/libsyntax-p5${DLL} core/config.h core/potion.h
+lib/libp2${DLL}: $(subst .opic,.opic2,${PIC_OBJ}) lib/potion/libsyntax-p5${DLL} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} $(subst potion,p2,${RPATH}) \
-	  $(subst .opic,.opic2,${PIC_OBJ}) -Llib -lsyntax-p5 ${LIBS} > /dev/null
+	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} $(subst libpotion,libp2,${RPATH}) \
+	  $(subst .opic,.opic2,${PIC_OBJ}) ${LIBPTH} -lsyntax-p5 ${LIBS} > /dev/null
 
-lib/libsyntax${DLL}: syn/syntax.opic
+lib/potion/libsyntax${DLL}: syn/syntax.opic
 	@${ECHO} LD $@
+	@[ -d lib/potion ] || mkdir lib/potion
 	@$(CC) ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
 	  $(subst libpotion,potion/libsyntax,${RPATH}) \
 	  $(INCS) $< $(LIBS)
 
-lib/libsyntax-p5${DLL}: syn/syntax-p5.opic2
+lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.opic2
 	@${ECHO} LD $@
+	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
 	  $(subst libpotion,potion/libsyntax-p5,${RPATH}) \
 	  $(INCS) $< $(LIBS)
 
-lib/readline${LOADEXT}: core/config.h core/potion.h \
+lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/readline
+	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
 
-bench: potion${EXE} test/api/gc-bench${EXE}
+bench: bin/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \
 	  ${ECHO} running GC benchmark; \
-	  time test/api/gc-bench
+	  time bin/gc-bench
 
 check: test.pn test.p2
 
 test: test.pn test.p2
 
-test.pn: potion${EXE} test/api/potion-test${EXE}
+test.pn: bin/potion${EXE} bin/potion-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
-	DYLD_LIBRARY_PATH=`pwd`:$DYLD_LIBRARY_PATH \
-	export DYLD_LIBRARY_PATH; \
-	test/api/potion-test; \
+	LD_LIBRARY_PATH=`pwd`/lib:`pwd`/lib/potion:$LD_LIBRARY_PATH \
+	export LD_LIBRARY_PATH; \
+	bin/potion-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
@@ -331,14 +339,14 @@ test.pn: potion${EXE} test/api/potion-test${EXE}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test.p2: p2${EXE} test/api/p2-test${EXE} test/api/gc-test${EXE}
+test.p2: bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running p2 API tests; \
-	LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH \
-	DYLD_LIBRARY_PATH=`pwd`:$DYLD_LIBRARY_PATH \
-	test/api/p2-test; \
+	LD_LIBRARY_PATH=`pwd`/lib:`pwd`/lib/potion:$LD_LIBRARY_PATH \
+	export LD_LIBRARY_PATH; \
+	bin/p2-test; \
 	${ECHO} running GC tests; \
-	test/api/gc-test; \
+	bin/gc-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
@@ -388,25 +396,27 @@ test.p2: p2${EXE} test/api/p2-test${EXE} test/api/gc-test${EXE}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test${EXE}: ${OBJ_TEST} libpotion.a
+bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK potion-test
-	@${CC} ${CFLAGS} ${OBJ_TEST} -o $@ libpotion.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}
 
-test/api/gc-test${EXE}: ${OBJ_GC_TEST} libp2.a
+bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a
 	@${ECHO} LINK gc-test
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ libp2.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${LIBS}
 
-test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} libp2.a
+bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
 	@${ECHO} LINK gc-bench
-	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ libp2.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${LIBS}
 
-test/api/p2-test${EXE}: ${OBJ_P2_TEST} libp2.a
+bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK p2-test
-	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ libp2.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}
 
 dist: core/config.h core/version.h ${SRC_SYN} ${SRC_P2_SYN} \
-  potion${EXE} p2${EXE} \
-  libpotion.a libpotion${DLL} libp2.a libp2${DLL} lib/readline${LOADEXT}
+  bin/potion${EXE} bin/p2${EXE} \
+  lib/libpotion.a lib/libpotion${DLL} lib/libp2.a lib/libp2${DLL} \
+  lib/potion/libsyntax${DLL} lib/potion/libsyntax-p5${DLL} \
+  lib/readline${LOADEXT}
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: dist
@@ -476,16 +486,13 @@ clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o test/api/*.o front/*.o syn/*.i syn/*.o syn/*.opic \
 	       core/*.i core/*.opic core/*.opic2 core/*.o2 front/*.opic
+	@rm -f bin/* lib/potion/* lib/libpotion${DLL} lib/libp2${DLL}
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f ${GREG} tools/*.o core/config.h core/version.h ${SRC_SYN}
 	@rm -f tools/*~ doc/*~ example/*~ tools/config.c
-	@rm -f lib/*${LOADEXT} lib/readline/readline${LOADEXT}
-	@rm -f test/api/potion-test${EXE} test/api/gc-test${EXE} \
-               test/api/gc-bench${EXE}
-	@rm -f potion${EXE} libpotion.* potion-s ${LIBHACK}
-	@rm -f test/api/p2-test${EXE}
-	@rm -f p2${EXE} libp2.* ${SRC_P2_SYN} p2-s
-	@rm -rf doc/html doc/latex
+	@rm -f lib/readline/readline${LOADEXT}
+	@rm -f ${SRC_P2_SYN}
+	@rm -rf doc/html doc/latex HTML
 
 realclean: clean
 	@rm -f config.inc

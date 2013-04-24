@@ -1,12 +1,12 @@
 include ../../config.inc
 INCS = -I../../core -L../..
-LIBS = -lpotion
+LIBS += -lpotion
 
 all: readline${LOADEXT}
 
 %${LOADEXT}: %.c
 	@if [ -f ../../libpotion.a ]; then mv ../../libpotion.a ../../libpotion.a.tmp; fi
-	@$(CC) $(CFLAGS) -o $@ $(LDDLLFLAGS) $(INCS) linenoise.c $< $(LIBS)
+	@$(CC) $(CFLAGS) -o $@ $(LDDLLFLAGS) $(INCS) -L.. linenoise.c $< $(LIBS)
 	@if [ -f ../../libpotion.a.tmp ]; then mv ../../libpotion.a.tmp ../../libpotion.a; fi
 
 test:

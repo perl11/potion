@@ -23,7 +23,7 @@ release: dist
 install: bin-dist
 	${SUDO} tar xfz pkg/${PKGBIN}.tar.gz -C $(PREFIX)/
 
-bin-dist: pkg/${PKGBIN}.tar.gz
+bin-dist: pkg/${PKGBIN}.tar.gz pkg/${PKGBIN}-devel.tar.gz
 
 pkg/${PKGBIN}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
   potion${EXE} p2${EXE} doc \
@@ -31,18 +31,31 @@ pkg/${PKGBIN}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc dist/share/potion/example
-	cp core/*.h                    dist/include/potion/
-	cp potion${EXE}                dist/bin/
-	cp p2${EXE}                    dist/bin/
-	cp libp2.a libp2${DLL}         dist/lib/
-	cp libpotion.a libpotion${DLL} dist/lib/
-	cp lib/readline${LOADEXT}      dist/lib/potion/
-	cp lib/libsyntax${DLL}         dist/lib/potion/
+	cp bin/potion${EXE}            dist/bin/
+	cp bin/p2${EXE}                dist/bin/
+	cp lib/libp*${DLL}             dist/lib/
+	cp lib/potion/readline${LOADEXT} dist/lib/potion/
+	cp lib/potion/lib*${DLL}         dist/lib/potion/
+	cp core/potion.h               dist/include/potion/
+	cp core/config.h               dist/include/potion/
 	-cp doc/* README COPYING       dist/share/potion/doc/
-	-cp README.p2 I*.md            dist/share/potion/doc/
+	-cp README.p2                  dist/share/potion/doc/
 	cp example/*                   dist/share/potion/example/
 	-mkdir -p pkg
 	(cd dist && tar czvf ../pkg/${PKGBIN}.tar.gz * && cd ..)
+	rm -rf dist
+
+pkg/${PKGBIN}-devel.tar.gz: ${GREG} libpotion.a libp2.a bin/p2-s bin/potion-s doxygen GTAGS
+	rm -rf dist
+	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
+                 dist/share/potion/doc dist/share/potion/example
+	cp ${GREG}                      dist/bin/
+	cp lib/libp*.a                  dist/lib/
+	cp core/*.h                     dist/include/potion/
+	-cp -r doc/html doc/latex I*.md dist/share/potion/doc/
+	-cp -r HTML/*                   dist/share/potion/doc/ref/
+	-mkdir -p pkg
+	(cd dist && tar czvf ../pkg/${PKGBIN}-devel.tar.gz * && cd ..)
 	rm -rf dist
 
 src-dist: pkg/${PKG}-src.tar.gz

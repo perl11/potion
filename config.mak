@@ -1,20 +1,20 @@
 # -*- makefile -*-
 # create config.inc and core/config.h
 PREFIX = /usr/local
-CC ?= gcc
+CC    ?= gcc
 CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -Wno-unused-label -D_GNU_SOURCE
-LDEXEFLAGS = -L.
+INCS   = -Icore
+LIBPTH = -Llib -Llib/potion
+RPATH  = -Wl,-rpath=../lib -Wl,-rpath=../lib/potion
+LIBS   = -lm
 LDDLLFLAGS = -shared -fpic
-RPATH = -Wl,-rpath=. -Wl,-rpath=../lib
-INCS = -Icore
-LIBS = -lm
-AR ?= ar
+AR    ?= ar
 DEBUG ?= 0
-WIN32 = 0
-CLANG = 0
-JIT = 0
-EXE =
-APPLE = 0
+WIN32  = 0
+CLANG  = 0
+JIT    = 0
+EXE    =
+APPLE  = 0
 
 CAT  = /bin/cat
 ECHO = /bin/echo
@@ -112,7 +112,6 @@ ifeq ($(shell ./tools/config.sh "${CC}" mingw),1)
 	DLL  = .dll
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
-	RUNPOTION = potion.exe
 else
 ifeq ($(shell ./tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
@@ -120,18 +119,14 @@ ifeq ($(shell ./tools/config.sh "${CC}" cygwin),1)
 	EXE  = .exe
 	LOADEXT = .dll
 	DLL  = .dll
-	RUNPOTION = ./potion
 else
 ifeq ($(shell ./tools/config.sh "${CC}" apple),1)
         APPLE    = 1
 	DLL      = .dylib
 	LOADEXT  = .bundle
-	RUNPOTION = ./potion
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
 	RPATH = -install_name "@executable_path/../lib/libpotion${DLL}"
-	LDEXEFLAGS = -L.
 else
-	RUNPOTION = ./potion
 	DLL  = .so
 	LOADEXT = .so
     ifeq (${CC},gcc)
@@ -156,10 +151,10 @@ config.inc.echo:
 	@${ECHO} "DEFINES = ${DEFINES}"
 	@${ECHO} "DEBUGFLAGS = ${DEBUGFLAGS}"
 	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS}
+	@${ECHO} "LIBPTH  = ${LIBPTH}"
 	@${ECHO} "RPATH   = ${RPATH}"
-	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
-	@${ECHO} "LDEXEFLAGS = ${LDEXEFLAGS}"
 	@${ECHO} "LIBS    = ${LIBS}"
+	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "STRIP   = ${STRIP}"
 	@${ECHO} "APPLE   = ${APPLE}"
 	@${ECHO} "WIN32   = ${WIN32}"
@@ -167,7 +162,6 @@ config.inc.echo:
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
-	@${ECHO} "RUNPOTION = ${RUNPOTION}"
 	@${ECHO} "REVISION  = " $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
 
 config.h.echo:
