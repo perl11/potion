@@ -59,4 +59,16 @@ tarball: core/version.h syn/syntax.c
 	tar czvf pkg/${PKG}-src.tar.gz ${PKG}
 	rm -rf ${PKG}
 
+GTAGS: ${SRC} core/*.h
+	rm -rf ${PKG} HTML
+	git checkout-index --prefix=${PKG}/ -a
+	-cp core/version.h ${PKG}/core/
+	cd ${PKG} && \
+	  mv syn/greg.c syn/greg-c.tmp && \
+	  gtags && htags && \
+	  mv syn/greg-c.tmp syn/greg.c && \
+	  cd ..  && \
+	  mv ${PKG}/HTML .
+	rm -rf ${PKG}
+
 .PHONY: dist release install tarball src-dist bin-dist

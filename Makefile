@@ -415,30 +415,33 @@ release:
 doc: ${DOCHTML} doc/html/files.html
 
 doxygen: doc/html/files.html
-	@${ECHO} DOXYGEN core
+	@${ECHO} DOXYGEN -f core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	@doc/footer.sh > doc/footer.inc
 	@doxygen doc/Doxyfile
 
 doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh p2${EXE}
-	@${ECHO} DOXYGEN
+	@${ECHO} DOXYGEN core
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	doc/footer.sh > doc/footer.inc
 	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
 
 # perl11.org only. needs doxygen redcloth global
 website:
 	test -d ${WEBSITE} || exit
-	@${MAKE} doc
-	cp doc/*.html ${WEBSITE}/p2/
 	@${MAKE} doxygen
 	cp -r doc/html/* ${WEBSITE}/p2/html/
+	@${MAKE} doc
+	cp doc/*.html ${WEBSITE}/p2/
 	@${MAKE} GTAGS
 	cp -r HTML/* ${WEBSITE}/p2/ref/
 	cd ${WEBSITE}/p2/ && git add *.html html ref && git ci -m'doc: automatic update'
 	@${ECHO} "need to cd ${WEBSITE}; git push"
 
+# in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h
-	gtags && htags
+	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+
 TAGS: ${SRC} core/*.h
 	@rm -f TAGS
 	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
