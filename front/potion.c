@@ -58,50 +58,48 @@ static void potion_cmd_version(Potion *P) {
   printf(potion_banner, POTION_JIT);
 }
 
-#define dumpv_str(str) \
+#define dbg_v(...) \
     if (P->flags & DEBUG_VERBOSE) \
-      fprintf(stderr, str)
-#define dumpv_p(c) \
+      fprintf(stderr, __VA_ARGS__)
+#define dbgP_v(c) \
     if (P->flags & DEBUG_VERBOSE) \
       potion_p(P, c)
-#define dumpvi_p(c) \
+#define dbgP_vi(c) \
     if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE)) \
       potion_p(P, c)
 
 static PN potion_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
   PN code = potion_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
-    dumpv_str("\n-- loaded --\n");
+    dbg_v("\n-- loaded --\n");
   } else {
     code = potion_parse(P, buf, filename);
     if (!code || PN_TYPE(code) == PN_TERROR) {
       potion_p(P, code);
       return code;
     }
-    dumpv_str("\n-- parsed --\n");
-    dumpv_p(code);
+    dbg_v("\n-- parsed --\n");
+    dbgP_v(code);
     code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
-    dumpv_str("\n-- compiled --\n");
+    dbg_v("\n-- compiled --\n");
   }
-  dumpv_p(code);
+  dbgP_v(code);
   if (exec == EXEC_VM) {
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-    if (P->flags & DEBUG_VERBOSE)
-      fprintf(stderr, "\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
-	      PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-	      PN_INT(potion_gc_reserved(P, 0, 0)));
-    dumpvi_p(code);
+    dbg_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
+	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+	  PN_INT(potion_gc_reserved(P, 0, 0)));
+    dbgP_vi(code);
   } else if (exec == EXEC_JIT) {
 #ifdef POTION_JIT_TARGET
     PN val;
     PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = code;
     val = PN_PROTO(code)->jit(P, cl, P->lobby);
-    if (P->flags & DEBUG_VERBOSE)
-      fprintf(stderr, "\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
-	      PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-	      PN_INT(potion_gc_reserved(P, 0, 0)));
-    dumpvi_p(val);
+    dbg_v("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
+	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+	  PN_INT(potion_gc_reserved(P, 0, 0)));
+    dbgP_vi(val);
 #else
     fprintf(stderr, "** potion built without JIT support\n");
 #endif
