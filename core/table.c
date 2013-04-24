@@ -267,7 +267,7 @@ PN potion_tuple_string(Potion *P, PN cl, PN self) {
 }
 
 ///\memberof PNTuple
-/// "pop" method. remove the last element
+/// "pop" method. remove the last element and return it
 ///\return last PN
 PN potion_tuple_pop(Potion *P, PN cl, PN self, PN key) {
   vPN(Tuple) t = PN_GET_TUPLE(self);
@@ -295,6 +295,34 @@ PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
       return potion_tuple_push(P, self, value);
   }
   return potion_table_put(P, PN_NIL, potion_table_cast(P, self), key, value);
+}
+
+///\memberof PNTuple
+/// "unshift" method. put new element to the front
+///\param value PN
+///\return PNTuple
+PN potion_tuple_unshift(Potion *P, PN cl, PN self, PN value) {
+  vPN(Tuple) t = PN_GET_TUPLE(self);
+  PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len + 1));
+  memmove((void *)&t->set[1], (void *)&t->set[0], sizeof(PN) * t->len);
+  t->set[0] = value;
+  t->len++;
+  PN_TOUCH(self);
+  return self;
+}
+
+///\memberof PNTuple
+/// "shift" method. remove first element and return it
+///\param value PN
+///\return PNTuple
+PN potion_tuple_shift(Potion *P, PN cl, PN self) {
+  vPN(Tuple) t = PN_GET_TUPLE(self);
+  PN obj = t->set[0];
+  memmove((void *)&t->set[0], (void *)&t->set[1], sizeof(PN) * t->len);
+  PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len - 1));
+  t->len--;
+  PN_TOUCH(self);
+  return obj;
 }
 
 ///\memberof PNTuple
@@ -398,6 +426,8 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "put", potion_tuple_put, "index=N,value=o");
   potion_method(tpl_vt, "reverse", potion_tuple_reverse, 0);
   // TODO: add Tuple remove
+  potion_method(tpl_vt, "unshift", potion_tuple_unshift, "value=o");
+  potion_method(tpl_vt, "shift", potion_tuple_shift, 0);
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
   potion_method(P->lobby, "list", potion_lobby_list, "length=N");
 }
