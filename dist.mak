@@ -2,6 +2,7 @@
 include config.inc
 
 SUDO = sudo
+GREG = bin/greg${EXE}
 
 ifeq (${PREFIX},)
 	$(error need to make config first)
@@ -25,16 +26,15 @@ install: bin-dist
 
 bin-dist: pkg/${PKGBIN}.tar.gz pkg/${PKGBIN}-devel.tar.gz
 
-pkg/${PKGBIN}.tar.gz: core/config.h core/version.h core/syntax.c potion${EXE} \
-  doc libpotion.a libpotion${DLL} lib/readline${LOADEXT}
+pkg/${PKGBIN}.tar.gz: core/config.h core/version.h core/syntax.c bin/potion${EXE} \
+  doc lib/libpotion.a lib/libpotion${DLL} lib/potion/readline${LOADEXT}
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc dist/share/potion/example
-	cp potion${EXE}                dist/bin/
-	cp libpotion.a                 dist/lib/
-	cp libpotion${DLL}             dist/lib/
+	cp bin/potion${EXE}            dist/bin/
+	cp lib/libpotion${DLL}         dist/lib/
+	cp lib/potion/readline${LOADEXT} dist/lib/potion/
 	if [ ${WIN32} = 1 ]; then mv dist/lib/*.dll dist/bin/; fi
-	cp lib/readline${LOADEXT}      dist/lib/potion/
 	cp core/potion.h               dist/include/potion/
 	cp core/config.h               dist/include/potion/
 	-cp doc/*.html doc/*.png       dist/share/potion/doc/
@@ -45,13 +45,13 @@ pkg/${PKGBIN}.tar.gz: core/config.h core/version.h core/syntax.c potion${EXE} \
 	(cd dist && tar czf ../pkg/${PKGBIN}.tar.gz * && cd ..)
 	rm -rf dist
 
-pkg/${PKGBIN}-devel.tar.gz: tools/greg${EXE} potion-s${EXE}
-	+${MAKE} GTAGS
+pkg/${PKGBIN}-devel.tar.gz: ${GREG} bin/potion-s${EXE} lib/libpotion.a GTAGS
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc/ref
-	cp tools/greg${EXE}             dist/bin/
-	cp potion-s${EXE}               dist/bin/
+	cp ${GREG}                      dist/bin/
+	cp bin/potion-s${EXE}           dist/bin/
+	cp lib/libpotion.a              dist/lib/
 	cp core/*.h                     dist/include/potion/
 	rm dist/include/potion/potion.h dist/include/potion/config.h
 	-cp -r doc/*.textile doc/html   dist/share/potion/doc/
@@ -65,7 +65,7 @@ src-dist: pkg/${PKG}-src.tar.gz
 
 pkg/${PKG}-src.tar.gz: tarball
 
-# you should be able to build without git
+#TODO: you should be able to build without git
 tarball: core/version.h core/syntax.c
 	-mkdir -p pkg
 	rm -rf ${PKG}

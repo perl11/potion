@@ -5,8 +5,8 @@ CC     = $(shell tools/config.sh compiler)
 WARNINGS = -Wall -Werror -fno-strict-aliasing -Wno-switch -Wno-return-type -Wno-unused-label
 CFLAGS = -D_GNU_SOURCE
 INCS   = -Icore
-LIBPTH = -L.
-RPATH         = -Wl,-rpath=$(shell pwd)
+LIBPTH = -Llib
+RPATH         = -Wl,-rpath=$(shell pwd)/lib
 RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib
 LIBS   = -lm
 LDDLLFLAGS = -shared -fpic
@@ -143,8 +143,8 @@ ifeq ($(shell tools/config.sh "${CC}" apple),1)
 	LOADEXT  = .bundle
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
 	LDDLLFLAGS += -install_name "@executable_path/../lib/libpotion${DLL}"
-	RPATH =
-	RPATH_INSTALL =
+	RPATH = -install_name "@executable_path/../lib/libpotion${DLL}"
+	RPATH_INSTALL = -install_name "@executable_path\$${PREFIX}/lib
 else
 	DLL  = .so
 	LOADEXT = .so
@@ -172,11 +172,11 @@ config.inc.echo:
 	@${ECHO} "WARNINGS   = ${WARNINGS}"
 	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS} "\$$"{WARNINGS}
 	@${ECHO} "INCS    = ${INCS}"
-	@${ECHO} "LIBPTH  = ${LIBPTH}"
+	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "RPATH   = ${RPATH}"
 	@${ECHO} "RPATH_INSTALL = " ${RPATH_INSTALL}
+	@${ECHO} "LIBPTH  = ${LIBPTH}"
 	@${ECHO} "LIBS    = ${LIBS}"
-	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "STRIP   = ${STRIP}"
 	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "CROSS   = ${CROSS}"
@@ -187,6 +187,7 @@ config.inc.echo:
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
+	@${ECHO} "#TODO get rid of git here, read from POTION_REV in core/version.h"
 	@${ECHO} "REVISION  = " $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
 
 config.h.echo:
@@ -218,6 +219,7 @@ core/config.h: config.inc core/version.h tools/config.sh config.mak
 	@${CAT} core/version.h > core/config.h
 	@${MAKE} -s -f config.mak config.h.echo >> core/config.h
 
+#TODO: fix when git is not available
 core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${ECHO} MAKE $@
 	@${ECHO} "/* created by ${MAKE} -f config.mak */" > core/version.h

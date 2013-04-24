@@ -29,11 +29,11 @@ ifneq (${WIN32},1)
 endif
 OBJ = ${SRC:.c=.o}
 PIC_OBJ = ${SRC:.c=.${OPIC}}
-OBJ_POTION = core/potion.${OPIC}
+PIC_OBJ_POTION = core/potion.${OPIC}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
-PLIBS = libpotion${DLL} lib/readline${LOADEXT}
+PLIBS = lib/libpotion${DLL} lib/potion/readline${LOADEXT}
 DOC = doc/start.textile doc/glossary.textile
 DOCHTML = ${DOC:.textile=.html}
 
@@ -42,9 +42,8 @@ ECHO = /bin/echo
 MV   = /bin/mv
 SED  = sed
 EXPR = expr
-GREG = tools/greg${EXE}
+GREG = bin/greg${EXE}
 RANLIB ?= ranlib
-RUNPRE ?= ./
 
 INCS = -Icore
 # perl11.org only
@@ -53,8 +52,8 @@ WEBSITE = ../perl11.org
 all: pn
 	+${MAKE} -s usage
 
-pn: potion${EXE} ${PLIBS}
-static: libpotion.a potion-s${EXE}
+pn: bin/potion${EXE} ${PLIBS}
+static: lib/libpotion.a bin/potion-s${EXE}
 rebuild: clean pn test
 
 usage:
@@ -62,18 +61,18 @@ usage:
 	@${ECHO} " ~ using potion ~"
 	@${ECHO} " "
 	@${ECHO} " Running a script."
-
 	@${ECHO} " "
-	@${ECHO} "   $$ ./potion example/fib.pn"
+	@${ECHO} "   $$ bin/potion example/fib.pn"
+	@${ECHO} "   $$ bin/potion -e \"code\""
 	@${ECHO} " "
 	@${ECHO} " Dump the AST and bytecode inspection for a script. "
 	@${ECHO} " "
-	@${ECHO} "   $$ ./potion -V example/fib.pn"
+	@${ECHO} "   $$ bin/potion -V example/fib.pn"
 	@${ECHO} " "
 	@${ECHO} " Compiling to bytecode."
 	@${ECHO} " "
-	@${ECHO} "   $$ ./potion -c example/fib.pn"
-	@${ECHO} "   $$ ./potion example/fib.pnb"
+	@${ECHO} "   $$ bin/potion -c example/fib.pn"
+	@${ECHO} "   $$ bin/potion example/fib.pnb"
 	@${ECHO} " "
 	@${ECHO} " Potion builds its JIT compiler by default, but"
 	@${ECHO} " you can use the bytecode VM by running scripts"
@@ -86,7 +85,7 @@ usage:
 	@${ECHO} "   $$ make test"
 	@${ECHO} " "
 	@${ECHO} " Originally written by _why the lucky stiff"
-	@${ECHO} " Maintained at https://github.com/fogus/potion"
+	@${ECHO} " Maintained at https://github.com/perl11/potion"
 
 config:
 	@${ECHO} MAKE -f config.mak $@
@@ -109,10 +108,11 @@ grammar: tools/greg.y
 # bootstrap tools/greg.c, tools/compile.c not yet
 tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	@${ECHO} GREG $<
+	@[ -d bin ] || mkdir bin
 	@if test -f ${GREG}; then ${GREG} tools/greg.y > tools/greg-new.c && \
 	  ${CC} ${GREGCFLAGS} -o tools/greg-new tools/greg-new.c tools/compile.c tools/tree.c -Itools && \
 	  ${MV} tools/greg-new.c tools/greg.c && \
-	  ${MV} tools/greg-new tools/greg; \
+	  ${MV} tools/greg-new ${GREG}; \
 	fi
 
 core/callcc.o: core/callcc.c core/config.h
@@ -124,11 +124,6 @@ core/callcc.opic: core/callcc.c core/config.h
 	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/vm.o core/vm.opic: core/vm-dis.c core/config.h
-
-# no optimizations
-#core/vm-x86.opic: core/vm-x86.c
-#	@${ECHO} CC ${FPIC} $@ +frame-pointer
-#	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE ${FPIC} ${INCS} -o $@ $<
 
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
@@ -161,57 +156,51 @@ endif
 	@${ECHO} GREG $@
 	@${GREG} $< > $@-new && ${MV} $@-new $@
 
-${GREG}: tools/compile.c tools/tree.c
+${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
 	@${CC} ${GREGCFLAGS} -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
-# the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
-# on darwin we generate a parallel potion/../lib to use @executable_path/../lib/libpotion
-ifeq (${APPLE},1)
-LIBHACK = ../lib/libpotion.dylib
-else
-LIBHACK =
-endif
-../lib/libpotion.dylib:
-	-mkdir ../lib
-	-ln -s `pwd`/libpotion.dylib ../lib/
-
-potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
+bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion ${LIBS}
+	@[ -d bin ] || mkdir bin
+	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${RPATH} \
+	  -Llib -lpotion ${LIBPTH} ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
 	fi
 
-potion-s${EXE}: core/potion.o libpotion.a ${LIBHACK}
+bin/potion-s${EXE}: core/potion.o lib/libpotion.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} core/potion.o -o $@ ${LIBPTH} ${RPATH} libpotion.a ${LIBS}
+	@[ -d bin ] || mkdir bin
+	@${CC} ${CFLAGS} core/potion.o -o $@ lib/libpotion.a ${LIBPTH} ${LIBS}
 
-libpotion.a: ${OBJ} core/config.h core/potion.h
+lib/libpotion.a: ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ core/*.o > /dev/null
 
-libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
+lib/libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
-	  ${PIC_OBJ} ${LIBS} > /dev/null
+	  ${PIC_OBJ} -Llib ${LIBPTH} ${LIBS} > /dev/null
 
-lib/readline${LOADEXT}: core/config.h core/potion.h \
+lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/readline
+	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
 
-bench: potion${EXE} test/api/gc-bench${EXE}
+bench: bin/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \
 	  ${ECHO} running GC benchmark; \
-	  time test/api/gc-bench
+	  time bin/gc-bench
 
-test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
+check: test
+test: bin/potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running API tests; \
 	DYLD_LIBRARY_PATH=`pwd`:$DYLD_LIBRARY_PATH \
@@ -228,7 +217,7 @@ test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 		   ${ECHO} running compiler tests; \
 		else \
 		   ${ECHO} running JIT tests; \
-			 jit=`${RUNPRE}potion -v | ${SED} "/jit=1/!d"`; \
+			 jit=`bin/potion -v | ${SED} "/jit=1/!d"`; \
 			 if [ "$$jit" = "" ]; then \
 			   ${ECHO} skipping; \
 			   break; \
@@ -237,14 +226,14 @@ test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 		for f in test/**/*.pn; do \
 			look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
 			if [ $$pass -eq 0 ]; then \
-				for=`${RUNPRE}potion -I -B $$f | ${SED} "s/\n$$//"`; \
+				for=`bin/potion -I -B $$f | ${SED} "s/\n$$//"`; \
 			elif [ $$pass -eq 1 ]; then \
-				${RUNPRE}potion -c $$f > /dev/null; \
+				bin/potion -c $$f > /dev/null; \
 				fb="$$f"b; \
-				for=`${RUNPRE}potion -I -B $$fb | ${SED} "s/\n$$//"`; \
+				for=`bin/potion -I -B $$fb | ${SED} "s/\n$$//"`; \
 				rm -rf $$fb; \
 			else \
-				for=`${RUNPRE}potion -I -X $$f | ${SED} "s/\n$$//"`; \
+				for=`bin/potion -I -X $$f | ${SED} "s/\n$$//"`; \
 			fi; \
 			if [ "$$look" != "$$for" ]; then \
 				${ECHO}; \
@@ -265,17 +254,17 @@ test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test/api/potion-test${EXE}: ${OBJ_TEST} ${OBJ}
+test/api/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK potion-test
-	@${CC} ${CFLAGS} ${OBJ_TEST} ${OBJ} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}
 
-test/api/gc-test${EXE}: ${OBJ_GC_TEST} ${OBJ}
+test/api/gc-test${EXE}: ${OBJ_GC_TEST} lib/libpotion.a
 	@${ECHO} LINK gc-test
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} ${OBJ} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/libpotion.a ${LIBS}
 
-test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ}
+test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libpotion.a
 	@${ECHO} LINK gc-bench
-	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
+	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libpotion.a ${LIBS}
 
 dist: pn static docall
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
@@ -314,7 +303,7 @@ doxygen: doc/html/files.html
 	@doxygen doc/Doxyfile
 	mv core/syntax-c.tmp core/syntax.c
 
-doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh potion${EXE}
+doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh pn
 	@${ECHO} DOXYGEN core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	doc/footer.sh > doc/footer.inc
@@ -352,12 +341,15 @@ clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o core/*.opic core/*.i test/api/*.o
 	@rm -f tools/*.o tools/*~ doc/*~ example/*~ tools/config.c
-	@rm -f ${DOCHTML}
+	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f core/config.h core/version.h
-	@rm -f potion${EXE} potion-s${EXE} libpotion.* \
+	@rm -f bin/potion${EXE} bin/potion-s${EXE} lib/libpotion.* \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 	@rm -rf doc/html doc/latex
-	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
+	@rm -f lib/potion/readline${LOADEXT} lib/readline/readline${LOADEXT}
+	@rm -f tools/*.o core/config.h core/version.h
+	@rm -f tools/*~ doc/*~ example/*~ tools/config.c
+	@rm -rf doc/html doc/latex doc/ref
 
 realclean: clean
 	@rm -f config.inc ${GREG} core/syntax.c
@@ -365,5 +357,5 @@ realclean: clean
 	@rm -rf doc/ref
 	@find . -name \*.gcov -delete
 
-.PHONY: all config clean doc docall rebuild check test test.pn test.p2 bench tarball dist \
+.PHONY: all config clean doc docall rebuild check test bench tarball dist \
         release install grammar doxygen website
