@@ -315,7 +315,7 @@ doxygen: doc/html/files.html
 doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh potion${EXE}
 	@${ECHO} DOXYGEN
 	doc/footer.sh > doc/footer.inc
-	@doxygen doc/Doxyfile
+	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
 
 # perl11.org only. needs: doxygen redcloth global
 website:
@@ -327,7 +327,7 @@ website:
 	@${MAKE} GTAGS
 	cp -r HTML/* ${WEBSITE}/potion/ref/
 	cd ${WEBSITE}/potion/ && git add *.html html ref && git ci -m'doc: automatic update'
-	@${ECHO} need to cd ${WEBSITE} && git push
+	@${ECHO} "need to cd ${WEBSITE}; git push"
 
 # in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h
