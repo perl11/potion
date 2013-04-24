@@ -94,13 +94,13 @@ PN potion_str_format(Potion *P, const char *format, ...) {
 }
 
 ///\memberof PNString
-/// "length" method for PNString. number of chars
+/// "length" method. number of chars
 static PN potion_str_length(Potion *P, PN cl, PN self) {
   return PN_NUM(potion_cp_strlen_utf8(PN_STR_PTR(self)));
 }
 
 ///\memberof PNString
-/// "eval" method for PNString. execs the default JIT/VM, not the actual EXEC_MODE
+/// "eval" method. execs the default JIT/VM, not the actual EXEC_MODE
 static PN potion_str_eval(Potion *P, PN cl, PN self) {
   return potion_eval(P, self, POTION_JIT);
 }

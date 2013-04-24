@@ -1,5 +1,5 @@
 ///\file lick.c
-///\class PNLick - the interleaved data format
+/// PNLick class - the interleaved data format
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -18,13 +18,14 @@ PN potion_lick(Potion *P, PN name, PN inner, PN attr) {
 
 ///\memberof PNLick
 /// "attrs" method
+///\return the attached attr member PN
 PN potion_lick_attr(Potion *P, PN cl, PN self) {
   return ((struct PNLick *)self)->attr;
 }
 
 ///\memberof PNLick
-/// "licks" method
-///\return PNTuple or PN_NIL
+/// "licks" method. attached can be a string or PNTuple
+///\return the attached licks PNTuple or PN_NIL
 PN potion_lick_licks(Potion *P, PN cl, PN self) {
   PN licks = ((struct PNLick *)self)->inner;
   if (PN_IS_TUPLE(licks)) return licks;
@@ -39,8 +40,8 @@ PN potion_lick_name(Potion *P, PN cl, PN self) {
 }
 
 ///\memberof PNLick
-/// "text" method
-///\return PNString or PN_NIL
+/// "text" method.  attached can be a string or PNTuple
+///\return the attached text PNString or PN_NIL
 PN potion_lick_text(Potion *P, PN cl, PN self) {
   PN text = ((struct PNLick *)self)->inner;
   if (PN_IS_STR(text)) return text;
@@ -49,7 +50,7 @@ PN potion_lick_text(Potion *P, PN cl, PN self) {
 
 ///\memberof PNLick
 /// "string" method
-///\return PNString
+///\return space seperated PNString of the lick members: name inner attr
 PN potion_lick_string(Potion *P, PN cl, PN self) {
   PN out = potion_byte_str(P, "");
   potion_bytes_obj_string(P, out, ((struct PNLick *)self)->name);

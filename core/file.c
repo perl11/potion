@@ -1,6 +1,5 @@
-//
-// file.c
-// working with file descriptors
+///\file file.c
+/// PNFile class for file descriptors
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -23,6 +22,11 @@
 
 typedef vPN(File) pn_file;
 
+///\memberof PNFile
+/// constructor method. opens a file with 0755 and returns the created PNFile
+///\param path PNString
+///\param modestr PNString r,r+,w,w+,a,a+
+///\return self or PN_NIL
 PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   int fd;
   mode_t mode;
@@ -44,7 +48,7 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   }
   if ((fd = open(PN_STR_PTR(path), mode, 0755)) == -1) {
     perror("open");
-    // TODO: error
+    // TODO: error, perm
     return PN_NIL;
   }
   ((struct PNFile *)self)->fd = fd;
@@ -53,6 +57,10 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   return self;
 }
 
+///\memberof PNFile
+/// "fd" class method.
+///\param fd PNNumber
+///\return a new PNFile object for the already opened file descriptor (sorry, empty path).
 PN potion_file_with_fd(Potion *P, PN cl, PN self, PN fd) {
   struct PNFile *file = (struct PNFile *)potion_object_new(P, PN_NIL, PN_VTABLE(PN_TFILE));
   file->fd = PN_INT(fd);
@@ -67,12 +75,19 @@ PN potion_file_with_fd(Potion *P, PN cl, PN self, PN fd) {
   return (PN)file;
 }
 
+///\memberof PNFile
+/// "close" method.
+///\return PN_NIL
 PN potion_file_close(Potion *P, PN cl, pn_file self) {
   close(self->fd);
   self->fd = -1;
   return PN_NIL;
 }
 
+///\memberof PNFile
+/// "read" method.
+///\param n PNNumber
+///\return n PNBytes
 PN potion_file_read(Potion *P, PN cl, pn_file self, PN n) {
   n = PN_INT(n);
   char buf[n];
@@ -87,6 +102,10 @@ PN potion_file_read(Potion *P, PN cl, pn_file self, PN n) {
   return potion_byte_str2(P, buf, r);
 }
 
+///\memberof PNFile
+/// "write" method.
+///\param str PNString
+///\return PNNumber written bytes or PN_NIL
 PN potion_file_write(Potion *P, PN cl, pn_file self, PN str) {
   int r = write(self->fd, PN_STR_PTR(str), PN_STR_LEN(str));
   if (r == -1) {
@@ -97,6 +116,8 @@ PN potion_file_write(Potion *P, PN cl, pn_file self, PN str) {
   return PN_NUM(r);
 }
 
+///\memberof PNFile
+/// "string" method. some internal descr
 PN potion_file_string(Potion *P, PN cl, pn_file self) {
   int fd = self->fd, rv;
   char *buf;
@@ -114,6 +135,9 @@ PN potion_file_string(Potion *P, PN cl, pn_file self) {
   return str;
 }
 
+/// memberof Lobby
+/// global "read" method, read next line from stdin via fgets()
+///\return PNString or or PN_NIL
 PN potion_lobby_read(Potion *P, PN cl, PN self) {
   const int linemax = 1024;
   char line[linemax];
@@ -122,6 +146,7 @@ PN potion_lobby_read(Potion *P, PN cl, PN self) {
   return PN_NIL;
 }
 
+/// set Env global
 void potion_file_init(Potion *P) {
   PN file_vt = PN_VTABLE(PN_TFILE);
   char **env = environ, *key;
