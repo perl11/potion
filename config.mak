@@ -18,7 +18,6 @@ JIT    = 0
 EXE    =
 APPLE  = 0
 CYGWIN = 0
-RUNPRE = ./
 
 CAT  = /bin/cat
 ECHO = /bin/echo
@@ -125,7 +124,6 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
     ifneq (${CROSS},1)
 	ECHO = echo
 	CAT = type
-	RUNPRE =
     else
         RANLIB = $(shell echo "${CC}" | sed -e "s,-gcc,-ranlib,")
     endif
@@ -142,9 +140,9 @@ ifeq ($(shell tools/config.sh "${CC}" apple),1)
 	DLL      = .dylib
 	LOADEXT  = .bundle
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
-	LDDLLFLAGS += -install_name "@executable_path/../lib/libpotion${DLL}"
-	RPATH = -install_name "@executable_path/../lib/libpotion${DLL}"
-	RPATH_INSTALL = -install_name "@executable_path\$${PREFIX}/lib
+	LDDLLFLAGS += -install_name $(shell pwd)/lib/libpotion${DLL}
+	RPATH = -rpath "@executable_path$(shell pwd)/lib/libpotion${DLL}"
+	RPATH_INSTALL = -rpath "@executable_path/../lib"
 else
 	DLL  = .so
 	LOADEXT = .so
@@ -178,7 +176,6 @@ config.inc.echo:
 	@${ECHO} "LIBPTH  = ${LIBPTH}"
 	@${ECHO} "LIBS    = ${LIBS}"
 	@${ECHO} "STRIP   = ${STRIP}"
-	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "CROSS   = ${CROSS}"
 	@${ECHO} "APPLE   = ${APPLE}"
 	@${ECHO} "WIN32   = ${WIN32}"

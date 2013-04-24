@@ -355,10 +355,11 @@ PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
   return tuple;
 }
 
-/// search for value X in an ordered PNTuple
+///\memberof PNTuple
+/// search for value x in an ordered PNTuple, ordered by PN_UNIQ.
 ///\param x PN (PNUniq in fact)
-///\return long found index or -1
-long potion_tuple_binary_search(PN self, PN x) {
+///\return found index or -1
+PN potion_tuple_bsearch(Potion *P, PN cl, PN self, PN x) {
   struct PNTuple *t = PN_GET_TUPLE(self);
   PNUniq xu = PN_UNIQ(x);
   long i = 0, j = t->len - 1;
@@ -366,34 +367,68 @@ long potion_tuple_binary_search(PN self, PN x) {
     long m = j + ((i - j) / 2);
     PNUniq u = PN_UNIQ(t->set[m]);
     if (u == xu)
-      return m;
+      return PN_NUM(m);
     else if (u > xu)
       j = m - 1;
     else
       i = m + 1;
   }
-  return -1;
+  return PN_NUM(-1);
 }
 
-/// sort PNTuple by value (simple insertion sort)
-///\param self PNTuple
-///\return void
-void potion_tuple_ins_sort(PN self) {
+#if CAN_QSORT
+static int potion_qsort_cmp (const void* v1, const void *v2) {
+  return potion_send(P, PN_cmp, (PN)v1, (PN)v2);
+}
+#endif
+
+///\memberof PNTuple
+/// sort PNTuple by value
+///\param cmp (optional) comparison closure: (a,b) a < b ? -1 : a == b ? 0 : 1.
+///\return sorted PNTuple
+PN potion_tuple_sort(Potion *P, PN cl, PN self, PN cmp) {
   struct PNTuple *t = PN_GET_TUPLE(self);
   unsigned long i, j, tmp;
-  for (i = 1; i < t->len; i++) {
-    j = i;
-    while (j > 0 && PN_UNIQ(t->set[j - 1]) > PN_UNIQ(t->set[j])) {
-      tmp = t->set[j];
-      t->set[j] = t->set[j - 1];
-      t->set[j - 1] = tmp;
-      j--;
+  vPN(Closure) c;
+  //if (cmp == PN_NIL) cmp = PN_CLOSURE(&potion_any_cmp);
+#if CAN_QSORT
+  if (t->len < 13) {
+#endif
+  if (cmp == PN_NIL) {
+    for (i = 1; i < t->len; i++) {
+      j = i;
+      while (j > 0 && PN_UNIQ(t->set[j-1]) > PN_UNIQ(t->set[j])) {
+	tmp = t->set[j];
+	t->set[j] = t->set[j - 1];
+	t->set[j - 1] = tmp;
+	j--;
+      }
     }
   }
+  else {
+    c = PN_CLOSURE(cmp);
+    for (i = 1; i < t->len; i++) {
+      j = i;
+      while (j > 0 && c->method(P, cmp, P->lobby, t->set[j-1], t->set[j]) > 0) {
+	tmp = t->set[j];
+	t->set[j] = t->set[j - 1];
+	t->set[j - 1] = tmp;
+	j--;
+      }
+    }
+  }
+#if CAN_QSORT
+  // But need P for the cmp func
+  else {
+    qsort(t->set, t->len, sizeof(PN), potion_qsort_cmp);
+  }
+#endif
+  return self;
 }
 
 ///\memberof PNLobby
-/// "list" method.
+/// global "list" method. return a new empty list
+///\param size PNNumber
 ///\return PNTuple
 PN potion_lobby_list(Potion *P, PN cl, PN self, PN size) {
   return potion_tuple_with_size(P, PN_INT(size));
@@ -428,6 +463,8 @@ void potion_table_init(Potion *P) {
   // TODO: add Tuple remove
   potion_method(tpl_vt, "unshift", potion_tuple_unshift, "value=o");
   potion_method(tpl_vt, "shift", potion_tuple_shift, 0);
+  potion_method(tpl_vt, "bsearch", potion_tuple_bsearch, "value=o");
+  potion_method(tpl_vt, "sort", potion_tuple_sort, "|block=&");
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
   potion_method(P->lobby, "list", potion_lobby_list, "length=N");
 }

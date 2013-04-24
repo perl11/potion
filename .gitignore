@@ -21,9 +21,9 @@
 *.pnb
 ._*
 .DS_Store
-/lib/potion/*.so
-/lib/potion/*.dll
-/lib/potion/*.bundle
+/lib/*/*.so
+/lib/*/*.dll
+/lib/*/*.bundle
 /lib/libpotion.a
 /lib/libpotion.so
 /lib/libpotion.dll

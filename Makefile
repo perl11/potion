@@ -45,6 +45,7 @@ EXPR = expr
 GREG = bin/greg${EXE}
 RANLIB ?= ranlib
 
+RUNPRE = bin/
 INCS = -Icore
 # perl11.org only
 WEBSITE = ../perl11.org
@@ -202,49 +203,50 @@ bench: bin/gc-bench${EXE} bin/potion${EXE}
 check: test
 test: bin/potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
-	${ECHO} running API tests; \
-	DYLD_LIBRARY_PATH=`pwd`:$DYLD_LIBRARY_PATH \
-	export DYLD_LIBRARY_PATH; \
+	${ECHO} running potion API tests; \
+	LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH \
+	export LD_LIBRARY_PATH; \
 	test/api/potion-test; \
-	${ECHO} running GC tests; \
-	test/api/gc-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
 	  if [ $$pass -eq 0 ]; then \
-		   ${ECHO} running VM tests; \
+		t=0; \
+		${ECHO} running potion VM tests; \
 	  elif [ $$pass -eq 1 ]; then \
-		   ${ECHO} running compiler tests; \
-		else \
-		   ${ECHO} running JIT tests; \
-			 jit=`bin/potion -v | ${SED} "/jit=1/!d"`; \
-			 if [ "$$jit" = "" ]; then \
-			   ${ECHO} skipping; \
-			   break; \
-			 fi; \
+                t=1; \
+		${ECHO} running potion compiler tests; \
+	  elif [ $$pass -eq 2 ]; then \
+                t=2; \
+		${ECHO} running potion JIT tests; \
+		jit=`${RUNPRE}potion -v | ${SED} "/jit=1/!d"`; \
+		if [ "$$jit" = "" ]; then \
+		    ${ECHO} skipping; \
+		    break; \
 		fi; \
-		for f in test/**/*.pn; do \
-			look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
-			if [ $$pass -eq 0 ]; then \
-				for=`bin/potion -I -B $$f | ${SED} "s/\n$$//"`; \
-			elif [ $$pass -eq 1 ]; then \
-				bin/potion -c $$f > /dev/null; \
-				fb="$$f"b; \
-				for=`bin/potion -I -B $$fb | ${SED} "s/\n$$//"`; \
-				rm -rf $$fb; \
-			else \
-				for=`bin/potion -I -X $$f | ${SED} "s/\n$$//"`; \
-			fi; \
-			if [ "$$look" != "$$for" ]; then \
-				${ECHO}; \
-				${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
-				failed=`${EXPR} $$failed + 1`; \
-			else \
-				${ECHO} -n .; \
-			fi; \
-			count=`${EXPR} $$count + 1`; \
-		done; \
-		pass=`${EXPR} $$pass + 1`; \
+	  fi; \
+	  for f in test/**/*.pn; do \
+		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
+		if [ $$t -eq 0 ]; then \
+			for=`${RUNPRE}potion -I -B $$f | ${SED} "s/\n$$//"`; \
+		elif [ $$t -eq 1 ]; then \
+			${RUNPRE}potion -c $$f > /dev/null; \
+			fb="$$f"b; \
+			for=`${RUNPRE}potion -I -B $$fb | ${SED} "s/\n$$//"`; \
+			rm -rf $$fb; \
+		else \
+			for=`${RUNPRE}potion -I -X $$f | ${SED} "s/\n$$//"`; \
+		fi; \
+		if [ "$$look" != "$$for" ]; then \
+			${ECHO}; \
+			${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
+			failed=`${EXPR} $$failed + 1`; \
+		else \
+		   ${ECHO} -n .; \
+		fi; \
+		count=`${EXPR} $$count + 1`; \
+	  done; \
+	  pass=`${EXPR} $$pass + 1`; \
 	done; \
 	${ECHO}; \
 	if [ $$failed -gt 0 ]; then \
