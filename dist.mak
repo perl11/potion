@@ -26,19 +26,20 @@ install: bin-dist
 bin-dist: pkg/${PKGBIN}.tar.gz
 
 pkg/${PKGBIN}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
-  potion${EXE} p2${EXE} \
+  potion${EXE} p2${EXE} doc \
   libpotion.a libpotion${DLL} libp2.a libp2${DLL} lib/readline${LOADEXT}
 	rm -rf dist
-	mkdir -p dist dist/bin dist/include/potion dist/lib/potion dist/share/potion/doc \
-	  dist/share/potion/example
-	cp core/*.h dist/include/potion/
-	cp potion${EXE} dist/bin/
-	cp p2${EXE} dist/bin/
-	cp libp2.a libp2${DLL} dist/lib/
+	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
+                 dist/share/potion/doc dist/share/potion/example
+	cp core/*.h                    dist/include/potion/
+	cp potion${EXE}                dist/bin/
+	cp p2${EXE}                    dist/bin/
+	cp libp2.a libp2${DLL}         dist/lib/
 	cp libpotion.a libpotion${DLL} dist/lib/
-	cp lib/readline${LOADEXT} dist/lib/potion/
-	-cp doc/* *.md README COPYING dist/share/potion/doc/
-	cp example/* dist/share/potion/example/
+	cp lib/readline${LOADEXT}      dist/lib/potion/
+	-cp doc/* README COPYING       dist/share/potion/doc/
+	-cp README.p2 I*.md            dist/share/potion/doc/
+	cp example/*                   dist/share/potion/example/
 	-mkdir -p pkg
 	(cd dist && tar czvf ../pkg/${PKGBIN}.tar.gz * && cd ..)
 	rm -rf dist
