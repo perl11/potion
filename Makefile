@@ -307,23 +307,28 @@ doc: ${DOCHTML} doc/html/files.html
 docall: doc GTAGS
 
 doxygen: doc/html/files.html
-	@${ECHO} DOXYGEN core
+	@${ECHO} DOXYGEN -f core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	@doc/footer.sh > doc/footer.inc
+	mv core/syntax.c core/syntax-c.tmp
 	@doxygen doc/Doxyfile
+	mv core/syntax-c.tmp core/syntax.c
 
 doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh potion${EXE}
-	@${ECHO} DOXYGEN
+	@${ECHO} DOXYGEN core
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	doc/footer.sh > doc/footer.inc
+	mv core/syntax.c core/syntax-c.tmp
 	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
+	mv core/syntax-c.tmp core/syntax.c
 
 # perl11.org only. needs: doxygen redcloth global
 website:
 	test -d ${WEBSITE} || exit
-	@${MAKE} doc
-	cp doc/*.html ${WEBSITE}/potion/
 	@${MAKE} doxygen
 	cp -r doc/html/* ${WEBSITE}/potion/html/
+	@${MAKE} doc
+	cp doc/*.html ${WEBSITE}/potion/
 	@${MAKE} GTAGS
 	cp -r HTML/* ${WEBSITE}/potion/ref/
 	cd ${WEBSITE}/potion/ && git add *.html html ref && git ci -m'doc: automatic update'
@@ -331,7 +336,7 @@ website:
 
 # in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h
-	+${MAKE} -f dist.mak $@
+	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 TAGS: ${SRC} core/*.h
 	@rm -f TAGS
