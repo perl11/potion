@@ -433,7 +433,6 @@ reentry:
             reg[op.a + 1] = potion_object_new(P, PN_NIL, reg[op.a]);
             reg[op.a] = ((struct PNVtable *)reg[op.a])->ctor;
           case PN_TCLOSURE:
-	    dbg_t("\n");
             if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) {
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);
             } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
@@ -454,7 +453,7 @@ reentry:
 
               f = PN_PROTO(PN_CLOSURE(reg[op.a])->data[0]);
               pos = 0;
-	      dbg_t("\t => ; %s\n", STRINGIFY(reg[op.a]));
+	      dbg_t("\t; %s\n", STRINGIFY(reg[op.a]));
               goto reentry;
             }
           break;
@@ -462,10 +461,9 @@ reentry:
           default: {
             reg[op.a + 1] = reg[op.a];
             reg[op.a] = potion_obj_get_call(P, reg[op.a]);
-	    dbg_t("\n");
             if (PN_IS_CLOSURE(reg[op.a]))
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, &reg[op.a + 1]);
-	      dbg_t("\t => ; %s\n", STRINGIFY(reg[op.a]));
+	      dbg_t("\t; %s\n", STRINGIFY(reg[op.a]));
           }
           break;
         }
