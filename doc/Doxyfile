@@ -19,6 +19,7 @@ SORT_MEMBER_DOCS       = NO
 QUIET                  = YES
 WARNINGS               = NO
 WARN_IF_UNDOCUMENTED   = NO
+WARN_NO_PARAMDOC       = NO
 INPUT                  = core
 INPUT                  += README.md INTERNALS.md INSTALL.md README.p2
 SOURCE_BROWSER         = YES

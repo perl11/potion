@@ -423,7 +423,7 @@ doxygen: doc/html/files.html
 doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh p2${EXE}
 	@${ECHO} DOXYGEN
 	doc/footer.sh > doc/footer.inc
-	@doxygen doc/Doxyfile
+	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
 
 # perl11.org only. needs doxygen redcloth global
 website:
@@ -435,7 +435,7 @@ website:
 	@${MAKE} GTAGS
 	cp -r HTML/* ${WEBSITE}/p2/ref/
 	cd ${WEBSITE}/p2/ && git add *.html html ref && git ci -m'doc: automatic update'
-	@${ECHO} need to cd ${WEBSITE} && git push
+	@${ECHO} "need to cd ${WEBSITE}; git push"
 
 GTAGS: ${SRC} core/*.h
 	gtags && htags
