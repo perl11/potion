@@ -263,15 +263,13 @@ int main(int argc, char *argv[]) {
   PN buf = PN_NIL;
 
   for (i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "--") == 0) {
+    if (!strcmp(argv[i], "--"))
       break;
-    }
-    if (strcmp(argv[i], "-I") == 0 ||
-        strcmp(argv[i], "--inspect") == 0) {
+    if (!strcmp(argv[i], "-I") || !strcmp(argv[i], "--inspect")) {
       P->flags |= DEBUG_INSPECT;
       continue;
     }
-    if (strcmp(argv[i], "-L") == 0) {
+    if (!strcmp(argv[i], "-L")) {
       char *extra_path = &argv[i][2]; // todo: flexible
       if (*extra_path)
 	potion_loader_add(P, potion_str(P, extra_path));
@@ -285,42 +283,35 @@ int main(int argc, char *argv[]) {
       }
       continue;
     }
-    if (strcmp(argv[i], "-V") == 0 ||
-        strcmp(argv[i], "--verbose") == 0) {
+    if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--verbose")) {
       P->flags |= DEBUG_VERBOSE;
       continue;
     }
-    if (strcmp(argv[i], "-v") == 0 ||
-        strcmp(argv[i], "--version") == 0) {
+    if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
       potion_cmd_version(P);
       goto END;
     }
-    if (strcmp(argv[i], "-h") == 0 ||
-        strcmp(argv[i], "--help") == 0) {
+    if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
       potion_cmd_usage(P);
       goto END;
     }
-    if (strcmp(argv[i], "-s") == 0 ||
-        strcmp(argv[i], "--stats") == 0) {
+    if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--stats")) {
       potion_cmd_stats(P);
       goto END;
     }
-    if (strcmp(argv[i], "--compile") == 0 ||
-        strcmp(argv[i], "-c") == 0) {
+    if (!strcmp(argv[i], "--compile") || !strcmp(argv[i], "-c")) {
       exec = EXEC_COMPILE;
       continue;
     }
-    if (strcmp(argv[i], "--check") == 0) {
+    if (!strcmp(argv[i], "--check")) {
       exec = EXEC_CHECK;
       continue;
     }
-    if (strcmp(argv[i], "-B") == 0 ||
-        strcmp(argv[i], "--bytecode") == 0) {
+    if (!strcmp(argv[i], "-B") || !strcmp(argv[i], "--bytecode")) {
       exec = EXEC_VM;
       continue;
     }
-    if (strcmp(argv[i], "-X") == 0 ||
-        strcmp(argv[i], "--x86") == 0) {
+    if (!strcmp(argv[i], "-X") || !strcmp(argv[i], "--x86")) {
       exec = EXEC_JIT;
       continue;
     }
@@ -341,10 +332,7 @@ int main(int argc, char *argv[]) {
       if (strchr(&argv[i][2], 'i')) P->flags |= DEBUG_INSPECT;
       if (strchr(&argv[i][2], 'v')) P->flags |= DEBUG_VERBOSE;
       if (strchr(&argv[i][2], 't')) P->flags |= DEBUG_TRACE;
-      if (strchr(&argv[i][2], 'i')) P->flags |= DEBUG_INSPECT;
-      if (strchr(&argv[i][2], 'v')) P->flags |= DEBUG_VERBOSE;
-      if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE;
-	exec = exec==EXEC_JIT ? EXEC_VM : exec; }
+      if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE; exec = EXEC_VM; }
       if (strchr(&argv[i][2], 'p')) P->flags |= DEBUG_PARSE;
       if (strchr(&argv[i][2], 'P')) P->flags |= DEBUG_PARSE_VERBOSE;
       if (strchr(&argv[i][2], 'c')) P->flags |= DEBUG_COMPILE;
