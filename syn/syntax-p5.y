@@ -122,7 +122,7 @@ subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
 #subattrlist = ':' -? arg-name
 
 # TODO: compile-time sideeffs (BEGIN block)
-use = USE n:id - semi    { $$ = PN_AST2(MESSAGE, PN_use, n); }
+use = USE n:id - semi    { $$ = PN_AST2(MESSAGE, potion_str(P,"use"), n); }
 
 ifstmt = IF e:ifexpr s:block - !"els" { s  = PN_OP(AST_AND, e, s); }
        | IF e:ifexpr s1:block         { s1 = PN_AST(MESSAGE, PN_if); }

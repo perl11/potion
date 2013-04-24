@@ -15,12 +15,12 @@ CLANG  = 0
 JIT    = 0
 EXE    =
 APPLE  = 0
+RUNPRE = ./
 
 CAT  = /bin/cat
 ECHO = /bin/echo
 SED  = sed
 EXPR = expr
-GREG = tools/greg${EXE}
 
 STRIP ?= `./tools/config.sh "${CC}" strip`
 JIT_TARGET ?= `./tools/config.sh "${CC}" jit`
@@ -112,6 +112,7 @@ ifeq ($(shell ./tools/config.sh "${CC}" mingw),1)
 	DLL  = .dll
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
+	RUNPRE =
 else
 ifeq ($(shell ./tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
@@ -125,7 +126,8 @@ ifeq ($(shell ./tools/config.sh "${CC}" apple),1)
 	DLL      = .dylib
 	LOADEXT  = .bundle
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
-	RPATH = -install_name "@executable_path/../lib/libpotion${DLL}"
+	LDDLLFLAGS += -install_name "@executable_path/../lib/libpotion${DLL}"
+	RPATH =
 else
 	DLL  = .so
 	LOADEXT = .so
@@ -156,6 +158,7 @@ config.inc.echo:
 	@${ECHO} "LIBS    = ${LIBS}"
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "STRIP   = ${STRIP}"
+	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "APPLE   = ${APPLE}"
 	@${ECHO} "WIN32   = ${WIN32}"
 	@${ECHO} "CLANG   = ${CLANG}"

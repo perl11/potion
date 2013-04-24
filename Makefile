@@ -47,9 +47,8 @@ SED  = sed
 EXPR = expr
 GREG = bin/greg${EXE}
 
+RUNPRE = bin/
 INCS = -Icore
-RUNPOTION = bin/potion
-RUNP2 = bin/p2
 # perl11.org only
 WEBSITE = ../perl11.org
 
@@ -66,17 +65,17 @@ usage:
 	@${ECHO} " "
 	@${ECHO} " Running a script or code."
 	@${ECHO} " "
-	@${ECHO} "   $$ bin/p2 example/fib.pl"
-	@${ECHO} "   $$ bin/p2 -e \"code\""
+	@${ECHO} "   $$ p2 example/fib.pl"
+	@${ECHO} "   $$ p2 -e \"code\""
 	@${ECHO} " "
 	@${ECHO} " Dump the AST and bytecode inspection for a script. "
 	@${ECHO} " "
-	@${ECHO} "   $$ bin/p2 --verbose example/fib.pl"
+	@${ECHO} "   $$ p2 --verbose example/fib.pl"
 	@${ECHO} " "
 	@${ECHO} " Compiling to bytecode."
 	@${ECHO} " "
-	@${ECHO} "   $$ bin/p2 --compile example/fib.pl"
-	@${ECHO} "   $$ bin/p2 example/fib.plc"
+	@${ECHO} "   $$ p2 --compile example/fib.pl"
+	@${ECHO} "   $$ p2 example/fib.plc"
 	@${ECHO} " "
 	@${ECHO} " Potion builds its JIT compiler by default, but"
 	@${ECHO} " you can use the bytecode VM by running scripts"
@@ -250,21 +249,21 @@ lib/libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) core/config.h core/potion.h
 lib/libp2${DLL}: $(subst .opic,.opic2,${PIC_OBJ}) lib/potion/libsyntax-p5${DLL} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} $(subst libpotion,libp2,${RPATH}) \
+	@${CC} ${DEBUGFLAGS} -o $@ $(subst libpotion,libp2,${LDDLLFLAGS}) ${RPATH} \
 	  $(subst .opic,.opic2,${PIC_OBJ}) ${LIBPTH} -lsyntax-p5 ${LIBS} > /dev/null
 
 lib/potion/libsyntax${DLL}: syn/syntax.opic
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
-	@$(CC) ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
-	  $(subst libpotion,potion/libsyntax,${RPATH}) \
+	@$(CC) ${DEBUGFLAGS} -o $@ \
+	  $(subst libpotion,potion/libsyntax,${LDDLLFLAGS}) ${RPATH} \
 	  $(INCS) $< $(LIBS)
 
 lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.opic2
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
-	  $(subst libpotion,potion/libsyntax-p5,${RPATH}) \
+	  $(subst libpotion,potion/libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
 	  $(INCS) $< $(LIBS)
 
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
@@ -289,7 +288,7 @@ test.pn: bin/potion${EXE} bin/potion-test${EXE}
 	${ECHO} running potion API tests; \
 	LD_LIBRARY_PATH=`pwd`/lib:`pwd`/lib/potion:$LD_LIBRARY_PATH \
 	export LD_LIBRARY_PATH; \
-	bin/potion-test; \
+	${RUNPRE}potion-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
@@ -302,7 +301,7 @@ test.pn: bin/potion${EXE} bin/potion-test${EXE}
 	  elif [ $$pass -eq 2 ]; then \
                 t=2; \
 		${ECHO} running potion JIT tests; \
-		jit=`${RUNPOTION} -v | ${SED} "/jit=1/!d"`; \
+		jit=`${RUNPRE}potion -v | ${SED} "/jit=1/!d"`; \
 		if [ "$$jit" = "" ]; then \
 		    ${ECHO} skipping; \
 		    break; \
@@ -311,14 +310,14 @@ test.pn: bin/potion${EXE} bin/potion-test${EXE}
 	  for f in test/**/*.pn; do \
 		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
 		if [ $$t -eq 0 ]; then \
-			for=`${RUNPOTION} -I -B $$f | ${SED} "s/\n$$//"`; \
+			for=`${RUNPRE}potion -I -B $$f | ${SED} "s/\n$$//"`; \
 		elif [ $$t -eq 1 ]; then \
-			${RUNPOTION} -c $$f > /dev/null; \
+			${RUNPRE}potion -c $$f > /dev/null; \
 			fb="$$f"b; \
-			for=`${RUNPOTION} -I -B $$fb | ${SED} "s/\n$$//"`; \
+			for=`${RUNPRE}potion -I -B $$fb | ${SED} "s/\n$$//"`; \
 			rm -rf $$fb; \
 		else \
-			for=`${RUNPOTION} -I -X $$f | ${SED} "s/\n$$//"`; \
+			for=`${RUNPRE}potion -I -X $$f | ${SED} "s/\n$$//"`; \
 		fi; \
 		if [ "$$look" != "$$for" ]; then \
 			${ECHO}; \
@@ -344,9 +343,9 @@ test.p2: bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 	${ECHO} running p2 API tests; \
 	LD_LIBRARY_PATH=`pwd`/lib:`pwd`/lib/potion:$LD_LIBRARY_PATH \
 	export LD_LIBRARY_PATH; \
-	bin/p2-test; \
+	${RUNPRE}p2-test; \
 	${ECHO} running GC tests; \
-	bin/gc-test; \
+	${RUNPRE}gc-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
@@ -359,7 +358,7 @@ test.p2: bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 	  elif [ $$pass -eq 2 ]; then \
                 t=2; \
 		${ECHO} running p2 JIT tests; \
-		jit=`${RUNP2} -v | ${SED} "/jit=1/!d"`; \
+		jit=`${RUNPRE}p2 -v | ${SED} "/jit=1/!d"`; \
 		if [ "$$jit" = "" ]; then \
 		    ${ECHO} skipping; \
 		    break; \
@@ -368,14 +367,14 @@ test.p2: bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 	  for f in test/**/*.pl; do \
 		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
 		if [ $$t -eq 0 ]; then \
-			for=`${RUNP2} --inspect -B $$f | ${SED} "s/\n$$//"`; \
+			for=`${RUNPRE}p2 --inspect -B $$f | ${SED} "s/\n$$//"`; \
 		elif [ $$t -eq 1 ]; then \
-			${RUNP2} --compile $$f > /dev/null; \
+			${RUNPRE}p2 --compile $$f > /dev/null; \
 			fb="$$f"c; \
-			for=`${RUNP2} --inspect -B $$fb | ${SED} "s/\n$$//"`; \
+			for=`${RUNPRE}p2 --inspect -B $$fb | ${SED} "s/\n$$//"`; \
 			rm -rf $$fb; \
 		else \
-			for=`${RUNP2} --inspect -J $$f | ${SED} "s/\n$$//"`; \
+			for=`${RUNPRE}p2 --inspect -J $$f | ${SED} "s/\n$$//"`; \
 		fi; \
 		if [ "$$look" != "$$for" ]; then \
 			${ECHO}; \

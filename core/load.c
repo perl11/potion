@@ -207,8 +207,15 @@ PN p2_load(Potion *P, PN cl, PN self, PN file) {
 }
 #endif
 
+void potion_loader_add(Potion *P, PN path) {
+  PN_PUSH(pn_loader_path, path);
+}
+
 void potion_loader_init(Potion *P) {
   pn_loader_path = PN_TUP0();
+  // relocatable path:
+  //PN arg0 = potion_send(P, potion_str(P, "$^X")); // but too early for argv[0]
+  //if (arg0) PN_PUSH(pn_loader_path, potion_strcat(P, basename(PN_STR_PTR(arg0)), "../lib"));
   PN_PUSH(pn_loader_path, potion_str(P, "lib"));
   PN_PUSH(pn_loader_path, potion_str(P, POTION_PREFIX"/lib/potion"));
   PN_PUSH(pn_loader_path, potion_str(P, "."));
@@ -220,8 +227,4 @@ void potion_loader_init(Potion *P) {
 #endif
   potion_define_global(P, potion_str(P, LOADER_PATH), pn_loader_path);
   potion_method(P->lobby, "load", potion_load, "file=S");
-}
-
-void potion_loader_add(Potion *P, PN path) {
-  PN_PUSH(pn_loader_path, path);
 }

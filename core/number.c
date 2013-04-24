@@ -1,6 +1,5 @@
-//
-// number.c
-// simple math
+///\file number.c
+/// simple math. PNNumber is either a immediate PN_NUM integer or double PNDecimal
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -22,14 +21,22 @@ PN potion_decimal(Potion *P, char *str, int len) {
   return potion_real(P, strtod(str, &ptr));
 }
 
+///\memberof PNNumber
+/// "pow"
+///\param sup PNumber
+///\return PNNumber or PNDecimal
 PN potion_pow(Potion *P, PN cl, PN num, PN sup) {
   double x = PN_DBL(num), y = PN_DBL(sup);
   double z = pow(x, y);
-  if (PN_IS_NUM(num) && PN_IS_NUM(sup))
+  if (PN_IS_NUM(num) && PN_IS_NUM(sup) && abs(z) < INT_MAX)
     return PN_NUM((int)z);
   return potion_real(P, z);
 }
 
+///\memberof PNNumber
+/// "sqrt"
+///\param sup PNumber
+///\return PNNumber or PNDecimal
 PN potion_sqrt(Potion *P, PN cl, PN num) {
   return potion_real(P, sqrt(PN_DBL(num)));
 }
@@ -152,6 +159,23 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
   return PN_NUM(labs(PN_INT(self)));
 }
 
+///\memberof PNNumber
+/// "cmp" two numbers. casts n to a number
+///\param n PN
+///\return PNNumber 1, 0 or -1
+PN potion_num_cmp(Potion *P, PN closure, PN self, PN n) {
+  if (PN_IS_DECIMAL(self)) {
+    double d1 = PN_DBL(self);
+    double d2 = PN_DBL(potion_send(P, potion_str(P, "number"), n));
+    return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_NUM(0) : PN_NUM(1);
+  } else {
+    long n1, n2;
+    n1 = PN_INT(self);
+    n2 = PN_IS_NUM(n) ? PN_INT(n) : PN_INT(potion_send(P, potion_str(P, "number"), n));
+    return n1 < n2 ? PN_NUM(-1) : n1 == n2 ? PN_NUM(0) : PN_NUM(1);
+  }
+}
+
 void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
 #if defined(P2)
@@ -177,6 +201,7 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "float?", potion_num_is_float, 0);
   potion_method(num_vt, "integer", potion_num_integer, 0);
   potion_method(num_vt, "abs", potion_abs, 0);
+  potion_method(num_vt, "cmp", potion_num_cmp, "value=N");
 #if defined(P2)
   potion_method(dbl_vt, "string", potion_num_string, 0);
 #endif
