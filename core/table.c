@@ -157,7 +157,7 @@ PN potion_tuple_push(Potion *P, PN tuple, PN value) {
 }
 
 ///\memberof PNTuple
-/// "append" method.
+/// "append" and "push" method.
 ///\param value PN
 ///\return PNTuple
 PN potion_tuple_append(Potion *P, PN cl, PN self, PN value) {
@@ -347,8 +347,8 @@ long potion_tuple_binary_search(PN self, PN x) {
   return -1;
 }
 
-/// insertion sort to create an ordered PNTuple
-///\param x PN (PNUniq in fact)
+/// sort PNTuple by value (simple insertion sort)
+///\param self PNTuple
 ///\return void
 void potion_tuple_ins_sort(PN self) {
   struct PNTuple *t = PN_GET_TUPLE(self);

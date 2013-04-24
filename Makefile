@@ -412,17 +412,19 @@ release:
 
 doc: ${DOCHTML} doc/html/files.html
 
-doxygen:
+doxygen: doc/html/files.html
 	@${ECHO} DOXYGEN core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	@doc/footer.sh > doc/footer.inc
 	@doxygen
 
-doc/html/files.html: ${SRC} core/*.h Doxyfile doc/footer.sh
+doc/html/files.html: ${SRC} core/*.h Doxyfile doc/footer.sh p2${EXE}
 	@${ECHO} DOXYGEN
 	doc/footer.sh > doc/footer.inc
 	@doxygen
 
+GTAGS: ${SRC} core/*.h
+	gtags && htags
 TAGS: ${SRC} core/*.h
 	@rm -f TAGS
 	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
@@ -439,7 +441,7 @@ clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o test/api/*.o front/*.o syn/*.i syn/*.o syn/*.opic \
 	       core/*.i core/*.opic core/*.opic2 core/*.o2 front/*.opic
-	@rm -f ${DOCHTML}
+	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f ${GREG} tools/*.o core/config.h core/version.h ${SRC_SYN}
 	@rm -f tools/*~ doc/*~ example/*~ tools/config.c
 	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
@@ -448,6 +450,7 @@ clean:
 	@rm -f potion${EXE} libpotion.* potion-s
 	@rm -f test/api/p2-test${EXE}
 	@rm -f p2${EXE} libp2.* ${SRC_P2_SYN} p2-s
+	@rm -rf doc/html doc/latex
 
 realclean: clean
 	@rm -f config.inc
