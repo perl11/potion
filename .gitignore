@@ -59,3 +59,8 @@ readline.bundle
 /GPATH
 /GRTAGS
 /GTAGS
+/HTML
+/doc/html
+/doc/latex
+/README.md
+/doc/footer.inc
