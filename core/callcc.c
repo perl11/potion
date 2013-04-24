@@ -1,6 +1,5 @@
-//
-// callcc.c
-// creation and calling of continuations
+///\file callcc.c
+/// creation and calling of continuations, in non-portable asm, x86 only yet
 //
 // NOTE: these hacks make use of the frame pointer, so they must
 // be compiled -fno-omit-frame-pointer!
@@ -30,7 +29,6 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
 
   //
   // move stack pointer, fill in stack, resume
-  //
   cc->stack[3] = (PN)cc;
 #if POTION_X86 == POTION_JIT_TARGET
 #if __WORDSIZE == 64
