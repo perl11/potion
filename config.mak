@@ -3,8 +3,9 @@
 PREFIX = /usr/local
 CC ?= gcc
 CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -Wno-unused-label -D_GNU_SOURCE
-LDEXEFLAGS = -L. -Wl,-rpath=. -Wl,-rpath=../lib
+LDEXEFLAGS = -L.
 LDDLLFLAGS = -shared -fpic
+RPATH = -Wl,-rpath=. -Wl,-rpath=../lib
 INCS = -Icore
 LIBS = -lm
 AR ?= ar
@@ -126,8 +127,8 @@ ifeq ($(shell ./tools/config.sh "${CC}" apple),1)
 	DLL      = .dylib
 	LOADEXT  = .bundle
 	RUNPOTION = ./potion
-	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace \
-	             -install_name "@executable_path/../lib/libpotion${DLL}"
+	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
+	RPATH = -install_name "@executable_path/../lib/libpotion${DLL}"
 	LDEXEFLAGS = -L.
 else
 	RUNPOTION = ./potion
@@ -155,6 +156,7 @@ config.inc.echo:
 	@${ECHO} "DEFINES = ${DEFINES}"
 	@${ECHO} "DEBUGFLAGS = ${DEBUGFLAGS}"
 	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS}
+	@${ECHO} "RPATH   = ${RPATH}"
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "LDEXEFLAGS = ${LDEXEFLAGS}"
 	@${ECHO} "LIBS    = ${LIBS}"

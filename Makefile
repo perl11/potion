@@ -181,28 +181,34 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
 # on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
 ifeq (${APPLE},1)
-LIBHACK = ../lib/libpotion.dylib ../lib/libp2.dylib
+LIBHACK  = ../lib/libpotion.dylib ../lib/potion/libsyntax.dylib
+LIBHACK2 = ../lib/libp2.dylib ../lib/potion/libsyntax-p5.dylib
 else
-LIBHACK =
+LIBHACK  =
+LIBHACK2 =
 endif
-../lib/libpotion.dylib:
-	-mkdir ../lib
+../lib/libpotion.dylib ../lib/potion/libsyntax.dylib:
+	-mkdir -p ../lib/potion
 	-ln -sf `pwd`/libpotion.dylib ../lib/
-../lib/libp2.dylib:
-	-mkdir ../lib
+	-ln -sf `pwd`/lib/libsyntax.dylib ../lib/potion/
+../lib/libp2.dylib ../lib/potion/libsyntax-p5.dylib:
+	-mkdir -p ../lib/potion
 	-ln -sf `pwd`/libp2.dylib ../lib/
+	-ln -sf `pwd`/lib/libsyntax-p5.dylib ../lib/potion/
 
 potion${EXE}: ${PIC_OBJ_POTION} libpotion${DLL} ${LIBHACK}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LDEXEFLAGS} -lpotion ${LIBS}
+	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LDEXEFLAGS} \
+	  -Llib -lsyntax -lpotion ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
 	fi
 
-p2${EXE}: ${OBJ_P2} libp2${DLL} ${LIBHACK}
+p2${EXE}: ${OBJ_P2} libp2${DLL} ${LIBHACK2}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ $(subst potion,p2,${LDEXEFLAGS}) -lp2 ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ $(subst potion,p2,${LDEXEFLAGS}) \
+	  -Llib -lsyntax-p5 -lp2 ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
@@ -225,27 +231,39 @@ libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_SYN} ${OBJ} > /dev/null
 
-libpotion${DLL}: ${PIC_OBJ_SYN} ${PIC_OBJ} core/config.h core/potion.h
-	@${ECHO} LD $@ -fpic
+libpotion${DLL}: ${PIC_OBJ} lib/libsyntax${DLL} core/config.h core/potion.h
+	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
-	  ${PIC_OBJ_SYN} ${PIC_OBJ} ${LIBS} > /dev/null
+	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
+	  ${PIC_OBJ} -Llib -lsyntax ${LIBS} > /dev/null
 
 libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
 
-libp2${DLL}: ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ}) core/config.h core/potion.h
-	@${ECHO} LD $@ -fpic
+libp2${DLL}: $(subst .opic,.opic2,${PIC_OBJ}) lib/libsyntax-p5${DLL} core/config.h core/potion.h
+	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -o $@ $(subst potion,p2,${LDDLLFLAGS}) \
-	  ${PIC_OBJ_P2_SYN} $(subst .opic,.opic2,${PIC_OBJ}) ${LIBS} > /dev/null
+	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} $(subst potion,p2,${RPATH}) \
+	  $(subst .opic,.opic2,${PIC_OBJ}) -Llib -lsyntax-p5 ${LIBS} > /dev/null
+
+lib/libsyntax${DLL}: syn/syntax.opic
+	@${ECHO} LD $@
+	@$(CC) ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
+	  $(subst libpotion,potion/libsyntax,${RPATH}) \
+	  $(INCS) $< $(LIBS)
+
+lib/libsyntax-p5${DLL}: syn/syntax-p5.opic2
+	@${ECHO} LD $@
+	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
+	  $(subst libpotion,potion/libsyntax-p5,${RPATH}) \
+	  $(INCS) $< $(LIBS)
 
 lib/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
-	@${ECHO} MAKE $@ -fpic
+	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/readline
 	@cp lib/readline/readline${LOADEXT} $@
 
@@ -461,10 +479,10 @@ clean:
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f ${GREG} tools/*.o core/config.h core/version.h ${SRC_SYN}
 	@rm -f tools/*~ doc/*~ example/*~ tools/config.c
-	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
+	@rm -f lib/*${LOADEXT} lib/readline/readline${LOADEXT}
 	@rm -f test/api/potion-test${EXE} test/api/gc-test${EXE} \
                test/api/gc-bench${EXE}
-	@rm -f potion${EXE} libpotion.* potion-s
+	@rm -f potion${EXE} libpotion.* potion-s ${LIBHACK}
 	@rm -f test/api/p2-test${EXE}
 	@rm -f p2${EXE} libp2.* ${SRC_P2_SYN} p2-s
 	@rm -rf doc/html doc/latex

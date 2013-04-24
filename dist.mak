@@ -37,6 +37,7 @@ pkg/${PKGBIN}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
 	cp libp2.a libp2${DLL}         dist/lib/
 	cp libpotion.a libpotion${DLL} dist/lib/
 	cp lib/readline${LOADEXT}      dist/lib/potion/
+	cp lib/libsyntax${DLL}         dist/lib/potion/
 	-cp doc/* README COPYING       dist/share/potion/doc/
 	-cp README.p2 I*.md            dist/share/potion/doc/
 	cp example/*                   dist/share/potion/example/

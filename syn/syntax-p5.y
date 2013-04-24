@@ -8,7 +8,9 @@
 #
 
 %{
-#define P2
+#ifndef P2
+# define P2
+#endif
 #include "p2.h"
 #include "internal.h"
 #include "asm.h"
