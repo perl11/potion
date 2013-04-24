@@ -27,7 +27,7 @@
 #  endif
 #endif
 
-#if DEBUG
+#ifdef DEBUG
 extern const struct {
   const char *name;
   const u8 args;
