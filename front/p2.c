@@ -383,17 +383,17 @@ int main(int argc, char *argv[]) {
     }
   } else {
     if (!exec || P->flags & DEBUG_INSPECT) potion_fatal("no filename given");
-    potion_define_global(P, potion_str(P, "$0"), potion_str(P, ""));
+    potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-i"));
     // TODO: p5 not yet parsed
     p2_eval(P, potion_byte_str(P,
-      "p2::load 'readline';" \
-      "while ($code = readline('>> ')) {" \
-      "  $obj = eval $code;" \
-      "  if ($@) {" \
-      "    say $@;" \
-      "  } else {" \
-      "    say '=> ', $obj;" \
-      "  }"
+      "load 'readline';\n" \
+      "while ($code = readline('>> ')) {\n" \
+      "  $obj = eval $code;\n" \
+      "  if ($@) {\n" \
+      "    say $@;\n" \
+      "  } else {\n" \
+      "    say '=> ', $obj;\n" \
+      "  }\n"
       "}"), exec == EXEC_JIT ? 1 : 0);
   }
 END:
