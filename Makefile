@@ -46,6 +46,10 @@ GREG = tools/greg${EXE}
 RANLIB ?= ranlib
 RUNPRE ?= ./
 
+INCS = -Icore
+# perl11.org only
+WEBSITE = ../perl11.org
+
 all: pn
 	+${MAKE} -s usage
 
@@ -313,6 +317,18 @@ doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh potion${EXE}
 	doc/footer.sh > doc/footer.inc
 	@doxygen doc/Doxyfile
 
+# perl11.org only. needs: doxygen redcloth global
+website:
+	test -d ${WEBSITE} || exit
+	@${MAKE} doc
+	cp doc/*.html ${WEBSITE}/potion/
+	@${MAKE} doxygen
+	cp -r doc/html/* ${WEBSITE}/potion/html/
+	@${MAKE} GTAGS
+	cp -r HTML/* ${WEBSITE}/potion/ref/
+	cd ${WEBSITE}/potion/ && git add *.html html ref && git ci -m'doc: automatic update'
+	@${ECHO} need to git push
+
 # in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h
 	+${MAKE} -f dist.mak $@
@@ -344,4 +360,5 @@ realclean: clean
 	@rm -rf HTML
 	@find . -name \*.gcov -delete
 
-.PHONY: all config clean doc docall rebuild check test test.pn test.p2 bench tarball dist release install grammar doxygen
+.PHONY: all config clean doc docall rebuild check test test.pn test.p2 bench tarball dist \
+        release install grammar doxygen website
