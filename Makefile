@@ -50,6 +50,8 @@ GREG = syn/greg${EXE}
 INCS = -Icore
 RUNPOTION = ./potion
 RUNP2 = ./p2
+# perl11.org only
+WEBSITE = ../perl11.org
 
 all: pn p2${EXE}
 	+${MAKE} -s usage
@@ -416,12 +418,24 @@ doxygen: doc/html/files.html
 	@${ECHO} DOXYGEN core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	@doc/footer.sh > doc/footer.inc
-	@doxygen
+	@doxygen doc/Doxyfile
 
-doc/html/files.html: ${SRC} core/*.h Doxyfile doc/footer.sh p2${EXE}
+doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh p2${EXE}
 	@${ECHO} DOXYGEN
 	doc/footer.sh > doc/footer.inc
-	@doxygen
+	@doxygen doc/Doxyfile
+
+# perl11.org only. needs doxygen redcloth global
+website:
+	test -d ${WEBSITE} || exit
+	@${MAKE} doc
+	cp doc/*.html ${WEBSITE}/p2/
+	@${MAKE} doxygen
+	cp -r doc/html/* ${WEBSITE}/p2/html/
+	@${MAKE} GTAGS
+	cp -r HTML/* ${WEBSITE}/p2/ref/
+	cd ${WEBSITE}/p2/ && git add *.html html ref && git ci -m'doc: automatic update'
+	@${ECHO} need to git push
 
 GTAGS: ${SRC} core/*.h
 	gtags && htags
@@ -455,4 +469,5 @@ clean:
 realclean: clean
 	@rm -f config.inc
 
-.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release install grammar doxygen
+.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release \
+	install grammar doxygen website
