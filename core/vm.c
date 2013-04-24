@@ -28,12 +28,18 @@
 #endif
 
 #if DEBUG
+#define dbg_t(...)				\
+  if (P->flags & DEBUG_TRACE) {			\
+    fprintf(stderr,__VA_ARGS__);		\
+  }
 extern const struct {
   const char *name;
   const u8 args;
 } potion_ops[];
 
 #define STRINGIFY(_obj) PN_STR_PTR(potion_send(_obj, PN_string))
+#else
+#define dbg_t(...)
 #endif
 
 #ifdef POTION_JIT_TARGET
@@ -273,19 +279,15 @@ reentry:
       });
     }
   }
-
-#ifdef DEBUG
-    if (P->flags & DEBUG_TRACE)
-      fprintf(stderr, "-- run-time --\n");
-#endif
+  dbg_t("-- run-time --\n");
 
   while (pos < PN_OP_LEN(f->asmb)) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
-#ifdef DEBUG
+    dbg_t("[%2d] %-8s %d ", pos+1, potion_ops[op.code].name, op.a);
+#if DEBUG
     if (P->flags & DEBUG_TRACE) {
-      fprintf(stderr, "[%2d] %-8s %d", pos+1, potion_ops[op.code].name, op.a);
       if (potion_ops[op.code].args > 1)
-	fprintf(stderr, " %d", op.b);
+	fprintf(stderr, "%d", op.b);
     }
 #endif
     // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
@@ -431,6 +433,7 @@ reentry:
             reg[op.a + 1] = potion_object_new(P, PN_NIL, reg[op.a]);
             reg[op.a] = ((struct PNVtable *)reg[op.a])->ctor;
           case PN_TCLOSURE:
+	    dbg_t("\n");
             if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) {
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);
             } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
@@ -451,6 +454,7 @@ reentry:
 
               f = PN_PROTO(PN_CLOSURE(reg[op.a])->data[0]);
               pos = 0;
+	      dbg_t("\t => ; %s\n", STRINGIFY(reg[op.a]));
               goto reentry;
             }
           break;
@@ -458,8 +462,10 @@ reentry:
           default: {
             reg[op.a + 1] = reg[op.a];
             reg[op.a] = potion_obj_get_call(P, reg[op.a]);
+	    dbg_t("\n");
             if (PN_IS_CLOSURE(reg[op.a]))
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, &reg[op.a + 1]);
+	      dbg_t("\t => ; %s\n", STRINGIFY(reg[op.a]));
           }
           break;
         }
@@ -479,9 +485,11 @@ reentry:
           current = reg - (f->localsize + f->upvalsize + 1);
           reg[op.a] = val;
           pos++;
+	  dbg_t("\t; %s\n", STRINGIFY(val));
           goto reentry;
         } else {
           reg[0] = reg[op.a];
+	  dbg_t("\t; %s\n", STRINGIFY(reg[op.a]));
           goto done;
         }
       break;
