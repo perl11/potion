@@ -296,22 +296,22 @@ release: dist
 	@redcloth $< >> $@
 	@${ECHO} "</div></body></html>" >> $@
 
+MANIFEST:
+	git ls-tree -r --name-only HEAD > $@
+
 doc: ${DOCHTML} doc/html/files.html
 docall: doc GTAGS
 
-doxygen:
+doxygen: doc/html/files.html
 	@${ECHO} DOXYGEN core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	@doc/footer.sh > doc/footer.inc
-	@doxygen
+	@doxygen doc/Doxyfile
 
-doc/html/files.html: ${SRC} core/*.h Doxyfile doc/footer.sh
+doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh potion${EXE}
 	@${ECHO} DOXYGEN
 	doc/footer.sh > doc/footer.inc
-	@doxygen
-
-MANIFEST:
-	git ls-tree -r --name-only HEAD > $@
+	@doxygen doc/Doxyfile
 
 # in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h
@@ -329,12 +329,14 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f core/*.o core/*.opic core/*.i test/api/*.o ${DOCHTML}
+	@rm -f core/*.o core/*.opic core/*.i test/api/*.o
 	@rm -f tools/*.o tools/*~ doc/*~ example/*~ tools/config.c
+	@rm -f ${DOCHTML}
 	@rm -f core/config.h core/version.h
 	@rm -f potion${EXE} potion-s${EXE} libpotion.* \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 	@rm -rf doc/html doc/latex
+	@rm -f lib/readline${LOADEXT} lib/readline/readline${LOADEXT}
 
 realclean: clean
 	@rm -f config.inc ${GREG} core/syntax.c
@@ -342,4 +344,4 @@ realclean: clean
 	@rm -rf HTML
 	@find . -name \*.gcov -delete
 
-.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release install grammar doxygen
+.PHONY: all config clean doc docall rebuild check test test.pn test.p2 bench tarball dist release install grammar doxygen
