@@ -10,24 +10,22 @@ ifeq (${DLL},)
 	$(error need to make config first)
 endif
 
-#VERSION   = $(shell ./tools/config.sh ${CC} version)
-#RELEASE   ?= ${VERSION}.${REVISION}
-#PKG       = potion-${RELEASE}
-
-VERSION = $(shell ./tools/config.sh ${CC} p2version)
+VERSION  = $(shell ./tools/config.sh ${CC} p2version)
+PLATFORM = $(shell ./tools/config.sh ${CC} target)
 RELEASE ?= ${VERSION}.${REVISION}
-PKG     = p2-${RELEASE}
+PKG      = p2-${RELEASE}
+PKGBIN   = ${PKG}-${PLATFORM}
 
 dist: bin-dist src-dist
 
 release: dist
 
 install: bin-dist
-	${SUDO} tar xfz pkg/${PKG}.tar.gz -C $(PREFIX)/
+	${SUDO} tar xfz pkg/${PKGBIN}.tar.gz -C $(PREFIX)/
 
-bin-dist: pkg/${PKG}.tar.gz
+bin-dist: pkg/${PKGBIN}.tar.gz
 
-pkg/${PKG}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
+pkg/${PKGBIN}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
   potion${EXE} p2${EXE} \
   libpotion.a libpotion${DLL} libp2.a libp2${DLL} lib/readline${LOADEXT}
 	rm -rf dist
@@ -42,7 +40,7 @@ pkg/${PKG}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
 	-cp doc/* *.md README COPYING dist/share/potion/doc/
 	cp example/* dist/share/potion/example/
 	-mkdir -p pkg
-	(cd dist && tar czvf ../pkg/${PKG}.tar.gz * && cd ..)
+	(cd dist && tar czvf ../pkg/${PKGBIN}.tar.gz * && cd ..)
 	rm -rf dist
 
 src-dist: pkg/${PKG}-src.tar.gz

@@ -68,6 +68,8 @@ elif [ "$2" = "version" ]; then
   cat core/potion.h | sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//"
 elif [ "$2" = "p2version" ]; then
   cat core/p2.h | sed "/P2_VERSION/!d; s/\\\"$//; s/.*\\\"//"
+elif [ "$2" = "target" ]; then
+  echo "$TARGET"
 elif [ "$2" = "jit" ]; then
   if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
     echo "X86"
