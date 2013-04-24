@@ -25,9 +25,8 @@ install: bin-dist
 
 bin-dist: pkg/${PKGBIN}.tar.gz pkg/${PKGBIN}-devel.tar.gz
 
-pkg/${PKGBIN}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
-  potion${EXE} p2${EXE} doc \
-  libpotion.a libpotion${DLL} libp2.a libp2${DLL} lib/readline${LOADEXT}
+pkg/${PKGBIN}.tar.gz: bin/potion${EXE} bin/p2${EXE} doc \
+  lib/libpotion${DLL} lib/libp2${DLL} lib/potion/readline${LOADEXT} lib/potion/libsyntax*${DLL}
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc dist/share/potion/example
@@ -45,11 +44,12 @@ pkg/${PKGBIN}.tar.gz: core/config.h core/version.h syn/syntax-p5.c \
 	(cd dist && tar czvf ../pkg/${PKGBIN}.tar.gz * && cd ..)
 	rm -rf dist
 
-pkg/${PKGBIN}-devel.tar.gz: ${GREG} libpotion.a libp2.a bin/p2-s bin/potion-s doxygen GTAGS
+pkg/${PKGBIN}-devel.tar.gz: ${GREG} lib/libpotion.a lib/libp2.a bin/p2-s bin/potion-s
+	+${MAKE} doxygen GTAGS
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc dist/share/potion/example
-	cp ${GREG}                      dist/bin/
+	cp bin/greg${EXE}               dist/bin/
 	cp lib/libp*.a                  dist/lib/
 	cp core/*.h                     dist/include/potion/
 	-cp -r doc/html doc/latex I*.md dist/share/potion/doc/

@@ -412,11 +412,7 @@ bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK p2-test
 	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}
 
-dist: core/config.h core/version.h ${SRC_SYN} ${SRC_P2_SYN} \
-  bin/potion${EXE} bin/p2${EXE} \
-  lib/libpotion.a lib/libpotion${DLL} lib/libp2.a lib/libp2${DLL} \
-  lib/potion/libsyntax${DLL} lib/potion/libsyntax-p5${DLL} \
-  lib/readline${LOADEXT}
+dist: bin/potion${EXE} bin/p2${EXE} lib/libpotion.a lib/libp2.a bin/p2-s bin/potion-s doc
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: dist
@@ -448,7 +444,7 @@ doxygen: doc/html/files.html
 	@doc/footer.sh > doc/footer.inc
 	@doxygen doc/Doxyfile
 
-doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh p2${EXE}
+doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh bin/p2${EXE}
 	@${ECHO} DOXYGEN core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	doc/footer.sh > doc/footer.inc
