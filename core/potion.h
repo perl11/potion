@@ -280,7 +280,7 @@ struct PNFile {
 typedef PN (*PN_F)(Potion *, PN, PN, ...);
 
 ///
-/// a closure is an anonymous function,
+/// a closure is an anonymous function, without closed values, \see PNProto
 /// non-volatile.
 ///
 struct PNClosure {
@@ -301,7 +301,7 @@ struct PNSource {
 };
 
 ///
-/// a prototype is compiled source code,
+/// a prototype is compiled source code, a closure block (lambda)
 /// non-volatile.
 ///
 struct PNProto {
@@ -357,8 +357,8 @@ struct PNError {
 struct PNLick {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN name;  ///< PNString
-  PN attr;  ///< ??
-  PN inner; ///< PNTuple, \see potion_lick_licks:"licks" method
+  PN attr;  ///< PN
+  PN inner; ///< "licks" PNTuple or "text" PNString member
 };
 
 ///
