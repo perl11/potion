@@ -435,7 +435,7 @@ website:
 	@${MAKE} GTAGS
 	cp -r HTML/* ${WEBSITE}/p2/ref/
 	cd ${WEBSITE}/p2/ && git add *.html html ref && git ci -m'doc: automatic update'
-	@${ECHO} need to git push
+	@${ECHO} need to cd ${WEBSITE} && git push
 
 GTAGS: ${SRC} core/*.h
 	gtags && htags
