@@ -51,3 +51,4 @@ readline.bundle
 /doc/latex
 /README.md
 /doc/footer.inc
+/tools/bisect*.sh

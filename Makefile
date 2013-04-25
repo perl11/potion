@@ -442,12 +442,14 @@ doxygen: doc/html/files.html
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	@doc/footer.sh > doc/footer.inc
 	@doxygen doc/Doxyfile
+	@rm README.md
 
-doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh bin/p2${EXE}
+doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh Makefile
 	@${ECHO} DOXYGEN core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	doc/footer.sh > doc/footer.inc
 	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
+	@rm README.md
 
 # perl11.org only. needs doxygen redcloth global
 website:
