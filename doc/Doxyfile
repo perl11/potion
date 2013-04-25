@@ -24,6 +24,7 @@ WARN_NO_PARAMDOC       = NO
 INPUT                  = core
 INPUT                  += README.md INTERNALS.md INSTALL.md README.p2
 SOURCE_BROWSER         = YES
+#INLINE_SOURCES         = YES
 
 HTML_COLORSTYLE_HUE    = 157
 HTML_COLORSTYLE_SAT    = 35

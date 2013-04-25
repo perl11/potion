@@ -10,34 +10,34 @@
 #include "p2.h"
 #include "internal.h"
 
+/// new PNDecimal
 PN potion_real(Potion *P, double v) {
   vPN(Decimal) d = PN_ALLOC_N(PN_TNUMBER, struct PNDecimal, 0);
   d->value = v;
   return (PN)d;
 }
 
+/// strtod
 PN potion_decimal(Potion *P, char *str, int len) {
   char *ptr = str + len;
   return potion_real(P, strtod(str, &ptr));
 }
-///\memberof PNNumber
-/// "**" method
-///\param num PN_INT or PNDecimal
-///\param sup PNNumber
-///\return PNNumber or PNDecimal
-PN potion_pow(Potion *P, PN cl, PN num, PN sup) {
-  double x = PN_DBL(num), y = PN_DBL(sup);
+/**\memberof PNNumber
+  "**" method. not static, needed in x86 jit.
+ \param sup PNDecimal
+ \return PNNumber or PNDecimal */
+PN potion_pow(Potion *P, PN cl, PN self, PN sup) {
+  double x = PN_DBL(self), y = PN_DBL(sup);
   double z = pow(x, y);
-  if (PN_IS_NUM(num) && PN_IS_NUM(sup) && abs(z) < INT_MAX)
+  if (PN_IS_NUM(self) && PN_IS_NUM(sup) && abs(z) < INT_MAX)
     return PN_NUM((int)z);
   return potion_real(P, z);
 }
-///\memberof PNNumber
-/// "sqrt"
-///\param num PNumber
-///\return PNDecimal
-PN potion_sqrt(Potion *P, PN cl, PN num) {
-  return potion_real(P, sqrt(PN_DBL(num)));
+/**\memberof PNNumber
+  "sqrt"
+ \return PNDecimal */
+static PN potion_sqrt(Potion *P, PN cl, PN self) {
+  return potion_real(P, sqrt(PN_DBL(self)));
 }
 
 #define PN_NUM_MATH(int_math) \
@@ -45,22 +45,42 @@ PN potion_sqrt(Potion *P, PN cl, PN num) {
     return PN_NUM(PN_INT(self) int_math PN_INT(num)); \
   return potion_real(P, PN_DBL(self) int_math PN_DBL(num));
 
+/**\memberof PNNumber
+  "+" method
+ \param num PN_INT or PNDecimal
+ \return PNNumber (if both are INT) or PNDecimal */
 static PN potion_add(Potion *P, PN cl, PN self, PN num) {
   PN_NUM_MATH(+)
 }
 
+/**\memberof PNNumber
+  "-" method
+ \param num PN_INT or PNDecimal
+ \return PNNumber (if both are INT) or PNDecimal */
 static PN potion_sub(Potion *P, PN cl, PN self, PN num) {
   PN_NUM_MATH(-)
 }
 
+/**\memberof PNNumber
+  "*" method
+ \param num PN_INT or PNDecimal
+ \return PNNumber (if both are INT) or PNDecimal */
 static PN potion_mult(Potion *P, PN cl, PN self, PN num) {
   PN_NUM_MATH(*)
 }
 
+/**\memberof PNNumber
+  "/" method
+ \param num PN_INT or PNDecimal
+ \return PNNumber (if both are INT) or PNDecimal */
 static PN potion_div(Potion *P, PN cl, PN self, PN num) {
   PN_NUM_MATH(/)
 }
 
+/**\memberof PNNumber
+  "%" method, Integer division, resp rounded division
+ \param num PN_INT or PNDecimal
+ \return PNNumber (if both are INT) or PNDecimal */
 static PN potion_rem(Potion *P, PN cl, PN self, PN num) {
   if (PN_IS_NUM(self) && PN_IS_NUM(num))
     return PN_NUM(PN_INT(self) % PN_INT(num));
@@ -69,35 +89,43 @@ static PN potion_rem(Potion *P, PN cl, PN self, PN num) {
   return potion_real(P, x - (y * (double)z));
 }
 
+/**\memberof PNNumber
+  "~" method, bitwise negation  \code ~ 0 #=> -1 \endcode
+ \return PNNumber or 0.0 for PNDecimal argument */
 static PN potion_bitn(Potion *P, PN cl, PN self) {
   if (PN_IS_NUM(self))
     return PN_NUM(~PN_INT(self));
   return (PN)potion_real(P, 0.0);
 }
 
+/**\memberof PNNumber
+  "<<" method, left shift by num. \code 2 << 1 #=> 4 \endcode
+ \param num PN_INT or PNDecimal
+ \return PNNumber or 0.0 for a PNDecimal argument */
 static PN potion_bitl(Potion *P, PN cl, PN self, PN num) {
   if (PN_IS_NUM(self) && PN_IS_NUM(num))
     return PN_NUM(PN_INT(self) << PN_INT(num));
   return (PN)potion_real(P, 0.0);
 }
 
+/**\memberof PNNumber
+  ">>" method, right shift by num. \code 4 >> 1 #=> 2 \endcode
+ \param num PN_INT or PNDecimal
+ \return PNNumber or 0.0 for a PNDecimal argument */
 static PN potion_bitr(Potion *P, PN cl, PN self, PN num) {
   if (PN_IS_NUM(self) && PN_IS_NUM(num))
     return PN_NUM(PN_INT(self) >> PN_INT(num));
   return (PN)potion_real(P, 0.0);
 }
-
+/**\memberof PNNumber
+  "number" method, identity. \code 4 number #=> 4 \endcode
+ \return PNNumber or PNDecimal */
 static PN potion_num_number(Potion *P, PN cl, PN self) {
   return self;
 }
-
-static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) {
-  long i, j = PN_INT(end), k = PN_INT(step);
-  for (i = PN_INT(self); i <= j; i += k) {
-    PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
-  }
-}
-
+/**\memberof PNNumber
+  "string" method, stringify
+ \return PNString */
 PN potion_num_string(Potion *P, PN cl, PN self) {
   char ints[40];
   if (PN_IS_NUM(self)) {
@@ -110,63 +138,91 @@ PN potion_num_string(Potion *P, PN cl, PN self) {
   }
   return potion_str(P, ints);
 }
-///\memberof PNNumber
-/// "times" call block times (int only)
-///\param block PNClosure
-///\return PNNumber
+/**\memberof PNNumber
+  "times" call block times (int only). argument starting with 0.
+          \code 2 times: "x" print.         #=> xx \endcode
+          \code 2 times(i): i string print. #=> 01 \endcode
+
+          Note: Do not mix it up with the 'mult' opcode which is parsed as AST_TIMES.
+ \verbatim $ potion -Div -e'4 * 2'
+        -- parsed --
+        code (times (expr (value (4 )) expr (value (2 ))))
+        -- compiled --
+        [1] loadpn   0 9    ; 4
+        [2] loadpn   1 5    ; 2
+        [3] mult     0 1
+        [4] return   0
+ \endverbatim
+ \param block PNClosure
+ \return self PNNumber (normally unused)
+ \sa potion_num_to */
 static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
   long i, j = PN_INT(self);
   for (i = 0; i < j; i++)
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(i);
 }
-///\memberof PNNumber
-/// "to" call block from self to end
-///\param end int
-///\param block PNClosure
-///\return PNNumber
-PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
+/**\memberof PNNumber
+  from "to" end: block. call block on each number from self to end
+                 \code 1 to 2: "x" print. #=> "xx" \endcode
+ \param end int
+ \param block PNClosure
+ \return self PNNumber (normally unused)
+ \sa potion_num_times, potion_num_step */
+static PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
   long i, s = 1, j = PN_INT(self), k = PN_INT(end);
   if (k < j) s = -1;
   for (i = j; i != k + s; i += s)
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(abs(i - j));
 }
-///\memberof PNNumber
-/// "chr" of int only, no UTF-8 multi-byte sequence
-///\return PNString one char <255
+/**\memberof PNNumber
+  from "step" end step: block. call block on each number from self to end
+                 \code 1 step 5 2(i): i string print. #=> 1 3 5 \endcode
+ \param end  PNNumber (int only)
+ \param step PNNumber (int only)
+ \param block PNClosure
+ \sa potion_num_to. */
+static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) {
+  long i, j = PN_INT(end), k = PN_INT(step);
+  for (i = PN_INT(self); i <= j; i += k) {
+    PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
+  }
+}
+/**\memberof PNNumber
+  "chr" of int only, no UTF-8 multi-byte sequence
+ \return PNString one char <255 */
 static PN potion_num_chr(Potion *P, PN cl, PN self) {
   char c = PN_INT(self);
   return potion_str2(P, &c, 1);
 }
-///\memberof PNNumber
-/// "integer?"
-///\return PNBoolean true or false
+/**\memberof PNNumber
+  "integer?"
+ \return PNBoolean true or false */
 static PN potion_num_is_integer(Potion *P, PN cl, PN self) {
   return PN_IS_NUM(self) ? PN_TRUE : PN_FALSE;
 }
-///\memberof PNNumber
-/// "float?"
-///\return PNBoolean true or false
+/**\memberof PNNumber
+  "float?"
+ \return PNBoolean true or false */
 static PN potion_num_is_float(Potion *P, PN cl, PN self) {
   return PN_IS_DECIMAL(self) ? PN_TRUE : PN_FALSE;
 }
-///\memberof PNNumber
-/// "integer" cast
-///\return floor rounded PNNumber
+/**\memberof PNNumber
+  "integer" cast
+ \return floor rounded PNNumber */
 static PN potion_num_integer(Potion *P, PN cl, PN self) {
   if (PN_IS_NUM(self))
     return self;
   else
     return PN_NUM(floor(((struct PNDecimal *)self)->value));
 }
-///\memberof PNNumber
-/// "abs"
-///\return PNNumber or PNDecimal
+/**\memberof PNNumber
+  "abs"
+ \return PNNumber or PNDecimal */
 static PN potion_abs(Potion *P, PN cl, PN self) {
   if (PN_IS_DECIMAL(self)) {
     double d = PN_DBL(self);
-
     if (d < 0.0)
       return (PN) potion_real(P, -d);
     else
@@ -174,19 +230,23 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
   }
   return PN_NUM(labs(PN_INT(self)));
 }
-///\memberof PNNumber
-/// "cmp" two numbers. casts n to a number
-///\param n PN
-///\return PNNumber 1, 0 or -1
-PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
+/**\memberof PNNumber
+  "cmp" two numbers. casts argument n to a number
+                     \code 1 cmp 2 #=> -1 \endcode
+                     \code 1 cmp 1 #=>  0 \endcode
+                     \code 1 cmp 0 #=>  1 \endcode
+ \param n PN number compared to
+ \return PNNumber 1, 0 or -1
+ \sa potion_tuple_sort. */
+static PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
   if (PN_IS_DECIMAL(self)) {
     double d1 = PN_DBL(self);
-    double d2 = PN_DBL(potion_send(P, potion_str(P, "number"), n));
+    double d2 = PN_DBL(potion_send(P, PN_number, n));
     return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_NUM(0) : PN_NUM(1);
   } else {
     long n1, n2;
     n1 = PN_INT(self);
-    n2 = PN_IS_NUM(n) ? PN_INT(n) : PN_INT(potion_send(P, potion_str(P, "number"), n));
+    n2 = PN_IS_NUM(n) ? PN_INT(n) : PN_INT(potion_send(P, PN_number, n));
     return n1 < n2 ? PN_NUM(-1) : n1 == n2 ? PN_NUM(0) : PN_NUM(1);
   }
 }

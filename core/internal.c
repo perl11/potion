@@ -15,7 +15,7 @@ PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
    PN_delegated, PN_else, PN_elsif, PN_if, PN_lookup, PN_loop, PN_print,
    PN_return, PN_self, PN_string, PN_while;
 PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
-PN PN_cmp;
+PN PN_cmp, PN_number;
 
 PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
   struct PNData *obj = PN_ALLOC_N(PN_TUSER, struct PNData, PN_INT(len));
@@ -76,6 +76,7 @@ static void potion_init(Potion *P) {
   PN_bitn = potion_str(P, "~");
   PN_bitl = potion_str(P, "<<");
   PN_bitr = potion_str(P, ">>");
+  PN_number = potion_str(P, "number");
   PN_cmp = potion_str(P, "cmp");
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup, 0));

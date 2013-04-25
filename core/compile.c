@@ -681,8 +681,8 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
 /// Dissect the parsed and compiled parse_from()/yy_sig() AST tree
 /// of a potion signature. Name=Type, '| optional' '.' sep
 /// Types are encoded as ord. No handling of default values.
-///\param  f    the PNProto closure to store locals
-///\param  src  PNSource signature tree, parsed via yy_sig()
+///\param f    the PNProto closure to store locals
+///\param src  PNSource signature tree, parsed via yy_sig()
 ///\return PNProto a closure
 PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   PN sig = PN_TUP0();
@@ -716,8 +716,8 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 ///\memberof PNSource
 /// "compile" method for PNSource, an AST fragment. Typically to add a function definition,
 /// but also objects, blocks, ... (Almost everything is a PNClosure)
-///\param  source  PNSource AST source tree
-///\param  sig     PNSource signature tree or PN_NIL, parsed via yy_sig(), compiled with potion_sig_compile()
+///\param source  PNSource AST source tree
+///\param sig     PNSource signature tree or PN_NIL, parsed via yy_sig(), compiled with potion_sig_compile()
 ///\return PNProto a closure
 PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   vPN(Proto) f;
