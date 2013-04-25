@@ -1,9 +1,9 @@
-//
-// vm-ppc.c
-// the powerpc jit (32-bit only)
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/**\file vm-ppc.c
+the powerpc jit (32-bit only)
+\see core/vm.c and INTERNALS.md
+
+(c) 2008 why the lucky stiff, the freelance professor
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -12,36 +12,37 @@
 #include "opcodes.h"
 #include "asm.h"
 
-// STACK LAYOUT
-//
-// Like on other platforms, Potion attempts to match the conventions
-// used by C compilers. In C, the stack layout looks something like:
-//
-//   sp | linkage (24 bytes) | parameters | locals | saved |
-//
-// Note that while PowerPC has an EA, registers and stack space are
-// the same. This is actually pretty ideal for Potion, since I can
-// use the parameters area (the general-purpose registers) as if
-// they were Potion's registers, then copy everything to the
-// saved registers area when it comes time to make a call. This
-// cuts down the assembler in every operation except for OP_CALL.
-//
-// Now, if OP_CALL proves to be slow, I've considered an optimization.
-// Since Potion already uses a contiguous set of registers to pass
-// arguments, maybe I could just save the registers and the linkage,
-// shift the stack pointer, then set it back once the call is done.
-//
-// Alternatively, maybe it would be nice to give Potion's VM its
-// own set of parameter registers, as a hint to the JIT.
+/**\par STACK LAYOUT
+
+ Like on other platforms, Potion attempts to match the conventions
+ used by C compilers. In C, the stack layout looks something like:
+
+   sp | linkage (24 bytes) | parameters | locals | saved |
+
+ Note that while PowerPC has an EA, registers and stack space are
+ the same. This is actually pretty ideal for Potion, since I can
+ use the parameters area (the general-purpose registers) as if
+ they were Potion's registers, then copy everything to the
+ saved registers area when it comes time to make a call. This
+ cuts down the assembler in every operation except for OP_CALL.
+
+ Now, if OP_CALL proves to be slow, I've considered an optimization.
+ Since Potion already uses a contiguous set of registers to pass
+ arguments, maybe I could just save the registers and the linkage,
+ shift the stack pointer, then set it back once the call is done.
+
+ Alternatively, maybe it would be nice to give Potion's VM its
+ own set of parameter registers, as a hint to the JIT.
+*/
 
 #define RBP(x) (0x18 + (x * sizeof(PN)))
 
-// The EABI reserves GPR1 for a stack pointer, GPR3-GPR7 for function
-// argument passing, and GPR3 for function return values. (In Potion,
-// it's the same but GPR3 is also used as scratch space and GPR4-7 act
-// as general registers when not being used for parameters.)
+/// The EABI reserves GPR1 for a stack pointer, GPR3-GPR7 for function
+/// argument passing, and GPR3 for function return values. (In Potion,
+/// it's the same but GPR3 is also used as scratch space and GPR4-7 act
+/// as general registers when not being used for parameters.)
 #define REG(x) (x == 0 ? 0 : (x == 1 ? 2 : x + 2))
-// The scratch space, register 3, is referred to as rD in the notation.
+/// The scratch space, register 3, is referred to as rD in the notation.
 #define REG_TMP 3
 
 #define PPC(ins, a, b, c, d) \

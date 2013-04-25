@@ -197,6 +197,8 @@ struct PNVtable;
 #define PN_UNIQ(x)      (PN_IS_PTR(x) ? ((struct PNObject *)(x))->uniq : PN_NUMHASH(x))
 
 #if DEBUG
+#define DBG_t(...) \
+  if (P->flags & DEBUG_TRACE) fprintf(stderr, __VA_ARGS__)
 #define DBG_v(...) \
   if (P->flags & DEBUG_VERBOSE) fprintf(stderr, __VA_ARGS__)
 #define DBG_vt(...) \
@@ -204,6 +206,7 @@ struct PNVtable;
 #define DBG_vi(...) \
   if (P->flags & (DEBUG_VERBOSE|DEBUG_INSPECT)) fprintf(stderr, __VA_ARGS__)
 #else
+#define DBG_t(...)
 #define DBG_v(...)
 #define DBG_vt(...)
 #define DBG_vi(...)
