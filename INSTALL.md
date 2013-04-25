@@ -20,6 +20,7 @@ Lastly, to verify your build
 
 To build the bleeding edge, you will need
 GNU make, binutils and gcc or clang.
+Favor clang over gcc, gcc-4.6.3 is broken, at least on ubuntu.
 
     $ git clone --branch master git://github.com/perl11/potion.git
     $ cd potion
