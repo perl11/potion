@@ -1,6 +1,8 @@
-//
-// khash.h
-// a hashtable library, modified to suit potion's gc
+///\file khash.h
+/// klib hash table library based on double hashing http://en.wikipedia.org/wiki/Double_hashing .
+/// modified to suit potion's gc.
+/// https://github.com/attractivechaos/klib
+///\see core/table.h
 //
 // Copyright (c) 2008, by Attractive Chaos <attractivechaos@aol.co.uk>
 // (Released under the MIT license, see COPYING)
