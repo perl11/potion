@@ -4,13 +4,36 @@
 // (c) 2008 why the lucky stiff, the freelance professor
 //
 /**
-\mainpage potion - _why's object- and mixin-oriented (traits) language
+\mainpage potion + p2
 
-see README.md
+\see INTERNALS.md
 
-    p2 - a perl11 project (perl 5+6=11) based on potion
+Every object is a closure (lambda), even values, classes, types, metaclasses,
+just local (lexical) variables not.
 
-see README.p2
+PN is either an immediate tagged value for int, bool and nil
+or a ptr to an object.
+
+ops use a three-addresss layout: dest =  op src what
+
+The root class is P->lobby, which holds global values.
+
+# Methods use as first three params:
+ - Potion *P - the global interpeter singleton (not threaded yet)
+ - PN cl     - optional parent enclosing block (default: P->lobby)
+               for the lexical environment.
+ - PN self   - the object we are acting on
+
+and optionally args, statically typed via signature strings.
+
+# Method signatures:
+
+  name=one-char type.
+  - o PN (any)
+  - N Num
+  - & Closure
+  - S String
+
 */
 
 #ifndef POTION_H
@@ -141,8 +164,9 @@ struct PNVtable;
 #define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
 
 ///\class PNNumber
-/// Immediate object (no struct) 0x...1
-/// Integer: 31bit/63bit shifted off the last 1 bit
+/// Either a PN_INT immediate object (no struct) 0x...1
+///        Integer: 31bit/63bit shifted off the last 1 bit
+/// or a PNDecimal double.
 ///\see PN_NUM (int to obj), PN_INT (obj to int), PN_IS_NUM (is num obj?)
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       ((long)((long)(x))>>1)
@@ -468,7 +492,7 @@ typedef enum {
 #endif
 } Potion_Flags;
 
-/// the global interpreter state P. singleton
+/// the global interpreter state P. currently singleton (not threads yet)
 struct Potion_State {
   PN_OBJECT_HEADER;        ///< PNType vt; PNUniq uniq
   PNTarget target;         ///< the jit
