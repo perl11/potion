@@ -304,14 +304,16 @@ doxygen: doc/html/files.html
 	mv core/syntax.c core/syntax-c.tmp
 	@doxygen doc/Doxyfile
 	mv core/syntax-c.tmp core/syntax.c
+	@rm README.md
 
-doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh pn
+doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh Makefile
 	@${ECHO} DOXYGEN core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	doc/footer.sh > doc/footer.inc
 	mv core/syntax.c core/syntax-c.tmp
 	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
 	mv core/syntax-c.tmp core/syntax.c
+	@rm README.md
 
 # perl11.org only. needs: doxygen redcloth global
 website:
