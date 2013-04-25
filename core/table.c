@@ -426,7 +426,7 @@ PN potion_tuple_sort(Potion *P, PN cl, PN self, PN cmp) {
   return self;
 }
 
-///\memberof PNLobby
+///\memberof PN
 /// global "list" method. return a new empty list
 ///\param size PNNumber
 ///\return PNTuple
