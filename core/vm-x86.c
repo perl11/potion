@@ -1,9 +1,9 @@
-//
-// vm-x86.c
-// the x86 and x86_64 jit
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/**\file vm-x86.c
+the x86 and x86_64 jit.
+\see core/vm.c and INTERNALS.md
+
+(c) 2008 why the lucky stiff, the freelance professor
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

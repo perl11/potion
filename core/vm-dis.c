@@ -1,3 +1,16 @@
+/**\file vm-dis.c
+  interface to various jit disassembler libs. currently x86 only. usage: -DJ
+
+ - http://udis86.sourceforge.net/ x86 16,32,64 bit
+   \code port install udis86 \endcode
+ - http://ragestorm.net/distorm/ x86 16,32,64 bit with all intel/amd extensions
+   \code apt-get install libdistorm64-dev \endcode
+ - http://bastard.sourceforge.net/libdisasm.html 386 32bit only
+   \code apt-get install libdisasm-dev \endcode
+
+  written by Reini Urban
+*/
+
 #if defined(JIT_DEBUG)
   printf("-- jit --\n");
   printf("; function definition: %p ; %u bytes\n", asmb->ptr, asmb->len);

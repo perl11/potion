@@ -306,7 +306,7 @@ doxygen: doc/html/files.html
 	mv core/syntax-c.tmp core/syntax.c
 	@rm README.md
 
-doc/html/files.html: ${SRC} core/*.h doc/Doxyfile doc/footer.sh Makefile
+doc/html/files.html: core/*.c core/*.h doc/Doxyfile doc/footer.sh Makefile
 	@${ECHO} DOXYGEN core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	doc/footer.sh > doc/footer.inc

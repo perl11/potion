@@ -1,10 +1,66 @@
-//
-// vm.c
-// the vm execution loop
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2013 by perl11 org
-//
+/**\file vm.c
+the vm execution loop, the "bytecode interpreter". correct but slower than the jit.
+
+usage: -B or automatically when no jit is available for your architecture.
+
+Potion uses a register-based bytecode VM that
+is nearly a word-for-word copy of Lua's. The
+code is all different, but the bytecode is
+nearly identical.
+See http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
+or http://www.lua.org/doc/jucs05.pdf
+
+  - MOVE (pos)		 	copy value between registers
+  - LOADPN (pos)	 	load a PN value into a register
+  - LOADK (pos, need)  	 	load a constant into a register
+  - SELF (pos, need)   	 	prepare an object method for calling
+   			 	R(A+1) := R(B); R(A) := R(B)[RK(C)]
+  - GETLOCAL (pos, regs)	read a local into a register
+  - SETLOCAL (pos, regs)	write a register value into a local
+  - GETUPVAL (pos, lregs)	read an upvalue (upper scope)
+  - SETUPVAL (pos, lregs)	write to an upvalue
+  - GLOBAL (pos, need)	 	returns a global (for get or set)
+  - NEWTUPLE (pos, need)	create tuple
+  - SETTUPLE (pos, need)	write register into tuple key
+  - SETTABLE (pos, need)	write register into a table entry
+  - NEWLICK (pos, need)	 	create lick. R(A) := {} (size = B,C)
+  - GETPATH (pos, need)	 	read obj field into register
+  - SETPATH (pos, need)	 	write into obj field
+  - ADD (pos, need)	 	a = b + c
+  - SUB (pos, need)	 	a = b - c
+  - MULT (pos, need)
+  - DIV (pos, need)
+  - REM (pos, need)
+  - POW (pos, need)
+  - NEQ (pos)
+  - EQ (pos)		 	if ((RK(B) == RK(C) ~= A) then PC++
+  - LT (pos)		 	if ((RK(B) < RK(C) ~= A) then PC++
+  - LTE (pos)		 	if ((RK(B) <= RK(C) ~= A) then PC++
+  - GT (pos)
+  - GTE (pos)
+  - BITN (pos, need)
+  - BITL (pos, need)
+  - BITR (pos, need)
+  - DEF (pos, need)	 	define a method for an object
+  - BIND (pos, need)   	 	extend obj by set a binding
+   				http://piumarta.com/software/cola/colas-whitepaper.pdf
+  - MESSAGE (pos, need)	 	call a method of an object
+  - JMP (pos, jmps, offs, &jmpc) PC += sBx
+  - TEST (pos)		 	if not (R(A) <=> C) then PC++
+  - NOT (pos)		 	a = not b
+  - CMP (pos)
+  - TESTJMP (pos, jmps, offs, &jmpc)
+  - NOTJMP (pos, jmps, offs, &jmpc)
+  - NAMED (pos, need)	 	assign named args before a CALL
+  - CALL (pos, need)	 	call a function. R(A),...:= R(A)(R(A+1),...,R(A+B-1)
+  - CALLSET (pos, need)		? set return register to write to
+  - RETURN (pos)	 	return R(A), ... ,R(A+B-2)
+  - PROTO (&pos, lregs, need, regs) define function prototype
+  - CLASS (pos, need)    	find class for register value
+
+(c) 2008 why the lucky stiff, the freelance professor
+(c) 2013 by perl11 org
+*/
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -27,7 +83,7 @@
 #  endif
 #endif
 
-#ifdef DEBUG
+#if DEBUG
 extern const struct {
   const char *name;
   const u8 args;
@@ -160,8 +216,6 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       }
     }
 
-    // See http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
-    // or http://www.lua.org/doc/jucs05.pdf
     // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
     switch (PN_OP_AT(f->asmb, pos).code) {
       CASE_OP(MOVE, (P, f, &asmb, pos))		// copy value between registers
@@ -282,6 +336,7 @@ reentry:
       });
     }
   }
+  DBG_t("-- run-time --\n");
 
   while (pos < PN_OP_LEN(f->asmb)) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
