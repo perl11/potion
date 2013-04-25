@@ -64,8 +64,11 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
     if (i == n - 1 && n > 1) {
       if (cut > 0) {
 	vPN(Bytes) b = (struct PNBytes *)potion_fwd(out);
-	b->len = cut;
-	b->chars[cut] = '\0';
+	//DBG_vt("cut at %d, len=%d: \"%s\"\n", cut, b->len, b->chars);
+	if (cut < b->len) {
+	  b->len = cut;
+	  b->chars[cut] = '\0';
+	}
       }
       pn_printf(P, out, ")");
     }
