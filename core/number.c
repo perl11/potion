@@ -20,10 +20,10 @@ PN potion_decimal(Potion *P, char *str, int len) {
   char *ptr = str + len;
   return potion_real(P, strtod(str, &ptr));
 }
-
 ///\memberof PNNumber
-/// "pow"
-///\param sup PNumber
+/// "**" method
+///\param num PN_INT or PNDecimal
+///\param sup PNNumber
 ///\return PNNumber or PNDecimal
 PN potion_pow(Potion *P, PN cl, PN num, PN sup) {
   double x = PN_DBL(num), y = PN_DBL(sup);
@@ -32,11 +32,10 @@ PN potion_pow(Potion *P, PN cl, PN num, PN sup) {
     return PN_NUM((int)z);
   return potion_real(P, z);
 }
-
 ///\memberof PNNumber
 /// "sqrt"
-///\param sup PNumber
-///\return PNNumber or PNDecimal
+///\param num PNumber
+///\return PNDecimal
 PN potion_sqrt(Potion *P, PN cl, PN num) {
   return potion_real(P, sqrt(PN_DBL(num)));
 }
@@ -46,23 +45,23 @@ PN potion_sqrt(Potion *P, PN cl, PN num) {
     return PN_NUM(PN_INT(self) int_math PN_INT(num)); \
   return potion_real(P, PN_DBL(self) int_math PN_DBL(num));
 
-static PN potion_add(Potion *P, PN closure, PN self, PN num) {
+static PN potion_add(Potion *P, PN cl, PN self, PN num) {
   PN_NUM_MATH(+)
 }
 
-static PN potion_sub(Potion *P, PN closure, PN self, PN num) {
+static PN potion_sub(Potion *P, PN cl, PN self, PN num) {
   PN_NUM_MATH(-)
 }
 
-static PN potion_mult(Potion *P, PN closure, PN self, PN num) {
+static PN potion_mult(Potion *P, PN cl, PN self, PN num) {
   PN_NUM_MATH(*)
 }
 
-static PN potion_div(Potion *P, PN closure, PN self, PN num) {
+static PN potion_div(Potion *P, PN cl, PN self, PN num) {
   PN_NUM_MATH(/)
 }
 
-static PN potion_rem(Potion *P, PN closure, PN self, PN num) {
+static PN potion_rem(Potion *P, PN cl, PN self, PN num) {
   if (PN_IS_NUM(self) && PN_IS_NUM(num))
     return PN_NUM(PN_INT(self) % PN_INT(num));
   double x = PN_DBL(self), y = PN_DBL(num);
@@ -70,25 +69,25 @@ static PN potion_rem(Potion *P, PN closure, PN self, PN num) {
   return potion_real(P, x - (y * (double)z));
 }
 
-static PN potion_bitn(Potion *P, PN closure, PN self) {
+static PN potion_bitn(Potion *P, PN cl, PN self) {
   if (PN_IS_NUM(self))
     return PN_NUM(~PN_INT(self));
   return (PN)potion_real(P, 0.0);
 }
 
-static PN potion_bitl(Potion *P, PN closure, PN self, PN num) {
+static PN potion_bitl(Potion *P, PN cl, PN self, PN num) {
   if (PN_IS_NUM(self) && PN_IS_NUM(num))
     return PN_NUM(PN_INT(self) << PN_INT(num));
   return (PN)potion_real(P, 0.0);
 }
 
-static PN potion_bitr(Potion *P, PN closure, PN self, PN num) {
+static PN potion_bitr(Potion *P, PN cl, PN self, PN num) {
   if (PN_IS_NUM(self) && PN_IS_NUM(num))
     return PN_NUM(PN_INT(self) >> PN_INT(num));
   return (PN)potion_real(P, 0.0);
 }
 
-static PN potion_num_number(Potion *P, PN closure, PN self) {
+static PN potion_num_number(Potion *P, PN cl, PN self) {
   return self;
 }
 
@@ -99,7 +98,7 @@ static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) 
   }
 }
 
-PN potion_num_string(Potion *P, PN closure, PN self) {
+PN potion_num_string(Potion *P, PN cl, PN self) {
   char ints[40];
   if (PN_IS_NUM(self)) {
     sprintf(ints, "%ld", PN_INT(self));
@@ -111,7 +110,10 @@ PN potion_num_string(Potion *P, PN closure, PN self) {
   }
   return potion_str(P, ints);
 }
-
+///\memberof PNNumber
+/// "times" call block times (int only)
+///\param block PNClosure
+///\return PNNumber
 static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
   long i, j = PN_INT(self);
   if (PN_TYPE(block) != PN_TCLOSURE)
@@ -120,7 +122,11 @@ static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(i);
 }
-
+///\memberof PNNumber
+/// "to" call block from self to end
+///\param end int
+///\param block PNClosure
+///\return PNNumber
 PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
   long i, s = 1, j = PN_INT(self), k = PN_INT(end);
   if (k < j) s = -1;
@@ -130,27 +136,37 @@ PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(abs(i - j));
 }
-
+///\memberof PNNumber
+/// "chr" of int only, no UTF-8 multi-byte sequence
+///\return PNString one char <255
 static PN potion_num_chr(Potion *P, PN cl, PN self) {
   char c = PN_INT(self);
   return potion_str2(P, &c, 1);
 }
-
+///\memberof PNNumber
+/// "integer?"
+///\return PNBoolean true or false
 static PN potion_num_is_integer(Potion *P, PN cl, PN self) {
   return PN_IS_NUM(self) ? PN_TRUE : PN_FALSE;
 }
-
+///\memberof PNNumber
+/// "float?"
+///\return PNBoolean true or false
 static PN potion_num_is_float(Potion *P, PN cl, PN self) {
   return PN_IS_DECIMAL(self) ? PN_TRUE : PN_FALSE;
 }
-
+///\memberof PNNumber
+/// "integer" cast
+///\return floor rounded PNNumber
 static PN potion_num_integer(Potion *P, PN cl, PN self) {
   if (PN_IS_NUM(self))
     return self;
   else
     return PN_NUM(floor(((struct PNDecimal *)self)->value));
 }
-
+///\memberof PNNumber
+/// "abs"
+///\return PNNumber or PNDecimal
 static PN potion_abs(Potion *P, PN cl, PN self) {
   if (PN_IS_DECIMAL(self)) {
     double d = PN_DBL(self);
@@ -162,12 +178,11 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
   }
   return PN_NUM(labs(PN_INT(self)));
 }
-
 ///\memberof PNNumber
 /// "cmp" two numbers. casts n to a number
 ///\param n PN
 ///\return PNNumber 1, 0 or -1
-PN potion_num_cmp(Potion *P, PN closure, PN self, PN n) {
+PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
   if (PN_IS_DECIMAL(self)) {
     double d1 = PN_DBL(self);
     double d2 = PN_DBL(potion_send(P, potion_str(P, "number"), n));
