@@ -1,13 +1,12 @@
-//
-// gc.c
-// the garbage collector
-//
-// heavily based on Qish, a lightweight copying generational GC
-// by Basile Starynkevitch.
-// <http://starynkevitch.net/Basile/qishintro.html>
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/**\file gc.c
+Generational copying garbage collector, non-precise with Cheney loop.
+
+Heavily based on Qish, a lightweight copying generational GC
+by Basile Starynkevitch.
+http://starynkevitch.net/Basile/qishintro.html
+
+(c) 2008 why the lucky stiff, the freelance professor
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include "p2.h"
@@ -114,13 +113,13 @@ static inline int NEW_BIRTH_REGION(struct PNMemory *M, void **wb, int sz) {
   SET_STOREPTR(5 + keeps);
 }
 
-//
-// Both this function and potion_gc_major embody a simple
-// Cheney loop (also called a "two-finger collector.")
-// http://en.wikipedia.org/wiki/Cheney%27s_algorithm
-// (Again, many thanks to Basile Starynkevitch for
-// his tutelage in this matter.)
-//
+/** \par
+  Both this function and potion_gc_major embody a simple
+  Cheney loop (also called a "two-finger collector.")
+  http://en.wikipedia.org/wiki/Cheney%27s_algorithm
+  (Again, many thanks to Basile Starynkevitch for
+  his tutelage in this matter.)
+*/
 static int potion_gc_minor(Potion *P, int sz) {
   struct PNMemory *M = P->mem;
   void *scanptr = 0;
@@ -549,27 +548,28 @@ done:
   return (void *)((char *)ptr + sz);
 }
 
-//
-// Potion's GC is a generational copying GC. This is why the
-// volatile keyword is used so liberally throughout the source
-// code. PN types may suddenly move during any collection phase.
-// They move from the birth area to the old area.
-//
-// Potion actually begins by allocating an old area. This is for
-// two reasons. First, the script may be too short to require an
-// old area, so we want to avoid allocating two areas to start with.
-// And second, since Potion loads its core classes into GC first,
-// we save ourselves a severe promotion step by beginning with an
-// automatic promotion to second generation. (Oh and this allows
-// the core Potion struct pointer to be non-volatile.)
-//
-// In short, this first page is never released, since the GC struct
-// itself is on that page.
-//
-// While this may pay a slight penalty in memory size for long-running
-// scripts, perhaps I could add some occassional compaction to solve
-// that as well.
-//
+/** \par
+ Potion's GC is a generational copying GC. This is why the
+ volatile keyword is used so liberally throughout the source
+ code. PN types may suddenly move during any collection phase.
+ They move from the birth area to the old area.
+
+ Potion actually begins by allocating an old area. This is for
+ two reasons. First, the script may be too short to require an
+ old area, so we want to avoid allocating two areas to start with.
+ And second, since Potion loads its core classes into GC first,
+ we save ourselves a severe promotion step by beginning with an
+ automatic promotion to second generation. (Oh and this allows
+ the core Potion struct pointer to be non-volatile.)
+
+ In short, this first page is never released, since the GC struct
+ itself is on that page.
+
+ While this may pay a slight penalty in memory size for long-running
+ scripts, perhaps I could add some occassional compaction to solve
+ that as well.
+ \sa potion_init() which calls GC_PROTECT()
+*/
 Potion *potion_gc_boot(void *sp) {
   Potion *P;
   int bootsz = POTION_MIN_BIRTH_SIZE;
