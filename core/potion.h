@@ -20,8 +20,9 @@ The root class is P->lobby, which holds global values.
 
 # Methods use as first three params:
  - Potion *P - the global interpeter singleton (not threaded yet)
- - PN cl     - optional parent enclosing block (default: P->lobby)
-               for the lexical environment.
+ - PN cl     - bound closure, the optional parent enclosing block for the lexical environment.
+               This gives shared methods access to any differentiating data
+               that might be stored in the closure.
  - PN self   - the object we are acting on
 
 and optionally args, statically typed via signature strings.
