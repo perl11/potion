@@ -132,7 +132,51 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
     PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
 
-    code = potion_cmd_exec(P, buf, filename, exec);
+    //code = potion_cmd_exec(P, buf, filename, exec);
+
+    // horrible code duplication hack.
+    // fix #18 segv with test/closures/long.pn and wrong result in test/closures/upvals.pn
+    // haven't found the wrong stack ptr yet
+  code = potion_source_load(P, PN_NIL, buf);
+  if (PN_IS_PROTO(code)) {
+    dumpv_str("\n-- loaded --\n");
+  } else {
+    code = potion_parse(P, buf, filename);
+    if (!code || PN_TYPE(code) == PN_TERROR) {
+      potion_p(P, code);
+      goto done;
+    }
+    dumpv_str("\n-- parsed --\n");
+    dumpv_p(code);
+    code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
+    dumpv_str("\n-- compiled --\n");
+  }
+  dumpv_p(code);
+  if (exec == EXEC_VM) {
+    code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
+    if (P->flags & DEBUG_VERBOSE)
+      fprintf(stderr, "\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
+	      PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+	      PN_INT(potion_gc_reserved(P, 0, 0)));
+    dumpvi_p(code);
+  } else if (exec == EXEC_JIT) {
+#ifdef POTION_JIT_TARGET
+    PN val;
+    PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
+    PN_CLOSURE(cl)->data[0] = code;
+    val = PN_PROTO(code)->jit(P, cl, P->lobby);
+    if (P->flags & DEBUG_VERBOSE)
+      fprintf(stderr, "\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
+	      PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
+	      PN_INT(potion_gc_reserved(P, 0, 0)));
+    dumpvi_p(val);
+#else
+    fprintf(stderr, "** potion built without JIT support\n");
+#endif
+  }
+  else if (exec == EXEC_CHECK) {
+  }
+
     if (!code || PN_TYPE(code) == PN_TERROR)
       goto done;
 
