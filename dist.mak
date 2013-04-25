@@ -26,13 +26,12 @@ install: bin-dist
 bin-dist: pkg/${PKGBIN}.tar.gz pkg/${PKGBIN}-devel.tar.gz
 
 pkg/${PKGBIN}.tar.gz: bin/potion${EXE} bin/p2${EXE} doc \
-  lib/libpotion${DLL} lib/libp2${DLL} lib/potion/readline${LOADEXT} lib/potion/libsyntax*${DLL}
+  lib/potion/libp*${DLL} lib/potion/*${LOADEXT} lib/potion/libsyntax*${DLL}
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc dist/share/potion/example
 	cp bin/potion${EXE}            dist/bin/
 	cp bin/p2${EXE}                dist/bin/
-	cp lib/libp*${DLL}             dist/lib/
 	cp lib/potion/readline${LOADEXT} dist/lib/potion/
 	cp lib/potion/lib*${DLL}         dist/lib/potion/
 	cp core/potion.h               dist/include/potion/
@@ -62,7 +61,7 @@ src-dist: pkg/${PKG}-src.tar.gz
 
 pkg/${PKG}-src.tar.gz: tarball
 
-tarball: core/version.h syn/syntax.c
+tarball: core/version.h
 	-mkdir -p pkg
 	rm -rf ${PKG}
 	git checkout-index --prefix=${PKG}/ -a

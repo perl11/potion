@@ -1,5 +1,7 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .i2 .o .opic .o2 .opic2 .textile .html
+.PHONY: all libs static default config clean doc rebuild check test test.pn test.p2 \
+	bench tarball dist release install grammar doxygen website
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
 
@@ -52,12 +54,16 @@ INCS = -Icore
 # perl11.org only
 WEBSITE = ../perl11.org
 
-all: pn bin/p2${EXE}
+default: pn p2
 	+${MAKE} -s usage
 
+all: default libs static doc test
 pn: bin/potion${EXE} lib/potion/readline${LOADEXT}
+p2: bin/p2${EXE} lib/potion/readline${LOADEXT}
+libs: lib/potion/libp2${DLL} lib/potion/libpotion${DLL}
+static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
 
-rebuild: clean bin/potion${EXE} test
+rebuild: clean default test
 
 usage:
 	@${ECHO} " "
@@ -177,25 +183,7 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 	@${ECHO} GREG $<
 	@${GREG} $< > $@-new && ${MV} $@-new $@
 
-# the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
-# on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
-#ifeq (${APPLE},1)
-#LIBHACK  = ../lib/libpotion.dylib ../lib/potion/libsyntax.dylib
-#LIBHACK2 = ../lib/libp2.dylib ../lib/potion/libsyntax-p5.dylib
-#else
-LIBHACK  =
-LIBHACK2 =
-#endif
-#../lib/libpotion.dylib ../lib/potion/libsyntax.dylib:
-#	-mkdir -p ../lib/potion
-#	-ln -sf `pwd`/libpotion.dylib ../lib/
-#	-ln -sf `pwd`/lib/potion/libsyntax.dylib ../lib/potion/
-#../lib/libp2.dylib ../lib/potion/libsyntax-p5.dylib:
-#	-mkdir -p ../lib/potion
-#	-ln -sf `pwd`/libp2.dylib ../lib/
-#	-ln -sf `pwd`/lib/potion/libsyntax-p5.dylib ../lib/potion/
-
-bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
+bin/potion${EXE}: ${PIC_OBJ_POTION} lib/potion/libpotion${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} \
@@ -205,7 +193,7 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	  ${STRIP} $@; \
 	fi
 
-bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL} ${LIBHACK2}
+bin/p2${EXE}: ${OBJ_P2} lib/potion/libp2${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} \
@@ -235,18 +223,18 @@ lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_SYN} ${OBJ} > /dev/null
 
-lib/libpotion${DLL}: ${PIC_OBJ} lib/potion/libsyntax${DLL} core/config.h core/potion.h
-	@${ECHO} LD $@
-	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
-	  ${PIC_OBJ} ${LIBPTH} -lsyntax ${LIBS} > /dev/null
-
 lib/libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
 
-lib/libp2${DLL}: $(subst .opic,.opic2,${PIC_OBJ}) lib/potion/libsyntax-p5${DLL} core/config.h core/potion.h
+lib/potion/libpotion${DLL}: ${PIC_OBJ} lib/potion/libsyntax${DLL} core/config.h core/potion.h
+	@${ECHO} LD $@
+	@if [ -e $@ ]; then rm -f $@; fi
+	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
+	  ${PIC_OBJ} ${LIBPTH} -lsyntax ${LIBS} > /dev/null
+
+lib/potion/libp2${DLL}: $(subst .opic,.opic2,${PIC_OBJ}) lib/potion/libsyntax-p5${DLL} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ $(subst libpotion,libp2,${LDDLLFLAGS}) ${RPATH} \
@@ -280,8 +268,7 @@ bench: bin/gc-bench${EXE} bin/potion${EXE}
 	  time bin/gc-bench
 
 check: test.pn test.p2
-
-test: test.pn test.p2
+test:  test.pn test.p2
 
 test.pn: bin/potion${EXE} bin/potion-test${EXE}
 	@${ECHO}; \
@@ -411,7 +398,7 @@ bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK p2-test
 	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}
 
-dist: bin/potion${EXE} bin/p2${EXE} lib/libpotion.a lib/libp2.a bin/p2-s bin/potion-s doc
+dist: pn p2 libs static doc ${SRC_SYN} ${SRC_P2_SYN}
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: dist
@@ -483,7 +470,7 @@ clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o test/api/*.o front/*.o syn/*.i syn/*.o syn/*.opic \
 	       core/*.i core/*.opic core/*.opic2 core/*.o2 front/*.opic
-	@rm -f bin/* lib/potion/* lib/libpotion${DLL} lib/libp2${DLL}
+	@rm -f bin/* lib/potion/* lib/*.a
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f ${GREG} tools/*.o core/config.h core/version.h ${SRC_SYN}
 	@rm -f tools/*~ doc/*~ example/*~ tools/config.c
@@ -494,5 +481,3 @@ clean:
 realclean: clean
 	@rm -f config.inc
 
-.PHONY: all config clean doc rebuild check test test.pn test.p2 bench tarball dist release \
-	install grammar doxygen website

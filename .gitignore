@@ -32,13 +32,7 @@ readline.dll
 readline.bundle
 /lib/readline/readline.bundle.dSYM
 /lib/libpotion.a
-/lib/libpotion.so
-/lib/libpotion.dll
-/lib/libpotion.dylib
 /lib/libp2.a
-/lib/libp2.so
-/lib/libp2.dll
-/lib/libp2.dylib
 /history.txt
 /pkg
 /doc/*.html

@@ -4,8 +4,8 @@ PREFIX = /usr/local
 CC    ?= gcc
 CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -Wno-unused-label -D_GNU_SOURCE
 INCS   = -Icore
-LIBPTH = -Llib -Llib/potion
-RPATH  = -Wl,-rpath=../lib -Wl,-rpath=../lib/potion
+LIBPTH = -Llib/potion
+RPATH  = -Wl,-rpath=../lib/potion
 LIBS   = -lm
 LDDLLFLAGS = -shared -fpic
 AR    ?= ar
@@ -126,7 +126,7 @@ ifeq ($(shell ./tools/config.sh "${CC}" apple),1)
 	DLL      = .dylib
 	LOADEXT  = .bundle
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
-	LDDLLFLAGS += -install_name "@executable_path/../lib/libpotion${DLL}"
+	LDDLLFLAGS += -install_name "@executable_path/../lib/potion/libpotion${DLL}"
 	RPATH =
 else
 	DLL  = .so
