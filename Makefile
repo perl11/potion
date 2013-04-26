@@ -478,7 +478,7 @@ GTAGS: ${SRC} core/*.h
 
 TAGS: ${SRC} core/*.h
 	@rm -f TAGS
-	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
+	/usr/bin/find core syn front \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
 	@mv syn/greg.c syn/greg-c.tmp

@@ -15,7 +15,7 @@
 #include "asm.h"
 
 PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
-  PN_SIZE i;
+  PN_SIZE i; PN cr;
   vPN(Closure) c = PN_ALLOC_N(PN_TCLOSURE, struct PNClosure, extra * sizeof(PN));
   c->method = meth;
   if (PN_IS_TUPLE(sig) && PN_TUPLE_LEN(sig) > 0)
@@ -23,7 +23,8 @@ PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   c->extra = extra;
   for (i = 0; i < c->extra; i++)
     c->data[i] = PN_NIL;
-  return (PN)c;
+  cr = (PN)c;
+  return cr;
 }
 
 PN potion_closure_code(Potion *P, PN cl, PN self) {
