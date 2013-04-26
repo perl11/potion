@@ -133,6 +133,7 @@ ifeq ($(shell ./tools/config.sh "${CC}" apple),1)
 	LOADEXT  = .bundle
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
 	LDDLLFLAGS += -install_name "@executable_path/../lib/potion/libpotion${DLL}"
+	RPATH =
 	RPATH_INSTALL =
 else
 	DLL  = .so
