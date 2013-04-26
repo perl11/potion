@@ -447,7 +447,7 @@ doc/html/files.html: core/*.c core/*.h doc/Doxyfile doc/footer.sh Makefile
 	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
 	@rm README.md
 
-# perl11.org only. needs doxygen redcloth global
+# perl11.org admins only. requires: doxygen redcloth global
 website:
 	test -d ${WEBSITE} || exit
 	@${MAKE} doxygen
@@ -458,6 +458,9 @@ website:
 	cp -r HTML/* ${WEBSITE}/p2/ref/
 	cd ${WEBSITE}/p2/ && git add *.html html ref && git ci -m'doc: automatic update'
 	@${ECHO} "need to cd ${WEBSITE}; git push"
+
+MANIFEST:
+	git ls-tree -r --name-only HEAD > $@
 
 # in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h
