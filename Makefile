@@ -260,14 +260,14 @@ lib/potion/libsyntax${DLL}: syn/syntax.${OPIC}
 	@[ -d lib/potion ] || mkdir lib/potion
 	@$(CC) ${DEBUGFLAGS} -o $@ $(INCS) \
 	  $(subst libpotion,libsyntax,${LDDLLFLAGS}) ${RPATH} \
-	  $< $(LIBS) -lpotion
+	  $< ${LIBPTH} -lpotion $(LIBS)
 
 lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) \
 	  $(subst libpotion,libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
-	  $< $(LIBS) -lp2
+	  $< ${LIBPTH} -lp2 $(LIBS)
 
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \

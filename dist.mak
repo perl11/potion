@@ -34,6 +34,7 @@ pkg/${PKGBIN}.tar.gz: bin/potion${EXE} bin/p2${EXE} doc \
 	cp bin/p2${EXE}                dist/bin/
 	cp lib/potion/readline${LOADEXT} dist/lib/potion/
 	cp lib/potion/lib*${DLL}       dist/lib/potion/
+	if [ -n "$WIN32" ]; then mv dist/lib/potion/*.dll dist/bin/; fi
 	cp core/potion.h               dist/include/potion/
 	cp core/config.h               dist/include/potion/
 	-cp doc/*.html doc/*.png       dist/share/potion/doc/
@@ -44,12 +45,13 @@ pkg/${PKGBIN}.tar.gz: bin/potion${EXE} bin/p2${EXE} doc \
 	(cd dist && tar czvf ../pkg/${PKGBIN}.tar.gz * && cd ..)
 	rm -rf dist
 
-pkg/${PKGBIN}-devel.tar.gz: ${GREG} lib/libpotion.a lib/libp2.a bin/p2-s bin/potion-s
+pkg/${PKGBIN}-devel.tar.gz: ${GREG} lib/libpotion.a lib/libp2.a bin/p2-s${EXE} bin/potion-s${EXE}
 	+${MAKE} doxygen GTAGS
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc dist/share/potion/example
 	cp bin/greg${EXE}               dist/bin/
+	cp bin/p*-s${EXE}               dist/bin/
 	cp lib/libp*.a                  dist/lib/
 	cp core/*.h                     dist/include/potion/
 	-cp -r doc/*.textile doc/html   dist/share/potion/doc/
