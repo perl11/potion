@@ -58,7 +58,7 @@ and optionally args, statically typed via signature strings.
 #define _STR(s)  #s
 #define POTION_VERSION  _XSTR(POTION_MAJOR) "." _XSTR(POTION_MINOR)
 
-#if defined(__clang__) || defined (__GNUC__)
+#if HAVE_ASAN_ATTR
 # define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS __attribute__((no_address_safety_analysis))
 #else
 # define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
