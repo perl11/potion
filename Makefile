@@ -404,7 +404,7 @@ bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}
 
 dist: bins libs static doc ${SRC_SYN} ${SRC_P2_SYN}
-	@if [ -n "${RPATH_INSTALL}" ]; then \
+	@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PLIBS}; \
 	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
 	fi
@@ -416,7 +416,7 @@ install: dist
 tarball:
 	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
-release:
+release: dist
 	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
 %.html: %.textile doc/logo

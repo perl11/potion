@@ -33,11 +33,12 @@ pkg/${PKGBIN}.tar.gz: bin/potion${EXE} bin/p2${EXE} doc \
 	cp bin/potion${EXE}            dist/bin/
 	cp bin/p2${EXE}                dist/bin/
 	cp lib/potion/readline${LOADEXT} dist/lib/potion/
-	cp lib/potion/lib*${DLL}         dist/lib/potion/
+	cp lib/potion/lib*${DLL}       dist/lib/potion/
 	cp core/potion.h               dist/include/potion/
 	cp core/config.h               dist/include/potion/
-	-cp doc/* README COPYING       dist/share/potion/doc/
-	-cp README.p2                  dist/share/potion/doc/
+	-cp doc/*.html doc/*.png       dist/share/potion/doc/
+	-cp doc/core-files.txt         dist/share/potion/doc/
+	-cp README COPYING README.p2   dist/share/potion/doc/
 	cp example/*                   dist/share/potion/example/
 	-mkdir -p pkg
 	(cd dist && tar czvf ../pkg/${PKGBIN}.tar.gz * && cd ..)
@@ -51,7 +52,8 @@ pkg/${PKGBIN}-devel.tar.gz: ${GREG} lib/libpotion.a lib/libp2.a bin/p2-s bin/pot
 	cp bin/greg${EXE}               dist/bin/
 	cp lib/libp*.a                  dist/lib/
 	cp core/*.h                     dist/include/potion/
-	-cp -r doc/html doc/latex I*.md dist/share/potion/doc/
+	-cp -r doc/*.textile doc/html   dist/share/potion/doc/
+	-cp -r doc/latex I*.md          dist/share/potion/doc/
 	-cp -r HTML/*                   dist/share/potion/doc/ref/
 	-mkdir -p pkg
 	(cd dist && tar czvf ../pkg/${PKGBIN}-devel.tar.gz * && cd ..)
