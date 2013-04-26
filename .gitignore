@@ -46,3 +46,4 @@ readline.bundle
 /README.md
 /doc/footer.inc
 /tools/bisect*.sh
+/MANIFEST
