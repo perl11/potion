@@ -41,6 +41,9 @@ OBJ_GC_BENCH = test/api/gc-bench.o
 DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/design-decisions.textile
 DOCHTML = ${DOC:.textile=.html}
 
+ifneq (${WIN32},1)
+  FPIC = -fPIC
+endif
 GREGCFLAGS = -O3 -DNDEBUG
 CAT  = /bin/cat
 ECHO = /bin/echo
@@ -50,7 +53,6 @@ EXPR = expr
 GREG = bin/greg${EXE}
 
 RUNPRE = bin/
-INCS = -Icore
 # perl11.org only
 WEBSITE = ../perl11.org
 
@@ -128,15 +130,15 @@ core/callcc.o core/callcc.o2: core/callcc.c core/config.h
 	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/callcc.opic core/callcc.opic2: core/callcc.c core/config.h
-	@${ECHO} CC -fPIC $< +frame-pointer
-	@${CC} -c ${CFLAGS} -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${ECHO} CC ${FPIC} $< +frame-pointer
+	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 
 # no optimizations
 #core/vm-x86.opic: core/vm-x86.c
-#	@${ECHO} CC -fPIC $< +frame-pointer
-#	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE -fPIC ${INCS} -o $@ $<
+#	@${ECHO} CC ${FPIC} $< +frame-pointer
+#	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE ${FPIC} ${INCS} -o $@ $<
 
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
@@ -148,14 +150,14 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 %.opic: %.c core/config.h
-	@${ECHO} CC -fPIC $<
-	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
+	@${ECHO} CC ${FPIC} $<
+	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 %.o2: %.c core/config.h
 	@${ECHO} CC -DP2 $<
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 %.opic2: %.c core/config.h
-	@${ECHO} CC -DP2 -fPIC $<
-	@${CC} -c -DP2 -fPIC ${CFLAGS} ${INCS} -o $@ $<
+	@${ECHO} CC -DP2 ${FPIC} $<
+	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 
 .c.i: core/config.h
 	@${ECHO} CPP $@
@@ -170,11 +172,11 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 	@${ECHO} CC -DP2 $<
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 .c.opic: core/config.h
-	@${ECHO} CC -fPIC $<
-	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
+	@${ECHO} CC ${FPIC} $<
+	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 .c.opic2: core/config.h
-	@${ECHO} CC -DP2 -fPIC $<
-	@${CC} -c -DP2 -fPIC ${CFLAGS} ${INCS} -o $@ $<
+	@${ECHO} CC -DP2 ${FPIC} $<
+	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 
 %.c: %.y ${GREG}
 	@${ECHO} GREG $<
@@ -243,16 +245,16 @@ lib/potion/libp2${DLL}: $(subst .opic,.opic2,${PIC_OBJ}) lib/potion/libsyntax-p5
 lib/potion/libsyntax${DLL}: syn/syntax.opic
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
-	@$(CC) ${DEBUGFLAGS} -o $@ \
+	@$(CC) ${DEBUGFLAGS} -o $@ $(INCS) \
 	  $(subst libpotion,libsyntax,${LDDLLFLAGS}) ${RPATH} \
-	  $(INCS) $< $(LIBS)
+	  $< $(LIBS)
 
 lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.opic2
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
-	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
+	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) \
 	  $(subst libpotion,libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
-	  $(INCS) $< $(LIBS)
+	  $< $(LIBS)
 
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \

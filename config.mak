@@ -38,11 +38,13 @@ ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h),1)
 	LIBS += -ludis86
 else
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h /opt/local),1)
-	DEFINES += -I/opt/local/include -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	DEFINES += -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	INCS += -I/opt/local/include
 	LIBS += -L/opt/local/lib -ludis86
 else
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h /usr/local),1)
-	DEFINES += -I/usr/local/include -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	DEFINES += -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	INCS += -I/usr/local/include
 	LIBS += -L/usr/local/lib -ludis86
 else
 # http://ragestorm.net/distorm/ x86 16,32,64 bit with all intel/amd extensions
@@ -62,7 +64,8 @@ ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h),1)
 	LIBS += -ldisasm
 else
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h /usr/local),1)
-	DEFINES += -I/usr/local/include -DHAVE_LIBDISASM -DJIT_DEBUG
+	DEFINES += -DHAVE_LIBDISASM -DJIT_DEBUG
+	INCS += -I/usr/local/include
 	LIBS += -L/usr/local/lib -ldisasm
 endif
 endif
@@ -103,7 +106,7 @@ endif
 ifneq ($(shell ./tools/config.sh "${CC}" bsd),1)
 	LIBS += -ldl
 endif
-# cygwin is not WIN32
+# cygwin is not WIN32. detect mingw target on cross
 ifeq ($(shell ./tools/config.sh "${CC}" mingw),1)
 	WIN32 = 1
 	LDDLLFLAGS = -shared
@@ -113,6 +116,7 @@ ifeq ($(shell ./tools/config.sh "${CC}" mingw),1)
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
 	RUNPRE =
+	RPATH =
 else
 ifeq ($(shell ./tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
@@ -153,6 +157,7 @@ config.inc.echo:
 	@${ECHO} "DEFINES = ${DEFINES}"
 	@${ECHO} "DEBUGFLAGS = ${DEBUGFLAGS}"
 	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS}
+	@${ECHO} "INCS    = ${INCS}"
 	@${ECHO} "LIBPTH  = ${LIBPTH}"
 	@${ECHO} "RPATH   = ${RPATH}"
 	@${ECHO} "LIBS    = ${LIBS}"
