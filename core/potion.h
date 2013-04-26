@@ -494,6 +494,7 @@ typedef enum {
   EXEC_COMPILE,        ///< to bytecode (dumpbc)
   EXEC_COMPILE_C,      ///< compile-c
   EXEC_COMPILE_NATIVE, ///< compile-exec
+  MAX_EXEC,            ///< sanity-check (possible stack overwrittes by callcc)
 } exec_mode_t;
 
 typedef enum {

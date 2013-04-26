@@ -177,6 +177,8 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
     if (!code || PN_TYPE(code) == PN_TERROR)
       goto done;
 
+    if (exec >= MAX_EXEC)
+      potion_fatal("fatal: stack overwrite (exec > MAX_EXEC)\n");
     if (exec >= EXEC_COMPILE) { // needs an inputfile. TODO: -e"" -ofile
       char pnbpath[255];
       FILE *pnb;
