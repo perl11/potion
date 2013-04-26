@@ -2,10 +2,11 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC    ?= gcc
-CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -Wno-unused-label -D_GNU_SOURCE
+CFLAGS = -Wall -Werror -fno-strict-aliasing -Wno-return-type -Wno-unused-label -D_GNU_SOURCE
 INCS   = -Icore
 LIBPTH = -Llib/potion
-RPATH  = -Wl,-rpath=../lib/potion
+RPATH         = -Wl,-rpath=$(shell pwd)/lib/potion
+RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib/potion
 LIBS   = -lm
 LDDLLFLAGS = -shared -fpic
 AR    ?= ar
@@ -78,15 +79,15 @@ endif
 endif
 
 # JIT with -O still fails some tests
-ifneq (${JIT},1)
-       DEBUGFLAGS += -O3
-endif
+#ifneq (${JIT},1)
+#       DEBUGFLAGS += -O
+#endif
 ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	CFLAGS += -Wno-unused-value
 endif
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -fno-stack-protector
+	DEBUGFLAGS += -O3 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
 	STRIP = echo
@@ -117,6 +118,7 @@ ifeq ($(shell ./tools/config.sh "${CC}" mingw),1)
 	LIBS += -Ltools/dlfcn-win32/lib
 	RUNPRE =
 	RPATH =
+	RPATH_INSTALL =
 else
 ifeq ($(shell ./tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
@@ -131,7 +133,7 @@ ifeq ($(shell ./tools/config.sh "${CC}" apple),1)
 	LOADEXT  = .bundle
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
 	LDDLLFLAGS += -install_name "@executable_path/../lib/potion/libpotion${DLL}"
-	RPATH =
+	RPATH_INSTALL =
 else
 	DLL  = .so
 	LOADEXT = .so
@@ -160,6 +162,7 @@ config.inc.echo:
 	@${ECHO} "INCS    = ${INCS}"
 	@${ECHO} "LIBPTH  = ${LIBPTH}"
 	@${ECHO} "RPATH   = ${RPATH}"
+	@${ECHO} "RPATH_INSTALL = " ${RPATH_INSTALL}
 	@${ECHO} "LIBS    = ${LIBS}"
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "STRIP   = ${STRIP}"

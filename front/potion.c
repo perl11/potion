@@ -132,7 +132,7 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
 
     //code = potion_cmd_exec(P, buf, filename, exec);
 
-    // horrible code duplication hack. 
+    // horrible code duplication hack.
     // fix #18 segv with test/closures/long.pn and wrong result in test/closures/upvals.pn
     // haven't found the wrong stack ptr yet
   code = potion_source_load(P, PN_NIL, buf);

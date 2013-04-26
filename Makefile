@@ -40,6 +40,8 @@ OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
 DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/design-decisions.textile
 DOCHTML = ${DOC:.textile=.html}
+BINS = bin/potion${EXE} bin/p2${EXE}
+PLIBS = $(foreach l,potion p2 syntax syntax-p5,lib/potion/lib$l${DLL}) lib/potion/readline${LOADEXT}
 
 ifneq (${WIN32},1)
   FPIC = -fPIC
@@ -62,7 +64,8 @@ default: pn p2
 all: default libs static doc test
 pn: bin/potion${EXE} lib/potion/readline${LOADEXT}
 p2: bin/p2${EXE} lib/potion/readline${LOADEXT}
-libs: lib/potion/libp2${DLL} lib/potion/libpotion${DLL}
+bins: ${BINS}
+libs: ${PLIBS}
 static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
 
 rebuild: clean default test
@@ -400,17 +403,21 @@ bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK p2-test
 	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}
 
-dist: pn p2 libs static doc ${SRC_SYN} ${SRC_P2_SYN}
+dist: bins libs static doc ${SRC_SYN} ${SRC_P2_SYN}
+	@if [ -n "${RPATH_INSTALL}" ]; then \
+	  rm -f ${BINS} ${PLIBS}; \
+	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
+	fi
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: dist
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
 tarball:
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
 release:
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
 %.html: %.textile doc/logo
 	@${ECHO} DOC $@
