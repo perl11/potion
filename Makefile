@@ -275,7 +275,7 @@ test:  test.pn test.p2
 test.pn: bin/potion${EXE} bin/potion-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
-	LD_LIBRARY_PATH=`pwd`/lib:`pwd`/lib/potion:$LD_LIBRARY_PATH \
+	LD_LIBRARY_PATH=`pwd`/lib/potion:$LD_LIBRARY_PATH \
 	export LD_LIBRARY_PATH; \
 	${RUNPRE}potion-test; \
 	count=0; failed=0; pass=0; \

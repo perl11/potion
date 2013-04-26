@@ -2,23 +2,23 @@
 # usage: test/runtests.sh [testfile]
 #        cmd="valgrind ./potion" test/runtests.sh
 
-cmd=${cmd:-./potion}
+cmd=${cmd:-bin/potion}
 ECHO=/bin/echo
 SED=sed
 EXPR=expr
 
 count=0; failed=0; pass=0
-EXT=pn;
-cmdi="$cmd -I"; cmdx="$cmdi -X"; 
+EXT=pn
+cmdi="$cmd -I"; cmdx="$cmdi -X"
 cmdc="$cmd -c"; extc=b
 
 if test -z $1; then
-    ${ECHO} running potion API tests; 
-    test/api/potion-test; 
-    ${ECHO} running p2 API tests; 
-    test/api/p2-test; 
-    ${ECHO} running GC tests; 
-    test/api/gc-test; 
+    ${ECHO} running potion API tests
+    bin/potion-test
+    ${ECHO} running p2 API tests
+    bin/p2-test
+    ${ECHO} running GC tests
+    bin/gc-test
 fi
 
 while [ $pass -lt 6 ]; do 
@@ -35,13 +35,13 @@ while [ $pass -lt 6 ]; do
 	jit=`$cmd -v | sed "/jit=1/!d"`; 
 	if [ "$jit" = "" ]; then 
 	    pass=`expr $pass + 1`
-            cmd="./p2"; t=0; EXT=pl
+            cmd=bin/p2; t=0; EXT=pl
 	    cmdi="$cmd --inspect"; cmdx="$cmdi -J";
 	    cmdc="$cmd --compile"; extc=c
 	    whattests="$cmd VM tests"
 	fi;
     elif [ $pass -eq 3 ]; then 
-        cmd="./p2"; t=0; EXT=pl
+        cmd=bin/p2; t=0; EXT=pl
 	cmdi="$cmd --inspect"; cmdx="$cmdi -J";
 	cmdc="$cmd --compile"; extc=c
 	whattests="$cmd VM tests"
@@ -68,7 +68,7 @@ while [ $pass -lt 6 ]; do
 	if [ ${what%.pn} = $what -a $EXT = pn -a $pass -le 3 ]; then
 	    ${ECHO} skipping potion
 	    pass=3
-            cmd=./p2; t=0; EXT=pl
+            cmd=bin/p2; t=0; EXT=pl
 	    cmdi="$cmd --inspect"; cmdx="$cmdi -J";
 	    cmdc="$cmd --compile"; extc=c
 	    whattests="$cmd VM tests"
