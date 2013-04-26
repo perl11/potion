@@ -244,14 +244,14 @@ lib/potion/libsyntax${DLL}: syn/syntax.opic
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@$(CC) ${DEBUGFLAGS} -o $@ \
-	  $(subst libpotion,potion/libsyntax,${LDDLLFLAGS}) ${RPATH} \
+	  $(subst libpotion,libsyntax,${LDDLLFLAGS}) ${RPATH} \
 	  $(INCS) $< $(LIBS)
 
 lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.opic2
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
-	  $(subst libpotion,potion/libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
+	  $(subst libpotion,libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
 	  $(INCS) $< $(LIBS)
 
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
