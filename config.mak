@@ -169,6 +169,7 @@ config.inc.echo:
 	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "APPLE   = ${APPLE}"
 	@${ECHO} "WIN32   = ${WIN32}"
+	@${ECHO} "CYGWIN  = ${CYGWIN}"
 	@${ECHO} "CLANG   = ${CLANG}"
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"

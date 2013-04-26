@@ -86,15 +86,22 @@ int potion_munmap(void *mem, size_t len)
 #if POTION_WIN32
 // vasprintf from nokogiri
 // http://github.com/tenderlove/nokogiri
-// (written by Geoffroy Couprie)
-int vasprintf (char **strp, const char *fmt, va_list ap)
+// (written by Geoffroy Couprie), mingw32 fixes by rurban
+int vasprintf (char **strp, const char *fmt, ...)
 {
-  int len = vsnprintf (NULL, 0, fmt, ap) + 1;
-  char *res = (char *)malloc((unsigned int)len);
+  va_list ap;
+  int len;
+  char *res;
+
+  va_start (ap, fmt);
+  len = vsnprintf (NULL, 0, fmt, ap) + 1;
+  res = (char *)malloc((unsigned int)len);
   if (res == NULL)
       return -1;
   *strp = res;
-  return vsnprintf(res, (unsigned int)len, fmt, ap);
+  len = vsnprintf(res, (unsigned int)len, fmt, ap);
+  va_end (ap);
+  return len;
 }
 
 // asprintf from glibc

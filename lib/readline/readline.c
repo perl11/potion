@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <potion.h>
+#include "p2.h"
 #include "linenoise.h"
 
 PN pn_readline(Potion *P, PN cl, PN self, PN start) {

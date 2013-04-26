@@ -53,6 +53,9 @@ and optionally args, statically typed via signature strings.
 #include <string.h>
 #include <fcntl.h>
 #include "config.h"
+#if POTION_WIN32
+# include <sys/stat.h>
+#endif
 
 #define _XSTR(s) _STR(s)
 #define _STR(s)  #s

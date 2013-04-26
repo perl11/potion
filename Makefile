@@ -24,16 +24,24 @@ SRC_P2_SYN = syn/syntax-p5.c
 SRC_POTION = front/potion.c
 SRC_P2     = front/p2.c
 
+FPIC =
+OPIC = o
+ifneq (${WIN32},1)
+  ifneq (${CYGWIN},1)
+    FPIC = -fPIC
+    OPIC = opic
+  endif
+endif
 OBJ = ${SRC:.c=.o}
 OBJ_SYN = ${SRC_SYN:.c=.o}
 OBJ_POTION = ${SRC_POTION:.c=.o}
-OBJ_P2 = ${SRC_P2:.c=.opic}
+OBJ_P2 = ${SRC_P2:.c=.${OPIC}}
 OBJ_P2_SYN = ${SRC_P2_SYN:.c=.o}
-PIC_OBJ = ${SRC:.c=.opic}
-PIC_OBJ_SYN = ${SRC_SYN:.c=.opic}
-PIC_OBJ_POTION = ${SRC_POTION:.c=.opic}
-PIC_OBJ_P2 = ${SRC_P2:.c=.opic}
-PIC_OBJ_P2_SYN = ${SRC_P2_SYN:.c=.opic}
+PIC_OBJ = ${SRC:.c=.${OPIC}}
+PIC_OBJ_SYN = ${SRC_SYN:.c=.${OPIC}}
+PIC_OBJ_POTION = ${SRC_POTION:.c=.${OPIC}}
+PIC_OBJ_P2 = ${SRC_P2:.c=.${OPIC}}
+PIC_OBJ_P2_SYN = ${SRC_P2_SYN:.c=.${OPIC}}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_P2_TEST = test/api/p2-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
@@ -43,9 +51,6 @@ DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
 PLIBS = $(foreach l,potion p2 syntax syntax-p5,lib/potion/lib$l${DLL}) lib/potion/readline${LOADEXT}
 
-ifneq (${WIN32},1)
-  FPIC = -fPIC
-endif
 GREGCFLAGS = -O3 -DNDEBUG
 CAT  = /bin/cat
 ECHO = /bin/echo
@@ -131,15 +136,15 @@ syn/greg.c: syn/greg.y
 core/callcc.o core/callcc.o2: core/callcc.c core/config.h
 	@${ECHO} CC $< +frame-pointer
 	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
-
-core/callcc.opic core/callcc.opic2: core/callcc.c core/config.h
+ifneq (${FPIC},)
+core/callcc.${OPIC} core/callcc.${OPIC}2: core/callcc.c core/config.h
 	@${ECHO} CC ${FPIC} $< +frame-pointer
 	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
-
-core/vm.o core/vm.opic: core/vm-dis.c core/config.h
+endif
+core/vm.o core/vm.${OPIC}: core/vm-dis.c core/config.h
 
 # no optimizations
-#core/vm-x86.opic: core/vm-x86.c
+#core/vm-x86.${OPIC}: core/vm-x86.c
 #	@${ECHO} CC ${FPIC} $< +frame-pointer
 #	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE ${FPIC} ${INCS} -o $@ $<
 
@@ -152,15 +157,17 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 %.o: %.c core/config.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-%.opic: %.c core/config.h
-	@${ECHO} CC ${FPIC} $<
-	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 %.o2: %.c core/config.h
 	@${ECHO} CC -DP2 $<
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
-%.opic2: %.c core/config.h
+ifneq (${FPIC},)
+%.${OPIC}: %.c core/config.h
+	@${ECHO} CC ${FPIC} $<
+	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
+%.${OPIC}2: %.c core/config.h
 	@${ECHO} CC -DP2 ${FPIC} $<
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
+endif
 
 .c.i: core/config.h
 	@${ECHO} CPP $@
@@ -174,13 +181,14 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 .c.o2: core/config.h
 	@${ECHO} CC -DP2 $<
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
-.c.opic: core/config.h
+ifneq (${FPIC},)
+.c.${OPIC}: core/config.h
 	@${ECHO} CC ${FPIC} $<
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
-.c.opic2: core/config.h
+.c.${OPIC}2: core/config.h
 	@${ECHO} CC -DP2 ${FPIC} $<
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
-
+endif
 %.c: %.y ${GREG}
 	@${ECHO} GREG $<
 	@${GREG} $< > $@-new && ${MV} $@-new $@
@@ -192,7 +200,7 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/potion/libpotion${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} \
-	  -lsyntax -lpotion ${LIBS}
+	  -lpotion ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
@@ -202,7 +210,7 @@ bin/p2${EXE}: ${OBJ_P2} lib/potion/libp2${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} \
-	  -lsyntax-p5 -lp2 ${LIBS}
+	  -lp2 ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
@@ -233,31 +241,31 @@ lib/libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) core/config.h core/potion.h
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
 
-lib/potion/libpotion${DLL}: ${PIC_OBJ} lib/potion/libsyntax${DLL} core/config.h core/potion.h
+lib/potion/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
-	  ${PIC_OBJ} ${LIBPTH} -lsyntax ${LIBS} > /dev/null
+	  ${PIC_OBJ} ${PIC_OBJ_SYN} ${LIBS} > /dev/null
 
-lib/potion/libp2${DLL}: $(subst .opic,.opic2,${PIC_OBJ}) lib/potion/libsyntax-p5${DLL} core/config.h core/potion.h
+lib/potion/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ} ${PIC_OBJ_P2_SYN}) core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ $(subst libpotion,libp2,${LDDLLFLAGS}) ${RPATH} \
-	  $(subst .opic,.opic2,${PIC_OBJ}) ${LIBPTH} -lsyntax-p5 ${LIBS} > /dev/null
+	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ} ${PIC_OBJ_P2_SYN}) ${LIBS} > /dev/null
 
-lib/potion/libsyntax${DLL}: syn/syntax.opic
+lib/potion/libsyntax${DLL}: syn/syntax.${OPIC}
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@$(CC) ${DEBUGFLAGS} -o $@ $(INCS) \
 	  $(subst libpotion,libsyntax,${LDDLLFLAGS}) ${RPATH} \
-	  $< $(LIBS)
+	  $< $(LIBS) -lpotion
 
-lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.opic2
+lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) \
 	  $(subst libpotion,libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
-	  $< $(LIBS)
+	  $< $(LIBS) -lp2
 
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
@@ -480,16 +488,17 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f core/*.o test/api/*.o front/*.o syn/*.i syn/*.o syn/*.opic \
-	       core/*.i core/*.opic core/*.opic2 core/*.o2 front/*.opic
+	@rm -f {core,syn,front,test/api}/*.o {core,syn,front,test/api}/*.o2 \
+	       {core,syn,front,test/api}/*.${OPIC} {core,syn,front,test/api}/*.${OPIC}2 \
+	       {core,syn,front,test/api}/*.i
 	@rm -f bin/* lib/potion/* lib/*.a
 	@rm -f ${DOCHTML} README.md doc/footer.inc
-	@rm -f ${GREG} tools/*.o core/config.h core/version.h ${SRC_SYN}
-	@rm -f tools/*~ doc/*~ example/*~ tools/config.c
+	@rm -f tools/*.o core/config.h core/version.h
+	@rm -f tools/*~ doc/*~ example/*~ core/*~ config.inc~ tools/config.c
 	@rm -f lib/readline/readline${LOADEXT}
-	@rm -f ${SRC_P2_SYN}
 	@rm -rf doc/html doc/latex HTML
 
+# also config.inc and files needed for cross-compilation
 realclean: clean
-	@rm -f config.inc
+	@rm -f config.inc ${SRC_SYN} ${SRC_P2_SYN} ${GREG}
 
