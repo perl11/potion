@@ -251,13 +251,14 @@ static inline long potion_obj_find_ivar(Potion *P, PN self, PN ivar) {
   return -1;
 }
 
+/// implements OP_GETPATH
 PN potion_obj_get(Potion *P, PN cl, PN self, PN ivar) {
   long i = potion_obj_find_ivar(P, self, ivar);
   if (i >= 0)
     return ((struct PNObject *)self)->ivars[i];
   return PN_NIL;
 }
-
+/// implements OP_SETPATH
 PN potion_obj_set(Potion *P, PN cl, PN self, PN ivar, PN value) {
   long i = potion_obj_find_ivar(P, self, ivar);
   if (i >= 0) {
@@ -266,11 +267,11 @@ PN potion_obj_set(Potion *P, PN cl, PN self, PN ivar, PN value) {
   }
   return value;
 }
-
+/// only used in def_method
 PN potion_proto_method(Potion *P, PN cl, PN self, PN args) {
   return potion_vm(P, PN_CLOSURE(cl)->data[0], P->lobby, args, 0, NULL);
 }
-
+/// only used in def_method
 PN potion_getter_method(Potion *P, PN cl, PN self) {
   return PN_CLOSURE(cl)->data[0];
 }
@@ -313,7 +314,7 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
 #endif
   return method;
 }
-
+/// used in bind and def_method
 PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   vPN(Vtable) vt = (struct PNVtable *)self;
 #ifdef JIT_MCACHE
@@ -398,14 +399,14 @@ PN potion_ref(Potion *P, PN data) {
 
 /**\memberof PNWeakRef
  "string" of a ref, a PNWeakRef object
- \returns "&lt;ref>" */
+ \returns "\<ref>" */
 PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
   return potion_str(P, "<ref>");
 }
 
 /**\memberof PNObject
  "string" method
- \return PNString representation of self: &lt;name ptr> if named or &lt;object> */
+ \return PNString representation of self: \<name ptr> if named or \<object> */
 PN potion_object_string(Potion *P, PN cl, vPN(Object) self) {
   struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(self->vt);
   if (vt->name != PN_NIL) {
@@ -418,15 +419,15 @@ PN potion_object_string(Potion *P, PN cl, vPN(Object) self) {
 }
 
 /**\memberof PNObject
- "forward" method. (??)
- \return PN_NIL and prints "&lt;#object>" */
+ \c "forward" method. Does nothing for the base object
+ \return PN_NIL and prints "\<#object>" */
 PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {
   printf("#<object>");
   return PN_NIL;
 }
 
 /**\memberof PNObject
- "send" method, call a method on self by name
+ \c "send" method, call a method on self by name
  \param self
  \param method
  \return the result of the method call */
@@ -455,14 +456,14 @@ PN potion_get_metaclass(Potion *P, PN cl, vPN(Vtable) self) {
 }
 
 /**\memberof Lobby
- global "self" method, object identity
+ global \c "self" method, object identity
  \return self */
 static PN potion_lobby_self(Potion *P, PN cl, PN self) {
   return self;
 }
 
 /**\memberof Lobby
- global "string" method
+ global \c "string" method
  \return the name of self */
 PN potion_lobby_string(Potion *P, PN cl, PN self) {
   PN str = ((struct PNVtable *)self)->name;
@@ -471,7 +472,7 @@ PN potion_lobby_string(Potion *P, PN cl, PN self) {
 }
 
 /**\memberof Lobby
- global "kind" method
+ global \c "kind" method
  \return the PNVtable (type) of self */
 PN potion_lobby_kind(Potion *P, PN cl, PN self) {
   PNType t = PN_TYPE(self);
@@ -496,8 +497,8 @@ void potion_define_global(Potion *P, PN name, PN val) {
 }
 
 /**\memberof Lobby
- global "about" method
- \return a table with various quotes */
+ global \c "about" method
+ \returns a table with various quotes */
 PN potion_about(Potion *P, PN cl, PN self) {
   PN about = potion_table_empty(P);
   potion_table_put(P, PN_NIL, about, potion_str(P, "_why"),
@@ -522,7 +523,7 @@ PN potion_about(Potion *P, PN cl, PN self) {
 }
 
 /**\memberof Lobby
-  global "exit" method. exit(0) */
+  global \c "exit" method. \c exit(0) */
 PN potion_exit(Potion *P, PN cl, PN self) {
   potion_destroy(P);
   exit(0);
