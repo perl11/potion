@@ -277,6 +277,7 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "integer", potion_num_integer, 0);
   potion_method(num_vt, "abs", potion_abs, 0);
   potion_method(num_vt, "cmp", potion_num_cmp, "value=N");
+  potion_method(num_vt, "rand", potion_num_rand, 0);
 #if defined(P2)
   potion_method(dbl_vt, "string", potion_num_string, 0);
 #endif

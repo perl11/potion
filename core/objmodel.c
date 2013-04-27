@@ -27,12 +27,21 @@ PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   return cr;
 }
 
+/**\memberof PNClosure
+ "send" method, call a method on self by name
+ \param self
+ \param method
+ \return the result of the method call */
 PN potion_closure_code(Potion *P, PN cl, PN self) {
   if (PN_CLOSURE(self)->extra > 0 && PN_IS_PROTO(PN_CLOSURE(self)->data[0])) 
     return PN_CLOSURE(self)->data[0];
   return PN_NIL;
 }
 
+/**\memberof PNClosure
+ "string" method, unserializable
+ \param len (ignored)
+ \return a string like function(arg1, arg2, ...)  */
 PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
   int x = 0;
 #ifdef P2
@@ -59,6 +68,9 @@ long potion_arity(Potion *P, PN closure) {
   return 0;
 }
 
+/**\memberof PNClosure
+ "arity" method, number of args
+ \return as PNNumber */
 PN potion_closure_arity(Potion *P, PN cl, PN self) {
   return PN_NUM(potion_arity(P, self));
 }
@@ -329,10 +341,16 @@ PN potion_ref(Potion *P, PN data) {
   return (PN)ref;
 }
 
+/**\memberof PNTweak
+ "string" of a ref, a PNTweak object
+ \returns "&lt;ref>" */
 PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
   return potion_str(P, "<ref>");
 }
 
+/**\memberof PNClosure
+ "string" method
+ \return PNString representation of self: &lt;name ptr> if named or &lt;object> */
 PN potion_object_string(Potion *P, PN cl, vPN(Object) self) {
   struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(self->vt);
   if (vt->name != PN_NIL) {
@@ -344,11 +362,19 @@ PN potion_object_string(Potion *P, PN cl, vPN(Object) self) {
   return potion_str(P, "<object>");
 }
 
+/**\memberof PNClosure
+ "forward" method. (??)
+ \return PN_NIL and prints "&lt;#object>" */
 PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {
   printf("#<object>");
   return PN_NIL;
 }
 
+/**\memberof PNClosure
+ "send" method, call a method on self by name
+ \param self
+ \param method
+ \return the result of the method call */
 PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
   return potion_send(self, method);
 }
@@ -367,16 +393,25 @@ PN potion_get_metaclass(Potion *P, PN cl, vPN(Vtable) self) {
   return (PN)self->meta;
 }
 
+/**\memberof Lobby
+ global "self" method, object identity
+ \return self */
 static PN potion_lobby_self(Potion *P, PN cl, PN self) {
   return self;
 }
 
+/**\memberof Lobby
+ global "string" method
+ \return the name of self */
 PN potion_lobby_string(Potion *P, PN cl, PN self) {
   PN str = ((struct PNVtable *)self)->name;
   return (void *)str != PN_NIL ? str :
     PN_IS_METACLASS(self) ? potion_str(P, "<metaclass>") : potion_str(P, "<class>");
 }
 
+/**\memberof Lobby
+ global "kind" method
+ \return the PNVtable (type) of self */
 PN potion_lobby_kind(Potion *P, PN cl, PN self) {
   PNType t = PN_TYPE(self);
   if (!PN_TYPECHECK(t)) return PN_NIL; // TODO: error
@@ -399,6 +434,9 @@ void potion_define_global(Potion *P, PN name, PN val) {
   }
 }
 
+/**\memberof Lobby
+ global "about" method
+ \return a table with various quotes */
 PN potion_about(Potion *P, PN cl, PN self) {
   PN about = potion_table_empty(P);
   potion_table_put(P, PN_NIL, about, potion_str(P, "_why"),
@@ -422,6 +460,8 @@ PN potion_about(Potion *P, PN cl, PN self) {
   return about;
 }
 
+/**\memberof Lobby
+  global "exit" method. exit(0) */
 PN potion_exit(Potion *P, PN cl, PN self) {
   potion_destroy(P);
   exit(0);
@@ -440,6 +480,9 @@ void potion_object_init(Potion *P) {
   potion_method(obj_vt, "string", potion_object_string, 0);
 }
 
+/**\class Lobby
+ Lobby is the global environment and parent class of all builtins.
+ */
 void potion_lobby_init(Potion *P) {
 
 # ifdef P2

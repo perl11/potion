@@ -30,7 +30,7 @@ PN potion_any_is_nil(Potion *P, PN closure, PN self) {
 }
 #endif
 
-///\memberof PN
+///\memberof Lobby
 /// "cmp" method. compare given value against argument, possibly casting value
 ///\param value PN
 ///\return PNNumber 1, 0 or -1
@@ -67,11 +67,11 @@ void potion_primitive_init(Potion *P) {
   PN nil_vt = PN_VTABLE(PN_TNIL);
   PN boo_vt = PN_VTABLE(PN_TBOOLEAN);
 #ifdef P2
-  potion_method(nil_vt, "defined", potion_nil_is_defined, 0);
   potion_method(P->lobby, "defined", potion_any_is_defined, 0);
+  potion_method(nil_vt, "defined", potion_nil_is_defined, 0);
 #else
-  potion_method(nil_vt, NIL_NAME"?", potion_nil_is_nil, 0);
   potion_method(P->lobby, NIL_NAME"?", potion_any_is_nil, 0);
+  potion_method(nil_vt, NIL_NAME"?", potion_nil_is_nil, 0);
 #endif
   potion_method(nil_vt, "number", potion_bool_number, 0);
   potion_send(nil_vt, PN_def, PN_string, potion_str(P, NIL_NAME));
