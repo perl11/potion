@@ -142,7 +142,7 @@ void potion_add_metaclass(Potion *P, vPN(Vtable) vt) {
   meta->meta = PN_NIL;
   PN_TOUCH(P->vts);
 }
-
+/// create a type derived from self
 PN potion_type_new(Potion *P, PNType t, PN self) {
   vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, 0);
   vt->type = t;
@@ -154,13 +154,13 @@ PN potion_type_new(Potion *P, PNType t, PN self) {
   potion_add_metaclass(P, vt);
   return (PN)vt;
 }
-
+/// create a named type
 PN potion_type_new2(Potion *P, PNType t, PN self, PN name) {
   vPN(Vtable) vt = (vPN(Vtable))potion_type_new(P, t, self);
   vt->name = name;
   return (PN)vt;
 }
-
+/// sets the default call method of the PNVtable
 void potion_type_call_is(PN vt, PN cl) {
   ((struct PNVtable *)vt)->call = cl;
 }
