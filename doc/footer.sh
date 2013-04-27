@@ -1,5 +1,5 @@
 #!/bin/sh
-GENERATED=`date`
+GENERATED=`date +"%a %b %d %Y"`
 POTION_VERSION=`perl -ane'/POTION_VERSION/ && print $F[2]' core/potion.h`
 POTION_DATE=`perl -ane'/POTION_DATE/ && print $F[2]' core/config.h`
 POTION_REV=`perl -ane'/POTION_REV/ && print $F[2]' core/config.h`
