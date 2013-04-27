@@ -15,6 +15,8 @@ typedef PN (*PN_MCACHE_FUNC)(unsigned int hash);
 typedef PN (*PN_IVAR_FUNC)(PNUniq hash);
 
 /// the central vtable, see io http://www.piumarta.com/pepsi/objmodel.pdf
+/// \image html p2-mop.png
+/// \see objmodel.c
 struct PNVtable {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PNType parent;     ///< parent type, default: for P->lobby: PN_VTABLE(PN_TOBJECT)
