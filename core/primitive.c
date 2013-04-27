@@ -19,7 +19,7 @@ static PN potion_any_is_nil(Potion *P, PN closure, PN self) {
   return PN_FALSE;
 }
 
-///\memberof PN
+///\memberof Lobby
 /// "cmp" method. compare given value against argument, possibly casting value
 ///\param value PN
 ///\return PNNumber 1, 0 or -1

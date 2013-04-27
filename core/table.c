@@ -450,7 +450,7 @@ PN potion_tuple_sort(Potion *P, PN cl, PN self, PN cmp) {
 #undef GET
 #undef SET
 
-///\memberof PNLobby
+///\memberof Lobby
 /// global "list" method. return a new empty list
 ///\param size PNNumber
 ///\return PNTuple

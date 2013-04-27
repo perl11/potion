@@ -1,4 +1,6 @@
-/* 
+/**\file mt19937ar.c
+   random numbers (mersenne twister). As Lobby (global long) or PNNumber (0-1.0)
+
    A C-program for MT19937, with initialization improved 2002/2/10.
    Coded by Takuji Nishimura and Makoto Matsumoto.
    This is a faster version by taking Shawn Cokus's optimization,
@@ -124,7 +126,7 @@ static void next_state(void) {
   *p = p[M-N] ^ TWIST(p[0], state[0]);
 }
 
-/* generates a random number on [0,0xffffffff]-interval */
+/** generates a random number on [0,0xffffffff]-interval */
 unsigned long potion_rand_int(void) {
   unsigned long y;
 
@@ -140,17 +142,35 @@ unsigned long potion_rand_int(void) {
   return y;
 }
 
-/* generates a random number on [0,1) with 53-bit resolution*/
+/** generates a random number on [0,1) with 53-bit resolution*/
 double potion_rand_double(void) {
   unsigned long a=potion_rand_int()>>5, b=potion_rand_int()>>6; 
   return(a*67108864.0+b)*(1.0/9007199254740992.0); 
 } 
-
+/**\memberof Lobby
+  "srand" initialize random seed
+ \param seed PNNumber
+ \return Lobby (usually unused)
+ \sa potion_rand. */
 PN potion_srand(Potion *P, PN cl, PN self, PN seed) {
-  init_genrand(seed);
+  init_genrand(PN_INT(seed));
   return self;
 }
 
+/**\memberof Lobby
+  "rand" generate random ulong number
+  \code rand #=> xxxxxx \endcode
+ \return PNDecimal in [0,0xffffffff]-interval
+ \sa potion_num_rand for double, potion_srand. */
 PN potion_rand(Potion *P, PN cl, PN self) {
   return PN_NUM(potion_rand_int());
+}
+
+/**\memberof PNNumber
+  "rand" generate random float number
+  \code 1 rand #=> 0.xxxxxx \endcode
+ \return PNDecimal in [0.0,0.1]-interval
+ \sa potion_rand for long, potion_srand. */
+PN potion_num_rand(Potion *P, PN cl, PN self) {
+  return PN_NUM(potion_rand_double());
 }

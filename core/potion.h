@@ -739,6 +739,7 @@ PN potion_decimal(Potion *, char *, int);
 PN potion_pow(Potion *, PN, PN, PN);
 PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);
+PN potion_num_rand(Potion *, PN, PN);
 PN potion_real(Potion *, double);
 PN potion_sig_at(Potion *, PN, int);
 int potion_sig_arity(Potion *, PN);

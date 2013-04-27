@@ -162,10 +162,9 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
 
   // calculate needed stackspace. nested protos may need more.
   if (PN_TUPLE_LEN(f->protos) > 0) {
-    DBG_vt(";  %lu subprotos\n", PN_TUPLE_LEN(f->protos));
     PN_SIZE j;
     vPN(Tuple) tp = (vPN(Tuple)) potion_fwd(f->protos);
-    DBG_vt(";  %ld subprotos\n", tp->len);
+    DBG_vt(";  %u subprotos\n", tp->len);
     for (j=0; j < tp->len; j++) {
       PN proto2 = (PN)tp->set[j];
       vPN(Proto) f2 = (struct PNProto *)proto2;
