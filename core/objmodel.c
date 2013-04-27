@@ -1,10 +1,10 @@
-//
-// objmodel.c
-// much of this is based on the work of ian piumarta
-// <http://www.piumarta.com/pepsi/objmodel.pdf>
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/**\file objmodel.c
+  objects, classes, types, methods, weakrefs and mop.
+  much of this is based on the work of ian piumarta
+  <http://www.piumarta.com/pepsi/objmodel.pdf>
+  \image html p2-mop.png
+*/
+//  (c) 2008 why the lucky stiff, the freelance professor
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -334,6 +334,11 @@ PN potion_obj_bitr(Potion *P, PN a, PN b) {
   return potion_send(a, PN_bitr, b);
 }
 
+/**\memberof PNWeakRef
+  PNWeakRef constructor, get or set the attached ref data
+ \param data - non-volatile but mutable
+ \return if is_ref data returns data, else create and return a new PNWeakRef to data
+*/
 PN potion_ref(Potion *P, PN data) {
   if (PN_IS_REF(data)) return data;
   vPN(WeakRef) ref = PN_ALLOC(PN_TWEAK, struct PNWeakRef);
@@ -341,14 +346,14 @@ PN potion_ref(Potion *P, PN data) {
   return (PN)ref;
 }
 
-/**\memberof PNTweak
- "string" of a ref, a PNTweak object
+/**\memberof PNWeakRef
+ "string" of a ref, a PNWeakRef object
  \returns "&lt;ref>" */
 PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
   return potion_str(P, "<ref>");
 }
 
-/**\memberof PNClosure
+/**\memberof PNObject
  "string" method
  \return PNString representation of self: &lt;name ptr> if named or &lt;object> */
 PN potion_object_string(Potion *P, PN cl, vPN(Object) self) {
@@ -362,7 +367,7 @@ PN potion_object_string(Potion *P, PN cl, vPN(Object) self) {
   return potion_str(P, "<object>");
 }
 
-/**\memberof PNClosure
+/**\memberof PNObject
  "forward" method. (??)
  \return PN_NIL and prints "&lt;#object>" */
 PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {
@@ -370,7 +375,7 @@ PN potion_object_forward(Potion *P, PN cl, PN self, PN method) {
   return PN_NIL;
 }
 
-/**\memberof PNClosure
+/**\memberof PNObject
  "send" method, call a method on self by name
  \param self
  \param method
@@ -379,6 +384,11 @@ PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
   return potion_send(self, method);
 }
 
+/**\memberof PNVtable
+   PNObject constructor.
+   Fails on metaclass and type.
+   \return PNObject or PN_NIL
+*/
 PN potion_object_new(Potion *P, PN cl, PN self) {
   vPN(Vtable) vt = (struct PNVtable *)self;
   if (PN_IS_METACLASS(vt)) // TODO: error
@@ -388,7 +398,8 @@ PN potion_object_new(Potion *P, PN cl, PN self) {
   return (PN)PN_ALLOC_N(vt->type, struct PNObject,
     potion_type_size(P, (struct PNObject *)self) - sizeof(struct PNObject) + vt->ivlen * sizeof(PN));
 }
-
+/**\memberof PNVtable
+   \return metaclass */
 PN potion_get_metaclass(Potion *P, PN cl, vPN(Vtable) self) {
   return (PN)self->meta;
 }
@@ -516,7 +527,7 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Error"),        PN_VTABLE(PN_TERROR));
   potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
 #if defined(P2)
-  potion_init_class_reference(P, potion_str(P, "Num"),        PN_VTABLE(PN_TDECIMAL));
+  potion_init_class_reference(P, potion_str(P, "Num"),          PN_VTABLE(PN_TDECIMAL));
 #endif
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
