@@ -492,7 +492,7 @@ void potion_object_init(Potion *P) {
 }
 
 /**\class Lobby
- Lobby is the global environment and parent class of all builtins.
+ root namespace, the global environment and parent class of all builtins.
  */
 void potion_lobby_init(Potion *P) {
 
