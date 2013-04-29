@@ -593,7 +593,14 @@ Potion *potion_gc_boot(void *sp) {
   SET_GEN(birth, page1, bootsz);
   SET_STOREPTR(4);
 
+  // stack must be 16-byte aligned on amd64 SSE or __APPLE__, and 32-byte with AVX instrs.
+  // at least amd64 atof() does SSE register return.
+#if (__WORDSIZE == 64) || defined(__APPLE__)
+  M->cstack = (((_PN)sp & ((1<<5)-1)) == 0 )
+    ? sp : (void *)(_PN)((_PN)sp | ((1<<5)-1) )+1;
+#else
   M->cstack = sp;
+#endif
   P = (Potion *)((char *)M + PN_ALIGN(sizeof(struct PNMemory), 8));
   PN_MEMZERO(P, Potion);
   P->mem = M;
