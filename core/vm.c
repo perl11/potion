@@ -56,6 +56,7 @@ or http://www.lua.org/doc/jucs05.pdf
   - RETURN (pos)	 	return R(A), ... ,R(A+B-2)
   - PROTO (&pos, lregs, need, regs) define function prototype
   - CLASS (pos, need)    	find class for register value
+  - DEBUG (pos, need)	        set lineno and filename
 
 (c) 2008 why the lucky stiff, the freelance professor
 (c) 2013 by perl11 org
@@ -267,6 +268,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(RETURN, (P, f, &asmb, pos))	// return R[a], ... ,R[a+b-2]
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))// define function prototype
       CASE_OP(CLASS, (P, f, &asmb, pos, need)) // find class for register value
+      CASE_OP(DEBUG, (P, f, &asmb, pos, need)) // set lineno and filename
     }
   }
 
@@ -577,6 +579,11 @@ reentry:
       break;
       case OP_CLASS:
         reg[op.a] = potion_vm_class(P, reg[op.b], reg[op.a]);
+      break;
+      case OP_DEBUG:
+	//check breakpoints vs lineno (a), switch to debugger
+        //lineno: reg[op.a], filename: reg[op.b]
+        reg[op.a] = reg[-1];
       break;
     }
 #ifdef DEBUG
