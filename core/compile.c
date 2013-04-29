@@ -1,7 +1,9 @@
 /** \file compile.c
  * ast to bytecode.
  *
- * implement PNSource (AST) and PNProto (closure) methods
+ * implement PNSource (AST) and PNProto (closure) methods,
+ * special signature handling (parsed extra) and compile, bytecode load and dump methods.
+ * Some special control methods are handled here and not in the parser. We do not need lexed keywords.
  */
 // (c) 2008 why the lucky stiff, the freelance professor
 //

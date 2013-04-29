@@ -88,6 +88,7 @@ int asprintf (char **string_ptr, const char *format, ...);
 //
 #if POTION_X86 == POTION_JIT_TARGET
 #if __WORDSIZE == 64
+// preserve: rbx r12 r13 r14 r15. scratch: rax rcx rdx r8 r9 r10 r11.
 #define PN_SAVED_REGS 5
 #define POTION_ESP(p) __asm__("mov %%rsp, %0" : "=r" (*p))
 #define POTION_EBP(p) __asm__("mov %%rbp, %0" : "=r" (*p))

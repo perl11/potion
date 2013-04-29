@@ -80,6 +80,10 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
 #else
   fprintf(stderr, "** TODO: callcc/yield does not work outside of X86 yet.\n");
 #endif
+#ifdef DEBUG
+  if (!P->strings || !P->lobby || !P->mem)
+      potion_fatal("fatal: yield stack underflow\n");
+#endif
   return self;
 }
 
@@ -88,7 +92,13 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
   PN_SIZE n;
   PN *start, *sp1 = P->mem->cstack, *sp2, *sp3;
-  POTION_ESP(&sp2);
+#if defined(DEBUG) && (__WORDSIZE == 64)
+  if ((_PN)sp1 & 0x1F) {
+    fprintf(stderr,"P->mem->cstack=0x%lx ", (_PN)sp1);
+    potion_fatal("stack not 32byte aligned");
+  }
+#endif
+  POTION_ESP(&sp2); // usually P
   POTION_EBP(&sp3);
 #if POTION_STACK_DIR > 0
   n = sp2 - sp1;
@@ -130,11 +140,16 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
 #else
   PN_MEMCPY_N((char *)(cc->stack + 4 + PN_SAVED_REGS), start + 1, PN, n - 1);
 #endif
+// stack-buffer-underflow sanity check, should not overwrite P
+#ifdef DEBUG
+  if (!P->strings || !P->lobby || !P->mem)
+      potion_fatal("fatal: callcc stack underflow\n");
+#endif
   return (PN)cc;
 }
 
+// callcc is the "here" method of lobby
 void potion_cont_init(Potion *P) {
   PN cnt_vt = PN_VTABLE(PN_TCONT);
   potion_type_call_is(cnt_vt, PN_FUNC(potion_continuation_yield, 0));
 }
-
