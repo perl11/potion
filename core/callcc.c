@@ -103,15 +103,10 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
   PN_SIZE n;
   PN *start, *sp1 = P->mem->cstack, *sp2, *sp3;
-#if defined(DEBUG) && defined(__APPLE__)
-  if ((_PN)sp1 & 0xF) {
+#if defined(DEBUG) && (__WORDSIZE == 64)
+  if ((_PN)sp1 & 0x1F) {
     fprintf(stderr,"P->mem->cstack=0x%lx ", (_PN)sp1);
-    potion_fatal("stack not 16byte aligned");
-  }
-#elif defined(DEBUG) && (__WORDSIZE == 64)
-  if (((_PN)sp1 & 0xF) != 0 && ((_PN)sp1 & 0xF) != 8) {
-    fprintf(stderr,"P->mem->cstack=0x%lx ", (_PN)sp1);
-    potion_fatal("stack not 8byte aligned");
+    potion_fatal("stack not 32byte aligned");
   }
 #endif
   POTION_ESP(&sp2); // usually P
@@ -157,11 +152,16 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
 #else
   PN_MEMCPY_N((char *)(cc->stack + 4 + PN_SAVED_REGS), start + 1, PN, n - 1);
 #endif
+// stack-buffer-underflow sanity check, should not overwrite P
+#ifdef DEBUG
+  if (!P->strings || !P->lobby || !P->mem)
+      potion_fatal("fatal: callcc stack underflow\n");
+#endif
   return (PN)cc;
 }
 
+// callcc is the "here" method of lobby
 void potion_cont_init(Potion *P) {
   PN cnt_vt = PN_VTABLE(PN_TCONT);
   potion_type_call_is(cnt_vt, PN_FUNC(potion_continuation_yield, 0));
 }
-

@@ -188,6 +188,12 @@ struct PNVtable;
 #define PN_TOUCH(x)     potion_gc_update(P, (PN)(x))
 
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
+_PN* PN_ALIGN_STACK(_PN* a) {
+  _PN mask_aligned_32B = (1<<5)-1;
+  _PN u = (_PN)a;
+  if( (u & mask_aligned_32B) == 0 ) return (_PN*)u;
+  return (_PN*)((u|mask_aligned_32B)+1);
+}
 #define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[0]; } N;
 #define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
 #define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
@@ -588,9 +594,14 @@ struct PNMemory {
   void *protect; ///< end of protected memory
 };
 
+/// stack must be 16byte aligned on amd64 or __APPLE__, and 32byte with xmm or AVX instrs
+#if (__WORDSIZE == 64) || defined(__APPLE__)
+#define POTION_INIT_STACK(x) \
+  PN __##x = 0x571FF; void *x = (void *)&__##x; x = (void *)PN_ALIGN_STACK(x)
+#else
 #define POTION_INIT_STACK(x) \
   PN __##x = 0x571FF; void *x = (void *)&__##x
-
+#endif
 void potion_garbagecollect(Potion *, int, int);
 PN_SIZE potion_type_size(Potion *, const struct PNObject *);
 unsigned long potion_rand_int();
