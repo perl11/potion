@@ -203,7 +203,7 @@ struct PNVtable;
 #define PN_UNIQ(x)      (PN_IS_PTR(x) ? ((struct PNObject *)(x))->uniq : PN_NUMHASH(x))
 
 #define AS_STR(x)       PN_STR_PTR(potion_send(x, PN_string))
-#if DEBUG
+#ifdef DEBUG
 #define DBG_t(...) \
   if (P->flags & DEBUG_TRACE) fprintf(stderr, __VA_ARGS__)
 #define DBG_v(...) \
@@ -381,11 +381,12 @@ enum PN_AST {
   AST_LIST, /* was TABLE, it is a TUPLE */
   AST_BLOCK,
   AST_LICK,
-  AST_PROTO
+  AST_PROTO,
+  AST_DEBUG
 };
 struct PNSource {
   PN_OBJECT_HEADER;  	///< PNType vt; PNUniq uniq
-  enum PN_AST part;	///< AST type, avoid -Wswitch
+  enum PN_AST part;     ///< AST type, avoid -Wswitch
   struct PNSource * volatile a[3];///< PNTuple of 1-3 kids, \see ast.c
 };
 
@@ -534,7 +535,7 @@ typedef struct {
 
 typedef enum {
   EXEC_VM = 0,  ///< bytecode (switch or cgoto)
-  EXEC_JIT,
+  EXEC_JIT,     ///< JIT if detected at config-time (x86, ppc)
   EXEC_DEBUG,   ///< -d: instrumented bytecode (line stepping) or just slow runloop?
   EXEC_CHECK,          ///< -c stop after compilation
   EXEC_COMPILE,        ///< to bytecode (dumpbc)
@@ -776,6 +777,7 @@ PN potion_tuple_ins_sort(Potion *, PN, PN, PN);
 PN potion_lick(Potion *, PN, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
+PN potion_source_dump(Potion *, PN, PN, PN);
 PN potion_source_dumpbc(Potion *, PN, PN);
 PN potion_greg_parse(Potion *, PN);
 PN potion_sig_string(Potion *, PN, PN);

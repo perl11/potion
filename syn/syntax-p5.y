@@ -657,7 +657,7 @@ comment	= '#' (!end-of-line utf8)*
 # \240 U+A0 NO-BREAK SPACE
 # \205 U+85 NEL
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
-end-of-line = '\r\n' | '\n' | '\r'
+end-of-line = '\r\n' | '\n' | '\r' { $$ = PN_AST2(DEBUG, PN_NUM(G->lineno), PN_NIL); }
 end-of-file = !'\0'
 
 # for potion_sig, used in the runtime initialization
