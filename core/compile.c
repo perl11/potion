@@ -33,7 +33,7 @@ const struct {
   {"gt", 2}, {"gte", 2}, {"bitn", 2}, {"bitl", 2}, {"bitr", 2}, {"def", 2},
   {"bind", 2}, {"msg", 2}, {"jump", 1}, {"test", 2}, {"testjmp", 2},
   {"notjmp", 2}, {"named", 2}, {"call", 2}, {"callset", 2}, {"tailcall", 2},
-  {"return", 1}, {"proto", 2}, {"class", 2}
+  {"return", 1}, {"proto", 2}, {"class", 2}, {"debug", 3}
 };
 
 ///\memberof PNProto
@@ -247,15 +247,15 @@ struct PNLoop {
   int cjmpc;  ///< count of c jumps (abc regs)
 };
 
-void potion_source_asmb(Potion *, struct PNProto * volatile, struct PNLoop *, PN_SIZE, vPN(Source), u8);
+void potion_source_asmb(Potion *, struct PNProto * volatile, struct PNLoop *, PN_SIZE, struct PNSource * volatile, u8);
 
-void potion_arg_asmb(Potion *P, struct PNProto * f, struct PNLoop *loop, PN args, u8 *reg, int inc)
-{
+void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop, PN args, u8 *reg, int inc) {
   if (args != PN_NIL) {
     if (PN_PART(args) == AST_LIST) {
       args = PN_S(args,0);
       if (!PN_IS_NIL(args)) {
         u8 freg = *reg, sreg = *reg + PN_TUPLE_LEN(args) + 1;
+	DBG_c("ARGLIST %d %d\n", freg, sreg);
         PN_TUPLE_EACH(args, i, v, {
           if (inc) {
             (*reg)++;
@@ -307,14 +307,16 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
     case AST_CODE:
     case AST_BLOCK:
       if (PN_S(t,0) != PN_NIL) {
+        DBG_c("%s %u\n", PN_STR_PTR(potion_send(t, potion_str(P,"name"))), PN_TUPLE_LEN(t->a[0]));
         PN_TUPLE_EACH(PN_S(t,0), i, v, {
-	    potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg);
+          potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg);
         });
       }
     break;
 
     case AST_EXPR:
       if (PN_S(t,0) != PN_NIL) {
+        DBG_c("expr %lu\n", PN_S(t,0));
         PN_TUPLE_EACH(PN_S(t,0), i, v, {
 	    potion_source_asmb(P, f, loop, i, PN_SRC(v), reg);
         });
@@ -341,7 +343,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           breg++;
           PN_BLOCK(breg, PN_S(t,2), PN_NIL);
         }
-	DBG_c("; call %d %d VALUE\n", reg, breg);
+        DBG_c("; call %d %d VALUE\n", reg, breg);
         PN_ASM2(OP_CALL, reg, breg);
       }
     }
@@ -394,12 +396,12 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       if (lhs->a[1] != PN_NIL) {
         breg = reg;
         PN_ASM2(opcode, ++breg, num);
-	DBG_c("; callset %d %d ASSIGN\n", reg, breg);
+        DBG_c("; callset %d %d ASSIGN\n", reg, breg);
         PN_ASM2(OP_CALLSET, reg, breg);
         PN_ARG_TABLE(PN_S(lhs,1), breg, 1);
         // TODO: no block allowed here?
         potion_source_asmb(P, f, loop, 0, t->a[1], ++breg);
-	DBG_c("; call %d %d ASSIGN\n", reg, breg);
+        DBG_c("; call %d %d ASSIGN\n", reg, breg);
         PN_ASM2(OP_CALL, reg, breg);
       } else {
         potion_source_asmb(P, f, loop, 0, t->a[1], breg);
@@ -643,7 +645,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
               breg++;
               PN_BLOCK(breg, PN_S(t,2), PN_NIL);
             }
-	    DBG_c("; call %d %d\n", reg, breg);
+            DBG_c("; call %d %d\n", reg, breg);
             PN_ASM2(OP_CALL, reg, breg);
           }
         }
@@ -712,6 +714,10 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         });
       }
     break;
+    case AST_DEBUG:
+      if (P->flags & EXEC_DEBUG) {
+        PN_ASM2(OP_DEBUG, PN_S(t,1), PN_S(t,2));
+      }
   }
 }
 
@@ -996,6 +1002,19 @@ PN potion_source_dumpbc(Potion *P, PN cl, PN proto) {
   return pnb;
 }
 
+///\memberof PNSource
+/// dump (compiler) methods, default "bc". loads compile-<backend> extension.
+/// TODO: serializable ascii, c, exe, jvm, .net
+// Low TODO: dump to a stream (if we have not enough memory)
+PN potion_source_dump(Potion *P, PN cl, PN self, PN backend) {
+  if (backend == potion_str(P, "bc"))
+    return potion_source_dumpbc(P, cl, self);
+  // load a compile-<backend>
+  if (potion_send(PN_STRCAT("compile-", PN_STR_PTR(backend)), potion_str(P, "load")))
+    // implementing dump<backend>
+    return potion_send(self, potion_str_format(P, "dump%s"), PN_STR_PTR(backend));
+}
+
 PN potion_run(Potion *P, PN code, int jit) {
  #ifndef POTION_JIT_TARGET
   if (jit) {
@@ -1021,7 +1040,9 @@ PN potion_eval(Potion *P, PN bytes, int jit) {
 
 void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
+  PN src_vt = PN_VTABLE(PN_TSOURCE);
   potion_method(pro_vt, "call", potion_proto_call, 0); // TODO: args sig missing here
   potion_method(pro_vt, "tree", potion_proto_tree, 0);
   potion_method(pro_vt, "string", potion_proto_string, 0);
+  potion_method(src_vt, "dump", potion_source_dump, "backend=S");
 }

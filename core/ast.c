@@ -9,12 +9,13 @@
 #include "internal.h"
 #include "ast.h"
 
+///\see ast.h enum PN_AST
 const char *potion_ast_names[] = {
   "code", "value", "assign", "not", "or", "and", "cmp", "eq", "neq",
   "gt", "gte", "lt", "lte", "pipe", "caret", "amp", "wavy", "bitl",
   "bitr", "plus", "minus", "inc", "times", "div", "rem", "pow",
-  "msg", "path", "query", "pathq", "expr", "list",
-  "block", "lick", "proto"
+  "msg", "path", "query", "pathq", "expr", "list", "block", "lick",
+  "proto", "debug"
 };
 
 const int potion_ast_sizes[] = {
@@ -22,18 +23,33 @@ const int potion_ast_sizes[] = {
   2, 2, 2, 2, 2, 2, 2, 1, 2,
   2, 2, 2, 2, 2, 2, 2, 2,
   3, 1, 1, 1, 1, 1, 1, 3,
-  2
+  2, 3
 };
 
+/// PNSource constructor
+///\param p AST type
+///\param a,b,c AST operands
+///\returns a new three-address op AST leaf
 PN potion_source(Potion *P, u8 p, PN a, PN b, PN c) {
-  vPN(Source) t = PN_ALLOC_N(PN_TSOURCE, struct PNSource, 0 * sizeof(PN));
-  // t->a[0] = t->a[1] = t->a[2] = (vPN(Source))0;
+  int size = potion_ast_sizes[p];
   // TODO: potion_ast_sizes[p] * sizeof(PN) (then fix gc_copy)
-
+  vPN(Source) t = PN_ALLOC_N(PN_TSOURCE, struct PNSource, 0 * sizeof(PN));
   t->part = p;
-  t->a[0] = (vPN(Source))a;
-  if (potion_ast_sizes[p] > 1) t->a[1] = (vPN(Source))b;
-  if (potion_ast_sizes[p] > 2) t->a[2] = (vPN(Source))c;
+#if 1
+  switch (size) {
+  case 3: t->a[2] = PN_SRC(c);
+  case 2: t->a[1] = PN_SRC(b);
+  case 1: t->a[0] = PN_SRC(a); break;
+  default: potion_fatal("invalid AST type");
+  }
+#else
+  switch (size) {
+  case 3: t->a[0] = PN_SRC(a); t->a[1] = PN_SRC(b); t->a[2] = PN_SRC(c); break;
+  case 2: t->a[0] = PN_SRC(a); t->a[1] = PN_SRC(b); t->a[2] = 0; break;
+  case 1: t->a[0] = PN_SRC(a); t->a[1] = t->a[2] = 0; break;
+  default: potion_fatal("invalid AST type");
+  }
+#endif
   return (PN)t;
 }
 
@@ -55,7 +71,7 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
     pn_printf(P, out, " ");
     if (i == 0 && n > 1) pn_printf(P, out, "(");
     else if (i > 0) {
-      if (t->a[i] == PN_NIL) { // omit subsequent nil
+      if (t->a[i] == PN_NIL) { // omit subsequent nils
 	if (!cut) cut = PN_STR_LEN(out);
       }
       else cut = 0;

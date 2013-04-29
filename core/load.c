@@ -15,25 +15,26 @@
 #include "internal.h"
 #include "table.h"
 
-void potion_load_code(Potion *P, const char *filename) {
+PN potion_load_code(Potion *P, const char *filename) {
   PN buf, code;
   struct stat stats;
   int fd = -1;
+  PN result = PN_NIL;
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
-    return;
+    return PN_NIL;
   }
   fd = open(filename, O_RDONLY | O_BINARY);
   if (fd == -1) {
     fprintf(stderr, "** could not open %s. check permissions.", filename);
-    return;
+    return PN_NIL;
   }
   buf = potion_bytes(P, stats.st_size);
   if (read(fd, PN_STR_PTR(buf), stats.st_size) == stats.st_size) {
     PN_STR_PTR(buf)[stats.st_size] = '\0';
     code = potion_source_load(P, PN_NIL, buf);
     if (!PN_IS_PROTO(code)) {
-      potion_run(P, potion_send(
+      result = potion_run(P, potion_send(
 	  potion_parse(P, buf, (char *)filename),
           PN_compile, potion_str(P, filename), PN_NIL),
         POTION_JIT);
@@ -42,6 +43,7 @@ void potion_load_code(Potion *P, const char *filename) {
     fprintf(stderr, "** could not read entire file: %s.", filename);
   }
   close(fd);
+  return result;
 }
 
 static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE len) {
@@ -61,14 +63,14 @@ static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE le
   return func_name;
 }
 
-void potion_load_dylib(Potion *P, const char *filename) {
+PN potion_load_dylib(Potion *P, const char *filename) {
   void *handle = dlopen(filename, RTLD_LAZY);
   void (*func)(Potion *);
   char *err, *init_func_name;
   if (handle == NULL) {
     // TODO: error
     fprintf(stderr, "** error loading %s: %s\n", filename, dlerror());
-    return;
+    return PN_NIL;
   }
   init_func_name = potion_initializer_name(P, filename, strlen(filename));
   func = (void (*)(Potion *))dlsym(handle, init_func_name);
@@ -77,9 +79,10 @@ void potion_load_dylib(Potion *P, const char *filename) {
   if (err != NULL) {
     fprintf(stderr, "** error loading %s: %s\n", filename, err);
     dlclose(handle);
-    return;
+    return PN_NIL;
   }
   func(P);
+  return PN_TRUE;
 }
 
 static PN pn_loader_path;
@@ -152,6 +155,7 @@ char *potion_find_file(char *str, PN_SIZE str_len) {
 
 PN potion_load(Potion *P, PN cl, PN self, PN file) {
   char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
+  PN result = PN_NIL;
   if (filename == NULL) {
     fprintf(stderr, "** can't find %s\n", PN_STR_PTR(file));
     return PN_NIL;
@@ -160,18 +164,18 @@ PN potion_load(Potion *P, PN cl, PN self, PN file) {
   while (*--file_ext != '.' && file_ext >= filename);
   if (file_ext++ != filename) {
     if (strcmp(file_ext, "pn") == 0)
-      potion_load_code(P, filename);
+      result = potion_load_code(P, filename);
     else if (strcmp(file_ext, "pnb") == 0)
-      potion_load_code(P, filename);
+      result = potion_load_code(P, filename);
     else if (strcmp(file_ext, POTION_LOADEXT+1) == 0)
-      potion_load_dylib(P, filename);
+      result = potion_load_dylib(P, filename);
     else
       fprintf(stderr, "** unrecognized file extension: %s\n", file_ext);
   } else {
     fprintf(stderr, "** no file extension: %s\n", filename);
   }
   free(filename);
-  return PN_NIL;
+  return result;
 }
 
 void potion_loader_add(Potion *P, PN path) {

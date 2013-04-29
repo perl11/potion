@@ -29,11 +29,13 @@ static void potion_cmd_usage(Potion *P) {
       "  -Ldirectory        add library search path\n"
       "  -I, --inspect      print only the return value\n"
       "  -V, --verbose      show bytecode and ast info\n"
+      "  -d, --debug        debug script\n"
       "  -c, --compile      compile the script to bytecode\n"
+      "      --compile={c,exe}  compile to target: C or exe\n"   // jvm, .net
       "      --check        check the script syntax and exit\n"
       "  -h, --help         show this helpful stuff\n"
 #ifdef DEBUG
-      "  -D[itPpcvGJ?]      debugging flags, try -D?\n"
+      "  -D[itPpcvGJ?]       debugging flags, try -D?\n"
 #endif
       "  -v, --version      show version\n"
       "(default: %s)\n",
@@ -66,7 +68,7 @@ static void potion_cmd_version(Potion *P) {
     if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE)) \
       potion_p(P, c)
 
-static PN potion_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
+static PN potion_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec, char *compile) {
   PN code = potion_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
     DBG_v("\n-- loaded --\n");
@@ -107,7 +109,7 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
   return code;
 }
 
-static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
+static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec, char *compile) {
   PN buf;
   int fd = -1;
   struct stat stats;
@@ -177,44 +179,42 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
     if (exec >= EXEC_COMPILE) { // needs an inputfile. TODO: -e"" -ofile
       char pnbpath[255];
       FILE *pnb;
-      if (exec == EXEC_COMPILE)
-	sprintf(pnbpath, "%sb", filename);  // .pnb
-      else if (exec == EXEC_COMPILE_C)
-	sprintf(pnbpath, "%s.c", filename); // .pn.c
-      else if (exec == EXEC_COMPILE_NATIVE) {
-	sprintf(pnbpath, "%s.out", filename); // TODO: strip ext
+      if (exec == EXEC_COMPILE) {
+        if (!compile || !strcmp(compile, "bc"))
+	  sprintf(pnbpath, "%sb", filename);  // .pnb
+        else if (!strcmp(compile, "c"))
+	  sprintf(pnbpath, "%s.c", filename); // .pn.c
+        else if (!strcmp(compile, "exe"))
+	  sprintf(pnbpath, "%s.out", filename); // TODO: strip ext
       }
 
       pnb = fopen(pnbpath, "wb");
       if (!pnb) {
-        fprintf(stderr, "** could not open %s for writing. check permissions.", pnbpath);
+        fprintf(stderr, "** could not open %s for writing. check permissions.\n", pnbpath);
         goto done;
       }
 
-      if (exec == EXEC_COMPILE) { // compile to bytecode
-	code = potion_source_dumpbc(P, PN_NIL, code);
-      }
-      else if (exec == EXEC_COMPILE_C) {
-	//code = potion_send(code, "dumpc");
-	potion_fatal("--compile-c not yet implemented\n");
-      }
-      else if (exec == EXEC_COMPILE_NATIVE) {
-	//code = potion_send(code, "dumpexec");
-	potion_fatal("--compile-native not yet implemented\n");
+      if (exec == EXEC_COMPILE) { // compile backend. default: bc
+        if (!compile)
+          code = potion_source_dumpbc(P, PN_NIL, code);
+        else
+          code = potion_send(code, potion_str(P, "dump"), potion_str(P, compile));
       }
 
-      if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code)) {
+      if (code && fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code)) {
         printf("** compiled code saved to %s\n", pnbpath);
         fclose(pnb);
 
-	if (exec == EXEC_COMPILE)
-	  printf("** run it with: potion %s\n", pnbpath);
-	else if (exec == EXEC_COMPILE_C)
-	  printf("** compile it with: %s %s %s\n", POTION_CC, POTION_CFLAGS, pnbpath);
-	else if (exec == EXEC_COMPILE_NATIVE)
-	  printf("** run it with: ./%s\n", pnbpath);
+	if (exec == EXEC_COMPILE) {
+	  if (!compile || !strcmp(compile, "bc"))
+	    printf("** run it with: potion %s\n", pnbpath);
+	  else if (!strcmp(compile, "c"))
+	    printf("** compile it with: %s %s %s\n", POTION_CC, POTION_CFLAGS, pnbpath);
+	  else if (!strcmp(compile, "exe"))
+	    printf("** run it with: ./%s\n", pnbpath);
+	}
       } else {
-        fprintf(stderr, "** could not write all compiled code.");
+        fprintf(stderr, "** could not write all %s compiled code.\n", compile ? compile : "bytecode");
       }
     }
 
@@ -259,14 +259,12 @@ int main(int argc, char *argv[]) {
   exec_mode_t exec = POTION_JIT ? EXEC_JIT : EXEC_VM;
   Potion *P = potion_create(sp);
   PN buf = PN_NIL;
+  char *compile;
 
   for (i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "--"))
-      break;
+    if (!strcmp(argv[i], "--")) break;
     if (!strcmp(argv[i], "-I") || !strcmp(argv[i], "--inspect")) {
-      P->flags |= DEBUG_INSPECT;
-      continue;
-    }
+      P->flags |= DEBUG_INSPECT; continue; }
     if (!strcmp(argv[i], "-L")) {
       char *extra_path = &argv[i][2]; // todo: flexible
       if (*extra_path)
@@ -282,37 +280,24 @@ int main(int argc, char *argv[]) {
       continue;
     }
     if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--verbose")) {
-      P->flags |= DEBUG_VERBOSE;
-      continue;
-    }
+      P->flags |= DEBUG_VERBOSE; continue; }
     if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
-      potion_cmd_version(P);
-      goto END;
-    }
+      potion_cmd_version(P); goto END; }
     if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
-      potion_cmd_usage(P);
-      goto END;
-    }
+      potion_cmd_usage(P); goto END; }
     if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--stats")) {
-      potion_cmd_stats(P);
-      goto END;
-    }
+      potion_cmd_stats(P); goto END; }
+    if (!strcmp(argv[i], "--check")) { exec = EXEC_CHECK; continue; }
+    if (!strncmp(argv[i], "--compile=", 10)) {
+      exec = EXEC_COMPILE; compile = &argv[i][10]; continue; }
     if (!strcmp(argv[i], "--compile") || !strcmp(argv[i], "-c")) {
-      exec = EXEC_COMPILE;
-      continue;
-    }
-    if (!strcmp(argv[i], "--check")) {
-      exec = EXEC_CHECK;
-      continue;
-    }
+      exec = EXEC_COMPILE; compile = NULL; continue; }
+    if (!strcmp(argv[i], "--debug") || !strcmp(argv[i], "-d")) {
+      exec = EXEC_DEBUG; continue; }
     if (!strcmp(argv[i], "-B") || !strcmp(argv[i], "--bytecode")) {
-      exec = EXEC_VM;
-      continue;
-    }
+      exec = EXEC_VM; continue; }
     if (!strcmp(argv[i], "-X") || !strcmp(argv[i], "--x86")) {
-      exec = EXEC_JIT;
-      continue;
-    }
+      exec = EXEC_JIT; continue; }
 #ifdef DEBUG
     if (argv[i][0] == '-' && argv[i][1] == 'D') {
       if (strchr(&argv[i][2], '?')) {
@@ -362,9 +347,9 @@ int main(int argc, char *argv[]) {
   
   if (!interactive) {
     if (buf != PN_NIL) {
-      potion_cmd_exec(P, buf, "-e", exec);
+      potion_cmd_exec(P, buf, "-e", exec, compile);
     } else {
-      potion_cmd_compile(P, argv[argc-1], exec);
+      potion_cmd_compile(P, argv[argc-1], exec, compile);
     }
   } else {
     if (!exec || P->flags & DEBUG_INSPECT) potion_fatal("no filename given");
