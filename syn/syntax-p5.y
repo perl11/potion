@@ -121,7 +121,7 @@ subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
 #        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)); }
 #subattrlist = ':' -? arg-name
 
-# TODO: compile-time sideeffs (BEGIN block)
+# TODO: compile-time sideeffs (BEGIN block) in the compiler
 use = USE n:id - semi    { $$ = PN_AST2(MESSAGE, potion_str(P,"use"), n); }
 
 ifstmt = IF e:ifexpr s:block - !"els" { s  = PN_OP(AST_AND, e, s); }
@@ -681,7 +681,7 @@ sig_p5 = args2+ end-of-file
 args2 = arg2-list (arg-sep arg2-list)*
 arg2-list = arg2-set (optional arg2-set)?
          | optional arg2-set
-arg2-set = arg2 (comma - arg)*
+arg2-set = arg2 (comma - arg2)*
 
 arg2-name = < [$@%] id > - { $$ = potion_str2(P, yytext, yyleng); }
 # types are classes
