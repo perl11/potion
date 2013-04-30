@@ -54,9 +54,9 @@ static void p2_cmd_usage(Potion *P) {
 #endif
       "  -Idirectory        add library search path\n"
       "  -c                 check script and exit\n" // compile-time checks only
-//    "  -d                 run program under the debugger\n" // TODO: we want to debug over sockets, instrument bytecode and use p2d frontend
+      "  -d                 run script under the debugger\n"
 #ifdef DEBUG
-      "  -D[itpPvGJ]        debugging flags, try -D?\n"
+      "  -D[itvpPcGJ]       debugging flags, try -D?\n"
 #endif
       "  -e code            execute code\n"
       "  -E code            execute code with extended features enabled\n"
@@ -65,13 +65,8 @@ static void p2_cmd_usage(Potion *P) {
       "  -v, --version      print version, patchlevel, features and exit\n"
       "  --inspect          print the return value\n"
       "  --stats            print statistics and exit\n"
-// Traditionally compilers are "compile" methods of O packages (B::C, jvm, exec)
-// But B pollutes our namespace, so prefer native methods to avoid B/DynaLoader deps being pulled in
-      "  --compile          compile the script to bytecode and exit\n" // ie native B::ByteCode
-//    "  --compile-c        compile the script to C and exit\n" // TODO: or use p2c?
-#if POTION_JIT
-//    "  --compile-exec     compile the script to native executable and exit\n" // TODO: 2st via C, then direct
-#endif
+      "  --compile          compile the script to bytecode\n"
+      "  --compile={c,exe}  load compiler backend and compile: C or exe\n" // or jvm, .net
   );
 }
 
@@ -98,8 +93,9 @@ static void p2_cmd_version(Potion *P) {
     if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE)) \
       potion_p(P, p)
 
-static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
+static PN p2_cmd_exec(Potion *P, PN buf, char *filename, char *compile) {
   PN code = p2_source_load(P, PN_NIL, buf);
+  exec_mode_t exec = P->flags & ((1<<EXEC_BITS)-1);
   if (PN_IS_PROTO(code)) {
     dbg_v("\n-- loaded --\n");
   } else {
@@ -139,10 +135,11 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
   return code;
 }
 
-static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
+static void p2_cmd_compile(Potion *P, char *filename, char *compile) {
   PN buf;
   int fd = -1;
   struct stat stats;
+  exec_mode_t exec = P->flags & ((1<<EXEC_BITS)-1);
 
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
@@ -160,52 +157,49 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
     PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
 
-    code = p2_cmd_exec(P, buf, filename, exec);
+    code = p2_cmd_exec(P, buf, filename, compile);
     if (!code || PN_TYPE(code) == PN_TERROR)
       goto done;
 
     if (exec >= EXEC_COMPILE) { // needs an inputfile. TODO: -e"" -ofile
       char plcpath[255];
       FILE *plc;
-      if (exec == EXEC_COMPILE)
-	sprintf(plcpath, "%sc", filename);  // .plc and .pmc
-      else if (exec == EXEC_COMPILE_C)
-	sprintf(plcpath, "%s.c", filename); // .pl.c and .pm.c
-      else if (exec == EXEC_COMPILE_NATIVE) {
-	sprintf(plcpath, "%s.out", filename);   // TODO: strip ext
+      if (exec == EXEC_COMPILE) {
+        if (!compile || !strcmp(compile, "bc"))
+	  sprintf(plcpath, "%sc", filename);  // .plc
+        else if (!strcmp(compile, "c"))
+	  sprintf(plcpath, "%s.c", filename); // .pl.c
+        else if (!strcmp(compile, "exe"))
+	  sprintf(plcpath, "%s.out", filename); // TODO: strip ext
       }
+
       plc = fopen(plcpath, "wb");
       if (!plc) {
 	fprintf(stderr, "** could not open %s for writing. check permissions.", plcpath);
 	goto done;
       }
 
-      if (exec == EXEC_COMPILE)
-	//TODO: use source dumpbc,dumpc,dumpexec,dump (serializable ascii) methods
-	//code = potion_send(code, "dumpbc");
-	code = potion_source_dumpbc(P, PN_NIL, code);
-      else if (exec == EXEC_COMPILE_C) {
-	//code = potion_send(code, "dumpc");
-	potion_fatal("--compile-c not yet implemented\n");
-      }
-      else if (exec == EXEC_COMPILE_NATIVE) {
-	//code = potion_send(code, "dumpexec");
-	potion_fatal("--compile-native not yet implemented\n");
+      if (exec == EXEC_COMPILE) { // compile backend. default: bc
+        if (!compile)
+          code = potion_source_dumpbc(P, PN_NIL, code);
+        else
+          code = potion_send(P, code, potion_str(P, "dump"), potion_str(P, compile));
       }
 
-      if (fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), plc) == PN_STR_LEN(code)) {
+      if (code && fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), plc) == PN_STR_LEN(code)) {
 	printf("** compiled code saved to %s\n", plcpath);
         fclose(plc);
 
-	if (exec == EXEC_COMPILE)
-	  printf("** run it with: potion %s\n", plcpath);
-	else if (exec == EXEC_COMPILE_C)
-	  printf("** compile it with: %s %s %s\n", POTION_CC, POTION_CFLAGS, plcpath);
-	else if (exec == EXEC_COMPILE_NATIVE)
-	  printf("** run it with: ./%s\n", plcpath);
-
+	if (exec == EXEC_COMPILE) {
+	  if (!compile || !strcmp(compile, "bc"))
+	    printf("** run it with: p2 %s\n", plcpath);
+	  else if (!strcmp(compile, "c"))
+	    printf("** compile it with: %s %s %s\n", POTION_CC, POTION_CFLAGS, plcpath);
+	  else if (!strcmp(compile, "exe"))
+	    printf("** run it with: ./%s\n", plcpath);
+	}
       } else {
-        fprintf(stderr, "** could not write all compiled code.");
+        fprintf(stderr, "** could not write all %s compiled code.\n", compile ? compile : "bytecode");
       }
     }
 
@@ -249,6 +243,7 @@ int main(int argc, char *argv[]) {
   int i, exec = POTION_JIT ? EXEC_JIT : EXEC_VM, interactive = 1;
   Potion *P = potion_create(sp);
   PN buf = PN_NIL;
+  char *compile = NULL;
 
   for (i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--"))
@@ -282,6 +277,7 @@ int main(int argc, char *argv[]) {
 	printf("  i  inspect\n");
 	printf("  v  verbose\n");
 	printf("  t  trace\n");
+	printf("  c  compile\n");
 	printf("  p  parse\n");
 	printf("  P  parse verbose\n");
 	printf("  J  Jit\n");
@@ -294,6 +290,7 @@ int main(int argc, char *argv[]) {
 	exec = exec==EXEC_JIT ? EXEC_VM : exec; }
       if (strchr(&argv[i][2], 'p')) P->flags |= DEBUG_PARSE;
       if (strchr(&argv[i][2], 'P')) P->flags |= (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
+      if (strchr(&argv[i][2], 'c')) P->flags |= DEBUG_COMPILE;
       if (strchr(&argv[i][2], 'J')) P->flags |= DEBUG_JIT;
       if (strchr(&argv[i][2], 'G')) P->flags |= DEBUG_GC;
       continue;
@@ -368,11 +365,11 @@ int main(int argc, char *argv[]) {
   if (!interactive) {
     if (buf != PN_NIL) {
       potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-e"));
-      p2_cmd_exec(P, buf, "-e", exec);
+      p2_cmd_exec(P, buf, "-e", compile);
     }
     else {
       potion_define_global(P, potion_str(P, "$0"), potion_str(P, argv[argc-1]));
-      p2_cmd_compile(P, argv[argc-1], exec);
+      p2_cmd_compile(P, argv[argc-1], compile);
     }
   } else {
     if (!exec || P->flags & DEBUG_INSPECT) potion_fatal("no filename given");

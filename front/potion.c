@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
   exec_mode_t exec = POTION_JIT ? EXEC_JIT : EXEC_VM;
   Potion *P = potion_create(sp);
   PN buf = PN_NIL;
-  char *compile;
+  char *compile = NULL;
 
   for (i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--")) break;
