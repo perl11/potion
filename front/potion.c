@@ -70,7 +70,8 @@ static void potion_cmd_version(Potion *P) {
     if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE)) \
       potion_p(P, c)
 
-static PN potion_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec, char *compile) {
+static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile) {
+  exec_mode_t exec = P->flags & ((1<<EXEC_BITS)-1);
   PN code = potion_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
     dbg_v("\n-- loaded --\n");
@@ -112,10 +113,11 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec, c
   return code;
 }
 
-static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec, char *compile) {
+static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
   PN buf;
   int fd = -1;
   struct stat stats;
+  exec_mode_t exec = P->flags & ((1<<EXEC_BITS)-1);
 
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
@@ -133,7 +135,7 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec, char
     PN code;
     PN_STR_PTR(buf)[stats.st_size] = '\0';
 
-    //code = potion_cmd_exec(P, buf, filename, exec);
+    //code = potion_cmd_exec(P, buf, filename);
 
     // horrible code duplication hack.
     // fix #18 segv with test/closures/long.pn and wrong result in test/closures/upvals.pn
@@ -316,13 +318,14 @@ int main(int argc, char *argv[]) {
 	printf("  p  parse\n");
 	printf("  P  parse verbose\n");
 	printf("  c  compile\n");
-	printf("  J  Jit\n");
-	printf("  G  GC\n");
+	printf("  J  disassemble Jit code\n");
+	printf("  G  GC (use w/ or wo/ -Dv\n");
 	goto END;
       }
       if (strchr(&argv[i][2], 'i')) P->flags |= DEBUG_INSPECT;
       if (strchr(&argv[i][2], 'v')) P->flags |= DEBUG_VERBOSE;
-      if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE; exec = EXEC_VM; }
+      if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE;
+	exec = exec==EXEC_JIT ? EXEC_VM : exec; }
       if (strchr(&argv[i][2], 'p')) P->flags |= DEBUG_PARSE;
       if (strchr(&argv[i][2], 'P')) P->flags |= (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
       if (strchr(&argv[i][2], 'c')) P->flags |= DEBUG_COMPILE;
@@ -351,12 +354,13 @@ int main(int argc, char *argv[]) {
     }
     fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
   }
+  P->flags += exec;
   
   if (!interactive) {
     if (buf != PN_NIL) {
-      potion_cmd_exec(P, buf, "-e", exec, compile);
+      potion_cmd_exec(P, buf, "-e", compile);
     } else {
-      potion_cmd_compile(P, argv[argc-1], exec, compile);
+      potion_cmd_compile(P, argv[argc-1], compile);
     }
   } else {
     if (!exec || P->flags & DEBUG_INSPECT) potion_fatal("no filename given");

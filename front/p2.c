@@ -290,7 +290,8 @@ int main(int argc, char *argv[]) {
       }
       if (strchr(&argv[i][2], 'i')) P->flags |= DEBUG_INSPECT;
       if (strchr(&argv[i][2], 'v')) P->flags |= DEBUG_VERBOSE;
-      if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE; exec = EXEC_VM; }
+      if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE;
+	exec = exec==EXEC_JIT ? EXEC_VM : exec; }
       if (strchr(&argv[i][2], 'p')) P->flags |= DEBUG_PARSE;
       if (strchr(&argv[i][2], 'P')) P->flags |= (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
       if (strchr(&argv[i][2], 'J')) P->flags |= DEBUG_JIT;
@@ -355,6 +356,7 @@ int main(int argc, char *argv[]) {
     }
     fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
   }
+  P->flags += exec;
 
   potion_define_global(P, potion_str(P, "$P2::mode"), PN_NUM((P->flags & 0xff))); // first flags word: p5,p2,p6
   potion_define_global(P, potion_str(P, "$P2::execmode"), PN_NUM(exec)); // exec_jit, exec_vm
