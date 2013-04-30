@@ -686,8 +686,14 @@ arg2-set = arg2 (comma - arg2)*
 arg2-name = < [$@%] id > - { $$ = PN_STRN(yytext, yyleng); }
 # types are classes
 arg2-type = i:id space+  { $$ = potion_class_find(P, i); if (!$$) yyerror(G,"Invalid type"); }
-arg2 = n:arg2-name  { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source?P->source:PN_TUP0(), n), PN_STRN("O",1)), PN_NIL); }
-    | t:arg2-type n:arg2-name { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source?P->source:PN_TUP0(), n), t), PN_NIL); }
+arg2 = n:arg2-name
+      { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source?P->source:PN_TUP0(), n), PN_STRN("O",1)), PN_NIL); }
+    | t:arg2-type n:arg2-name
+      { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source?P->source:PN_TUP0(), n), t), PN_NIL); }
+    | n:arg2-name - '=' - d:value
+      { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source?P->source:PN_TUP0(), n), PN_NIL), d); }
+    | t:arg2-type n:arg2-name - '=' - d:value
+      { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source?P->source:PN_TUP0(), n), t), d); }
 
 %%
 
