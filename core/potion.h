@@ -547,21 +547,24 @@ typedef enum {
 #define EXEC_BITS 4 ///< 0-4
 
 typedef enum {
-  //syntax
-  MODE_P5       = 1<<EXEC_BITS,   ///< 0x10 16 plain p5
-  MODE_P2       = MODE_P5+1,      ///< 0x11 17 use p2 extensions
-  MODE_P6       = MODE_P5+2,      ///< 0x12 18 syntax p6. other via use syntax ""
-  // room for registered syntax modules 18-64 (46 modules: sql, c, ...)
+  MODE_P5     = 1<<EXEC_BITS,   ///< 0x10 16 plain p5
+  MODE_P2     = MODE_P5+1,      ///< 0x11 17 use p2 extensions
+  MODE_P6     = MODE_P5+2,      ///< 0x12 18 syntax p6. other via use syntax ""
+  // room for registered syntax modules 18-63 (45 modules: sql, c, ...)
+  MAX_SYNTAX  = 1<<(EXEC_BITS+2)-1,     ///< sanity-check
+} syntax_mode_t;
 
+typedef enum {
+  // exec + syntax + debug flags:
   DEBUG_INSPECT = 1<<(EXEC_BITS+2),	 // 0x0040
   DEBUG_VERBOSE = 1<<(EXEC_BITS+3),	 // 0x0080
 #ifdef DEBUG
-  DEBUG_TRACE  = 1<<(EXEC_BITS+4),  	 // 0x0100
-  DEBUG_PARSE  = 1<<(EXEC_BITS+5),	 // 0x0200
+  DEBUG_TRACE   = 1<<(EXEC_BITS+4),  	 // 0x0100
+  DEBUG_PARSE   = 1<<(EXEC_BITS+5),	 // 0x0200
   DEBUG_PARSE_VERBOSE = 1<<(EXEC_BITS+6),// 0x0400
-  DEBUG_GC     = 1<<(EXEC_BITS+7),	 // 0x0800
-  DEBUG_JIT    = 1<<(EXEC_BITS+8),	 // 0x1000
-  DEBUG_COMPILE= 1<<(EXEC_BITS+9),	 // 0x2000
+  DEBUG_COMPILE = 1<<(EXEC_BITS+7),	 // 0x2000
+  DEBUG_GC      = 1<<(EXEC_BITS+8),	 // 0x0800
+  DEBUG_JIT     = 1<<(EXEC_BITS+9),	 // 0x1000
 #endif
 } Potion_Flags;
 
