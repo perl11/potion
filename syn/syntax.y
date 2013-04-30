@@ -292,8 +292,9 @@ arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | 
 arg = n:arg-name assign t:arg-type
                        { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), t), PN_NIL); }
     | t:arg-type       { P->source = PN_PUSH(P->source, t); }
-    | n:arg-name ":=" d:value
-                       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), PN_NUM('O')), d), PN_NUM('|')); }
+    | n:arg-name bind d:value
+                       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),
+                                       PN_NUM(potion_type_char(potion_type(d)))), d), PN_NUM('|')); }
 optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')); }
 arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
