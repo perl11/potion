@@ -93,6 +93,8 @@ static const char *pn_loader_extensions[] = {
 #else
   ".plc"
   , ".pl"
+  ".pmc"
+  , ".pm"
 #endif
   , POTION_LOADEXT
 };
@@ -118,6 +120,7 @@ static const char *find_extension(char *str) {
 char *potion_find_file(char *str, PN_SIZE str_len) {
   char *r = NULL;
   struct stat st;
+  if (!str_len) str_len = strlen(str);
   PN_TUPLE_EACH(pn_loader_path, i, prefix, {
     PN_SIZE prefix_len = PN_STR_LEN(prefix);
     char dirname[prefix_len + 1 + str_len + 1];

@@ -1027,12 +1027,13 @@ PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
   char *cb = PN_STR_PTR(backend);
   if (backend == potion_str(P, "bc"))
     return potion_source_dumpbc(P, cl, self, options);
-  if (potion_send(potion_str(P, "load"), potion_str_format(P, "compile-%s", cb))) {
+  if (potion_load(P, P->lobby, self, potion_strcat(P, "compile-", cb))) {
     DBG_c("loaded compile-%s\n", cb);
     DBG_c("source dump%s %s\n", cb, options ? PN_STR_PTR(options) : "");
-    return potion_send(self, potion_str_format(P, "dump%s", cb), options);
+    return potion_send(self, potion_strcat(P, "dump", cb), options);
   } else {
     DBG_c("failed loading the compile-%s module\n", cb);
+    return PN_NIL;
   }
 }
 

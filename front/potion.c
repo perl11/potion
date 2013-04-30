@@ -214,8 +214,9 @@ static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
         if (!compile)
 	  code = potion_source_dumpbc(P, PN_NIL, code, PN_NIL);
         else
-	  code = potion_send(code, potion_str(P, "dump"),
-			     potion_str(P, compile), opts ? potion_str(P, opts) : PN_NIL);
+	  code = potion_source_dump(P, 0, code,
+				    potion_str(P, compile),
+				    opts ? potion_str(P, opts) : PN_NIL);
       }
 
       if (code &&
