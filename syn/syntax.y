@@ -52,6 +52,7 @@ stmt = s:sets
 
 sets = e:eqs
        ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
+       | bind s:value        { e = PN_AST2(ASSIGN, e, s); }
        | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
        | and assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
        | pipe assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PIPE, e, s)); }
@@ -191,6 +192,7 @@ group-start = '|' --
 group-end = '.' -
 quiz = '?' --
 assign = '=' --
+bind = ":=" --
 pplus = "++" -
 mminus = "--" -
 minus = '-' --
@@ -290,6 +292,8 @@ arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | 
 arg = n:arg-name assign t:arg-type
                        { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), t), PN_NIL); }
     | t:arg-type       { P->source = PN_PUSH(P->source, t); }
+    | n:arg-name ":=" d:value
+                       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), PN_NUM('O')), d), PN_NUM('|')); }
 optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')); }
 arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
@@ -307,7 +311,7 @@ PN potion_parse(Potion *P, PN code, char *filename) {
 
   G->filename = filename;
   if (!YY_NAME(parse)(G)) {
-    YY_ERROR(G, "** Syntax error!");
+    YY_ERROR(G, "** Syntax error");
     fprintf(stderr, "%s", PN_STR_PTR(code));
   }
   YY_NAME(parse_free)(G);
@@ -329,7 +333,7 @@ PN potion_sig(Potion *P, char *fmt) {
   P->pbuf = NULL;
 
   if (!YY_NAME(parse_from)(G, yy_sig))
-    YY_ERROR(G, "** Signature Syntax error!");
+    YY_ERROR(G, "** Syntax error in signature");
   YY_NAME(parse_free)(G);
 
   out = P->source;

@@ -681,11 +681,18 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
 }
 
 /// Dissect the parsed and compiled parse_from()/yy_sig() AST tree
-/// of a potion signature. Name=Type, '| optional' '.' sep
-/// Types are encoded as ord. No handling of default values.
+/// of a potion/p2 signature. Name=Type, '| optional' '.' sep
+/// Types are encoded as ord. Defaults via BIND ":="
+/// Default type: O (= PN object)
+/// Encoded to AST_CODE: (name type default)
+/// p2: type name := default, ...
 ///\param f    the PNProto closure to store locals
 ///\param src  PNSource signature tree, parsed via yy_sig()
 ///\return PNProto a closure
+///
+/// (x=n,y=n) =>
+///\code  (list (assign (expr (message (x )) expr (message (n ))),
+///              assign (expr (message (y )) expr (message (n )))) \endcode
 PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   PN sig = PN_TUP0();
   vPN(Source) t = (struct PNSource *)src;
@@ -694,17 +701,19 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
       vPN(Source) expr = (struct PNSource *)v;
       if (expr->part == AST_EXPR) {
         vPN(Source) name = (struct PNSource *)PN_TUPLE_AT(expr->a[0], 0);
-        if (name->part == AST_MESSAGE)
-        {
+        if (name->part == AST_MESSAGE) {
           PN_PUT(f->locals, name->a[0]);
           sig = PN_PUSH(PN_PUSH(sig, name->a[0]), PN_NUM('o'));
         }
       } else if (expr->part == AST_ASSIGN) {
         vPN(Source) lhs = (struct PNSource *)expr->a[0];
-        if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
-        {
+        if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1) {
           lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
-          if (lhs->part == AST_MESSAGE) {
+          if (lhs->part == AST_MESSAGE) { // type
+            PN_PUT(f->locals, lhs->a[0]);
+            sig = PN_PUSH(PN_PUSH(sig, lhs->a[0]), PN_NUM('o'));
+          }
+          else if (lhs->part == AST_VALUE) { // default. TODO: type->NUM
             PN_PUT(f->locals, lhs->a[0]);
             sig = PN_PUSH(PN_PUSH(sig, lhs->a[0]), PN_NUM('o'));
           }
