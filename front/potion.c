@@ -188,6 +188,14 @@ static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
     if (exec >= EXEC_COMPILE) { // needs an inputfile. TODO: -e"" -ofile
       char pnbpath[255];
       FILE *pnb;
+      char *opts = NULL;
+      PN_SIZE written = 0;
+      if (compile) { // --compile=c[,OPTS]
+	if ((opts = strchr(compile,','))) {
+	  opts[0] = '\0';
+	  opts++;
+	}
+      }
       if (exec == EXEC_COMPILE) {
         if (!compile || !strcmp(compile, "bc"))
 	  sprintf(pnbpath, "%sb", filename);  // .pnb
@@ -196,7 +204,6 @@ static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
         else if (!strcmp(compile, "exe"))
 	  sprintf(pnbpath, "%s.out", filename); // TODO: strip ext
       }
-
       pnb = fopen(pnbpath, "wb");
       if (!pnb) {
         fprintf(stderr, "** could not open %s for writing. check permissions.\n", pnbpath);
@@ -205,25 +212,29 @@ static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
 
       if (exec == EXEC_COMPILE) { // compile backend. default: bc
         if (!compile)
-          code = potion_source_dumpbc(P, PN_NIL, code);
+	  code = potion_source_dumpbc(P, PN_NIL, code, PN_NIL);
         else
-          code = potion_send(P, code, potion_str(P, "dump"), potion_str(P, compile));
+	  code = potion_send(code, potion_str(P, "dump"),
+			     potion_str(P, compile), opts ? potion_str(P, opts) : PN_NIL);
       }
 
-      if (code && fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code)) {
+      if (code &&
+	  (written = fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code))) {
         printf("** compiled code saved to %s\n", pnbpath);
         fclose(pnb);
 
 	if (exec == EXEC_COMPILE) {
 	  if (!compile || !strcmp(compile, "bc"))
 	    printf("** run it with: potion %s\n", pnbpath);
+	  // TODO: let the compilers write its own hints (,-ooutfile)
 	  else if (!strcmp(compile, "c"))
 	    printf("** compile it with: %s %s %s\n", POTION_CC, POTION_CFLAGS, pnbpath);
 	  else if (!strcmp(compile, "exe"))
 	    printf("** run it with: ./%s\n", pnbpath);
 	}
       } else {
-        fprintf(stderr, "** could not write all %s compiled code.\n", compile ? compile : "bytecode");
+        fprintf(stderr, "** could not write all %s compiled code (%u/%u) to %s\n",
+		compile?compile:"bytecode", written, code?PN_STR_LEN(code):0, pnbpath);
       }
     }
 

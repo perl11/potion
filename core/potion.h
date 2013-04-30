@@ -787,8 +787,8 @@ PN potion_tuple_ins_sort(Potion *, PN, PN, PN);
 PN potion_lick(Potion *, PN, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
-PN potion_source_dump(Potion *, PN, PN, PN);
-PN potion_source_dumpbc(Potion *, PN, PN);
+PN potion_source_dump(Potion *, PN, PN, PN, PN);
+PN potion_source_dumpbc(Potion *, PN, PN, PN);
 PN potion_greg_parse(Potion *, PN);
 PN potion_sig_string(Potion *, PN, PN);
 
