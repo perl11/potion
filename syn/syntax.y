@@ -281,7 +281,9 @@ unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = PN_STRN(yytext, yyleng); }
 sep = (end-of-line | comma) (space | comment | end-of-line | comma)*
 comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t'
-end-of-line = ( '\r\n' | '\n' | '\r' ) { $$ = PN_AST3(DEBUG, $$, PN_NUM(G->lineno), potion_str(P, G->filename)); }
+end-of-line = ( '\r\n' | '\n' | '\r' )
+    { if (yydebug & EXEC_DEBUG)
+        $$ = PN_AST3(DEBUG, $$, PN_NUM(G->lineno), potion_str(P, G->filename)); }
 end-of-file = !.
 
 sig = args+ end-of-file
@@ -318,10 +320,8 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   P->input = code;
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
-#ifdef YY_DEBUG
-  yydebug = P->flags & (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
-#endif
 
+  yydebug = P->flags;
   G->filename = filename;
   if (!YY_NAME(parse)(G)) {
     YY_ERROR(G, "** Syntax error");
@@ -370,9 +370,7 @@ PN potion_sig(Potion *P, char *fmt) {
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
-#ifdef YY_DEBUG
-  yydebug = P->flags & (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
-#endif
+  yydebug = P->flags;
 
   if (!YY_NAME(parse_from)(G, yy_sig))
     YY_ERROR(G, "** Syntax error in signature");

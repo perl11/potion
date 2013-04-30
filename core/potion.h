@@ -537,29 +537,33 @@ typedef enum {
   EXEC_VM = 0,  ///< bytecode (switch or cgoto)
   EXEC_JIT,     ///< JIT if detected at config-time (x86, ppc)
   EXEC_DEBUG,   ///< -d: instrumented bytecode (line stepping) or just slow runloop?
-  EXEC_CHECK,          ///< -c stop after compilation
-  EXEC_COMPILE,        ///< to bytecode (dumpbc)
-  EXEC_COMPILE_C,      ///< compile-c
-  EXEC_COMPILE_NATIVE, ///< compile-exec
-  MAX_EXEC,            ///< sanity-check (possible stack overwrites by callcc)
+  EXEC_CHECK,   ///< -c stop after compilation
+  EXEC_COMPILE, ///< to bytecode (dumpbc)
+  MAX_EXEC,     ///< sanity-check (possible stack overwrites by callcc)
 } exec_mode_t;
 
-typedef enum {
-  MODE_STD      = 0,  ///< plain p5
-#ifdef P2
-  MODE_P2       = 1,  ///< use p2
-  MODE_P6       = 2,  ///< syntax p6. other via use syntax ""
-#endif
+// we combine the exclusive enum 0-4 for exec, then the exclusive syntax modes 16-18,
+// and finally the inclusive debugging modes
+#define EXEC_BITS 4 ///< 0-4
 
-  DEBUG_INSPECT = 1<<8,
-  DEBUG_VERBOSE = 1<<9,
+typedef enum {
+  //syntax
+  MODE_STD      = 1<<EXEC_BITS,   ///< 0x10 16 plain p5
+#ifdef P2
+  MODE_P2       = MODE_STD+1,      ///< 0x11 17 use p2 extensions
+  MODE_P6       = MODE_STD+2,      ///< 0x12 18 syntax p6. other via use syntax ""
+#endif
+  // room for registered syntax modules 18-64 (46 modules: sql, c, ...)
+
+  DEBUG_INSPECT = 1<<(EXEC_BITS+2),	 // 0x0040
+  DEBUG_VERBOSE = 1<<(EXEC_BITS+3),	 // 0x0080
 #ifdef DEBUG
-  DEBUG_TRACE  = 1<<10,
-  DEBUG_PARSE  = 1<<11,
-  DEBUG_PARSE_VERBOSE = 1<<12,
-  DEBUG_COMPILE= 1<<13,
-  DEBUG_GC     = 1<<14,
-  DEBUG_JIT    = 1<<15,
+  DEBUG_TRACE  = 1<<(EXEC_BITS+4),  	 // 0x0100
+  DEBUG_PARSE  = 1<<(EXEC_BITS+5),	 // 0x0200
+  DEBUG_PARSE_VERBOSE = 1<<(EXEC_BITS+6),// 0x0400
+  DEBUG_GC     = 1<<(EXEC_BITS+7),	 // 0x0800
+  DEBUG_JIT    = 1<<(EXEC_BITS+8),	 // 0x1000
+  DEBUG_COMPILE= 1<<(EXEC_BITS+9),	 // 0x2000
 #endif
 } Potion_Flags;
 
@@ -693,7 +697,7 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
   PN_lookup, PN_loop, PN_print, PN_return, PN_self, PN_string,
   PN_while;
 extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
-extern PN PN_cmp, PN_number;
+extern PN PN_cmp, PN_number, PN_name;
 
 ///
 /// the potion API

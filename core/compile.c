@@ -3,7 +3,8 @@
  *
  * implement PNSource (AST) and PNProto (closure) methods,
  * special signature handling (parsed extra) and compile, bytecode load and dump methods.
- * Some special control methods are handled here and not in the parser. We do not need lexed keywords.
+ * Some special control methods are handled here and not in the parser. We do not need 
+ * lexed keywords.
  */
 // (c) 2008 why the lucky stiff, the freelance professor
 //
@@ -302,7 +303,16 @@ void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop
 void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop, PN_SIZE count,
                         struct PNSource * volatile t, u8 reg) {
   PN_REG(f, reg);
-
+  if (P->flags & EXEC_DEBUG) {
+    // debug eol ast's are not pushed nicely at statement/expression borders
+    // but can be embedded anywhere. so unpack ori from (debug ori line file) at first.
+    if (((struct PNSource *)t->a[0])->part == AST_DEBUG) {
+      struct PNSource * volatile v = (struct PNSource *)t->a[0];
+      DBG_c("debug %lu %s\n", PN_INT(v->a[1]), PN_STR_PTR(PN_S(v,2)));
+      PN_ASM2(OP_DEBUG, v->a[1], v->a[2]);
+      return potion_source_asmb(P, f, loop, 0, v->a[0], reg);
+    }
+  }
   switch (t->part) {
     case AST_CODE:
     case AST_BLOCK:
@@ -357,6 +367,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       if (lhs->part == AST_EXPR) {
         unsigned long i = 0;
         c = PN_TUPLE_LEN(PN_S(lhs,0)) - 1;
+        DBG_c("assign expr [%lu]\n", (_PN)c);
         for (i = 0; i < c; i++) {
           potion_source_asmb(P, f, loop, i, SRC_TUPLE_AT(lhs, i), reg);
         };
@@ -365,6 +376,8 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 
       if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
         char first_letter = PN_STR_PTR(PN_S(lhs,0))[0];
+	    DBG_c("assign %s '%s'\n", lhs->part == AST_MSG?"message":"query",
+		  PN_STR_PTR(PN_S(lhs,0)));
         if ((first_letter & 0x80) == 0 && isupper((unsigned char)first_letter)) {
           num = PN_PUT(f->values, PN_S(lhs,0));
           PN_ASM2(OP_LOADK, breg, num);
@@ -383,6 +396,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           num = ++breg;
         }
       } else if (lhs->part == AST_PATH || lhs->part == AST_PATHQ) {
+        DBG_c("assign %s\n", lhs->part == AST_PATH?"path":"pathq");
         num = PN_PUT(f->values, PN_S(lhs,0));
         if (c == 0) {
           PN_PUT(f->paths, PN_NUM(num));
