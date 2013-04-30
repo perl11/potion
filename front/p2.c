@@ -164,6 +164,13 @@ static void p2_cmd_compile(Potion *P, char *filename, char *compile) {
     if (exec >= EXEC_COMPILE) { // needs an inputfile. TODO: -e"" -ofile
       char plcpath[255];
       FILE *plc;
+      char *opts = NULL;
+      if (compile) { // --compile=c[,OPTS]
+	if ((opts = strchr(compile,','))) {
+	  opts[0] = '\0';
+	  opts++;
+	}
+      }
       if (exec == EXEC_COMPILE) {
         if (!compile || !strcmp(compile, "bc"))
 	  sprintf(plcpath, "%sc", filename);  // .plc
@@ -181,9 +188,10 @@ static void p2_cmd_compile(Potion *P, char *filename, char *compile) {
 
       if (exec == EXEC_COMPILE) { // compile backend. default: bc
         if (!compile)
-          code = potion_source_dumpbc(P, PN_NIL, code);
+	  code = potion_source_dumpbc(P, PN_NIL, code, PN_NIL);
         else
-          code = potion_send(P, code, potion_str(P, "dump"), potion_str(P, compile));
+	  code = potion_send(code, potion_str(P, "dump"),
+			     potion_str(P, compile), opts ? potion_str(P, opts) : PN_NIL);
       }
 
       if (code && fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), plc) == PN_STR_LEN(code)) {

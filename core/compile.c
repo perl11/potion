@@ -306,18 +306,18 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
   if (P->flags & EXEC_DEBUG) {
     // debug eol ast's are not pushed nicely at statement/expression borders
     // but can be embedded anywhere. so unpack ori from (debug ori line file) at first.
-    if (((struct PNSource *)t->a[0])->part == AST_DEBUG) {
-      struct PNSource * volatile v = (struct PNSource *)t->a[0];
-      DBG_c("debug %lu %s\n", PN_INT(v->a[1]), PN_STR_PTR(v->a[2]));
-      PN_ASM2(OP_DEBUG, v->a[1], v->a[2]);
-      return potion_source_asmb(P, f, loop, 0, (struct PNSource *)v->a[0], reg);
+    if (t->a[0]->part == AST_DEBUG) {
+      struct PNSource * volatile v = t->a[0];
+      DBG_c("debug %ld %s\n", PN_INT(PN_S(v,1)), PN_STR_PTR(PN_S(v,2)));
+      PN_ASM2(OP_DEBUG, PN_S(v,1), PN_S(v,2));
+      return potion_source_asmb(P, f, loop, 0, v->a[0], reg);
     }
   }
   switch (t->part) {
     case AST_CODE:
     case AST_BLOCK:
       if (PN_S(t,0) != PN_NIL) {
-        DBG_c("%s %u\n", PN_STR_PTR(potion_send(t, potion_str(P,"name"))), PN_TUPLE_LEN(t->a[0]));
+        DBG_c("%s [%u] %u\n", t->part == AST_CODE?"code":"block", PN_TUPLE_LEN(PN_S(t,0)), reg);
         PN_TUPLE_EACH(PN_S(t,0), i, v, {
           potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg);
         });
@@ -326,9 +326,9 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 
     case AST_EXPR:
       if (PN_S(t,0) != PN_NIL) {
-        DBG_c("expr %lu\n", PN_S(t,0));
+        DBG_c("expr %d\n", PN_TUPLE_LEN(PN_S(t,0)));
         PN_TUPLE_EACH(PN_S(t,0), i, v, {
-	    potion_source_asmb(P, f, loop, i, PN_SRC(v), reg);
+          potion_source_asmb(P, f, loop, i, PN_SRC(v), reg);
         });
       }
     break;
@@ -377,7 +377,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
         char first_letter = PN_STR_PTR(PN_S(lhs,0))[0];
 	    DBG_c("assign %s '%s'\n", lhs->part == AST_MSG?"message":"query",
-	      PN_STR_PTR(lhs->a[0]));
+                  PN_STR_PTR(PN_S(lhs,0)));
         if ((first_letter & 0x80) == 0 && isupper((unsigned char)first_letter)) {
           num = PN_PUT(f->values, PN_S(lhs,0));
           PN_ASM2(OP_LOADK, breg, num);
@@ -1000,11 +1000,12 @@ long potion_proto_dumpbc(Potion *P, PN proto, PN out, long pos) {
 }
 
 ///\memberof PNSource
+/// dump to bytecode
 // Low TODO: dump to a stream (if we have not enough memory)
-// TODO: proto dump methods, for bc, c and exec, also dump as serializable ascii
-PN potion_source_dumpbc(Potion *P, PN cl, PN proto) {
+PN potion_source_dumpbc(Potion *P, PN cl, PN proto, PN options) {
   PN pnb = potion_bytes(P, 8192);
   struct PNBHeader h;
+  DBG_c("compile bc\n");
   PN_MEMCPY_N(h.sig, POTION_SIG, u8, 4);
   h.major = POTION_MAJOR;
   h.minor = POTION_MINOR;
@@ -1019,15 +1020,20 @@ PN potion_source_dumpbc(Potion *P, PN cl, PN proto) {
 
 ///\memberof PNSource
 /// dump (compiler) methods, default "bc". loads compile-<backend> extension.
+///\param backend PNString - load a compile-<backend> module and call its dump<backend> method
+///\param options optional PNString
 /// TODO: serializable ascii, c, exe, jvm, .net
-// Low TODO: dump to a stream (if we have not enough memory)
-PN potion_source_dump(Potion *P, PN cl, PN self, PN backend) {
+PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
+  char *cb = PN_STR_PTR(backend);
   if (backend == potion_str(P, "bc"))
-    return potion_source_dumpbc(P, cl, self);
-  // load a compile-<backend>
-  if (potion_send(P, potion_str(P, "load"), potion_str_format(P, "compile-%s"), PN_STR_PTR(backend)))
-    // implementing dump<backend>
-    return potion_send(P, self, potion_str_format(P, "dump%s"), PN_STR_PTR(backend));
+    return potion_source_dumpbc(P, cl, self, options);
+  if (potion_send(potion_str(P, "load"), potion_str_format(P, "compile-%s", cb))) {
+    DBG_c("loaded compile-%s\n", cb);
+    DBG_c("source dump%s %s\n", cb, options ? PN_STR_PTR(options) : "");
+    return potion_send(self, potion_str_format(P, "dump%s", cb), options);
+  } else {
+    DBG_c("failed loading the compile-%s module\n", cb);
+  }
 }
 
 PN potion_run(Potion *P, PN code, int jit) {
