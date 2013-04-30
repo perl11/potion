@@ -349,7 +349,7 @@ PN potion_sig(Potion *P, char *fmt) {
 #endif
 
   if (!YY_NAME(parse_from)(G, yy_sig))
-    YY_ERROR("** Signature Syntax error!");
+    YY_ERROR("** Syntax error in signature");
   YY_NAME(parse_free)(G);
 
   out = P->source;
