@@ -174,6 +174,34 @@ PN potion_call(Potion *P, PN cl, PN_SIZE argc, PN * volatile argv) {
 PNType potion_kind_of(PN obj) {
   return potion_type(obj);
 }
+/// valid signature types
+char potion_type_char(PNType type) {
+  switch (type) {
+  case PN_TNIL:  	return 'N'; //0
+  case PN_TNUMBER:	return 'n'; //1
+  case PN_TBOOLEAN:	return 'b'; //2
+  case PN_TSTRING:	return 's'; //3
+  case PN_TWEAK:       	return 'w'; //4
+  case PN_TCLOSURE:    	return 'c'; //5
+  case PN_TTUPLE:      	return 'u'; //6
+  case PN_TSTATE:      	return 'a'; //7
+  case PN_TFILE:       	return 'f'; //8
+  case PN_TOBJECT:     	return 'O'; //9
+  case PN_TVTABLE:     	return 't'; //10
+  case PN_TSOURCE:     	return 'S'; //11
+  case PN_TBYTES:      	return 'b'; //12
+  case PN_TPROTO:      	return '&'; //13
+  case PN_TLOBBY:      	return 'l'; //14
+  case PN_TTABLE:      	return 'T'; //15
+  case PN_TLICK:       	return 'l'; //16
+  case PN_TFLEX:       	return 'f'; //17
+  case PN_TSTRINGS:    	return 'x'; //18
+  case PN_TERROR:      	return 'r'; //19
+  case PN_TCONT:       	return 'c'; //20
+  case PN_TUSER:       	return 'u'; //21
+    // '|' '.'
+  }
+}
 
 PN potion_error(Potion *P, PN msg, long lineno, long charno, PN excerpt) {
   struct PNError *e = PN_ALLOC(PN_TERROR, struct PNError);
