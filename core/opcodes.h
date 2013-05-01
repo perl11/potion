@@ -66,7 +66,7 @@ enum PN_OPCODE {
   OP_BITR,
   OP_DEF,
   OP_BIND,
-  OP_MESSAGE,
+  OP_MSG,
   OP_JMP,
   OP_TEST,
   OP_TESTJMP,

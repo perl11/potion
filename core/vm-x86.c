@@ -272,7 +272,7 @@ void potion_x86_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 
 void potion_x86_self(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  // TODO: optimize so that if this is followed by a BIND or MESSAGE, it'll just
+  // TODO: optimize so that if this is followed by a BIND or MSG, it'll just
   // use the self register directly.
   X86_MOV_RBP(0x8B, start - 1);
   X86_MOV_RBP(0x89, op.a);

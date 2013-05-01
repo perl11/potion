@@ -30,5 +30,5 @@ p2 renames it to @"P2"@
 
 - <a name="mop">mop</a> := potion/p2 uses the "cola mop":http://piumarta.com/software/cola/objmodel2.pdf
 with 5 core functions: @addMethod@, @lookup@, @allocate@, @delegated@ and @intern@.
-And 4 native (and jitted) VM ops: @SELF@, @CLASS@, @BIND@ and @MESSAGE@.
+And 4 native (and jitted) VM ops: @SELF@, @CLASS@, @BIND@ and @MSG@.
 !p2-mop.png(p2-mop)!
