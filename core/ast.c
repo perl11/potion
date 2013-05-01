@@ -13,7 +13,7 @@ const char *potion_ast_names[] = {
   "code", "value", "assign", "not", "or", "and", "cmp", "eq", "neq",
   "gt", "gte", "lt", "lte", "pipe", "caret", "amp", "wavy", "bitl",
   "bitr", "plus", "minus", "inc", "times", "div", "rem", "pow",
-  "message", "path", "query", "pathq", "expr", "list",
+  "msg", "path", "query", "pathq", "expr", "list",
   "block", "lick", "proto"
 };
 
@@ -67,7 +67,10 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
 	//DBG_vt("cut at %d, len=%d: \"%s\"\n", cut, b->len, b->chars);
 	if (cut < b->len) {
 	  b->len = cut;
-	  b->chars[cut] = '\0';
+	  if (b->chars[cut-1] == ' ')
+	    b->chars[cut-1] = '\0';
+	  else
+	    b->chars[cut] = '\0';
 	}
       }
       pn_printf(P, out, ")");

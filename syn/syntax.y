@@ -52,7 +52,7 @@ stmt = s:sets
 
 sets = e:eqs
        ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
-       | bind s:value        { e = PN_AST2(ASSIGN, e, s); }
+       | defassign s:value   { e = PN_AST2(ASSIGN, e, s); }
        | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
        | and assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
        | pipe assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PIPE, e, s)); }
@@ -192,7 +192,7 @@ group-start = '|' --
 group-end = '.' -
 quiz = '?' --
 assign = '=' --
-bind = ":=" --
+defassign = ":=" --
 pplus = "++" -
 mminus = "--" -
 minus = '-' --
@@ -292,9 +292,8 @@ arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | 
 arg = n:arg-name assign t:arg-type
                        { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), t), PN_NIL); }
     | t:arg-type       { P->source = PN_PUSH(P->source, t); }
-    | n:arg-name bind d:value
-                       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),
-                                       PN_NUM(potion_type_char(potion_type(d)))), d), PN_NUM('|')); }
+    | n:arg-name defassign d:value
+                       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), PN_NUM(':')), d); }
 optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')); }
 arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 

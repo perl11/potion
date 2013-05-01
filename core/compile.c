@@ -65,24 +65,34 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   pn_printf(P, out, ": %u bytes\n", PN_FLEX_SIZE(t->asmb));
   #endif
   pn_printf(P, out, "; (");
-  PN_TUPLE_EACH(t->sig, i, v, {
+  //PN_TUPLE_EACH(t->sig, i, v, {
+    ({ struct PNTuple * volatile __tv = ((struct PNTuple *)potion_fwd(t->sig));
+      if (__tv->len != 0) {
+	PN_SIZE i;
+	for (i = 0; i < __tv->len; i++) {
+	  PN v = (PN)__tv->set[i];
+	  {
     if (PN_IS_NUM(v)) {
       if (v == '.')      // is end
         pn_printf(P, out, ". ");
       else if (v == '|') // is optional
         pn_printf(P, out, "| ");
-      else if (v == ':') {
-	nextdef = 1;     // is default
-        pn_printf(P, out, ":");
+      else if (v == ':') { nextdef = 1;
+        pn_printf(P, out, ":"); // is default
       }
       else {
 	if (nextdef) { nextdef = 0;
-	  pn_printf(P, out, "=%s, ", PN_STR_PTR(potion_send(PN_string, v)));
+	  pn_printf(P, out, "=");
+	  potion_bytes_obj_string(P, out, v);
+	  pn_printf(P, out, ", ");
 	} else
 	  pn_printf(P, out, "=%c, ", (int)PN_INT(v));
       }
-    } else
+    } else {
+      if (nextdef) { nextdef = 0; pn_printf(P, out, "="); }
       potion_bytes_obj_string(P, out, v);
+    }
+	  }}}
   });
   pn_printf(P, out, ") %ld registers\n", PN_INT(t->stack));
   PN_TUPLE_EACH(t->paths, i, v, {
@@ -722,7 +732,8 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
         }
       } else if (expr->part == AST_VALUE) {
         vPN(Source) rhs = (struct PNSource *)expr->a[0];
-	sig = PN_PUSH(PN_PUSH(sig, rhs->a[0]), PN_NUM(potion_type_char(potion_type(rhs->a[0]))));
+	sig = PN_PUSH(PN_PUSH(sig, rhs->a[0]),
+		      PN_NUM(potion_type_char(potion_type(rhs->a[0]))));
       } else if (expr->part == AST_ASSIGN) {
         vPN(Source) lhs = (struct PNSource *)expr->a[0];
         if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1) {
