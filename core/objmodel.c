@@ -66,7 +66,7 @@ long potion_arity(Potion *P, PN closure) {
 	PN v = (PN)t->set[i];
 	if (PN_IS_STR(v)) count++; //names
 	//but not string default values
-	if (PN_IS_NUM(v) && v == ':' && PN_IS_STR((PN)t->set[i+1])) count--;
+	if (PN_IS_NUM(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
       }
     }
     return count;

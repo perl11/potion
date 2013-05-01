@@ -366,23 +366,22 @@ int potion_sig_find(Potion *P, PN cl, PN name)
 {
   PN_SIZE idx = 0;
   PN sig;
+
   if (!PN_IS_CLOSURE(cl))
     cl = potion_obj_get_call(P, cl);
-
   if (!PN_IS_CLOSURE(cl))
     return -1;
-
   sig = PN_CLOSURE(cl)->sig;
-
   if (!PN_IS_TUPLE(sig))
     return -1;
 
   PN_TUPLE_EACH(sig, i, v, {
-    if (v == PN_NUM(idx) || v == name)
-      return idx;
-    if (PN_IS_NUM(v)) // type or modifier
+    PN prev = PN_NIL;
+    if (v == name) return idx;
+    // count strings but not string default values
+    if (PN_IS_STR(v) && !(PN_IS_NUM(prev) && prev == PN_NUM(':'))) // name
       idx++;
+    prev = v;
   });
-
   return -1;
 }
