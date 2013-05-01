@@ -290,14 +290,14 @@ arg-name = < utfw+ > - { $$ = PN_STRN(yytext, yyleng); }
 arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
        { $$ = PN_NUM(yytext[0]); }
 arg = n:arg-name assign t:arg-type
-                       { P->source = PN_PUSH(PN_PUSH(P->source, n), t); }
-    # single types without name (N,o) as for FFIs now forbidden?
+                        { P->source = PN_PUSH(PN_PUSH(P->source, n), t); }
+    # single types without name (N,o) as for FFIs forbidden, use (=N) instead
     | assign t:arg-type { P->source = PN_PUSH(PN_PUSH(P->source, PN_STR("")), t); }
     | n:arg-name        { P->source = PN_PUSH(P->source, n); }
     | n:arg-name defassign d:value
                         { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),PN_NUM(':')), d); }
-optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')); }
-arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
+optional = '|' -        { P->source = PN_PUSH(P->source, PN_NUM('|')); }
+arg-sep = '.' -         { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
 %%
 

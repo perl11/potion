@@ -425,19 +425,19 @@ test.p2: bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 	fi
 
 bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
-	@${ECHO} LINK potion-test
+	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}
 
 bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a
-	@${ECHO} LINK gc-test
+	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${LIBS}
 
 bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
-	@${ECHO} LINK gc-bench
+	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${LIBS}
 
 bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
-	@${ECHO} LINK p2-test
+	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}
 
 dist: bins libs static doc ${SRC_SYN} ${SRC_P2_SYN}

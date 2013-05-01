@@ -755,15 +755,24 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 	sig = PN_PUSH(sig, PN_NUM('|'));
 	rhs = (struct PNSource * volatile)expr->a[1];
 	SIG_EXPR_MSG(rhs)
-	DBG_c("sig: pipe (e (m x) (e (m y) => x|y\n");
+	DBG_c("sig: pipe (expr (msg x) (expr (msg y))) => x|y\n");
       } else if (expr->part == AST_ASSIGN) {
 	int pipe = 0;
         vPN(Source) lhs = (struct PNSource * volatile)expr->a[0];
-        if (lhs->part == AST_PIPE && PN_TUPLE_LEN(lhs->a[0]) == 1) {
-	  pipe++; // x|y=o
+        if (lhs->part == AST_PIPE) {
+	  vPN(Source) rhs;
+	  vPN(Source) lhs = (struct PNSource * volatile)expr->a[0];
+	  SIG_EXPR_MSG(lhs);
+	  sig = PN_PUSH(sig, PN_NUM('|'));
+	  rhs = (struct PNSource * volatile)expr->a[1];
+	  SIG_EXPR_MSG(rhs)
+	  DBG_c("sig: assign (pipe (expr (msg x)) ...) "
+		"=> assign (expr (msg x)) ...; x|y=o\n");
+/*
+	  pipe++; // x|y=o or x|y:=1
 	  expr = SRC_TUPLE_AT(lhs, 0);
 	  lhs = (struct PNSource * volatile)expr->a[0];
-	  DBG_c("sig: assign (pipe (expr (msg x)) ...) => assign (expr (msg x)) ...; x|y=o\n");
+*/
 	}
         if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1) {
 	  vPN(Source) rhs = (struct PNSource * volatile)expr->a[1];
