@@ -195,10 +195,10 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
 
-bench: bin/gc-bench${EXE} bin/potion${EXE}
+bench: test/api/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \
 	  ${ECHO} running GC benchmark; \
-	  time bin/gc-bench
+	  time test/api/gc-bench
 
 check: test
 test: bin/potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
@@ -257,15 +257,15 @@ test: bin/potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 	fi
 
 test/api/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
-	@${ECHO} LINK potion-test
+	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}
 
 test/api/gc-test${EXE}: ${OBJ_GC_TEST} lib/libpotion.a
-	@${ECHO} LINK gc-test
+	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/libpotion.a ${LIBS}
 
 test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libpotion.a
-	@${ECHO} LINK gc-bench
+	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libpotion.a ${LIBS}
 
 dist: pn static docall

@@ -258,6 +258,9 @@ void CuSuiteSummary(CuSuite* testSuite, CuString* summary)
 		CuStringAppend(summary, testCase->failed ? "F" : ".");
 	}
 	CuStringAppend(summary, "\n");
+	if (getenv("TEST_VERBOSE")) {
+	  printf("1..%d\n", CuCount); CuCount=0;
+	}
 }
 
 void CuSuiteDetails(CuSuite* testSuite, CuString* details)
