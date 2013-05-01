@@ -32,24 +32,33 @@ PN potion_closure_code(Potion *P, PN cl, PN self) {
   return PN_NIL;
 }
 
-PN potion_closure_string(Potion *P, PN cl, PN self, PN len) {
-  int x = 0;
+/**\memberof PNClosure
+ "string" of a function proto, unserializable. without body.
+ \param maxlen (ignored)
+ \return rough protoype as string. "function(arg1, arg2)"  */
+PN potion_closure_string(Potion *P, PN cl, PN self, PN maxlen) {
   PN out = potion_byte_str(P, "function(");
-  if (PN_IS_TUPLE(PN_CLOSURE(self)->sig)) {
-    PN_TUPLE_EACH(PN_CLOSURE(self)->sig, i, v, {
-      if (PN_IS_STR(v)) {
-        if (x++ > 0) pn_printf(P, out, ", ");
-        potion_bytes_obj_string(P, out, v);
-      }
-    });
-  }
+  potion_bytes_obj_string(P, out, potion_sig_string(P,cl,PN_CLOSURE(self)->sig));
   pn_printf(P, out, ")");
   return PN_STR_B(out);
 }
 
 long potion_arity(Potion *P, PN closure) {
-  if (PN_IS_TUPLE(PN_CLOSURE(closure)->sig))
-    return PN_TUPLE_LEN(PN_CLOSURE(closure)->sig) / 2;
+  if (PN_IS_TUPLE(PN_CLOSURE(closure)->sig)) {
+    //return PN_TUPLE_LEN(PN_CLOSURE(closure)->sig) / 2;
+    int count = 0;
+    struct PNTuple * volatile t = (struct PNTuple *)potion_fwd(PN_CLOSURE(closure)->sig);
+    if (t->len != 0) {
+      PN_SIZE i;
+      for (i = 0; i < t->len; i++) {
+	PN v = (PN)t->set[i];
+	if (PN_IS_STR(v)) count++; //names
+	//but not string default values
+	if (PN_IS_NUM(v) && v == ':' && PN_IS_STR((PN)t->set[i+1])) count--;
+      }
+    }
+    return count;
+  }
   return 0;
 }
 

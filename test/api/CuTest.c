@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "CuTest.h"
+static int CuCount = 0;
 
 /*-------------------------------------------------------------------------*
  * CuStr
@@ -143,6 +144,11 @@ void CuAssertTrue(CuTest* tc, int condition)
 void CuAssertStrEquals(CuTest* tc, char* expected, char* actual)
 {
 	CuString* message;
+	if (getenv("TEST_VERBOSE")) {
+	  printf("%sok %d # <%s> == <%s>\n", 
+		 !strcmp(expected, actual)?"":"not ",
+		 CuCount++, expected, actual);
+	}
 	if (strcmp(expected, actual) == 0) return;
 	message = CuStringNew();
 	CuStringAppend(message, "expected <");
@@ -156,6 +162,10 @@ void CuAssertStrEquals(CuTest* tc, char* expected, char* actual)
 void CuAssertIntEquals(CuTest* tc, char *message, int expected, int actual)
 {
 	char buf[STRING_MAX];
+	if (getenv("TEST_VERBOSE"))
+	  printf("%sok %d # %s %d==%d\n",
+		 expected==actual?"":"not ",
+		 CuCount++, message, expected, actual);
 	if (expected == actual) return;
 	sprintf(buf, "%s, expected <%d> but was <%d>", message, expected, actual);
 	CuFail(tc, buf);

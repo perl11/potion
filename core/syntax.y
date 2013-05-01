@@ -295,10 +295,12 @@ arg-name = < utfw+ > - { $$ = potion_str2(P, yytext, yyleng); }
 arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
        { $$ = PN_NUM(yytext[0]); }
 arg = n:arg-name assign t:arg-type
-                       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), t), PN_NIL); }
-    | t:arg-type       { P->source = PN_PUSH(P->source, t); }
+                       { P->source = PN_PUSH(PN_PUSH(P->source, n), t); }
+    # single types without name (N,o) as for FFIs now forbidden?
+    | assign t:arg-type { P->source = PN_PUSH(PN_PUSH(P->source, PN_STR("")), t); }
+    | n:arg-name        { P->source = PN_PUSH(P->source, n); }
     | n:arg-name defassign d:value
-                       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), PN_NUM(':')), d); }
+                        { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),PN_NUM(':')), d); }
 optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')); }
 arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
@@ -331,6 +333,24 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   return code;
 }
 
+/** convert signature string to sig tuple.
+  Old:
+    (name type|modifier ...)
+    name = PNString - variable name
+    type = NUM of potion_type_char, currently used: oNS&
+    modifier = NUM of '|' optional, '.' end, ':' default
+    \see potion_arity PN_TUPLE_LEN(PN_CLOSURE(closure)->sig) / 2
+  New:
+    "|name=type:=default." accept type (such as o)
+    "|name:=default."      type = typeof default
+    (name type|modifier default ...)
+    name: PNString of variable
+    type: PNString with prepended modifier, accept old type abbrevs: oNS&
+          and Num, String, Closure, PN
+    modifier: |:.
+    default: any single value, even nil, a closure, tuple, table, lick, ...
+    arity: len/3
+ */
 PN potion_sig(Potion *P, char *fmt) {
   PN out = PN_NIL;
   if (fmt == NULL) return PN_NIL; // no signature, arg check off
@@ -358,7 +378,8 @@ PN potion_sig(Potion *P, char *fmt) {
   P->input = oldinput;
   return out;
 }
-
+/** look for name in sig tuple in the given function and return the position.
+  */
 int potion_sig_find(Potion *P, PN cl, PN name)
 {
   PN_SIZE idx = 0;
@@ -377,7 +398,7 @@ int potion_sig_find(Potion *P, PN cl, PN name)
   PN_TUPLE_EACH(sig, i, v, {
     if (v == PN_NUM(idx) || v == name)
       return idx;
-    if (PN_IS_NUM(v))
+    if (PN_IS_NUM(v)) // type or modifier
       idx++;
   });
 

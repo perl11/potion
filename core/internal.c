@@ -6,6 +6,7 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "potion.h"
 #include "internal.h"
 #include "table.h"
@@ -236,6 +237,17 @@ void potion_error_init(Potion *P) {
 
 void potion_fatal(char *message) {
   fprintf(stderr, "** %s\n", message);
+  exit(PN_EXIT_FATAL);
+}
+
+void potion_syntax_error(Potion *P, const char *fmt, ...) {
+  va_list args;
+  PN out = potion_bytes(P, 36);
+  ((struct PNBytes * volatile)out)->len = 0;
+  va_start(args, fmt);
+  pn_printf(P, out, fmt, args);
+  va_end(args);
+  fprintf(stderr, "** Syntax error %s\n", PN_STR_PTR(out));
   exit(PN_EXIT_FATAL);
 }
 

@@ -174,6 +174,8 @@ struct PNVtable;
 #define PN_DBL(num)     (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDecimal *)num)->value)
 #define PN_PREC 16
 #define PN_RAND()       PN_NUM(potion_rand_int())
+#define PN_STR(x)       potion_str(P, x)
+#define PN_STRN(x)      potion_str2(P, x)
 #define PN_STR_PTR(x)   potion_str_ptr(x)
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
 #define PN_STR_B(x)     potion_bytes_string(P, PN_NIL, x)
@@ -339,10 +341,47 @@ struct PNClosure {
 ///
 /// An AST fragment, non-volatile.
 ///
+enum PN_AST {
+  AST_CODE,
+  AST_VALUE,
+  AST_ASSIGN,
+  AST_NOT,
+  AST_OR,
+  AST_AND,
+  AST_CMP,
+  AST_EQ,
+  AST_NEQ,
+  AST_GT,
+  AST_GTE,
+  AST_LT,
+  AST_LTE,
+  AST_PIPE,
+  AST_CARET,
+  AST_AMP,
+  AST_WAVY,
+  AST_BITL,
+  AST_BITR,
+  AST_PLUS,
+  AST_MINUS,
+  AST_INC,
+  AST_TIMES,
+  AST_DIV,
+  AST_REM,
+  AST_POW,
+  AST_MSG,
+  AST_PATH,
+  AST_QUERY,
+  AST_PATHQ,
+  AST_EXPR,
+  AST_LIST, /* was TABLE, it is a TUPLE */
+  AST_BLOCK,
+  AST_LICK,
+  AST_PROTO
+};
 struct PNSource {
-  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
-  unsigned char part;
-  PN a[0];
+  PN_OBJECT_HEADER;  	///< PNType vt; PNUniq uniq
+  enum PN_AST part;	///< AST type, avoid -Wswitch
+  PN a[0];		///< PNTuple of 1-3 kids, \see ast.c
 };
 
 ///
@@ -654,6 +693,7 @@ void potion_destroy(Potion *);
 PN potion_error(Potion *, PN, long, long, PN);
 void potion_fatal(char *);
 void potion_allocation_error(void);
+void potion_syntax_error(Potion *, const char *, ...);
 PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
@@ -729,6 +769,7 @@ PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dumpbc(Potion *, PN, PN);
 PN potion_greg_parse(Potion *, PN);
+PN potion_sig_string(Potion *, PN, PN);
 
 Potion *potion_gc_boot(void *);
 void potion_lobby_init(Potion *);

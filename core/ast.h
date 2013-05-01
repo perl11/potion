@@ -14,44 +14,9 @@ typedef struct {
 } PNArg;
 
 
-/// PN_AST - tree-types
-enum PN_AST {
-  AST_CODE,
-  AST_VALUE,
-  AST_ASSIGN,
-  AST_NOT,
-  AST_OR,
-  AST_AND,
-  AST_CMP,
-  AST_EQ,
-  AST_NEQ,
-  AST_GT,
-  AST_GTE,
-  AST_LT,
-  AST_LTE,
-  AST_PIPE,
-  AST_CARET,
-  AST_AMP,
-  AST_WAVY,
-  AST_BITL,
-  AST_BITR,
-  AST_PLUS,
-  AST_MINUS,
-  AST_INC,
-  AST_TIMES,
-  AST_DIV,
-  AST_REM,
-  AST_POW,
-  AST_MSG,
-  AST_PATH,
-  AST_QUERY,
-  AST_PATHQ,
-  AST_EXPR,
-  AST_LIST, /* was TABLE: () lua hash */
-  AST_BLOCK,
-  AST_LICK,
-  AST_PROTO
-};
+// PN_AST - tree-types, now in potion.h
+//enum PN_AST {
+//};
 
 #define PN_TOK_MISSING 0x10000
 
