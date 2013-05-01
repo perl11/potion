@@ -2,7 +2,7 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC    ?= gcc
-CFLAGS = -Wall -Werror -fno-strict-aliasing -Wno-return-type -Wno-unused-label -D_GNU_SOURCE
+CFLAGS = -Wall -Werror -fno-strict-aliasing -Wno-switch -Wno-return-type -Wno-unused-label -D_GNU_SOURCE
 INCS   = -Icore
 LIBPTH = -Llib/potion
 RPATH         = -Wl,-rpath=$(shell pwd)/lib/potion

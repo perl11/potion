@@ -90,14 +90,45 @@ void potion_test_tuple(CuTest *T) {
 void potion_test_sig(CuTest *T) {
   PN sig = potion_sig(P, "num1=N,num2=N");
   CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
+  CuAssertIntEquals(T, "sig len=2", 2, PN_INT(PN_TUPLE_LEN(sig)));
+  //CuAssertIntEquals(T, "sig arity=2", 2, PN_INT(potion_arity(P, sig)));
+  CuAssertStrEquals(T, "num1=N,num2=N", //roundtrip
+		    PN_STR_PTR(potion_sig_string(P,0,sig)));
+  CuAssertStrEquals(T, "(num1, 78, num2, 78)",
+		    PN_STR_PTR(potion_send(sig, PN_string)));
+  CuAssertStrEquals(T, "num1",
+		    PN_STR_PTR(potion_send(PN_TUPLE_AT(sig,0), PN_string)));
+  CuAssertIntEquals(T, "num1=N", 'N',
+		    PN_INT(PN_TUPLE_AT(sig,1)));
+  CuAssertStrEquals(T, "num2",
+		    PN_STR_PTR(potion_send(PN_TUPLE_AT(sig,2), PN_string)));
+  CuAssertIntEquals(T, "num2=N", 'N',
+		    PN_INT(PN_TUPLE_AT(sig,3)));
 
   sig = potion_sig(P, "x=N,y=N|r=N");
   CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
+  CuAssertStrEquals(T, "(x, 78, y, 78, 124, r, 78)",
+		    PN_STR_PTR(potion_send(sig, PN_string)));
+  CuAssertStrEquals(T, "x=N,y=N|r=N",
+		    PN_STR_PTR(potion_sig_string(P,0,sig)));
+  {
+    // roundtrips
+    char *sigs[] = {
+      "x,y", "x", "x=N", "x,y", "x|y",
+      "x=o|y,z", "x|y:=0", "", "x|y=o", "x,y.", "x:=1", "x=N,y=o"
+    };
+    int size = sizeof(sigs)/sizeof(char *);
+    int i;
+    for (i=0; i< size; i++) {
+      CuAssertStrEquals(T, sigs[i],
+			PN_STR_PTR(potion_sig_string(P,0,potion_sig(P, sigs[i]))));
+    }
+  }
 }
 
 void potion_test_eval(CuTest *T) {
   PN add = potion_eval(P, potion_str(P, "(x, y): x + y."), POTION_JIT);
-  PN_F addfn = PN_CLOSURE_F(add);
+  PN_F addfn = PN_CLOSURE_F(add); // c callback
   PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func failed",
     PN_INT(num), 8);

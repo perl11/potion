@@ -211,11 +211,14 @@ struct PNVtable;
   if (P->flags & (DEBUG_VERBOSE|DEBUG_TRACE)) fprintf(stderr, __VA_ARGS__)
 #define DBG_vi(...) \
   if (P->flags & (DEBUG_VERBOSE|DEBUG_INSPECT)) fprintf(stderr, __VA_ARGS__)
+#define DBG_c(...) \
+  if (P->flags & DEBUG_COMPILE) fprintf(stderr, __VA_ARGS__)
 #else
 #define DBG_t(...)
 #define DBG_v(...)
 #define DBG_vt(...)
 #define DBG_vi(...)
+#define DBG_c(...)
 #endif
 
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
@@ -341,10 +344,47 @@ struct PNClosure {
 ///
 /// An AST fragment, non-volatile.
 ///
+enum PN_AST {
+  AST_CODE,
+  AST_VALUE,
+  AST_ASSIGN,
+  AST_NOT,
+  AST_OR,
+  AST_AND,
+  AST_CMP,
+  AST_EQ,
+  AST_NEQ,
+  AST_GT,
+  AST_GTE,
+  AST_LT,
+  AST_LTE,
+  AST_PIPE,
+  AST_CARET,
+  AST_AMP,
+  AST_WAVY,
+  AST_BITL,
+  AST_BITR,
+  AST_PLUS,
+  AST_MINUS,
+  AST_INC,
+  AST_TIMES,
+  AST_DIV,
+  AST_REM,
+  AST_POW,
+  AST_MSG,
+  AST_PATH,
+  AST_QUERY,
+  AST_PATHQ,
+  AST_EXPR,
+  AST_LIST, /* was TABLE, it is a TUPLE */
+  AST_BLOCK,
+  AST_LICK,
+  AST_PROTO
+};
 struct PNSource {
-  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
-  unsigned char part;
-  PN a[0];
+  PN_OBJECT_HEADER;  	///< PNType vt; PNUniq uniq
+  enum PN_AST part;	///< AST type, avoid -Wswitch
+  PN a[0];		///< PNTuple of 1-3 kids, \see ast.c
 };
 
 ///
@@ -511,8 +551,9 @@ typedef enum {
   DEBUG_TRACE  = 1<<10,
   DEBUG_PARSE  = 1<<11,
   DEBUG_PARSE_VERBOSE = 1<<12,
-  DEBUG_GC     = 1<<13,
-  DEBUG_JIT    = 1<<14,
+  DEBUG_COMPILE= 1<<13,
+  DEBUG_GC     = 1<<14,
+  DEBUG_JIT    = 1<<15,
 #endif
 } Potion_Flags;
 
@@ -656,6 +697,7 @@ void potion_destroy(Potion *);
 PN potion_error(Potion *, PN, long, long, PN);
 void potion_fatal(char *);
 void potion_allocation_error(void);
+void potion_syntax_error(Potion *, const char *, ...);
 PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
@@ -731,6 +773,7 @@ PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
 PN potion_source_dumpbc(Potion *, PN, PN);
 PN potion_greg_parse(Potion *, PN);
+PN potion_sig_string(Potion *, PN, PN);
 
 Potion *potion_gc_boot(void *);
 void potion_lobby_init(Potion *);
