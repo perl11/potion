@@ -42,7 +42,7 @@ enum PN_AST {
   AST_DIV,
   AST_REM,
   AST_POW,
-  AST_MESSAGE,
+  AST_MSG,
   AST_PATH,
   AST_QUERY,
   AST_PATHQ,
@@ -66,7 +66,7 @@ enum PN_AST {
     if (PN_IS_TUPLE(endname)) endname = PN_TUPLE_AT(endname, 0); \
     if (endname != PN_NIL) { \
       if (PN_PART(endname) == AST_EXPR) endname = PN_TUPLE_AT(PN_S(endname, 0), 0); \
-      if (PN_PART(endname) == AST_MESSAGE || PN_PART(endname) == AST_PATH) \
+      if (PN_PART(endname) == AST_MSG || PN_PART(endname) == AST_PATH) \
         endname = PN_S(endname, 0); \
       if (P->unclosed == endname) { P->unclosed = PN_NIL; } \
     } \

@@ -115,7 +115,7 @@ ELSE    = "else" space+
 MY      = "my" space+
 
 subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
-        { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_AST(MESSAGE, n)), PN_AST2(PROTO, p, b)); }
+        { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_AST(MSG, n)), PN_AST2(PROTO, p, b)); }
 # so far no difference in global or lex assignment
 #subrout = SUB n:id - ( '(' p:sig_p5 ')' )? a:subattrlist? b:block
 #lexsubrout = MY - SUB n:subname p:proto? a:subattrlist? b:subbody
@@ -123,12 +123,12 @@ subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
 #subattrlist = ':' -? arg-name
 
 # TODO: compile-time sideeffs (BEGIN block) in the compiler
-use = USE n:id - semi    { $$ = PN_AST2(MESSAGE, PN_STRN("use",3), n); }
+use = USE n:id - semi    { $$ = PN_AST2(MSG, PN_STRN("use",3), n); }
 
 ifstmt = IF e:ifexpr s:block - !"els" { s  = PN_OP(AST_AND, e, s); }
-       | IF e:ifexpr s1:block         { s1 = PN_AST(MESSAGE, PN_if); }
-         (ELSIF e1:ifexpr f:block )*  { f = PN_AST(MESSAGE, PN_elsif); }
-         (ELSE s2:block )?            { s2 = PN_AST(MESSAGE, PN_else); }
+       | IF e:ifexpr s1:block         { s1 = PN_AST(MSG, PN_if); }
+         (ELSIF e1:ifexpr f:block )*  { f = PN_AST(MSG, PN_elsif); }
+         (ELSE s2:block )?            { s2 = PN_AST(MSG, PN_else); }
 
 ifexpr = '(' - expr - ')' -
 
@@ -214,10 +214,10 @@ expr = ( not a:expr           { a = PN_AST(NOT, a); }
 atom = e:value | e:anonsub | e:list | e:call
 
 call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:anonsub)? |
-       (v:value | v:list) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
+       (v:value | v:list) { n = PN_AST(MSG, PN_NIL); b = PN_NIL; } b:block?)
          { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
-name = !keyword m:message     { $$ = PN_AST(MESSAGE, m); }
+name = !keyword m:message     { $$ = PN_AST(MSG, m); }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1); }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2); })*
@@ -265,9 +265,9 @@ global  = scalar | listvar | hashvar | listel | hashel
 # FIXME: starting wordchar (no numbers) + wordchars
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng); }
 # send the value a message, every global is a closure (see name)
-scalar  = < '$' i:id > { $$ = PN_AST(MESSAGE, $$); }
-listvar = < '@' i:id > { $$ = PN_AST(MESSAGE, $$); }
-hashvar = < '%' i:id > { $$ = PN_AST(MESSAGE, $$); }
+scalar  = < '$' i:id > { $$ = PN_AST(MSG, $$); }
+listvar = < '@' i:id > { $$ = PN_AST(MSG, $$); }
+hashvar = < '%' i:id > { $$ = PN_AST(MSG, $$); }
 listel  = < '$' l:id '[' i:value ']' >
         { $$ = PN_AST2(LICK, PN_STRCAT("@", PN_STR_PTR(l)), i); }
 hashel  = < '$' h:id '{' i:value '}' >

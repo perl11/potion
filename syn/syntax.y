@@ -124,14 +124,14 @@ expr = ( not a:expr           { a = PN_AST(NOT, a); }
 atom = e:value | e:closure | e:list | e:call
 
 call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:closure)? |
-       (v:value | v:list) { n = PN_AST(MESSAGE, PN_NIL); b = PN_NIL; } b:block?)
+       (v:value | v:list) { n = PN_AST(MSG, PN_NIL); b = PN_NIL; } b:block?)
          { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
 
 name = p:path           { $$ = PN_AST(PATH, p); }
      | quiz ( m:message { $$ = PN_AST(QUERY, m); }
             | p:path    { $$ = PN_AST(PATHQ, p); })
      | !keyword
-       m:message        { $$ = PN_AST(MESSAGE, m); }
+       m:message        { $$ = PN_AST(MSG, m); }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1); }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2); })*
