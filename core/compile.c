@@ -728,9 +728,9 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
           sig = PN_PUSH(PN_PUSH(sig, name->a[0]), PN_NUM('o'));
         }
       } else if (expr->part == AST_VALUE) {
-        vPN(Source) rhs = (struct PNSource *)expr->a[0];
-	sig = PN_PUSH(PN_PUSH(sig, rhs->a[0]),
-		      PN_NUM(potion_type_char(potion_type(rhs->a[0]))));
+	potion_fatal("Syntax error: value as param");
+        //vPN(Source) rhs = (struct PNSource *)expr->a[0];
+	//sig = PN_PUSH(sig, rhs->a[0]);
       } else if (expr->part == AST_ASSIGN) {
         vPN(Source) lhs = (struct PNSource *)expr->a[0];
         if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1) {
@@ -738,8 +738,14 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
           lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
           if (lhs->part == AST_MSG) // name
             PN_PUT(f->locals, lhs->a[0]);
-          if (rhs->part == AST_VALUE)      // default
-	    sig = PN_PUSH(PN_PUSH(sig, lhs->a[0]), PN_NUM(':'));
+          if (rhs->part == AST_VALUE)      // :=default
+	    sig = PN_PUSH(PN_PUSH(PN_PUSH(sig, lhs->a[0]), PN_NUM(':')), rhs->a[0]);
+          else if (rhs->part == AST_EXPR && PN_TUPLE_LEN(rhs->a[0]) == 1) { // =type
+	    vPN(Source) ty = (struct PNSource *)PN_TUPLE_AT(rhs->a[0], 0);
+	    if (ty->part == AST_MSG) {
+	      sig = PN_PUSH(PN_PUSH(sig, ty->a[0]), PN_NUM(ty->a[0]));
+	    }
+	  }
 	}
       }
     }}}

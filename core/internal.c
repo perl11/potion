@@ -178,31 +178,33 @@ PNType potion_kind_of(PN obj) {
   return potion_type(obj);
 }
 /// valid signature types
+/// syntax.y: arg-type = ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&')
+/// valid signature modifiers: '|' optional, '.' end, ':' default
 char potion_type_char(PNType type) {
   switch (type) {
-  case PN_TNIL:  	return 'N'; //0
-  case PN_TNUMBER:	return 'n'; //1
-  case PN_TBOOLEAN:	return 'b'; //2
-  case PN_TSTRING:	return 's'; //3
-  case PN_TWEAK:       	return 'w'; //4
-  case PN_TCLOSURE:    	return 'c'; //5
-  case PN_TTUPLE:      	return 'u'; //6
+  case PN_TNIL:  	return 'n'; //0 il
+  case PN_TNUMBER:	return 'N'; //1 Number
+  case PN_TBOOLEAN:	return 'B'; //2 Boolean
+  case PN_TSTRING:	return 'S'; //3 String
+  case PN_TWEAK:       	return 0;   //4
+  case PN_TCLOSURE:    	return '&'; //5
+  // random guessing
+  case PN_TTUPLE:      	return 't'; //6
   case PN_TSTATE:      	return 'a'; //7
   case PN_TFILE:       	return 'f'; //8
-  case PN_TOBJECT:     	return 'O'; //9
+  case PN_TOBJECT:     	return 'o'; //9
   case PN_TVTABLE:     	return 't'; //10
-  case PN_TSOURCE:     	return 'S'; //11
+  case PN_TSOURCE:     	return 's'; //11
   case PN_TBYTES:      	return 'b'; //12
-  case PN_TPROTO:      	return '&'; //13
+  case PN_TPROTO:      	return 'P'; //13
   case PN_TLOBBY:      	return 'l'; //14
   case PN_TTABLE:      	return 'T'; //15
-  case PN_TLICK:       	return 'l'; //16
+  case PN_TLICK:       	return 'k'; //16
   case PN_TFLEX:       	return 'f'; //17
   case PN_TSTRINGS:    	return 'x'; //18
   case PN_TERROR:      	return 'r'; //19
   case PN_TCONT:       	return 'c'; //20
   case PN_TUSER:       	return 'u'; //21
-    // '|' '.'
   }
 }
 
