@@ -114,8 +114,9 @@ void potion_test_sig(CuTest *T) {
   {
     // roundtrips
     char *sigs[] = {
-      "x,y", "x", "x=N", "x,y", "x|y",
-      "x=o|y,z", "x|y:=0", "", "x|y=o", "x,y.", "x:=1", "x=N,y=o"
+      "", "x,y", "x", "x=N", "x,y", "x=N,y=o",
+      "x|y", "x|y,z", "x=o|y,z", "x|y=o", "x=N,y=N|r=N",
+      "|x:=1", "x|y:=0", "x,y.z",
     };
     int size = sizeof(sigs)/sizeof(char *);
     int i;
@@ -123,6 +124,19 @@ void potion_test_sig(CuTest *T) {
       CuAssertStrEquals(T, sigs[i],
 			PN_STR_PTR(potion_sig_string(P,0,potion_sig(P, sigs[i]))));
     }
+  }
+}
+
+void potion_test_proto(CuTest *T) {
+  vPN(Closure) f1 = PN_CLOSURE(potion_eval(P, potion_str(P, "(x,y):x+y."), POTION_JIT));
+  vPN(Closure) f2 = PN_CLOSURE(PN_FUNC(PN_CLOSURE_F(f1), "x=N,y=N"));
+  CuAssertIntEquals(T, "arity f1", 2, potion_arity(P, (PN)f1));
+  CuAssertIntEquals(T, "arity f2", 2, potion_arity(P, (PN)f2));
+  //vPN(Source) src = (vPN(Source)) potion_parse(P, potion_str(P, "(x,y):x+y."), "<eval>");
+  //CuAssert(T, "parse fun", PN_TYPE(src) == PN_TSOURCE);
+  {
+    //vPN(Proto) proto = PN_PROTO(potion_send(src, PN_compile, PN_NIL, PN_NIL));
+    //vPN(Tuple) sig = proto->sig;
   }
 }
 
@@ -157,6 +171,7 @@ CuSuite *potion_suite() {
   SUITE_ADD_TEST(S, potion_test_empty);
   SUITE_ADD_TEST(S, potion_test_tuple);
   SUITE_ADD_TEST(S, potion_test_sig);
+  SUITE_ADD_TEST(S, potion_test_proto);
   SUITE_ADD_TEST(S, potion_test_eval);
   SUITE_ADD_TEST(S, potion_test_allocated);
   return S;

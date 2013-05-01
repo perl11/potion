@@ -396,8 +396,8 @@ int potion_sig_find(Potion *P, PN cl, PN name)
   PN_TUPLE_EACH(sig, i, v, {
     PN prev = PN_NIL;
     if (v == name) return idx;
-    // count strings but not string default values
-    if (PN_IS_STR(v) && !(PN_IS_NUM(prev) && prev == PN_NUM(':'))) // name
+    // count names, not string default values
+    if (PN_IS_STR(v) && !(PN_IS_NUM(prev) && prev == PN_NUM(':')))
       idx++;
     prev = v;
   });
