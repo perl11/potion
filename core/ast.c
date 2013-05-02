@@ -26,14 +26,14 @@ const int potion_ast_sizes[] = {
 };
 
 PN potion_source(Potion *P, u8 p, PN a, PN b, PN c) {
-  vPN(Source) t = PN_ALLOC_N(PN_TSOURCE, struct PNSource, 3 * sizeof(PN));
-  t->a[0] = t->a[1] = t->a[2] = 0;
-    // TODO: potion_ast_sizes[p] * sizeof(PN) (then fix gc_copy)
+  vPN(Source) t = PN_ALLOC_N(PN_TSOURCE, struct PNSource, 0 * sizeof(PN));
+  // t->a[0] = t->a[1] = t->a[2] = (vPN(Source))0;
+  // TODO: potion_ast_sizes[p] * sizeof(PN) (then fix gc_copy)
 
   t->part = p;
-  t->a[0] = a;
-  if (potion_ast_sizes[p] > 1) t->a[1] = b;
-  if (potion_ast_sizes[p] > 2) t->a[2] = c;
+  t->a[0] = (vPN(Source))a;
+  if (potion_ast_sizes[p] > 1) t->a[1] = (vPN(Source))b;
+  if (potion_ast_sizes[p] > 2) t->a[2] = (vPN(Source))c;
   return (PN)t;
 }
 
@@ -60,7 +60,7 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
       }
       else cut = 0;
     }
-    potion_bytes_obj_string(P, out, t->a[i]);
+    potion_bytes_obj_string(P, out, (PN)t->a[i]);
     if (i == n - 1 && n > 1) {
       if (cut > 0) {
 	vPN(Bytes) b = (struct PNBytes *)potion_fwd(out);

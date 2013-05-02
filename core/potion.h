@@ -381,7 +381,7 @@ enum PN_AST {
 struct PNSource {
   PN_OBJECT_HEADER;  	///< PNType vt; PNUniq uniq
   enum PN_AST part;	///< AST type, avoid -Wswitch
-  PN a[0];		///< PNTuple of 1-3 kids, \see ast.c
+  struct PNSource * volatile a[3];///< PNTuple of 1-3 kids, \see ast.c
 };
 
 ///
