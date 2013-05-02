@@ -54,30 +54,34 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN maxlen) {
   pn_printf(P, out, ")");
   return PN_STR_B(out);
 }
-/// number of args, implements the closure_arity method
-long potion_arity(Potion *P, PN closure) {
-  if (PN_IS_TUPLE(PN_CLOSURE(closure)->sig)) {
+/// number of args of sig tuple, implements the closure_arity method
+long potion_sig_arity(Potion *P, PN sig) {
+  if (PN_IS_TUPLE(sig)) {
     //return PN_TUPLE_LEN(PN_CLOSURE(closure)->sig) / 2;
     int count = 0;
-    struct PNTuple * volatile t = (struct PNTuple *)potion_fwd(PN_CLOSURE(closure)->sig);
+    struct PNTuple * volatile t = (struct PNTuple *)potion_fwd(sig);
     if (t->len != 0) {
       PN_SIZE i;
       for (i = 0; i < t->len; i++) {
 	PN v = (PN)t->set[i];
-	if (PN_IS_STR(v)) count++; //names
-	//but not string default values
+	if (PN_IS_STR(v)) count++; // names
+	// but not string default values
 	if (PN_IS_NUM(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
       }
     }
     return count;
   }
-  return 0;
+  else if (sig == PN_NIL)
+    return 0;
+  else {
+    potion_fatal("wrong sig type for sig_arity");
+  }
 }
 /**\memberof PNClosure
  "arity" method, number of args
  \return as PNNumber */
 PN potion_closure_arity(Potion *P, PN cl, PN self) {
-  return PN_NUM(potion_arity(P, self));
+  return PN_NUM(potion_sig_arity(P, PN_CLOSURE(self)->sig));
 }
 
 PN potion_no_call(Potion *P, PN cl, PN self) {

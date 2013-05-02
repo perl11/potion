@@ -215,7 +215,7 @@ PN potion_tuple_clone(Potion *P, PN cl, PN self) {
 ///\param block PNClosure
 ///\return self PNTuple
 PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
-  int with_index = potion_arity(P, block) >= 2;
+  int with_index = potion_sig_arity(P, PN_CLOSURE(block)->sig) >= 2;
   PN_TUPLE_EACH(self, i, v, {
     if (with_index)
       PN_CLOSURE(block)->method(P, block, P->lobby, v, PN_NUM(i));
