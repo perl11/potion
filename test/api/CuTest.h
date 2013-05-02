@@ -1,6 +1,8 @@
 #ifndef CU_TEST_H
 #define CU_TEST_H
 
+/* prints also TAP format with setting the env variable TEST_VERBOSE */
+
 #include <setjmp.h>
 #include <stdarg.h>
 
