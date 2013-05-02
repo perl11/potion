@@ -115,8 +115,9 @@ void potion_test_sig(CuTest *T) {
     // roundtrips
     char *sigs[] = {
       "", "x,y", "x", "x=N", "x,y", "x=N,y=o",
-      "x|y", "x|y,z", "x=o|y,z", "x|y=o", "x=N,y=N|r=N",
-      "|x:=1", "x|y:=0", "x,y.z",
+      "x|y", "x|y,z", "x=o|y,z", "x|y=o", "x=N,y=N|r=N", /*optional */
+      "x:=1", "|x:=1", "x|y:=0", /* defaults */
+      "x,y.z", /* the dot */
     };
     int size = sizeof(sigs)/sizeof(char *);
     int i;
