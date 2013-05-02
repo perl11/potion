@@ -175,26 +175,27 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   if (reg >= PN_INT(f->stack)) \
     f->stack = PN_NUM(reg + 1)
 #ifdef P2
+// uses global PN_SRC(t)
 #define PN_ARG(n, reg) \
-  if (PN_PART(t->a[n]) == AST_LIST && PN_PART(PN_TUPLE_AT(PN_S(t->a[n], 0), 0)) == AST_EXPR) { \
-    PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n], 0), 0), 0); \
-    if (!PN_IS_NIL(test)) { \
-      PN_TUPLE_EACH(test, i, v, { \
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg); }); \
-    } \
-  } else { \
-    potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[n], reg); \
+  if (PN_PART(t->a[n]) == AST_LIST && PN_PART(PN_TUPLE_AT(PN_S(t->a[n],0), 0)) == AST_EXPR) { \
+    PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n],0), 0), 0);			\
+    if (!PN_IS_NIL(test)) {						\
+      PN_TUPLE_EACH(test, i, v, {					\
+	  potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg); });	\
+    }									\
+  } else {								\
+    potion_source_asmb(P, f, loop, 0, t->a[n], reg);		\
   }
 #else
 #define PN_ARG(n, reg) \
-  if (PN_PART(t->a[n]) == AST_EXPR && PN_PART(PN_TUPLE_AT(PN_S(t->a[n], 0), 0)) == AST_LIST) { \
-    PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n], 0), 0), 0); \
+  if (PN_PART(t->a[n]) == AST_EXPR && PN_PART(PN_TUPLE_AT(PN_S(t->a[n],0), 0)) == AST_LIST) { \
+    PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n],0), 0), 0); \
     if (!PN_IS_NIL(test)) { \
       PN_TUPLE_EACH(test, i, v, { \
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg); }); \
+        potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg); }); \
     } \
   } else { \
-    potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[n], reg); \
+    potion_source_asmb(P, f, loop, 0, t->a[n], reg);	\
   }
 #endif
 #define PN_BLOCK(reg, blk, sig) ({ \
@@ -233,6 +234,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   numup; \
 })
 #define PN_ARG_TABLE(args, reg, inc) potion_arg_asmb(P, f, loop, args, &reg, inc)
+#define SRC_TUPLE_AT(src,i)  PN_SRC((PN_TUPLE_AT(PN_S(src,0), i)))
 
 #define MAX_JUMPS 1024
 /// jump table for loops, for the 2 args b and c
@@ -245,30 +247,30 @@ struct PNLoop {
   int cjmpc;  ///< count of c jumps (abc regs)
 };
 
-void potion_source_asmb(Potion *, vPN(Proto), struct PNLoop *, PN_SIZE, vPN(Source), u8);
+void potion_source_asmb(Potion *, struct PNProto * volatile, struct PNLoop *, PN_SIZE, vPN(Source), u8);
 
-void potion_arg_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN args, u8 *reg, int inc)
+void potion_arg_asmb(Potion *P, struct PNProto * f, struct PNLoop *loop, PN args, u8 *reg, int inc)
 {
   if (args != PN_NIL) {
     if (PN_PART(args) == AST_LIST) {
-      args = PN_S(args, 0);
+      args = PN_S(args,0);
       if (!PN_IS_NIL(args)) {
         u8 freg = *reg, sreg = *reg + PN_TUPLE_LEN(args) + 1;
         PN_TUPLE_EACH(args, i, v, {
           if (inc) {
             (*reg)++;
             if (PN_PART(v) == AST_ASSIGN) {
-              vPN(Source) lhs = (struct PNSource *)PN_S(v, 0);
-              potion_source_asmb(P, f, loop, 0, (struct PNSource *)PN_S(v, 1), sreg + 1);
-              if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
+              vPN(Source) lhs = PN_SRC(PN_S(v,0));
+	      potion_source_asmb(P, f, loop, 0, PN_SRC(v)->a[1], sreg + 1);
+              if (lhs->part == AST_EXPR && PN_TUPLE_LEN(PN_S(lhs,0)) == 1)
               {
-                lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
+                lhs = SRC_TUPLE_AT(lhs, 0);
                 if (lhs->part == AST_MSG || lhs->part == AST_VALUE) {
-                  PN_OP op; op.a = lhs->a[0];
-                  if (!PN_IS_PTR(lhs->a[0]) && lhs->a[0] == (PN)op.a) {
-                    PN_ASM2(OP_LOADPN, sreg, lhs->a[0]);
+                  PN_OP op; op.a = PN_S(lhs,0); //12 bit!
+                  if (!PN_IS_PTR(PN_S(lhs,0)) && PN_S(lhs,0) == op.a) {
+                    PN_ASM2(OP_LOADPN, sreg, PN_S(lhs,0));
                   } else {
-                    PN_SIZE num = PN_PUT(f->values, lhs->a[0]);
+                    PN_SIZE num = PN_PUT(f->values, PN_S(lhs,0));
                     PN_ASM2(OP_LOADK, sreg, num);
                   }
                   lhs = NULL;
@@ -276,19 +278,19 @@ void potion_arg_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN args, u8 *
               }
 
               if (lhs != NULL)
-                potion_source_asmb(P, f, loop, 0, (struct PNSource *)lhs, sreg);
+                potion_source_asmb(P, f, loop, 0, lhs, sreg);
 
               PN_ASM2(OP_NAMED, freg - 1, sreg + 1);
               PN_REG(f, sreg + 1);
             } else
-              potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, *reg);
+              potion_source_asmb(P, f, loop, 0, PN_SRC(v), *reg);
           } else
-            potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, *reg);
+            potion_source_asmb(P, f, loop, 0, PN_SRC(v), *reg);
         });
       }
     } else {
       if (inc) (*reg)++;
-      potion_source_asmb(P, f, loop, 0, (struct PNSource *)args, *reg);
+      potion_source_asmb(P, f, loop, 0, PN_SRC(args), *reg);
     }
   } else {
     if (inc) (*reg)++;
@@ -296,47 +298,47 @@ void potion_arg_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN args, u8 *
   }
 }
 
-void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE count,
-                        vPN(Source) t, u8 reg) {
+void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop, PN_SIZE count,
+                        struct PNSource * volatile t, u8 reg) {
   PN_REG(f, reg);
 
   switch (t->part) {
     case AST_CODE:
     case AST_BLOCK:
-      if (t->a[0] != PN_NIL) {
-        PN_TUPLE_EACH(t->a[0], i, v, {
-          potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg);
+      if (PN_S(t,0) != PN_NIL) {
+        PN_TUPLE_EACH(PN_S(t,0), i, v, {
+	    potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg);
         });
       }
     break;
 
     case AST_EXPR:
-      if (t->a[0] != PN_NIL) {
-        PN_TUPLE_EACH(t->a[0], i, v, {
-          potion_source_asmb(P, f, loop, i, (struct PNSource *)v, reg);
+      if (PN_S(t,0) != PN_NIL) {
+        PN_TUPLE_EACH(PN_S(t,0), i, v, {
+	    potion_source_asmb(P, f, loop, i, PN_SRC(v), reg);
         });
       }
     break;
 
     case AST_PROTO:
-      PN_BLOCK(reg, t->a[1], t->a[0]);
+      PN_BLOCK(reg, PN_S(t,1), PN_S(t,0));
     break;
 
     case AST_VALUE: {
-      PN_OP op; op.a = t->a[0];
-      if (!PN_IS_PTR(t->a[0]) && t->a[0] == (PN)op.a) {
-        PN_ASM2(OP_LOADPN, reg, t->a[0]);
+      PN_OP op; op.a = PN_S(t,0);
+      if (!PN_IS_PTR(PN_S(t,0)) && PN_S(t,0) == (PN)op.a) {
+        PN_ASM2(OP_LOADPN, reg, PN_S(t,0));
       } else {
-        PN_SIZE num = PN_PUT(f->values, t->a[0]);
+        PN_SIZE num = PN_PUT(f->values, PN_S(t,0));
         PN_ASM2(OP_LOADK, reg, num);
       }
-      if (t->a[1] != PN_NIL) {
+      if (PN_S(t,1) != PN_NIL) {
         u8 breg = reg;
         PN_ASM1(OP_SELF, ++breg);
-        PN_ARG_TABLE(t->a[1], breg, 1);
-        if (t->a[2] != PN_NIL) {
+        PN_ARG_TABLE(PN_S(t,1), breg, 1);
+        if (PN_S(t,2) != PN_NIL) {
           breg++;
-          PN_BLOCK(breg, t->a[2], PN_NIL);
+          PN_BLOCK(breg, PN_S(t,2), PN_NIL);
         }
         PN_ASM2(OP_CALL, reg, breg);
       }
@@ -344,40 +346,40 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
     break;
 
     case AST_ASSIGN: {
-      vPN(Source) lhs = (struct PNSource *)t->a[0];
+      vPN(Source) lhs = t->a[0];
       PN_SIZE num = PN_NONE, c = count;
       u8 opcode = OP_GETUPVAL, breg = reg;
 
       if (lhs->part == AST_EXPR) {
         unsigned long i = 0;
-        c = PN_TUPLE_LEN(lhs->a[0]) - 1;
+        c = PN_TUPLE_LEN(PN_S(lhs,0)) - 1;
         for (i = 0; i < c; i++) {
-          potion_source_asmb(P, f, loop, i, (struct PNSource *)PN_TUPLE_AT(lhs->a[0], i), reg);
+          potion_source_asmb(P, f, loop, i, SRC_TUPLE_AT(lhs, i), reg);
         };
-        lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], c);
+        lhs = SRC_TUPLE_AT(lhs, c);
       }
 
       if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
-        char first_letter = PN_STR_PTR(lhs->a[0])[0];
+        char first_letter = PN_STR_PTR(PN_S(lhs,0))[0];
         if ((first_letter & 0x80) == 0 && isupper((unsigned char)first_letter)) {
-          num = PN_PUT(f->values, lhs->a[0]);
+          num = PN_PUT(f->values, PN_S(lhs,0));
           PN_ASM2(OP_LOADK, breg, num);
           opcode = OP_GLOBAL;
           num = ++breg;
         } else if (c == 0) {
-          num = PN_UPVAL(lhs->a[0]);
+          num = PN_UPVAL(PN_S(lhs,0));
           if (num == PN_NONE) {
-            num = PN_PUT(f->locals, lhs->a[0]);
+            num = PN_PUT(f->locals, PN_S(lhs,0));
             opcode = OP_GETLOCAL;
           }
         } else {
-          num = PN_PUT(f->values, lhs->a[0]);
+          num = PN_PUT(f->values, PN_S(lhs,0));
           PN_ASM2(OP_LOADK, ++breg, num);
           opcode = OP_DEF;
           num = ++breg;
         }
       } else if (lhs->part == AST_PATH || lhs->part == AST_PATHQ) {
-        num = PN_PUT(f->values, lhs->a[0]);
+        num = PN_PUT(f->values, PN_S(lhs,0));
         if (c == 0) {
           PN_PUT(f->paths, PN_NUM(num));
           PN_ASM1(OP_SELF, reg);
@@ -391,12 +393,12 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
         breg = reg;
         PN_ASM2(opcode, ++breg, num);
         PN_ASM2(OP_CALLSET, reg, breg);
-        PN_ARG_TABLE(lhs->a[1], breg, 1);
+        PN_ARG_TABLE(PN_S(lhs,1), breg, 1);
         // TODO: no block allowed here?
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], ++breg);
+        potion_source_asmb(P, f, loop, 0, t->a[1], ++breg);
         PN_ASM2(OP_CALL, reg, breg);
       } else {
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], breg);
+        potion_source_asmb(P, f, loop, 0, t->a[1], breg);
         if (opcode == OP_GETUPVAL) {
           if (lhs->part == AST_QUERY) {
             PN_ASM2(OP_GETUPVAL, breg, num);
@@ -425,11 +427,11 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
 
     case AST_INC: {
       u8 breg = reg;
-      vPN(Source) lhs = (struct PNSource *)t->a[0];
-      PN_SIZE num = PN_UPVAL(lhs->a[0]);
+      vPN(Source) lhs = t->a[0];
+      PN_SIZE num = PN_UPVAL(PN_S(lhs,0));
       u8 opcode = OP_SETUPVAL;
       if (num == PN_NONE) {
-        num = PN_PUT(f->locals, lhs->a[0]);
+        num = PN_PUT(f->locals, PN_S(lhs,0));
         opcode = OP_SETLOCAL;
       }
 
@@ -437,11 +439,11 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
         PN_ASM2(OP_GETUPVAL, reg, num);
        else if (opcode == OP_SETLOCAL)
         PN_ASM2(OP_GETLOCAL, reg, num);
-      if (PN_IS_NUM(t->a[1])) {
+      if (PN_IS_NUM(PN_S(t,1))) {
         breg++;
         PN_ASM2(OP_MOVE, breg, reg);
       }
-      PN_ASM2(OP_LOADPN, breg + 1, (t->a[1] | PN_FNUMBER));
+      PN_ASM2(OP_LOADPN, breg + 1, (PN_S(t,1) | PN_FNUMBER));
       PN_ASM2(OP_ADD, breg, breg + 1);
       PN_ASM2(opcode, breg, num);
       PN_REG(f, breg + 1);
@@ -493,56 +495,56 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
     case AST_MSG:
     case AST_QUERY: {
       u8 breg = reg;
-      int arg = (t->a[1] != PN_NIL);
-      int call = (t->a[2] != PN_NIL || arg);
-      if (t->part == AST_MSG && t->a[0] == PN_if) {
+      int arg = (PN_S(t,1) != PN_NIL);
+      int call = (PN_S(t,2) != PN_NIL || arg);
+      if (t->part == AST_MSG && PN_S(t,0) == PN_if) {
         int jmp; breg++;
-        PN_ARG_TABLE(t->a[1], breg, 0);
+        PN_ARG_TABLE(PN_S(t,1), breg, 0);
         jmp = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg);
+        potion_source_asmb(P, f, loop, 0, t->a[2], reg);
         PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
-      } else if (t->part == AST_MSG && t->a[0] == PN_elsif) {
+      } else if (t->part == AST_MSG && PN_S(t,0) == PN_elsif) {
         int jmp1 = PN_OP_LEN(f->asmb), jmp2; breg++;
         PN_ASM2(OP_TESTJMP, breg, 0);
-        PN_ARG_TABLE(t->a[1], breg, 0);
+        PN_ARG_TABLE(PN_S(t,1), breg, 0);
         jmp2 = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg);
+        potion_source_asmb(P, f, loop, 0, t->a[2], reg);
         PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
         PN_OP_AT(f->asmb, jmp2).b = (PN_OP_LEN(f->asmb) - jmp2) - 1;
-      } else if (t->part == AST_MSG && t->a[0] == PN_else) {
+      } else if (t->part == AST_MSG && PN_S(t,0) == PN_else) {
         int jmp = PN_OP_LEN(f->asmb); breg++;
         PN_ASM2(OP_TESTJMP, breg, 0);
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], reg);
+        potion_source_asmb(P, f, loop, 0, t->a[2], reg);
         PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
-      } else if (t->part == AST_MSG && t->a[0] == PN_class) {
+      } else if (t->part == AST_MSG && PN_S(t,0) == PN_class) {
         u8 breg = reg;
         if (count == 0)
           PN_ASM1(OP_SELF, reg);
-        if (t->a[2] != PN_NIL) {
+        if (PN_S(t,2) != PN_NIL) {
           // TODO: a hack to make sure constructors always return self
-          if (PN_S(t->a[2], 0) == PN_NIL)
-            PN_S(t->a[2], 0) = PN_AST(CODE, PN_NIL);
-          PN ctor = PN_S(t->a[2], 0);
+          if (PN_S(PN_S(t,2), 0) == PN_NIL)
+            (t->a[2])->a[0] = PN_SRC(PN_AST(CODE, PN_NIL));
+          PN ctor = PN_S(PN_S(t,2), 0);
           PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MSG, potion_str(P, "self")))));
           breg++;
-          PN_BLOCK(breg, t->a[2], t->a[1]);
+          PN_BLOCK(breg, PN_S(t,2), PN_S(t,1));
         }
         PN_ASM2(OP_CLASS, reg, breg);
-      } else if (t->part == AST_MSG && (t->a[0] == PN_while || t->a[0] == PN_loop)) {
+      } else if (t->part == AST_MSG && (PN_S(t,0) == PN_while || PN_S(t,0) == PN_loop)) {
         int jmp1 = 0, jmp2 = PN_OP_LEN(f->asmb); breg++;
         struct PNLoop l; l.bjmpc = 0; l.cjmpc = 0;
         int i;
-        if (t->a[0] == PN_while) {
+        if (PN_S(t,0) == PN_while) {
           // TODO: error if args to `loop`?
-          PN_ARG_TABLE(t->a[1], breg, 0);
+          PN_ARG_TABLE(PN_S(t,1), breg, 0);
           jmp1 = PN_OP_LEN(f->asmb);
           PN_ASM2(OP_NOTJMP, breg, 0);
         }
-        potion_source_asmb(P, f, &l, 0, (struct PNSource *)t->a[2], reg);
+        potion_source_asmb(P, f, &l, 0, t->a[2], reg);
         PN_ASM1(OP_JMP, (jmp2 - PN_OP_LEN(f->asmb)) - 1);
-        if (t->a[0] == PN_while) {
+        if (PN_S(t,0) == PN_while) {
           PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
         }
         for (i = 0; i < l.bjmpc; i++) {
@@ -551,75 +553,75 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
         for (i = 0; i < l.cjmpc; i++) {
           PN_OP_AT(f->asmb, l.cjmps[i]).a = (jmp2 - l.cjmps[i]) - 1;
         }
-      } else if (t->part == AST_MSG && t->a[0] == PN_return) {
-        PN_ARG_TABLE(t->a[1], reg, 0);
+      } else if (t->part == AST_MSG && PN_S(t,0) == PN_return) {
+        PN_ARG_TABLE(PN_S(t,1), reg, 0);
         PN_ASM1(OP_RETURN, reg);
-      } else if (t->part == AST_MSG && t->a[0] == PN_break) {
+      } else if (t->part == AST_MSG && PN_S(t,0) == PN_break) {
         if (loop != NULL) {
           loop->bjmps[loop->bjmpc++] = PN_OP_LEN(f->asmb);
           PN_ASM1(OP_JMP, 0);
         } else {
           // TODO: Report error: 'break' outside of loop.
         }
-      } else if (t->part == AST_MSG && t->a[0] == PN_continue) {
+      } else if (t->part == AST_MSG && PN_S(t,0) == PN_continue) {
         if (loop != NULL) {
           loop->cjmps[loop->cjmpc++] = PN_OP_LEN(f->asmb);
           PN_ASM1(OP_JMP, 0);
         } else {
           // TODO: Report error: 'continue' outside of loop.
         }
-      } else if (t->part == AST_MSG && t->a[0] == PN_self) {
+      } else if (t->part == AST_MSG && PN_S(t,0) == PN_self) {
         PN_ASM1(OP_SELF, reg);
       } else {
         u8 opcode = OP_GETUPVAL;
         PN_SIZE num = PN_NONE;
         if (count == 0 && t->part == AST_MSG) {
-          num = PN_UPVAL(t->a[0]);
+          num = PN_UPVAL(PN_S(t,0));
           if (num == PN_NONE) {
-            num = PN_GET(f->locals, t->a[0]);
+            num = PN_GET(f->locals, PN_S(t,0));
             opcode = OP_GETLOCAL;
           }
         }
 
-        if (num == PN_NONE && t->a[0] != PN_NIL) {
+        if (num == PN_NONE && PN_S(t,0) != PN_NIL) {
           u8 oreg = ++breg;
           int jmp = 0;
-          num = PN_PUT(f->values, t->a[0]);
+          num = PN_PUT(f->values, PN_S(t,0));
           if (count == 0) {
             PN_ASM1(OP_SELF, oreg);
           } else {
             PN_ASM2(OP_MOVE, oreg, reg);
           }
           PN_ASM2(OP_LOADK, reg, num);
-          PN_ASM2(t->a[1] != PN_NIL || t->a[2] != PN_NIL ? OP_MSG : OP_BIND, reg, breg);
-          if (t->part == AST_QUERY && t->a[1] != PN_NIL) {
+          PN_ASM2(PN_S(t,1) != PN_NIL || PN_S(t,2) != PN_NIL ? OP_MSG : OP_BIND, reg, breg);
+          if (t->part == AST_QUERY && PN_S(t,1) != PN_NIL) {
             jmp = PN_OP_LEN(f->asmb);
             PN_ASM2(OP_NOTJMP, reg, 0);
           }
-#define LOAD_ARG() PN_ARG_TABLE(t->a[1], breg, 1)
+#define LOAD_ARG() PN_ARG_TABLE(PN_S(t,1), breg, 1)
           if (arg) {
-            u8 part1 = ((struct PNSource *)(t->a[1]))->part;
-            if (part1 == AST_VALUE || (part1 == AST_LIST && t->a[2] == PN_NIL)) {
+            u8 part1 = PN_PART(PN_S(t,1));
+            if (part1 == AST_VALUE || (part1 == AST_LIST && PN_S(t,2) == PN_NIL)) {
               LOAD_ARG();
             }
           }
-          if (t->a[2] != PN_NIL && ((struct PNSource *)(t->a[2]))->part == AST_PROTO) {
-            vPN(Source) t2 = (struct PNSource *)(t->a[2]);
+          if (PN_S(t,2) != PN_NIL && (PN_PART(PN_S(t,2)) == AST_PROTO)) {
+            vPN(Source) t2 = PN_SRC(PN_S(t,2));
             breg++;
-            PN_BLOCK(breg, t2->a[1], t2->a[0]);
+            PN_BLOCK(breg, PN_S(t2,1), PN_S(t2,0));
           } else {
-            if (t->a[1] == PN_NIL && t->a[2] == PN_NIL)
+            if (PN_S(t,1) == PN_NIL && PN_S(t,2) == PN_NIL)
               LOAD_ARG();
-            if (t->a[2] != PN_NIL && ((struct PNSource *)(t->a[2]))->part == AST_BLOCK) {
+            if (PN_S(t,2) != PN_NIL && PN_PART(PN_S(t,2)) == AST_BLOCK) {
               breg++;
-              PN_BLOCK(breg, t->a[2], t->a[1]);
+              PN_BLOCK(breg, PN_S(t,2), PN_S(t,1));
             }
           }
 #undef LOAD_ARG
           if (t->part == AST_MSG) {
             PN_ASM2(OP_CALL, reg, breg);
           } else
-            if (t->a[1] != PN_NIL) {
+            if (PN_S(t,1) != PN_NIL) {
               PN_ASM2(OP_CALL, reg, breg);
               PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
             } else {
@@ -630,10 +632,10 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
             PN_ASM2(opcode, reg, num);
           if (call) {
             PN_ASM1(OP_SELF, ++breg);
-            PN_ARG_TABLE(t->a[1], breg, 1);
-            if (t->a[2] != PN_NIL) {
+            PN_ARG_TABLE(PN_S(t,1), breg, 1);
+            if (PN_S(t,2) != PN_NIL) {
               breg++;
-              PN_BLOCK(breg, t->a[2], PN_NIL);
+              PN_BLOCK(breg, PN_S(t,2), PN_NIL);
             }
             PN_ASM2(OP_CALL, reg, breg);
           }
@@ -645,7 +647,7 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
 
     case AST_PATH:
     case AST_PATHQ: {
-      PN_SIZE num = PN_PUT(f->values, t->a[0]);
+      PN_SIZE num = PN_PUT(f->values, PN_S(t,0));
       if (count == 0) {
         PN_PUT(f->paths, PN_NUM(num));
         PN_ASM1(OP_SELF, reg);
@@ -660,14 +662,14 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
 
     case AST_LICK: {
       u8 breg = reg;
-      PN_SIZE num = PN_PUT(f->values, t->a[0]);
+      PN_SIZE num = PN_PUT(f->values, PN_S(t,0));
       PN_ASM2(OP_LOADK, reg, num);
-      if (t->a[1] != PN_NIL)
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[1], ++breg);
-      else if (t->a[2] != PN_NIL)
+      if (PN_S(t,1) != PN_NIL)
+        potion_source_asmb(P, f, loop, 0, t->a[1], ++breg);
+      else if (PN_S(t,2) != PN_NIL)
         PN_ASM2(OP_LOADPN, ++breg, PN_NIL);
-      if (t->a[2] != PN_NIL)
-        potion_source_asmb(P, f, loop, 0, (struct PNSource *)t->a[2], ++breg);
+      if (PN_S(t,2) != PN_NIL)
+        potion_source_asmb(P, f, loop, 0, t->a[2], ++breg);
       PN_ASM2(OP_NEWLICK, reg, breg);
       PN_REG(f, breg);
     }
@@ -675,28 +677,28 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
 
     case AST_LIST:
       PN_ASM1(OP_NEWTUPLE, reg);
-      if (t->a[0] != PN_NIL) {
-        PN_TUPLE_EACH(t->a[0], i, v, {
+      if (PN_S(t,0) != PN_NIL) {
+        PN_TUPLE_EACH(PN_S(t,0), i, v, {
           if (PN_PART(v) == AST_ASSIGN) {
-            vPN(Source) lhs = (struct PNSource *)PN_S(v, 0);
-            if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1)
+            vPN(Source) lhs = PN_SRC(PN_S(v,0));
+            if (lhs->part == AST_EXPR && PN_TUPLE_LEN(PN_S(lhs,0)) == 1)
             {
-              lhs = (struct PNSource *)PN_TUPLE_AT(lhs->a[0], 0);
+              lhs = SRC_TUPLE_AT(lhs, 0);
               if (lhs->part == AST_MSG) {
-                PN_SIZE num = PN_PUT(f->values, lhs->a[0]);
+                PN_SIZE num = PN_PUT(f->values, PN_S(lhs,0));
                 PN_ASM2(OP_LOADK, reg + 1, num);
                 lhs = NULL;
               }
             }
 
             if (lhs != NULL)
-              potion_source_asmb(P, f, loop, 0, (struct PNSource *)lhs, reg + 1);
+              potion_source_asmb(P, f, loop, 0, lhs, reg + 1);
 
-            potion_source_asmb(P, f, loop, 0, (struct PNSource *)PN_S(v, 1), reg + 2);
+            potion_source_asmb(P, f, loop, 0, PN_SRC(v)->a[1], reg + 2);
             PN_ASM2(OP_SETTABLE, reg, reg + 2);
             PN_REG(f, reg + 2);
           } else {
-            potion_source_asmb(P, f, loop, 0, (struct PNSource *)v, reg + 1);
+            potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg + 1);
             PN_ASM2(OP_SETTUPLE, reg, reg + 1);
             PN_REG(f, reg + 1);
           }
@@ -706,15 +708,13 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
   }
 }
 
-#define SRC_TUPLE_AT(src,i) \
-  (struct PNSource * volatile)PN_TUPLE_AT(src->a[0], i)
-#define SIG_EXPR_MSG(expr) \
-  if (expr->part == AST_EXPR) { \
-    vPN(Source) name = SRC_TUPLE_AT(expr, 0); \
-    if (name->part == AST_MSG) {      \
-      PN_PUT(f->locals, name->a[0]);  \
-      sig = PN_PUSH(sig, name->a[0]); \
-    }				      \
+#define SIG_EXPR_MSG(expr)			\
+  if (expr->part == AST_EXPR) {			\
+    vPN(Source) name = SRC_TUPLE_AT(expr, 0);	\
+    if (name->part == AST_MSG) {		\
+      PN_PUT(f->locals, PN_S(name,0));		\
+      sig = PN_PUSH(sig, PN_S(name,0));		\
+    }						\
   }
 
 /// Extract locals, apply type defaults and do type and param checks.
@@ -733,38 +733,37 @@ void potion_source_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN_SIZE co
 ///              assign (expr (msg (y)) value (1 ))) \endcode
 PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   PN sig = PN_TUP0();
-  vPN(Source) t = (struct PNSource *)src;
-  if (t->part == AST_LIST && t->a[0] != PN_NIL) {
-    //PN_TUPLE_EACH(t->a[0], i, v, {
-    ({ struct PNTuple * volatile __tv = ((struct PNTuple *)potion_fwd(t->a[0]));
+  vPN(Source) t = PN_SRC(src);
+  if (t->part == AST_LIST && PN_S(t,0) != PN_NIL) {
+    //PN_TUPLE_EACH(PN_S(t,0), i, v, {
+    ({ struct PNTuple * volatile __tv = ((struct PNTuple *)potion_fwd(PN_S(t,0)));
       if (__tv->len != 0) { 
 	PN_SIZE i;
 	for (i = 0; i < __tv->len; i++) {
-	  struct PNSource *v = (struct PNSource *)__tv->set[i]; 
+	  struct PNSource *v = PN_SRC(__tv->set[i]);
 	  {
-      vPN(Source) expr = (struct PNSource *)v;
+      vPN(Source) expr = PN_SRC(v);
       SIG_EXPR_MSG(expr)
       if (expr->part == AST_VALUE) {
 	potion_fatal("Syntax error: value as param");
         //vPN(Source) rhs = (struct PNSource *)expr->a[0];
 	//sig = PN_PUSH(sig, rhs->a[0]);
       } else if (expr->part == AST_PIPE) { //x|y => (pipe (expm x) (expm y)
-	vPN(Source) rhs;
-	vPN(Source) lhs = (struct PNSource * volatile)expr->a[0];
+	vPN(Source) lhs = expr->a[0];
+	vPN(Source) rhs = expr->a[1];
 	SIG_EXPR_MSG(lhs);
 	sig = PN_PUSH(sig, PN_NUM('|'));
-	rhs = (struct PNSource * volatile)expr->a[1];
 	SIG_EXPR_MSG(rhs)
 	DBG_c("sig: pipe (expr (msg x) (expr (msg y))) => x|y\n");
       } else if (expr->part == AST_ASSIGN) {
 	int pipe = 0;
-        vPN(Source) lhs = (struct PNSource * volatile)expr->a[0];
+        vPN(Source) lhs = expr->a[0];
         if (lhs->part == AST_PIPE) {
-	  vPN(Source) rhs;
-	  vPN(Source) lhs = (struct PNSource * volatile)expr->a[0];
+	  vPN(Source) lhs = expr->a[0];
+	  vPN(Source) rhs = expr->a[1];
 	  SIG_EXPR_MSG(lhs);
 	  sig = PN_PUSH(sig, PN_NUM('|'));
-	  rhs = (struct PNSource * volatile)expr->a[1];
+	  rhs = expr->a[1];
 	  SIG_EXPR_MSG(rhs)
 	  DBG_c("sig: assign (pipe (expr (msg x)) ...) "
 		"=> assign (expr (msg x)) ...; x|y=o\n");
@@ -774,12 +773,13 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 	  lhs = (struct PNSource * volatile)expr->a[0];
 */
 	}
-        if (lhs->part == AST_EXPR && PN_TUPLE_LEN(lhs->a[0]) == 1) {
-	  vPN(Source) rhs = (struct PNSource * volatile)expr->a[1];
+        if (lhs->part == AST_EXPR && PN_TUPLE_LEN(PN_S(lhs,0)) == 1) {
+	  //vPN(Source) lhs = expr->a[0];
+	  vPN(Source) rhs = expr->a[1];
           lhs = SRC_TUPLE_AT(lhs, 0);
           if (lhs->part == AST_MSG) // name
-            PN_PUT(f->locals, lhs->a[0]);
-	  sig = PN_PUSH(sig, lhs->a[0]);
+            PN_PUT(f->locals, PN_S(lhs,0));
+	  sig = PN_PUSH(sig, PN_S(lhs,0));
 	  if (pipe) {
 	    DBG_c("sig: assign (pipe (expr (msg x))) => assign (expr (msg x)); x|y=o\n");
 	    sig = PN_PUSH(sig, PN_NUM('|')); pipe = 0;
@@ -788,11 +788,11 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 	  }
           if (rhs->part == AST_VALUE) {     // :=default
 	    DBG_c("sig: assign (expr (msg x)) (value 1) => x:=1\n");
-	    sig = PN_PUSH(PN_PUSH(sig, PN_NUM(':')), rhs->a[0]);
+	    sig = PN_PUSH(PN_PUSH(sig, PN_NUM(':')), PN_S(rhs,0));
           } else if (rhs->part == AST_EXPR && PN_TUPLE_LEN(rhs->a[0]) == 1) {
 	    rhs = SRC_TUPLE_AT(rhs, 0);
 	    if (rhs->part == AST_MSG)
-	      sig = PN_PUSH(sig, rhs->a[0]);
+	      sig = PN_PUSH(sig, PN_S(rhs,0));
 	  }
 	}
       }

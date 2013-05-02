@@ -38,132 +38,132 @@
 
 %}
 
-potion = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s); }
+potion = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s) }
 
-statements = s1:stmt { $$ = s1 = PN_TUP(s1); }
-        (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2); })*
+statements = s1:stmt { $$ = s1 = PN_TUP(s1) }
+        (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2) })*
          sep?
      | ''            { $$ = PN_NIL; }
 
 stmt = s:sets
-       ( or x:sets          { s = PN_OP(AST_OR, s, x); }
-       | and x:sets         { s = PN_OP(AST_AND, s, x); })*
+       ( or x:sets          { s = PN_OP(AST_OR, s, x) }
+       | and x:sets         { s = PN_OP(AST_AND, s, x) })*
        { $$ = s; }
 
 sets = e:eqs
-       ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
-       | defassign s:value   { e = PN_AST2(ASSIGN, e, s); }
-       | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
-       | and assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
-       | pipe assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PIPE, e, s)); }
-       | caret assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_CARET, e, s)); }
-       | amp assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_AMP, e, s)); }
-       | bitl assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITL, e, s)); }
-       | bitr assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITR, e, s)); }
-       | plus assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PLUS, e, s)); }
-       | minus assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_MINUS, e, s)); }
-       | times assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_TIMES, e, s)); }
-       | div assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_DIV, e, s)); }
-       | rem assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_REM, e, s)); }
-       | pow assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_POW, e, s)); })?
+       ( assign s:sets       { e = PN_AST2(ASSIGN, e, s) }
+       | defassign s:value   { e = PN_AST2(ASSIGN, e, s) }
+       | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)) }
+       | and assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)) }
+       | pipe assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PIPE, e, s)) }
+       | caret assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_CARET, e, s)) }
+       | amp assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_AMP, e, s)) }
+       | bitl assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITL, e, s)) }
+       | bitr assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITR, e, s)) }
+       | plus assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PLUS, e, s)) }
+       | minus assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_MINUS, e, s)) }
+       | times assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_TIMES, e, s)) }
+       | div assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_DIV, e, s)) }
+       | rem assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_REM, e, s)) }
+       | pow assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_POW, e, s)) })?
        { $$ = e; }
 
 eqs = c:cmps
-      ( cmp x:cmps          { c = PN_OP(AST_CMP, c, x); }
-      | eq x:cmps           { c = PN_OP(AST_EQ, c, x); }
-      | neq x:cmps          { c = PN_OP(AST_NEQ, c, x); })*
+      ( cmp x:cmps          { c = PN_OP(AST_CMP, c, x) }
+      | eq x:cmps           { c = PN_OP(AST_EQ, c, x) }
+      | neq x:cmps          { c = PN_OP(AST_NEQ, c, x) })*
       { $$ = c; }
 
 cmps = o:bitors
-       ( gte x:bitors        { o = PN_OP(AST_GTE, o, x); }
-       | gt x:bitors         { o = PN_OP(AST_GT, o, x); }
-       | lte x:bitors        { o = PN_OP(AST_LTE, o, x); }
-       | lt x:bitors         { o = PN_OP(AST_LT, o, x); })*
+       ( gte x:bitors        { o = PN_OP(AST_GTE, o, x) }
+       | gt x:bitors         { o = PN_OP(AST_GT, o, x) }
+       | lte x:bitors        { o = PN_OP(AST_LTE, o, x) }
+       | lt x:bitors         { o = PN_OP(AST_LT, o, x) })*
        { $$ = o; }
 
 bitors = a:bitand
-         ( pipe x:bitand       { a = PN_OP(AST_PIPE, a, x); }
-         | caret x:bitand      { a = PN_OP(AST_CARET, a, x); })*
+         ( pipe x:bitand       { a = PN_OP(AST_PIPE, a, x) }
+         | caret x:bitand      { a = PN_OP(AST_CARET, a, x) })*
          { $$ = a; }
 
 bitand = b:bitshift
-         ( amp x:bitshift      { b = PN_OP(AST_AMP, b, x); })*
+         ( amp x:bitshift      { b = PN_OP(AST_AMP, b, x) })*
          { $$ = b; }
 
 bitshift = s:sum
-           ( bitl x:sum          { s = PN_OP(AST_BITL, s, x); }
-           | bitr x:sum          { s = PN_OP(AST_BITR, s, x); })*
+           ( bitl x:sum          { s = PN_OP(AST_BITL, s, x) }
+           | bitr x:sum          { s = PN_OP(AST_BITR, s, x) })*
            { $$ = s; }
 
 sum = p:product
-      ( plus x:product      { p = PN_OP(AST_PLUS, p, x); }
-      | minus x:product     { p = PN_OP(AST_MINUS, p, x); })*
+      ( plus x:product      { p = PN_OP(AST_PLUS, p, x) }
+      | minus x:product     { p = PN_OP(AST_MINUS, p, x) })*
       { $$ = p; }
 
 product = p:power
-          ( times x:power           { p = PN_OP(AST_TIMES, p, x); }
-          | div x:power             { p = PN_OP(AST_DIV, p, x); }
-          | rem x:power             { p = PN_OP(AST_REM, p, x); })*
+          ( times x:power           { p = PN_OP(AST_TIMES, p, x) }
+          | div x:power             { p = PN_OP(AST_DIV, p, x) }
+          | rem x:power             { p = PN_OP(AST_REM, p, x) })*
           { $$ = p; }
 
 power = e:expr
-        ( pow x:expr { e = PN_OP(AST_POW, e, x); })*
+        ( pow x:expr { e = PN_OP(AST_POW, e, x) })*
         { $$ = e; }
 
-expr = ( not a:expr           { a = PN_AST(NOT, a); }
-       | wavy a:expr          { a = PN_AST(WAVY, a); }
-       | minus !minus a:atom  { a = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), a); }
-       | plus !plus a:atom    { a = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), a); }
-       | mminus a:atom        { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1); }
-       | pplus a:atom         { a = PN_OP(AST_INC, a, PN_NUM(1) ^ 1); }
-       | a:atom (pplus          { a = PN_OP(AST_INC, a, PN_NUM(1)); }
-               | mminus         { a = PN_OP(AST_INC, a, PN_NUM(-1)); })?) { a = PN_TUP(a); }
+expr = ( not a:expr           { a = PN_AST(NOT, a) }
+       | wavy a:expr          { a = PN_AST(WAVY, a) }
+       | minus !minus a:atom  { a = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), a) }
+       | plus !plus a:atom    { a = PN_OP(AST_PLUS, PN_AST(VALUE, PN_ZERO), a) }
+       | mminus a:atom        { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1) }
+       | pplus a:atom         { a = PN_OP(AST_INC, a, PN_NUM(1) ^ 1) }
+       | a:atom (pplus          { a = PN_OP(AST_INC, a, PN_NUM(1)) }
+               | mminus         { a = PN_OP(AST_INC, a, PN_NUM(-1)) })?) { a = PN_TUP(a) }
          (c:call { a = PN_PUSH(a, c) })*
-       { $$ = PN_AST(EXPR, a); }
+       { $$ = PN_AST(EXPR, a) }
 
 atom = e:value | e:closure | e:list | e:call
 
 call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:closure)? |
        (v:value | v:list) { n = PN_AST(MSG, PN_NIL); b = PN_NIL; } b:block?)
-         { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
+         { $$ = n; PN_SRC(n)->a[1] = PN_SRC(v); PN_SRC(n)->a[2] = PN_SRC(b) }
 
-name = p:path           { $$ = PN_AST(PATH, p); }
-     | quiz ( m:message { $$ = PN_AST(QUERY, m); }
-            | p:path    { $$ = PN_AST(PATHQ, p); })
+name = p:path           { $$ = PN_AST(PATH, p) }
+     | quiz ( m:message { $$ = PN_AST(QUERY, m) }
+            | p:path    { $$ = PN_AST(PATHQ, p) })
      | !keyword
-       m:message        { $$ = PN_AST(MSG, m); }
+       m:message        { $$ = PN_AST(MSG, m) }
 
-lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1); }
-            (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2); })*
+lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1) }
+            (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2) })*
              sep?
            | ''               { $$ = PN_NIL; }
 
-lick-item = m:message t:list v:loose { $$ = PN_AST3(LICK, m, v, t); }
-          | m:message t:list { $$ = PN_AST3(LICK, m, PN_NIL, t); }
-          | m:message v:loose t:list { $$ = PN_AST3(LICK, m, v, t); }
-          | m:message v:loose { $$ = PN_AST2(LICK, m, v); }
-          | m:message         { $$ = PN_AST(LICK, m); }
+lick-item = m:message t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
+          | m:message t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
+          | m:message v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
+          | m:message v:loose { $$ = PN_AST2(LICK, m, v) }
+          | m:message         { $$ = PN_AST(LICK, m) }
 
 loose = value
-      | v:unquoted { $$ = PN_AST(VALUE, v); }
+      | v:unquoted { $$ = PN_AST(VALUE, v) }
 
-closure = t:list? b:block { $$ = PN_AST2(PROTO, t, b); }
-list = list-start s:statements list-end { $$ = PN_AST(LIST, s); }
-block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
-lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i); }
-group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
+closure = t:list? b:block { $$ = PN_AST2(PROTO, t, b) }
+list = list-start s:statements list-end { $$ = PN_AST(LIST, s) }
+block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s) }
+lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i) }
+group = group-start s:statements group-end { $$ = PN_AST(EXPR, s) }
 
 path = '/' < utfw+ > -       { $$ = PN_STRN(yytext, yyleng); }
 message = < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
 
-value = i:immed - { $$ = PN_AST(VALUE, i); }
+value = i:immed - { $$ = PN_AST(VALUE, i) }
       | lick
       | group
 
 immed = nil   { $$ = PN_NIL; }
       | true  { $$ = PN_TRUE; }
       | false { $$ = PN_FALSE; }
-      | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)); }
+      | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)) }
       | dec   { if ($$ == YY_TNUM) {
                   $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10));
                 } else {
@@ -229,17 +229,17 @@ dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM; }
         ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
 
 q1 = [']   # ' emacs highlight problems
-c1 = < (!q1 utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng); }
-str1 = q1 { P->pbuf = potion_asm_clear(P, P->pbuf); }
-       < (q1 q1 { P->pbuf = potion_asm_write(P, P->pbuf, "'", 1); } | c1)* >
-       q1 { $$ = potion_bytes_string(P, PN_NIL, (PN)P->pbuf); }
+c1 = < (!q1 utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng) }
+str1 = q1 { P->pbuf = potion_asm_clear(P, P->pbuf) }
+       < (q1 q1 { P->pbuf = potion_asm_write(P, P->pbuf, "'", 1) } | c1)* >
+       q1 { $$ = potion_bytes_string(P, PN_NIL, (PN)P->pbuf) }
 
 esc         = '\\'
-escn        = esc 'n' { P->pbuf = potion_asm_write(P, P->pbuf, "\n", 1); }
-escb        = esc 'b' { P->pbuf = potion_asm_write(P, P->pbuf, "\b", 1); }
-escf        = esc 'f' { P->pbuf = potion_asm_write(P, P->pbuf, "\f", 1); }
-escr        = esc 'r' { P->pbuf = potion_asm_write(P, P->pbuf, "\r", 1); }
-esct        = esc 't' { P->pbuf = potion_asm_write(P, P->pbuf, "\t", 1); }
+escn        = esc 'n' { P->pbuf = potion_asm_write(P, P->pbuf, "\n", 1) }
+escb        = esc 'b' { P->pbuf = potion_asm_write(P, P->pbuf, "\b", 1) }
+escf        = esc 'f' { P->pbuf = potion_asm_write(P, P->pbuf, "\f", 1) }
+escr        = esc 'r' { P->pbuf = potion_asm_write(P, P->pbuf, "\r", 1) }
+esct        = esc 't' { P->pbuf = potion_asm_write(P, P->pbuf, "\t", 1) }
 escu        = esc 'u' < hexl hexl hexl hexl > {
   int nbuf = 0;
   char utfc[4] = {0, 0, 0, 0};
@@ -256,14 +256,14 @@ escu        = esc 'u' < hexl hexl hexl hexl > {
   }
   P->pbuf = potion_asm_write(P, P->pbuf, utfc, nbuf);
 }
-escc = esc < utf8 > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng); }
+escc = esc < utf8 > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng) }
 
 q2 = ["]
-e2 = '\\' ["] { P->pbuf = potion_asm_write(P, P->pbuf, "\"", 1); }
-c2 = < (!q2 !esc utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng); }
-str2 = q2 { P->pbuf = potion_asm_clear(P, P->pbuf); }
+e2 = '\\' ["] { P->pbuf = potion_asm_write(P, P->pbuf, "\"", 1) }
+c2 = < (!q2 !esc utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng) }
+str2 = q2 { P->pbuf = potion_asm_clear(P, P->pbuf) }
        < (e2 | escn | escb | escf | escr | esct | escu | escc | c2)* >
-       q2 { $$ = potion_bytes_string(P, PN_NIL, (PN)P->pbuf); }
+       q2 { $$ = potion_bytes_string(P, PN_NIL, (PN)P->pbuf) }
 
 unq-char = '{' unq-char+ '}'
          | '[' unq-char+ ']'
@@ -288,16 +288,16 @@ arg-set = arg (comma - arg)*
 
 arg-name = < utfw+ > - { $$ = PN_STRN(yytext, yyleng); }
 arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
-       { $$ = PN_NUM(yytext[0]); }
+       { $$ = PN_NUM(yytext[0]) }
 arg = n:arg-name assign t:arg-type
-                        { P->source = PN_PUSH(PN_PUSH(P->source, n), t); }
+                        { P->source = PN_PUSH(PN_PUSH(P->source, n), t) }
     # single types without name (N,o) as for FFIs forbidden, use (=N) instead
-    | assign t:arg-type { P->source = PN_PUSH(PN_PUSH(P->source, PN_STR("")), t); }
-    | n:arg-name        { P->source = PN_PUSH(P->source, n); }
+    | assign t:arg-type { P->source = PN_PUSH(PN_PUSH(P->source, PN_STR("")), t) }
+    | n:arg-name        { P->source = PN_PUSH(P->source, n) }
     | n:arg-name defassign d:value
-                        { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),PN_NUM(':')), d); }
-optional = '|' -        { P->source = PN_PUSH(P->source, PN_NUM('|')); }
-arg-sep = '.' -         { P->source = PN_PUSH(P->source, PN_NUM('.')); }
+                        { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),PN_NUM(':')), d) }
+optional = '|' -        { P->source = PN_PUSH(P->source, PN_NUM('|')) }
+arg-sep = '.' -         { P->source = PN_PUSH(P->source, PN_NUM('.')) }
 
 %%
 

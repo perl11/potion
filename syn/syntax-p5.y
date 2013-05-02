@@ -215,7 +215,7 @@ atom = e:value | e:anonsub | e:list | e:call
 
 call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:anonsub)? |
        (v:value | v:list) { n = PN_AST(MSG, PN_NIL); b = PN_NIL; } b:block?)
-         { $$ = n; PN_S(n, 1) = v; PN_S(n, 2) = b; }
+         { $$ = n; PN_SRC(n)->a[1] = PN_SRC(v); PN_SRC(n)->a[2] = PN_SRC(b) }
 
 name = !keyword m:message     { $$ = PN_AST(MSG, m); }
 
