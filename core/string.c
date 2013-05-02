@@ -68,6 +68,7 @@ PN potion_strcat(Potion *P, char *str, char *str2) {
   PN_MEMCPY_N(s->chars, str,  char, len);
   PN_MEMCPY_N(s->chars+len, str2, char, len2);
   s->chars[len+len2] = '\0';
+  s->len = len+len2;
   exist = potion_lookup_str(P, s->chars);
   if (exist == PN_NIL) {
     potion_add_str(P, (PN)s);
@@ -89,7 +90,7 @@ PN potion_str_format(Potion *P, const char *format, ...) {
   va_start(args, format);
   vsnprintf(s->chars, len + 1, format, args);
   va_end(args);
-
+  s->len = len;
   return (PN)s;
 }
 
