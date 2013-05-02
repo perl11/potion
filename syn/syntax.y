@@ -291,11 +291,11 @@ arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | 
        { $$ = PN_NUM(yytext[0]) }
 arg = n:arg-name assign t:arg-type
                         { P->source = PN_PUSH(PN_PUSH(P->source, n), t) }
-    # single types without name (N,o) as for FFIs forbidden, use (=N) instead
-    | assign t:arg-type { P->source = PN_PUSH(PN_PUSH(P->source, PN_STR("")), t) }
-    | n:arg-name        { P->source = PN_PUSH(P->source, n) }
     | n:arg-name defassign d:value
                         { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),PN_NUM(':')), d) }
+    # single types without name (N,o) as for FFIs forbidden, use (x=N) instead
+    # | assign t:arg-type { P->source = PN_PUSH(PN_PUSH(P->source, PN_STR("")), t) }
+    | n:arg-name        { P->source = PN_PUSH(P->source, n) }
 optional = '|' -        { P->source = PN_PUSH(P->source, PN_NUM('|')) }
 arg-sep = '.' -         { P->source = PN_PUSH(P->source, PN_NUM('.')) }
 
@@ -325,21 +325,22 @@ PN potion_parse(Potion *P, PN code, char *filename) {
 
 /** convert signature string to sig tuple.
   Old:
-    (name type|modifier ...)
+    (name type|modifier default)
     name = PNString - variable name
     type = NUM of potion_type_char, currently used: oNS&
     modifier = NUM of '|' optional, '.' end, ':' default
-    \see potion_arity PN_TUPLE_LEN(PN_CLOSURE(closure)->sig) / 2
+    \see potion_sig_arity
   New:
-    "|name=type:=default." accept type (such as o)
-    "|name:=default."      type = typeof default
-    (name type|modifier default ...)
+    "=type" empty name (?)
+    "|name=type := default." accept type (such as o)
+    "|name := default."      type = typeof default
+    (name type|modifier default)
     name: PNString of variable
     type: PNString with prepended modifier, accept old type abbrevs: oNS&
           and Num, String, Closure, PN
     modifier: |:.
     default: any single value, even nil, a closure, tuple, table, lick, ...
-    arity: len/3
+    arity: number of any non-default-value strings
  */
 PN potion_sig(Potion *P, char *fmt) {
   PN out = PN_NIL;
@@ -351,6 +352,9 @@ PN potion_sig(Potion *P, char *fmt) {
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
+#ifdef YY_DEBUG
+  yydebug = P->flags & (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
+#endif
 
   if (!YY_NAME(parse_from)(G, yy_sig))
     YY_ERROR(G, "** Syntax error in signature");
