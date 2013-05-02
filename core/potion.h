@@ -221,10 +221,10 @@ struct PNVtable;
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
 #define PN_TUP0()       potion_tuple_empty(P)
 #define PN_TUP(X)       potion_tuple_new(P, X)
-#define PN_PUSH(T, X)   potion_tuple_push(P, T, X)
+#define PN_PUSH(T, X)   potion_tuple_push(P, T, (PN)X)
 #define PN_GET(T, X)    potion_tuple_find(P, T, X)
 #define PN_PUT(T, X)    potion_tuple_push_unless(P, T, X)
-#define PN_GET_TUPLE(t) ((struct PNTuple *)potion_fwd(t))
+#define PN_GET_TUPLE(t) ((struct PNTuple *)potion_fwd((PN)t))
 #define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
 #define PN_TUPLE_COUNT(T, I, B) ({ \
