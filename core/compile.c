@@ -59,6 +59,7 @@ PN potion_sig_string(Potion *P, PN cl, PN sig) {
       for (i = 0; i < t->len; i++) {
 	PN v = (PN)t->set[i];
 	if (PN_IS_NUM(v)) {
+    // currently types are still encoded as NUM, TODO: support VTABLE also
 	  int c = PN_INT(v); comma=0;
 	  if (c == '.')      // is end
 	    pn_printf(P, out, ".");
@@ -706,94 +707,92 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
   }
 }
 
-#define SIG_EXPR_MSG(expr)			\
+#define SIG_EXPR_MSG(name,expr)			\
   if (expr->part == AST_EXPR) {			\
-    vPN(Source) name = SRC_TUPLE_AT(expr, 0);	\
-    if (name->part == AST_MSG) {		\
-      PN_PUT(f->locals, PN_S(name,0));		\
-      sig = PN_PUSH(sig, PN_S(name,0));		\
+    vPN(Source) t = SRC_TUPLE_AT(expr, 0);	\
+    if (t->part == AST_MSG) {			\
+      name = PN_S(t,0);				\
+      PN_PUT(f->locals, name);			\
+      sig = PN_PUSH(sig, name);			\
     }						\
-  }
+  } else { name = PN_NIL; }
 
-/// Extract locals, apply type defaults and do type and param checks.
-/// sigs are also ambigious, the parser usually compiles it down to
-/// expression trees, not to sig. Convert it.
-///
-/// Name=Type, '|' optional '.' end ':='default
-/// type: 'o' (= PN object)
-/// Encode to AST_CODE: (name type|modifier default)
-///\param f    the PNProto closure to store locals
-///\param src  PNSource signature tree, parsed via yy_sig()
-///\return PNProto a closure
-///
-///
-/// (x=n,y:=1) =>
-///\code  (list (assign (expr (msg (x)) expr (msg (n ))),
-///              assign (expr (msg (y)) value (1 ))) \endcode
+/** Extract locals, apply type defaults and do type and param checks.
+   sigs are also ambigious, the parser usually compiles it down to
+   expression trees, not to a sig tuple. Convert assign,pipe,value.
+
+   Name=Type, '|' optional '.' end ':='default
+   type: 'o' (= PN object)
+   Encode to AST_CODE: (name type|modifier default)
+\param f    the PNProto closure to store locals
+\param src  PNSource signature tree, parsed via yy_sig()
+\return PNProto a closure
+
+ (x=n,y:=1) =>
+\code  (list (assign (expr (msg (x)) expr (msg (n ))),
+  assign (expr (msg (y)) value (1 ))) \endcode */
 PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   PN sig = PN_TUP0();
   vPN(Source) t = PN_SRC(src);
   if (t->part == AST_LIST && PN_S(t,0) != PN_NIL) {
-    DBG_c("--- sig compile ---\n");
     //PN_TUPLE_EACH(t->a[0], i, v, {
     ({ struct PNTuple * volatile __tv = ((struct PNTuple *)potion_fwd(PN_S(t,0)));
       if (__tv->len != 0) {
+        DBG_c("--- sig compile ---\n");
 	PN_SIZE i;
 	for (i = 0; i < __tv->len; i++) {
 	  struct PNSource *v = PN_SRC(__tv->set[i]);
 	  {
       vPN(Source) expr = PN_SRC(v);
-      SIG_EXPR_MSG(expr)
+      PN name = 0;
+      SIG_EXPR_MSG(name, expr)
       if (expr->part == AST_VALUE) {
-	potion_fatal("Syntax error: value as param");
-        //vPN(Source) rhs = (struct PNSource *)expr->a[0];
-	//sig = PN_PUSH(sig, rhs->a[0]);
-      } else if (expr->part == AST_PIPE) { //x|y => (pipe (expm x) (expm y)
+        vPN(Source) lhs = expr->a[0];
+	PN v = PN_S(lhs,0);
+	if (PN_IS_STR(v)) {
+	  DBG_c("sig: lhs value, computed name %s\n", AS_STR(v));
+          PN_PUT(f->locals, v);
+	  sig = PN_PUSH(sig, v);
+	} else {
+	  potion_syntax_error(P, "in signature: value %s as argument name", AS_STR(v));
+	}
+      } else if (expr->part == AST_PIPE) { //x|y => (pipe (expm x) (expm y))
 	vPN(Source) lhs = expr->a[0];
 	vPN(Source) rhs = expr->a[1];
-	SIG_EXPR_MSG(lhs);
+	PN name2 = 0;
+	SIG_EXPR_MSG(name, lhs);
 	sig = PN_PUSH(sig, PN_NUM('|'));
-	SIG_EXPR_MSG(rhs)
-	DBG_c("sig: pipe (expr (msg x) (expr (msg y))) => x|y\n");
-      } else if (expr->part == AST_ASSIGN) {
-	int pipe = 0;
+	SIG_EXPR_MSG(name2, rhs);
+	DBG_c("; (%s | %s)\n", AS_STR(name), AS_STR(name2));
+      } else if (expr->part == AST_ASSIGN) { //x=o => (assign (expm x) (expm o))
         vPN(Source) lhs = expr->a[0];
-        if (lhs->part == AST_PIPE) {
-	  vPN(Source) lhs = expr->a[0];
-	  vPN(Source) rhs = expr->a[1];
-	  SIG_EXPR_MSG(lhs);
-	  sig = PN_PUSH(sig, PN_NUM('|'));
-	  rhs = expr->a[1];
-	  SIG_EXPR_MSG(rhs)
-	  DBG_c("sig: assign (pipe (expr (msg x)) ...) "
-		"=> assign (expr (msg x)) ...; x|y=o\n");
-/*
-	  pipe++; // x|y=o or x|y:=1
-	  expr = SRC_TUPLE_AT(lhs, 0);
-	  lhs = (struct PNSource * volatile)expr->a[0];
-*/
-	}
+	vPN(Source) rhs = expr->a[1];
         if (lhs->part == AST_EXPR && PN_TUPLE_LEN(PN_S(lhs,0)) == 1) {
-	  //vPN(Source) lhs = expr->a[0];
-	  vPN(Source) rhs = expr->a[1];
+	  SIG_EXPR_MSG(name, lhs);
           lhs = SRC_TUPLE_AT(lhs, 0);
-          if (lhs->part == AST_MSG) // name
-            PN_PUT(f->locals, PN_S(lhs,0));
-	  sig = PN_PUSH(sig, PN_S(lhs,0));
-	  if (pipe) {
-	    DBG_c("sig: assign (pipe (expr (msg x))) => assign (expr (msg x)); x|y=o\n");
-	    sig = PN_PUSH(sig, PN_NUM('|')); pipe = 0;
-	    if (rhs->part == AST_VALUE)
-	      potion_syntax_error(P, "in signature: cannot mix | with :=");
+	  DBG_c("; (%s ", AS_STR(name));
+	}
+        else if (lhs->part == AST_PIPE) { //x|y=o => (assign (pipe (expm x) (expm y)) (expm o))
+	  SIG_EXPR_MSG(name, lhs->a[0]);
+	  sig = PN_PUSH(sig, PN_NUM('|'));
+	  rhs = lhs->a[1];
+	  DBG_c("; (%s | ", AS_STR(name));
+	} else {
+	  potion_syntax_error(P, "in signature: unexpected AST %s", AS_STR(lhs));
+	}
+	if (rhs->part == AST_EXPR && PN_TUPLE_LEN(rhs->a[0]) == 1) {
+	  rhs = SRC_TUPLE_AT(rhs, 0);
+	  if (rhs->part == AST_MSG) {
+	    name = PN_NUM(PN_STR_PTR(PN_S(rhs,0))[0]); // = type
+	    DBG_c("%s)\n", AS_STR(name));
+	    sig = PN_PUSH(sig, name);
 	  }
-          if (rhs->part == AST_VALUE) {     // :=default
-	    DBG_c("sig: assign (expr (msg x)) (value 1) => x:=1\n");
-	    sig = PN_PUSH(PN_PUSH(sig, PN_NUM(':')), PN_S(rhs,0));
-          } else if (rhs->part == AST_EXPR && PN_TUPLE_LEN(rhs->a[0]) == 1) {
-	    rhs = SRC_TUPLE_AT(rhs, 0);
-	    if (rhs->part == AST_MSG)
-	      sig = PN_PUSH(sig, PN_S(rhs,0));
-	  }
+	} else if (rhs->part == AST_VALUE) {           // :=default
+	  name = PN_S(rhs,0);
+	  DBG_c(": %s)\n", AS_STR(name));
+	  sig = PN_PUSH(PN_PUSH(sig, PN_NUM(':')), name);
+	} else {
+	  potion_syntax_error(P, "in signature: unexpected AST %s", AS_STR(expr));
 	}
       }
     }}}
@@ -819,7 +818,6 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
     case AST_BLOCK: break;
     default: return PN_NIL; // TODO: error
   }
-
   f = PN_ALLOC(PN_TPROTO, struct PNProto);
   f->source = source;
   f->stack = PN_NUM(1);
@@ -833,6 +831,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   f->sig = (sig == PN_NIL ? PN_TUP0() : potion_sig_compile(P, f, sig));
   f->asmb = (PN)potion_asm_new(P);
 
+  //DBG_c("--- compile ---\n");
   potion_source_asmb(P, f, NULL, 0, t, 0);
   PN_ASM1(OP_RETURN, 0);
 
@@ -879,7 +878,7 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   PNAsm * volatile asmb = NULL;
   vPN(Proto) f = PN_ALLOC(PN_TPROTO, struct PNProto);
   f->source = READ_CONST(pn, *ptr);
-  if (f->source == PN_NIL) f->source = up; 
+  if (f->source == PN_NIL) f->source = up;
   f->sig = READ_VALUES(pn, *ptr);
   f->stack = READ_CONST(pn, *ptr);
   f->values = READ_VALUES(pn, *ptr);
@@ -906,7 +905,8 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
 PN potion_source_load(Potion *P, PN cl, PN buf) {
   u8 *ptr;
   vPN(BHeader) h = (struct PNBHeader *)PN_STR_PTR(buf);
-  if ((size_t)PN_STR_LEN(buf) <= sizeof(struct PNBHeader) || 
+  // check for compiled binary first
+  if ((size_t)PN_STR_LEN(buf) <= sizeof(struct PNBHeader) ||
       strncmp((char *)h->sig, POTION_SIG, 4) != 0)
     return PN_NIL;
 
