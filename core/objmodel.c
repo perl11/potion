@@ -54,9 +54,11 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN maxlen) {
   pn_printf(P, out, ")");
   return PN_STR_B(out);
 }
-/** number of args of sig tuple, implements the potion_closure_arity method
-    sigs are encoded as tuples of len 2-3, name type|modifier default-value
-    modifiers are encoded as Num. types also yet, but we will switch to VTable. */
+/** number of args of sig tuple, implements the potion_closure_arity method.
+    sigs are encoded as tuples of len 2-3, (name type|modifier [default-value])
+    names String, modifiers Num.
+    types also Num, but we will switch to VTable.
+    default-value can be a value of any type and is prefixed with ':' */
 long potion_sig_arity(Potion *P, PN sig) {
   if (PN_IS_TUPLE(sig)) {
     //return PN_TUPLE_LEN(PN_CLOSURE(closure)->sig) / 2;
