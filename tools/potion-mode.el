@@ -1,3 +1,6 @@
+;;; (autoload 'potion-mode "potion-mode" nil t)
+;;; (add-to-list 'auto-mode-alist '("\\.pn$" . potion-mode))
+
 (eval-when-compile
   (require 'generic)
   (require 'font-lock)
@@ -51,3 +54,5 @@
       (modify-syntax-entry ?\. "):")))
   "Major mode for editing _why's Potion language."
 )
+
+(provide 'portion-mode)
