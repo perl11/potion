@@ -272,8 +272,7 @@ void potion_esp(void **esp) {
 
 #ifdef DEBUG
 void potion_dump(Potion *P, PN data) {
-  printf("%s (%s)\n", PN_STR_PTR(potion_send(data, PN_string)),
-	 PN_STR_PTR(potion_send(PN_VTABLE(PN_TYPE(data)), PN_string)));
+  printf("%s (%s)\n", AS_STR(data), AS_STR(PN_VTABLE(PN_TYPE(data))));
 }
 #define pdump(data) potion_dump(P, data)
 

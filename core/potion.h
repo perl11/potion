@@ -202,6 +202,7 @@ struct PNVtable;
 #endif
 #define PN_UNIQ(x)      (PN_IS_PTR(x) ? ((struct PNObject *)(x))->uniq : PN_NUMHASH(x))
 
+#define AS_STR(x)       PN_STR_PTR(potion_send(x, PN_string))
 #if DEBUG
 #define DBG_t(...) \
   if (P->flags & DEBUG_TRACE) fprintf(stderr, __VA_ARGS__)
