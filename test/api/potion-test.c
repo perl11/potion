@@ -112,6 +112,7 @@ void potion_test_sig(CuTest *T) {
 		    PN_STR_PTR(potion_send(sig, PN_string)));
   CuAssertStrEquals(T, "x=N,y=N|r=N",
 		    PN_STR_PTR(potion_sig_string(P,0,sig)));
+  CuAssertIntEquals(T, "arity=3", 3, potion_sig_arity(P, sig));
   {
     // roundtrips
     char *sigs[] = {
@@ -127,6 +128,12 @@ void potion_test_sig(CuTest *T) {
 			PN_STR_PTR(potion_sig_string(P,0,potion_sig(P, sigs[i]))));
     }
   }
+  CuAssertIntEquals(T, "arity nil", 0, potion_sig_arity(P, PN_NIL));
+  // sig "" returns PN_FALSE, which throws an error
+  //CuAssertIntEquals(T, "arity ''", 0, potion_sig_arity(P, potion_sig(P, "")));
+  CuAssertIntEquals(T, "arity x:=1", 1, potion_sig_arity(P, potion_sig(P, "x:=1")));
+  CuAssertIntEquals(T, "arity |x:=1", 1, potion_sig_arity(P, potion_sig(P, "|x:=1")));
+  CuAssertIntEquals(T, "arity x|y:=1", 2, potion_sig_arity(P, potion_sig(P, "x|y:=1")));
 }
 
 void potion_test_proto(CuTest *T) {
