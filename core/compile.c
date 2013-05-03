@@ -772,7 +772,8 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
           lhs = SRC_TUPLE_AT(lhs, 0);
 	  DBG_c("; (%s ", AS_STR(name));
 	}
-        else if (lhs->part == AST_PIPE) { //x|y=o => (assign (pipe (expm x) (expm y)) (expm o))
+        else if (lhs->part == AST_PIPE) {
+	  //x|y=o => (assign (pipe (expm x) (expm y)) (expm o))
 	  SIG_EXPR_MSG(name, lhs->a[0]);
 	  sig = PN_PUSH(sig, PN_NUM('|'));
 	  rhs = lhs->a[1];
