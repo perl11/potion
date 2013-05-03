@@ -292,7 +292,7 @@ arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | 
 arg = n:arg-name assign t:arg-type
                         { P->source = PN_PUSH(PN_PUSH(P->source, n), t) }
     | n:arg-name defassign d:value
-                        { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),PN_NUM(':')), d) }
+                        { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),PN_NUM(':')), PN_S(d,0)) }
     # single types without name (N,o) as for FFIs forbidden, use (x=N) instead
     # | assign t:arg-type { P->source = PN_PUSH(PN_PUSH(P->source, PN_STR("")), t) }
     | n:arg-name        { P->source = PN_PUSH(P->source, n) }
