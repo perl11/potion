@@ -139,15 +139,11 @@ void potion_test_sig(CuTest *T) {
 void potion_test_proto(CuTest *T) {
   // test compiler transformation potion_sig_compile, not just yy_sig
   vPN(Closure) f1 = PN_CLOSURE(potion_eval(P, potion_str(P, "(x,y):x+y."), POTION_JIT));
-  vPN(Closure) f2 = PN_CLOSURE(PN_FUNC(PN_CLOSURE_F(f1), "x=N,y=N"));
   CuAssertIntEquals(T, "arity f1", 2, potion_sig_arity(P, f1->sig));
+  CuAssertStrEquals(T, "x,y", PN_STR_PTR(potion_sig_string(P,0,f1->sig)));
+  vPN(Closure) f2 = PN_CLOSURE(PN_FUNC(PN_CLOSURE_F(f1), "x=N,y=N"));
   CuAssertIntEquals(T, "arity f2", 2, potion_sig_arity(P, f2->sig));
-  //vPN(Source) src = (vPN(Source)) potion_parse(P, potion_str(P, "(x,y):x+y."), "<eval>");
-  //CuAssert(T, "parse fun", PN_TYPE(src) == PN_TSOURCE);
-  {
-    //vPN(Proto) proto = PN_PROTO(potion_send(src, PN_compile, PN_NIL, PN_NIL));
-    //vPN(Tuple) sig = proto->sig;
-  }
+  CuAssertStrEquals(T, "x=N,y=N", PN_STR_PTR(potion_sig_string(P,0,f2->sig)));
 }
 
 void potion_test_eval(CuTest *T) {
