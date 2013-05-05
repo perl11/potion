@@ -358,7 +358,11 @@ PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
 
 #define GET(i)    t->set[i]
 #define SET(i,v)  t->set[i] = v
-#define SWAP(a,b) tmp = GET(a); SET(a, GET(b)); SET(b, tmp)
+//xor swap
+#define SWAP(a,b) if (a != b) { \
+  t->set[a] ^= GET(b); \
+  t->set[b] ^= GET(a); \
+  t->set[a] ^= GET(b); }
 
 ///\memberof PNTuple
 /// "reverse" a list destructively
@@ -367,7 +371,7 @@ PN potion_tuple_nreverse(Potion *P, PN cl, PN self) {
   struct PNTuple *t = PN_GET_TUPLE(self);
   PN_SIZE len = t->len;
   if (len) {
-    PN_SIZE i; PN tmp;
+    PN_SIZE i;
     for (i = 0; i < (PN_SIZE)(len/2); i++) {
       SWAP(len-i-1, i);
     }
@@ -404,37 +408,49 @@ static void potion_sort_internal(Potion *P, PN cl, PN self, ///< sort data
 {
   if (from < to) {
     struct PNTuple *t = PN_GET_TUPLE(self);
-    // which pivot? first is worst case if already sorted. random, middle or best: median.
-    PN_SIZE i, pivot = (PN_SIZE)((to - from) / 2);
-    PN tmp, pv = GET(pivot);
-    SWAP(pivot, to); // Move pivot element to end
-    pivot = from;
+    // which pivot? first is worst case if already sorted.
+    // random, last, middle or best: median-of-3.
+    PN_SIZE i, index = from + (to - from)/2;
+    PN pivot = GET(index);
+    //DBG_vt("; sort: %d-%d/%d %s", from, to, index, AS_STR(t));
+    SWAP(index, to);
+    //DBG_vt("\n;1      %d-%d/%d %s\n", from, to, index, AS_STR(t));
+    index = from;
     // partition the portion of the tuple between indexes from and to,
     // inclusively, by moving all elements less than pivot before
     // the pivot, and the equal or greater elements after it.
     if (cmp == PN_NIL) { // default: sort by uniq, not value
-      for (i=from; i < to-1; i++) { // left ≤ i < right
-	if (PN_UNIQ(GET(i)) <= PN_UNIQ(pv)) { SWAP(i, pivot); pivot++; }
+      for (i=from; i < to-1; i++) { // from ≤ i < to
+	if (PN_UNIQ(GET(i)) <= PN_UNIQ(pivot)) { SWAP(i, index); index++; }
       }
     } else if (cmp == PN_TRUE) { // sort by ascending number
-      for (i=from; i < to-1; i++) {
-	if (GET(i) > pv)  { SWAP(i, pivot); pivot++; }
+      for (i=from; i < to; i++) {
+	if (GET(i) <= pivot) {
+	  //DBG_vt(";(%d)    %s<%s/%d %s\n", i, AS_STR(GET(i)),AS_STR(pivot), index, AS_STR(t));
+	  SWAP(i, index); index++;
+	  //DBG_vt(";(%d)    %d-%d/%d %s\n", i, from, to, index, AS_STR(t));
+	}
       }
     } else if (cmp == PN_FALSE) { // sort by descending number
-      for (i=from; i < to-1; i++) {
-	if (GET(i) <= pv) { SWAP(i, pivot); pivot++; }
+      for (i=from; i < to; i++) {
+	if (GET(i) > pivot) { SWAP(i, index); index++;
+	  //DBG_vt("\n;(%d)    %d-%d/%d %s\n", i, from, to, index, AS_STR(t));
+	}
       }
     } else {
       vPN(Closure) c = PN_CLOSURE(cmp);
-      for (i=from; i < to-1; i++) { // call cmp
-	if (PN_INT(c->method(P, cl, cmp, GET(i), pv)) > 0)
-	  { SWAP(i, pivot); pivot++; }
+      for (i=from; i < to; i++) { // call cmp
+	if (PN_INT(c->method(P, cl, cmp, GET(i), pivot)) > 0)
+	  { SWAP(i, index); index++; }
       }
     }
-    SWAP(pivot, to); // Move pivot element from end to its final place
+    //DBG_vt(";2      %d-%d/%d %s\n", from, to, index, AS_STR(t));
+    SWAP(index, to); // Move pivot element back to its final place
+    //DBG_vt("         => %d %s\n", index, AS_STR(t));
 
-    potion_sort_internal(P,cl,self, from, pivot-1, cmp);
-    potion_sort_internal(P,cl,self, pivot+1, to,   cmp);
+    if (index > 0)
+      potion_sort_internal(P,cl,self, from, index-1, cmp);
+    potion_sort_internal(P,cl,self, index+1, to,   cmp);
   }
 }
  
@@ -457,6 +473,7 @@ static PN potion_tuple_sort(Potion *P, PN cl,
   PN_SIZE len = PN_TUPLE_LEN(self);
   if (cmp != PN_NIL && !PN_IS_BOOL(cmp) && !PN_IS_CLOSURE(cmp))
     potion_fatal("sort: invalid cmp type");
+  //DBG_t("\n");
   potion_sort_internal(P, cl, data, 0, len-1, cmp);
   return data;
 }
@@ -471,7 +488,7 @@ static PN potion_tuple_sort(Potion *P, PN cl,
    \see potion_tuple_sort for the safe variant and cmp variants. */
 PN potion_tuple_ins_sort(Potion *P, PN cl, PN self, PN cmp) {
   struct PNTuple *t = PN_GET_TUPLE(self);
-  unsigned long i, j; PN tmp;
+  unsigned long i, j;
   vPN(Closure) c;
   if (t->len < MAX_INS_SORT) {
     // simple insertion sort for smaller arrays (<13)
@@ -519,6 +536,7 @@ PN potion_tuple_ins_sort(Potion *P, PN cl, PN self, PN cmp) {
   else {
     if (cmp != PN_NIL && !PN_IS_BOOL(cmp) && !PN_IS_CLOSURE(cmp))
       potion_fatal("sort: invalid cmp type");
+    //DBG_t("\n");
     potion_sort_internal(P, cl, self, 0, t->len-1, cmp);
   }
   return self;
@@ -564,6 +582,7 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "reverse", potion_tuple_reverse, 0);
   potion_method(tpl_vt, "nreverse", potion_tuple_nreverse, 0);
   //potion_method(tpl_vt, "remove", potion_tuple_remove, "index=N");
+  //potion_method(tpl_vt, "slice", potion_tuple_slice, "from=N|to=N");
   potion_method(tpl_vt, "unshift", potion_tuple_unshift, "value=o");
   potion_method(tpl_vt, "shift", potion_tuple_shift, 0);
   potion_method(tpl_vt, "bsearch", potion_tuple_bsearch, "value=o");
