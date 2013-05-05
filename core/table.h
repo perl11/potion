@@ -10,6 +10,10 @@
 #include "internal.h"
 #include "khash.h"
 
+#ifndef MAX_INS_SORT
+# define MAX_INS_SORT 10
+#endif
+
 typedef PN (*PN_MCACHE_FUNC)(unsigned int hash);
 // TODO: ensure the random PNUniq is truly unique for strings
 typedef PN (*PN_IVAR_FUNC)(PNUniq hash);

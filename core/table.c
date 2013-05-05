@@ -396,53 +396,131 @@ PN potion_tuple_bsearch(Potion *P, PN cl, PN self, PN x) {
   return PN_NUM(-1);
 }
 
-#if CAN_QSORT
-static int potion_qsort_cmp (const void* v1, const void *v2) {
-  return potion_send(P, PN_cmp, (PN)v1, (PN)v2);
-}
-#endif
+/// space-efficient but destructive and not-stable qsort
+static void potion_sort_internal(Potion *P, PN cl, PN self, ///< sort data
+	       PN_SIZE from, ///< first index, usually 0
+	       PN_SIZE to,   ///< last index, usually len-1
+	       PN      cmp)  ///< cmp method for 2 values, returning -1,0,1
+{
+  if (from < to) {
+    struct PNTuple *t = PN_GET_TUPLE(self);
+    // which pivot? first is worst case if already sorted. random, middle or best: median.
+    PN_SIZE i, pivot = (PN_SIZE)((to - from) / 2);
+    PN tmp, pv = GET(pivot);
+    SWAP(pivot, to); // Move pivot element to end
+    pivot = from;
+    // partition the portion of the tuple between indexes from and to,
+    // inclusively, by moving all elements less than pivot before
+    // the pivot, and the equal or greater elements after it.
+    if (cmp == PN_NIL) { // default: sort by uniq, not value
+      for (i=from; i < to-1; i++) { // left ≤ i < right
+	if (PN_UNIQ(GET(i)) <= PN_UNIQ(pv)) { SWAP(i, pivot); pivot++; }
+      }
+    } else if (cmp == PN_TRUE) { // sort by ascending number
+      for (i=from; i < to-1; i++) {
+	if (GET(i) > pv)  { SWAP(i, pivot); pivot++; }
+      }
+    } else if (cmp == PN_FALSE) { // sort by descending number
+      for (i=from; i < to-1; i++) {
+	if (GET(i) <= pv) { SWAP(i, pivot); pivot++; }
+      }
+    } else {
+      vPN(Closure) c = PN_CLOSURE(cmp);
+      for (i=from; i < to-1; i++) { // call cmp
+	if (PN_INT(c->method(P, cl, cmp, GET(i), pv)) > 0)
+	  { SWAP(i, pivot); pivot++; }
+      }
+    }
+    SWAP(pivot, to); // Move pivot element from end to its final place
 
-///\memberof PNTuple
-/// sort PNTuple by value
-///\param cmp (optional) comparison closure: (a,b) a < b ? -1 : a == b ? 0 : 1.
-///\return sorted PNTuple
-PN potion_tuple_sort(Potion *P, PN cl, PN self, PN cmp) {
+    potion_sort_internal(P,cl,self, from, pivot-1, cmp);
+    potion_sort_internal(P,cl,self, pivot+1, to,   cmp);
+  }
+}
+ 
+/**\memberof PNTuple
+  sort elements, safe non-destructive version.
+  generic instable quicksort, via in-place quicksort partition algorithm.
+
+ \param  compare method cmp(a,b) => -1,0,1,
+         or NIL for UNIQ (random, but stable),
+         or true for ascending or false for descending order by value.
+         true or false will fail on most complex data types,
+	 works only with num (ints).
+ \returns a sorted copy of the tuple
+*/
+static PN potion_tuple_sort(Potion *P, PN cl,
+			    PN self, ///< sort tuple
+			    PN cmp)  ///< cmp method for 2 values, returning -1,0,1
+{
+  PN data = potion_tuple_clone(P, cl, self);
+  PN_SIZE len = PN_TUPLE_LEN(self);
+  if (cmp != PN_NIL && !PN_IS_BOOL(cmp) && !PN_IS_CLOSURE(cmp))
+    potion_fatal("sort: invalid cmp type");
+  potion_sort_internal(P, cl, data, 0, len-1, cmp);
+  return data;
+}
+ 
+/**\memberof PNTuple
+   "ins_sort" method, used internally, \warning destructive.
+   sort PNTuple by UNIQ, uses insertion_sort for less than 10 elements
+   otherwise quicksort.
+   \param cmp (optional) comparison closure: (a,b) a < b ? -1 : a == b ? 0 : 1.
+          The default sort method is not by value, it is by uniq (random, but stable).
+   \return the same, but sorted PNTuple
+   \see potion_tuple_sort for the safe variant and cmp variants. */
+PN potion_tuple_ins_sort(Potion *P, PN cl, PN self, PN cmp) {
   struct PNTuple *t = PN_GET_TUPLE(self);
-  unsigned long i, j, tmp;
+  unsigned long i, j; PN tmp;
   vPN(Closure) c;
-  //if (cmp == PN_NIL) cmp = PN_CLOSURE(&potion_any_cmp);
-#if CAN_QSORT
-  if (t->len < 13) {
-#endif
-  if (cmp == PN_NIL) {
-    for (i = 1; i < t->len; i++) {
-      j = i;
-      while (j > 0 && PN_UNIQ(t->set[j-1]) > PN_UNIQ(t->set[j])) {
-	tmp = t->set[j];
-	t->set[j] = t->set[j - 1];
-	t->set[j - 1] = tmp;
-	j--;
+  if (t->len < MAX_INS_SORT) {
+    // simple insertion sort for smaller arrays (<13)
+    if (cmp == PN_NIL) { // default: sort by uniq, not value
+      for (i = 1; i < t->len; i++) {
+ 	j = i;
+ 	while (j > 0 && PN_UNIQ(GET(j-1)) > PN_UNIQ(GET(j))) {
+ 	  SWAP(j, j-1);
+ 	  j--;
+ 	}
       }
+    }
+    else if (PN_IS_CLOSURE(cmp)) {
+      c = PN_CLOSURE(cmp);
+      for (i = 1; i < t->len; i++) {
+	j = i;
+	while (j > 0 && PN_INT(c->method(P, cl, cmp, GET(j-1), GET(j))) > 0) {
+	  SWAP(j, j-1);
+	  j--;
+	}
+      }
+    }
+    else if (cmp == PN_TRUE) {
+      for (i = 1; i < t->len; i++) {
+	j = i;
+	while (j > 0 && GET(j-1) > GET(j)) {
+	  SWAP(j, j-1);
+	  j--;
+	}
+      }
+    }
+    else if (cmp == PN_FALSE) {
+      for (i = 1; i < t->len; i++) {
+	j = i;
+	while (j > 0 && GET(j-1) < GET(j)) {
+	  SWAP(j, j-1);
+	  j--;
+	}
+      }
+    }
+    else {
+      potion_fatal("sort: invalid cmp type");
     }
   }
   else {
-    c = PN_CLOSURE(cmp);
-    for (i = 1; i < t->len; i++) {
-      j = i;
-      while (j > 0 && c->method(P, cmp, P->lobby, t->set[j-1], t->set[j]) > 0) {
-	tmp = t->set[j];
-	t->set[j] = t->set[j - 1];
-	t->set[j - 1] = tmp;
-	j--;
-      }
-    }
+    if (cmp != PN_NIL && !PN_IS_BOOL(cmp) && !PN_IS_CLOSURE(cmp))
+      potion_fatal("sort: invalid cmp type");
+    potion_sort_internal(P, cl, self, 0, t->len-1, cmp);
   }
-#if CAN_QSORT
-  // But need P for the cmp func
-  else {
-    qsort(t->set, t->len, sizeof(PN), potion_qsort_cmp);
-  }
-#endif
   return self;
 }
 
@@ -486,11 +564,11 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "reverse", potion_tuple_reverse, 0);
   potion_method(tpl_vt, "nreverse", potion_tuple_nreverse, 0);
   //potion_method(tpl_vt, "remove", potion_tuple_remove, "index=N");
-  // TODO: add Tuple remove
   potion_method(tpl_vt, "unshift", potion_tuple_unshift, "value=o");
   potion_method(tpl_vt, "shift", potion_tuple_shift, 0);
   potion_method(tpl_vt, "bsearch", potion_tuple_bsearch, "value=o");
   potion_method(tpl_vt, "sort", potion_tuple_sort, "|block=&");
+  potion_method(tpl_vt, "ins_sort", potion_tuple_ins_sort, "|block=&");
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
   potion_method(P->lobby, "list", potion_lobby_list, "length=N");
 }
