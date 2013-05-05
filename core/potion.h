@@ -370,7 +370,7 @@ struct PNProto {
 ///
 struct PNTuple {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
-  unsigned long len;
+  PN_SIZE len;
   PN set[0];
 };
 

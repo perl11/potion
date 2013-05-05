@@ -4,6 +4,7 @@
 ///\class PNTuple - ordered list (array)
 //
 // (c) 2008 why the lucky stiff, the freelance professor
+// (c) 2013 perl11 org
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,7 +158,7 @@ PN potion_tuple_push(Potion *P, PN tuple, PN value) {
 }
 
 ///\memberof PNTuple
-/// "append" and "push" method.
+/// "append" and "push" method. (to the end)
 ///\param value PN
 ///\return PNTuple
 PN potion_tuple_append(Potion *P, PN cl, PN self, PN value) {
@@ -336,15 +337,15 @@ PN potion_tuple_print(Potion *P, PN cl, PN self) {
 }
 
 ///\memberof PNTuple
-/// "length" method. Number of elements, keys
+/// "length" of a list. Number of elements
 ///\return PNNumber
 PN potion_tuple_length(Potion *P, PN cl, PN self) {
   return PN_NUM(PN_TUPLE_LEN(self));
 }
 
 ///\memberof PNTuple
-/// "reverse" method.
-///\return PNTuple
+/// "reverse" a list non-destructively
+///\return a new PNTuple
 PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
   unsigned long len = PN_TUPLE_LEN(self);
   PN tuple = potion_tuple_with_size(P, len);
@@ -353,6 +354,25 @@ PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
     PN_TUPLE_AT(tuple, len - i) = x;
   });
   return tuple;
+}
+
+#define GET(i)    t->set[i]
+#define SET(i,v)  t->set[i] = v
+#define SWAP(a,b) tmp = GET(a); SET(a, GET(b)); SET(b, tmp)
+
+///\memberof PNTuple
+/// "reverse" a list destructively
+///\return the same PNTuple with reversed elements
+PN potion_tuple_nreverse(Potion *P, PN cl, PN self) {
+  struct PNTuple *t = PN_GET_TUPLE(self);
+  PN_SIZE len = t->len;
+  if (len) {
+    PN_SIZE i; PN tmp;
+    for (i = 0; i < (PN_SIZE)(len/2); i++) {
+      SWAP(len-i-1, i);
+    }
+  }
+  return self;
 }
 
 ///\memberof PNTuple
@@ -426,6 +446,10 @@ PN potion_tuple_sort(Potion *P, PN cl, PN self, PN cmp) {
   return self;
 }
 
+#undef SWAP
+#undef GET
+#undef SET
+
 ///\memberof Lobby
 /// global "list" method. return a new empty list
 ///\param size PNNumber
@@ -460,6 +484,8 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "push", potion_tuple_append, "value=o");
   potion_method(tpl_vt, "put", potion_tuple_put, "index=N,value=o");
   potion_method(tpl_vt, "reverse", potion_tuple_reverse, 0);
+  potion_method(tpl_vt, "nreverse", potion_tuple_nreverse, 0);
+  //potion_method(tpl_vt, "remove", potion_tuple_remove, "index=N");
   // TODO: add Tuple remove
   potion_method(tpl_vt, "unshift", potion_tuple_unshift, "value=o");
   potion_method(tpl_vt, "shift", potion_tuple_shift, 0);
