@@ -50,6 +50,11 @@ DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/desig
 DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
 PLIBS = $(foreach l,potion p2 syntax syntax-p5,lib/potion/lib$l${DLL}) lib/potion/readline${LOADEXT}
+OBJS = .o .o2
+ifneq (${FPIC},)
+  OBJS += ${OPIC} ${OPIC}2
+endif
+
 
 GREGCFLAGS = -O3 -DNDEBUG
 CAT  = /bin/cat
@@ -133,59 +138,81 @@ syn/greg.c: syn/greg.y
 	  ${MV} syn/greg-new syn/greg; \
         fi
 
-core/callcc.o core/callcc.o2: core/callcc.c core/config.h
+core/callcc.o core/callcc.o2: core/callcc.c core/p2.h core/internal.h
 	@${ECHO} CC $< +frame-pointer
 	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 ifneq (${FPIC},)
-core/callcc.${OPIC} core/callcc.${OPIC}2: core/callcc.c core/config.h
+core/callcc.${OPIC} core/callcc.${OPIC}2: core/callcc.c core/p2.h core/internal.h
 	@${ECHO} CC ${FPIC} $< +frame-pointer
 	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 endif
-core/vm.o core/vm.${OPIC}: core/vm-dis.c core/config.h
+
+core/potion.h: core/config.h
+core/p2.h: core/potion.h
+core/table.h: core/potion.h core/internal.h core/khash.h
+$(foreach o,${OBJS},core/asm${o} ): core/asm.c core/p2.h core/internal.h core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/ast${o} ): core/ast.c core/p2.h core/internal.h core/ast.h
+$(foreach o,${OBJS},core/compile${o} ): core/compile.c core/p2.h core/internal.h core/ast.h core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/contrib${o} ): core/contrib.c core/config.h
+$(foreach o,${OBJS},core/file${o} ): core/file.c core/p2.h core/internal.h core/table.h
+$(foreach o,${OBJS},core/gc${o} ): core/gc.c core/p2.h core/internal.h core/table.h core/khash.h core/gc.h
+$(foreach o,${OBJS},core/internal${o} ): core/internal.c core/p2.h core/internal.h core/table.h core/gc.h
+$(foreach o,${OBJS},core/lick${o} ): core/lick.c core/p2.h core/internal.h
+$(foreach o,${OBJS},core/load${o} ): core/load.c core/p2.h core/internal.h core/table.h
+$(foreach o,${OBJS},core/mt19937ar${o} ): core/mt19937ar.c core/p2.h
+$(foreach o,${OBJS},core/number${o} ): core/number.c core/p2.h core/internal.h
+$(foreach o,${OBJS},core/objmodel${o} ): core/objmodel.c core/p2.h core/internal.h core/table.h core/khash.h core/asm.h
+$(foreach o,${OBJS},core/primitive${o} ): core/primitive.c core/p2.h core/internal.h
+$(foreach o,${OBJS},core/string${o} ): core/string.c core/p2.h core/internal.h core/table.h core/khash.h
+$(foreach o,${OBJS},core/table${o} ): core/table.c core/p2.h core/internal.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/vm${o} ): core/vm.c core/vm-dis.c core/p2.h core/internal.h core/opcodes.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/vm-ppc${o} ): core/vm-ppc.c core/p2.h core/internal.h core/opcodes.h
+$(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/p2.h core/internal.h core/opcodes.h core/khash.h core/table.h
+
 
 # no optimizations
 #core/vm-x86.${OPIC}: core/vm-x86.c
 #	@${ECHO} CC ${FPIC} $< +frame-pointer
 #	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE ${FPIC} ${INCS} -o $@ $<
 
-%.i: %.c core/config.h
+%.i: %.c core/p2.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
-%.i2: %.c core/config.h
+%.i2: %.c core/p2.h
 	@${ECHO} CPP $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
-%.o: %.c core/config.h
+%.o: %.c core/p2.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 %.o2: %.c core/config.h
 	@${ECHO} CC -DP2 $<
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 ifneq (${FPIC},)
-%.${OPIC}: %.c core/config.h
+%.${OPIC}: %.c core/p2.h
 	@${ECHO} CC ${FPIC} $<
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
-%.${OPIC}2: %.c core/config.h
+%.${OPIC}2: %.c core/p2.h
 	@${ECHO} CC -DP2 ${FPIC} $<
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
 
-.c.i: core/config.h
+.c.i: core/p2.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
-.c.i2: core/config.h
+.c.i2: core/p2.h
 	@${ECHO} CPP $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
-.c.o: core/config.h
+.c.o: core/p2.h
 	@${ECHO} CC $<
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-.c.o2: core/config.h
+.c.o2: core/p2.h
 	@${ECHO} CC -DP2 $<
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 ifneq (${FPIC},)
-.c.${OPIC}: core/config.h
+.c.${OPIC}: core/p2.h
 	@${ECHO} CC ${FPIC} $<
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
-.c.${OPIC}2: core/config.h
+.c.${OPIC}2: core/p2.h
 	@${ECHO} CC -DP2 ${FPIC} $<
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
