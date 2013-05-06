@@ -337,9 +337,10 @@ typedef PN (*PN_F)(Potion *, PN, PN, ...);
 struct PNClosure {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_F method;
-  PN sig;
-  PN_SIZE extra;
-  PN data[0];
+  PN sig;            ///< signature PNTuple
+  int arity;         ///< cached number of args
+  PN_SIZE extra;     ///< 0 or 1 if has code attached at data
+  PN data[0];        ///< code
 };
 
 ///
@@ -406,6 +407,7 @@ struct PNProto {
   PN_SIZE pathsize, localsize, upvalsize;
   PN asmb;   ///< assembled instructions
   PN_F jit;  ///< jit function pointer
+  int arity;  ///< cached sig arity (number of args)
 };
 
 ///
@@ -743,7 +745,8 @@ PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);
 PN potion_num_rand(Potion *, PN, PN);
 PN potion_real(Potion *, double);
-long potion_sig_arity(Potion *, PN);
+int potion_sig_arity(Potion *, PN);
+PN potion_closure_arity(Potion *, PN, PN);
 void potion_define_global(Potion *, PN, PN);
 
 PN potion_obj_add(Potion *, PN, PN);

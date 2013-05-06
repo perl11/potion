@@ -138,17 +138,23 @@ void potion_test_sig(CuTest *T) {
 
 void potion_test_proto(CuTest *T) {
   // test compiler transformation potion_sig_compile, not just yy_sig
+  PN p2;
+  vPN(Closure) f2;
   vPN(Closure) f1 = PN_CLOSURE(potion_eval(P, potion_str(P, "(x,y):x+y."), POTION_JIT));
   CuAssertIntEquals(T, "arity f1", 2, potion_sig_arity(P, f1->sig));
   CuAssertStrEquals(T, "x,y", PN_STR_PTR(potion_sig_string(P,0,f1->sig)));
-  vPN(Closure) f2 = PN_CLOSURE(PN_FUNC(PN_CLOSURE_F(f1), "x=N,y=N"));
-  CuAssertIntEquals(T, "arity f2", 2, potion_sig_arity(P, f2->sig));
+
+  p2 = PN_FUNC(PN_CLOSURE_F(f1), "x=N,y=N");
+  f2 = PN_CLOSURE(p2);
+  CuAssertIntEquals(T, "sig arity f2", 2, potion_sig_arity(P, f2->sig));
   CuAssertStrEquals(T, "x=N,y=N", PN_STR_PTR(potion_sig_string(P,0,f2->sig)));
+  CuAssertIntEquals(T, "cl arity f2", 2, PN_INT(potion_closure_arity(P,0,p2)));
 }
 
 void potion_test_eval(CuTest *T) {
   PN add = potion_eval(P, potion_str(P, "(x, y): x + y."), POTION_JIT);
   PN_F addfn = PN_CLOSURE_F(add); // c callback
+  CuAssertPtrNotNull(T, addfn);
   PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func failed",
     PN_INT(num), 8);

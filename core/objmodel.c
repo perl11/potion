@@ -18,8 +18,13 @@ PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   PN_SIZE i; PN cr;
   vPN(Closure) c = PN_ALLOC_N(PN_TCLOSURE, struct PNClosure, extra * sizeof(PN));
   c->method = meth;
-  if (PN_IS_TUPLE(sig) && PN_TUPLE_LEN(sig) > 0)
+  if (PN_IS_TUPLE(sig) && PN_TUPLE_LEN(sig) > 0) {
     c->sig = sig;
+    c->arity = potion_sig_arity(P, sig);
+  } else {
+    c->sig = PN_NIL;
+    c->arity = 0;
+  }
   c->extra = extra;
   for (i = 0; i < c->extra; i++)
     c->data[i] = PN_NIL;
@@ -54,12 +59,21 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN maxlen) {
   pn_printf(P, out, ")");
   return PN_STR_B(out);
 }
+/**\memberof PNClosure
+ "arity" method, optional args do count.
+ \return number of args as PNNumber */
+PN potion_closure_arity(Potion *P, PN cl, PN self) {
+  /// closure_new aka PN_FUNC sets arity, always use the cached value
+  return PN_NUM(PN_CLOSURE(self)->arity);
+}
+
 /** number of args of sig tuple, implements the potion_closure_arity method.
     sigs are encoded as tuples of len 2-3, (name type|modifier [default-value])
     names String, modifiers Num.
     types also Num, but we will switch to VTable.
-    default-value can be a value of any type and is prefixed with ':' */
-long potion_sig_arity(Potion *P, PN sig) {
+    default-value can be a value of any type and is prefixed with ':'
+  \return number of args as integer */
+int potion_sig_arity(Potion *P, PN sig) {
   if (PN_IS_TUPLE(sig)) {
     //return PN_TUPLE_LEN(PN_CLOSURE(closure)->sig) / 2;
     int count = 0;
@@ -80,13 +94,6 @@ long potion_sig_arity(Potion *P, PN sig) {
   else {
     potion_fatal("wrong sig type for sig_arity");
   }
-}
-/**\memberof PNClosure
- "arity" method, number of args
- optional args do count
- \return as PNNumber */
-PN potion_closure_arity(Potion *P, PN cl, PN self) {
-  return PN_NUM(potion_sig_arity(P, PN_CLOSURE(self)->sig));
 }
 
 PN potion_no_call(Potion *P, PN cl, PN self) {

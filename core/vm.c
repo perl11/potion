@@ -3,11 +3,10 @@ the vm execution loop, the "bytecode interpreter". correct but slower than the j
 
 usage: -B or automatically when no jit is available for your architecture.
 
-Potion uses a register-based bytecode VM that
-is nearly a word-for-word copy of Lua's. The
-code is all different, but the bytecode is
-nearly identical.
-See http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
+Potion uses a register-based bytecode VM that is nearly a
+word-for-word copy of Lua's. The code is all different, but the
+bytecode is nearly identical.  See
+http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
 or http://www.lua.org/doc/jucs05.pdf
 
   - MOVE (pos)		 	copy value between registers
@@ -160,21 +159,21 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   PNTarget *target = &P->target;
   target->setup(P, f, &asmb);
 
+  // calculate needed stackspace. nested protos may need more.
   if (PN_TUPLE_LEN(f->protos) > 0) {
-    PN_TUPLE_EACH(f->protos, i, proto2, {
-      int p2args = 3;
+    PN_SIZE j;
+    vPN(Tuple) tp = (vPN(Tuple)) potion_fwd(f->protos);
+    for (j=0; j < tp->len; j++) {
+      PN proto2 = (PN)tp->set[j];
       vPN(Proto) f2 = (struct PNProto *)proto2;
-      // TODO: i'm repeating this a lot. sad.
-      if (PN_IS_TUPLE(f2->sig)) {
-        PN_TUPLE_EACH(f2->sig, i, v, {
-          if (PN_IS_STR(v)) p2args++;
-        });
-      }
+      int p2args;
+      f2->arity = potion_sig_arity(P, f2->sig);
+      p2args = 3 + f2->arity;
       if (f2->jit == NULL)
         potion_jit_proto(P, proto2);
       if (p2args > protoargs)
         protoargs = p2args;
-    });
+    }
   }
 
   regs = PN_INT(f->stack);
@@ -187,15 +186,19 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
 
   // Read locals
   if (PN_IS_TUPLE(f->sig)) {
-    argx = 0;
-    PN_TUPLE_EACH(f->sig, i, v, {
-      if (PN_IS_STR(v)) {
+    PN_SIZE i;
+    vPN(Tuple) t = (vPN(Tuple)) potion_fwd(f->sig);
+    for (i=0; i < t->len; i++) {
+      PN v = (PN)t->set[i];
+      // arg names, except string default
+      if (PN_IS_STR(v) && !(i>0 && PN_IS_NUM(t->set[i-1]) && t->set[i-1] == PN_NUM(':'))) {
         PN_SIZE num = PN_GET(f->locals, v);
         target->local(P, f, &asmb, regs + num, argx);
         argx++;
       }
-    });
+    }
   }
+  f->arity = argx;
 
   // if CL passed in with upvals, load them
   if (upc > 0)
@@ -216,7 +219,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
       CASE_OP(LOADK, (P, f, &asmb, pos, need))  // load a constant into a register
       CASE_OP(SELF, (P, f, &asmb, pos, need))   // prepare an object method for calling
-						// R(A+1) := R(B); R(A) := R(B)[RK(C)]
+						// R[a+1] := R[b]; R[a] := R[b][RK[c]]
       CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs))// read a local into a register
       CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))// write a register value into a local
       CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))// read an upvalue (upper scope)
@@ -225,7 +228,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))// create tuple
       CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))// write register into tuple key
       CASE_OP(SETTABLE, (P, f, &asmb, pos, need))// write register into a table entry
-      CASE_OP(NEWLICK, (P, f, &asmb, pos, need))// create lick. R(A) := {} (size = B,C)
+      CASE_OP(NEWLICK, (P, f, &asmb, pos, need))// create lick. R[a] := {} (size = b,c)
       CASE_OP(GETPATH, (P, f, &asmb, pos, need))// read obj field into register
       CASE_OP(SETPATH, (P, f, &asmb, pos, need))// write into obj field
       CASE_OP(ADD, (P, f, &asmb, pos, need))	// a = b + c
@@ -235,9 +238,9 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(REM, (P, f, &asmb, pos, need))
       CASE_OP(POW, (P, f, &asmb, pos, need))
       CASE_OP(NEQ, (P, f, &asmb, pos))
-      CASE_OP(EQ, (P, f, &asmb, pos))		// if ((RK(B) == RK(C)) ~= A) then PC++
-      CASE_OP(LT, (P, f, &asmb, pos))		// if ((RK(B) < RK(C)) ~= A) then PC++
-      CASE_OP(LTE, (P, f, &asmb, pos))		// if ((RK(B) <= RK(C)) ~= A) then PC++
+      CASE_OP(EQ, (P, f, &asmb, pos))		// if ((RK[b] == RK[c]) ~= a) then PC++
+      CASE_OP(LT, (P, f, &asmb, pos))		// if ((RK[b] <  RK[c]) ~= a) then PC++
+      CASE_OP(LTE, (P, f, &asmb, pos))		// if ((RK[b] <= RK[c]) ~= a) then PC++
       CASE_OP(GT, (P, f, &asmb, pos))
       CASE_OP(GTE, (P, f, &asmb, pos))
       CASE_OP(BITN, (P, f, &asmb, pos, need))
@@ -246,17 +249,17 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(DEF, (P, f, &asmb, pos, need))	// define a method for an object
       CASE_OP(BIND, (P, f, &asmb, pos, need))   // extend obj by set a binding
 						// http://piumarta.com/software/cola/colas-whitepaper.pdf
-      CASE_OP(MSG, (P, f, &asmb, pos, need))// call a method of an object
+      CASE_OP(MSG, (P, f, &asmb, pos, need))	// call a method of an object
       CASE_OP(JMP, (P, f, &asmb, pos, jmps, offs, &jmpc)) // PC += sBx
-      CASE_OP(TEST, (P, f, &asmb, pos))		// if not (R(A) <=> C) then PC++
+      CASE_OP(TEST, (P, f, &asmb, pos))		// if not (R[a] <=> C) then PC++
       CASE_OP(NOT, (P, f, &asmb, pos))		// a = not b
       CASE_OP(CMP, (P, f, &asmb, pos))
       CASE_OP(TESTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(NOTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(NAMED, (P, f, &asmb, pos, need))	// assign named args before a CALL
-      CASE_OP(CALL, (P, f, &asmb, pos, need))	// call a function. R(A),...:= R(A)(R(A+1),...,R(A+B-1))
+      CASE_OP(CALL, (P, f, &asmb, pos, need))	// call a function. R[a],...:= R[a]( R[a+1],...,R[a+b-1] )
       CASE_OP(CALLSET, (P, f, &asmb, pos, need))//? set return register to write to
-      CASE_OP(RETURN, (P, f, &asmb, pos))	// return R(A), ... ,R(A+B-2)
+      CASE_OP(RETURN, (P, f, &asmb, pos))	// return R[a], ... ,R[a+b-2]
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))// define function prototype
       CASE_OP(CLASS, (P, f, &asmb, pos, need)) // find class for register value
     }
@@ -475,7 +478,7 @@ reentry:
         if (x >= 0) reg[op.a + x + 2] = reg[op.b];
       }
       break;
-      case OP_CALL: /* R[A]( R[A+1],...,R[A+B-1] ) */
+      case OP_CALL: /* R[a]( R[a+1],...,R[a+b-1] ) */
         switch (PN_TYPE(reg[op.a])) {
           case PN_TVTABLE:
             reg[op.a + 1] = potion_object_new(P, PN_NIL, reg[op.a]);
@@ -492,10 +495,10 @@ reentry:
                 PN_CLOSURE(reg[op.a])->extra - 1, &PN_CLOSURE(reg[op.a])->data[1]);
             } else {
               PN sig = PN_CLOSURE(reg[op.a])->sig;
-	      int numargs = op.b - op.a - 1;
+              int numargs = op.b - op.a - 1;
               self = reg[op.a + 1];
               args = &reg[op.a + 2];
-              if ((numargs < potion_sig_arity(P, sig)) && PN_IS_TUPLE(sig)) { // fill in defaults
+              if ((numargs < PN_CLOSURE(reg[op.a])->arity) && PN_IS_TUPLE(sig)) { // fill in defaults
 		int i = 0, j = -1;
                 vPN(Tuple) t = (vPN(Tuple)) potion_fwd(sig);
 		for (; i < t->len; i++) {
