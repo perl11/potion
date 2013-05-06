@@ -177,6 +177,7 @@ struct PNVtable;
 #define PN_RAND()       PN_NUM(potion_rand_int())
 #define PN_STR(x)       potion_str(P, x)
 #define PN_STRN(x, l)   potion_str2(P, x, l)
+#define PN_STRCAT(a, b) potion_strcat(P, (a), (b))
 #define PN_STR_PTR(x)   potion_str_ptr(x)
 #define PN_STR_LEN(x)   ((struct PNString *)(x))->len
 #define PN_STR_B(x)     potion_bytes_string(P, PN_NIL, x)
