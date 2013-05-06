@@ -20,6 +20,7 @@ typedef unsigned char u8;
 #define PN_MEMZERO_N(X,T,N)  memset((X), 0, sizeof(T)*(N))
 #define PN_MEMCPY(X,Y,T)     memcpy((void *)(X), (void *)(Y), sizeof(T))
 #define PN_MEMCPY_N(X,Y,T,N) memcpy((void *)(X), (void *)(Y), sizeof(T)*(N))
+#define PN_MEMMOVE_N(DST,SRC,T,N) memmove((void *)(DST), (void *)(SRC), sizeof(T)*(N))
 
 #ifndef min
 #define min(a, b) ((a) <= (b) ? (a) : (b))
