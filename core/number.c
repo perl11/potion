@@ -238,22 +238,22 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
   return PN_NUM(labs(PN_INT(self)));
 }
 /**\memberof PNNumber
-  "cmp" two numbers. casts argument n to a number
+  "cmp" a number to a value. casts argument n to a number
                      \code 1 cmp 2 #=> -1 \endcode
                      \code 1 cmp 1 #=>  0 \endcode
                      \code 1 cmp 0 #=>  1 \endcode
  \param n PN number compared to
- \return PNNumber 1, 0 or -1
+ \return PNNumber -1, 0 or 1
  \sa potion_tuple_sort. */
 static PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
   if (PN_IS_DECIMAL(self)) {
     double d1 = PN_DBL(self);
-    double d2 = PN_DBL(potion_send(P, PN_number, n));
+    double d2 = PN_DBL(potion_send(PN_number, n));
     return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_NUM(0) : PN_NUM(1);
   } else {
     long n1, n2;
     n1 = PN_INT(self);
-    n2 = PN_IS_NUM(n) ? PN_INT(n) : PN_INT(potion_send(P, PN_number, n));
+    n2 = PN_IS_NUM(n) ? PN_INT(n) : PN_INT(potion_send(PN_number, n));
     return n1 < n2 ? PN_NUM(-1) : n1 == n2 ? PN_NUM(0) : PN_NUM(1);
   }
 }
@@ -280,6 +280,6 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "float?", potion_num_is_float, 0);
   potion_method(num_vt, "integer", potion_num_integer, 0);
   potion_method(num_vt, "abs", potion_abs, 0);
-  potion_method(num_vt, "cmp", potion_num_cmp, "value=N");
+  potion_method(num_vt, "cmp", potion_num_cmp, "value=o");
   potion_method(num_vt, "rand", potion_num_rand, 0);
 }
