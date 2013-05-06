@@ -475,13 +475,13 @@ reentry:
         if (x >= 0) reg[op.a + x + 2] = reg[op.b];
       }
       break;
-      case OP_CALL:
+      case OP_CALL: /* R[A]( R[A+1],...,R[A+B-1] ) */
         switch (PN_TYPE(reg[op.a])) {
           case PN_TVTABLE:
             reg[op.a + 1] = potion_object_new(P, PN_NIL, reg[op.a]);
             reg[op.a] = ((struct PNVtable *)reg[op.a])->ctor;
           case PN_TCLOSURE:
-            if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) {
+            if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) { //ffi?
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);
             } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
               int i;
@@ -491,8 +491,25 @@ reentry:
               reg[op.a] = potion_vm(P, PN_CLOSURE(reg[op.a])->data[0], reg[op.a + 1], argt,
                 PN_CLOSURE(reg[op.a])->extra - 1, &PN_CLOSURE(reg[op.a])->data[1]);
             } else {
+              PN sig = PN_CLOSURE(reg[op.a])->sig;
+	      int numargs = op.b - op.a - 1;
               self = reg[op.a + 1];
               args = &reg[op.a + 2];
+              if ((numargs < potion_sig_arity(P, sig)) && PN_IS_TUPLE(sig)) { // fill in defaults
+		int i = 0, j = -1;
+                vPN(Tuple) t = (vPN(Tuple)) potion_fwd(sig);
+		for (; i < t->len; i++) {
+		  PN v = (PN)t->set[i];
+		  if (PN_IS_STR(v)) j++;
+		  else if (PN_IS_NUM(v) && v == PN_NUM(':')) {
+		    if (j >= numargs  && !reg[op.a + j + 2]) { // and not already filled by NAMED
+		      reg[op.a + j + 2] = (PN)t->set[i+1];
+		      op.b++;
+		    }
+		    if (PN_IS_STR((PN)t->set[i+1])) j--;
+		  }
+		}
+              }
               upc = PN_CLOSURE(reg[op.a])->extra - 1;
               upargs = &PN_CLOSURE(reg[op.a])->data[1];
               current = reg + PN_INT(f->stack) + 2;
