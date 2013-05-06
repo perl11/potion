@@ -87,7 +87,7 @@ ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CFLAGS += -Wno-unused-value
 endif
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -O3 -fno-stack-protector
+	DEBUGFLAGS += -O -fno-stack-protector
 else
 	DEFINES += -DDEBUG
 	STRIP = echo
