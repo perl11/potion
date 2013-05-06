@@ -305,7 +305,7 @@ PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
 PN potion_tuple_unshift(Potion *P, PN cl, PN self, PN value) {
   vPN(Tuple) t = PN_GET_TUPLE(self);
   PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len + 1));
-  memmove((void *)&t->set[1], (void *)&t->set[0], sizeof(PN) * t->len);
+  PN_MEMMOVE_N(&t->set[1], &t->set[0], PN, t->len);
   t->set[0] = value;
   t->len++;
   PN_TOUCH(self);
@@ -319,7 +319,7 @@ PN potion_tuple_unshift(Potion *P, PN cl, PN self, PN value) {
 PN potion_tuple_shift(Potion *P, PN cl, PN self) {
   vPN(Tuple) t = PN_GET_TUPLE(self);
   PN obj = t->set[0];
-  memmove((void *)&t->set[0], (void *)&t->set[1], sizeof(PN) * t->len);
+  PN_MEMMOVE_N(&t->set[0], &t->set[1], PN, t->len);
   PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len - 1));
   t->len--;
   PN_TOUCH(self);
@@ -364,6 +364,42 @@ PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
   t->set[b] ^= GET(a); \
   t->set[a] ^= GET(b); }
 
+/**\memberof PNTuple
+  "remove" an element at index from tuple.
+  \see potion_tuple_delete for the destructive variant
+  \return a copy of PNTuple with one less element */
+PN potion_tuple_remove(Potion *P, PN cl, PN self, PN index) {
+  struct PNTuple *t = PN_GET_TUPLE(self);
+  if (t->len) {
+    PN_SIZE i = PN_INT(index);
+    PN data = potion_tuple_clone(P, cl, self);
+    t = PN_GET_TUPLE(data);
+    if (i < t->len)
+      PN_MEMMOVE_N(&t->set[i], &t->set[i+1], PN, t->len - i);
+    t->len--;
+    //((struct PNFwd *)data)->ptr = (PN)t;
+    PN_TOUCH(data);
+    return data;
+  }
+  return self;
+}
+
+/**\memberof PNTuple
+   destructively "delete" an element at index from tuple.
+  \see potion_tuple_remove for the copying variant
+  \return PNTuple */
+PN potion_tuple_delete(Potion *P, PN cl, PN self, PN index) {
+  struct PNTuple *t = PN_GET_TUPLE(self);
+  if (t->len) {
+    PN_SIZE i = PN_INT(index);
+    if (i < t->len)
+      PN_MEMMOVE_N(&t->set[i], &t->set[i+1], PN, t->len - i);
+    t->len--;
+    PN_TOUCH(self);
+  }
+  return self;
+}
+
 ///\memberof PNTuple
 /// "reverse" a list destructively
 ///\return the same PNTuple with reversed elements
@@ -375,6 +411,7 @@ PN potion_tuple_nreverse(Potion *P, PN cl, PN self) {
     for (i = 0; i < (PN_SIZE)(len/2); i++) {
       SWAP(len-i-1, i);
     }
+    PN_TOUCH(self);
   }
   return self;
 }
@@ -412,9 +449,7 @@ static void potion_sort_internal(Potion *P, PN cl, PN self, ///< sort data
     // random, last, middle or best: median-of-3.
     PN_SIZE i, index = from + (to - from)/2;
     PN pivot = GET(index);
-    //DBG_vt("; sort: %d-%d/%d %s", from, to, index, AS_STR(t));
     SWAP(index, to);
-    //DBG_vt("\n;1      %d-%d/%d %s\n", from, to, index, AS_STR(t));
     index = from;
     // partition the portion of the tuple between indexes from and to,
     // inclusively, by moving all elements less than pivot before
@@ -426,15 +461,12 @@ static void potion_sort_internal(Potion *P, PN cl, PN self, ///< sort data
     } else if (cmp == PN_TRUE) { // sort by ascending number
       for (i=from; i < to; i++) {
 	if (GET(i) <= pivot) {
-	  //DBG_vt(";(%d)    %s<%s/%d %s\n", i, AS_STR(GET(i)),AS_STR(pivot), index, AS_STR(t));
 	  SWAP(i, index); index++;
-	  //DBG_vt(";(%d)    %d-%d/%d %s\n", i, from, to, index, AS_STR(t));
 	}
       }
     } else if (cmp == PN_FALSE) { // sort by descending number
       for (i=from; i < to; i++) {
 	if (GET(i) > pivot) { SWAP(i, index); index++;
-	  //DBG_vt("\n;(%d)    %d-%d/%d %s\n", i, from, to, index, AS_STR(t));
 	}
       }
     } else {
@@ -444,13 +476,12 @@ static void potion_sort_internal(Potion *P, PN cl, PN self, ///< sort data
 	  { SWAP(i, index); index++; }
       }
     }
-    //DBG_vt(";2      %d-%d/%d %s\n", from, to, index, AS_STR(t));
     SWAP(index, to); // Move pivot element back to its final place
-    //DBG_vt("         => %d %s\n", index, AS_STR(t));
 
     if (index > 0)
       potion_sort_internal(P,cl,self, from, index-1, cmp);
     potion_sort_internal(P,cl,self, index+1, to,   cmp);
+    PN_TOUCH(self);
   }
 }
  
@@ -473,7 +504,6 @@ static PN potion_tuple_sort(Potion *P, PN cl,
   PN_SIZE len = PN_TUPLE_LEN(self);
   if (cmp != PN_NIL && !PN_IS_BOOL(cmp) && !PN_IS_CLOSURE(cmp))
     potion_fatal("sort: invalid cmp type");
-  //DBG_t("\n");
   potion_sort_internal(P, cl, data, 0, len-1, cmp);
   return data;
 }
@@ -532,11 +562,11 @@ PN potion_tuple_ins_sort(Potion *P, PN cl, PN self, PN cmp) {
     else {
       potion_fatal("sort: invalid cmp type");
     }
+    PN_TOUCH(self);
   }
   else {
     if (cmp != PN_NIL && !PN_IS_BOOL(cmp) && !PN_IS_CLOSURE(cmp))
       potion_fatal("sort: invalid cmp type");
-    //DBG_t("\n");
     potion_sort_internal(P, cl, self, 0, t->len-1, cmp);
   }
   return self;
@@ -581,7 +611,8 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "put", potion_tuple_put, "index=N,value=o");
   potion_method(tpl_vt, "reverse", potion_tuple_reverse, 0);
   potion_method(tpl_vt, "nreverse", potion_tuple_nreverse, 0);
-  //potion_method(tpl_vt, "remove", potion_tuple_remove, "index=N");
+  potion_method(tpl_vt, "remove", potion_tuple_remove, "index=N");
+  potion_method(tpl_vt, "delete", potion_tuple_delete, "index=N");
   //potion_method(tpl_vt, "slice", potion_tuple_slice, "from=N|to=N");
   potion_method(tpl_vt, "unshift", potion_tuple_unshift, "value=o");
   potion_method(tpl_vt, "shift", potion_tuple_shift, 0);
