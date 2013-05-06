@@ -676,7 +676,12 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   // (Potion *, CL) as the first argument
   X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
-  while (--argc >= 0) X86_ARGO(op.a + argc + 1, argc + 2);
+  {
+    if ((argc < f->arity) && f->arity) { // fill in defaults backwards
+      DBG_c("jit: defaults argc=%d sig=%s\n", argc, AS_STR(f->sig));
+    }
+    while (--argc >= 0) X86_ARGO(op.a + argc + 1, argc + 2);
+  }
   ASM(0xFF); ASM(0xD0); // [b] callq *%rax
   X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op.a)); /* mov %rbp(A) %rax */
 }
