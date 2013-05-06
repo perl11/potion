@@ -183,10 +183,16 @@ PN_SIZE potion_tuple_push_unless(Potion *P, PN tuple, PN value) {
   return PN_TUPLE_LEN(tuple) - 1;
 }
 
-///\memberof PNTuple
-/// "at" method.
-///\param index PNNumber
-///\return PNTuple
+/**\memberof PNTuple
+ "at" method, the generic tuple accessor.
+ \code
+       t=(0,1,2)
+       t(0)  #=> 0
+       t(1)  #=> 1
+       t(-1) #=> 2
+ \endcode
+ \param index PNNumber. If negative, count from end. If too large, return nil.
+ \return tuple element at index */
 PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
   long i = PN_INT(index), len = PN_TUPLE_LEN(self);
   if (i < 0) i += len;
