@@ -122,7 +122,7 @@ subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
 #subattrlist = ':' -? arg-name
 
 # TODO: compile-time sideeffs (BEGIN block) in the compiler
-use = USE n:id - semi    { $$ = PN_AST2(MESSAGE, potion_str(P,"use"), n); }
+use = USE n:id - semi    { $$ = PN_AST2(MESSAGE, PN_STRN("use",3), n); }
 
 ifstmt = IF e:ifexpr s:block - !"els" { s  = PN_OP(AST_AND, e, s); }
        | IF e:ifexpr s1:block         { s1 = PN_AST(MESSAGE, PN_if); }
@@ -240,9 +240,9 @@ block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i); }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 
-#path = '/' < utfw+ > -       { $$ = potion_str2(P, yytext, yyleng); }
-#path    = < utfw+ > -   { $$ = potion_str2(P, yytext, yyleng); }
-message = < utfw+ > -   { $$ = potion_str2(P, yytext, yyleng); }
+#path = '/' < utfw+ > -       { $$ = PN_STRN(yytext, yyleng); }
+#path    = < utfw+ > -   { $$ = PN_STRN(yytext, yyleng); }
+message = < utfw+ > -   { $$ = PN_STRN(yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
       | global
@@ -262,15 +262,15 @@ immed = undef { $$ = PN_NIL; }
 
 global  = scalar | listvar | hashvar | listel | hashel
 # FIXME: starting wordchar (no numbers) + wordchars
-id = < IDFIRST utfw* > { $$ = potion_str2(P, yytext, yyleng); }
+id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng); }
 # send the value a message, every global is a closure (see name)
 scalar  = < '$' i:id > { $$ = PN_AST(MESSAGE, $$); }
 listvar = < '@' i:id > { $$ = PN_AST(MESSAGE, $$); }
 hashvar = < '%' i:id > { $$ = PN_AST(MESSAGE, $$); }
 listel  = < '$' l:id '[' i:value ']' >
-        { $$ = PN_AST2(LICK, potion_strcat(P,"@",PN_STR_PTR(l)), i); }
+        { $$ = PN_AST2(LICK, PN_STRCAT("@", PN_STR_PTR(l)), i); }
 hashel  = < '$' h:id '{' i:value '}' >
-        { $$ = PN_AST2(LICK, potion_strcat(P,"%",PN_STR_PTR(h)), i); }
+        { $$ = PN_AST2(LICK, PN_STRCAT("%", PN_STR_PTR(h)), i); }
 
 # isWORDCHAR && IDFIRST, no numbers
 IDFIRST = [A-Za-z_]
@@ -646,7 +646,7 @@ unq-char = '{' unq-char+ '}'
          | '(' unq-char+ ')'
          | !'{' !'[' !'(' !'}' !']' !')' utf8
 unq-sep = sep !'{' !'[' !'('
-unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = potion_str2(P, yytext, yyleng); }
+unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = PN_STRN(yytext, yyleng); }
 
 - = (space | comment)*
 -- = (space | comment | semi)*
@@ -666,7 +666,7 @@ arg-list = arg-set (optional arg-set)?
          | optional arg-set
 arg-set = arg (comma - arg)*
 
-arg-name = < utfw+ > - { $$ = potion_str2(P, yytext, yyleng); }
+arg-name = < utfw+ > - { $$ = PN_STRN(yytext, yyleng); }
 # types are numbers
 arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
        { $$ = PN_NUM(yytext[0]); }
@@ -683,10 +683,10 @@ arg2-list = arg2-set (optional arg2-set)?
          | optional arg2-set
 arg2-set = arg2 (comma - arg2)*
 
-arg2-name = < [$@%] id > - { $$ = potion_str2(P, yytext, yyleng); }
+arg2-name = < [$@%] id > - { $$ = PN_STRN(yytext, yyleng); }
 # types are classes
 arg2-type = i:id space+  { $$ = potion_class_find(P, i); if (!$$) yyerror(G,"Invalid type"); }
-arg2 = n:arg2-name  { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source?P->source:PN_TUP0(), n), potion_str(P,"O")), PN_NIL); }
+arg2 = n:arg2-name  { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source?P->source:PN_TUP0(), n), PN_STRN("O",1)), PN_NIL); }
     | t:arg2-type n:arg2-name { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source?P->source:PN_TUP0(), n), t), PN_NIL); }
 
 %%

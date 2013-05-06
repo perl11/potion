@@ -152,8 +152,8 @@ block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
 lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i); }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
 
-path = '/' < utfw+ > -       { $$ = potion_str2(P, yytext, yyleng); }
-message = < utfw+ '?'? > -   { $$ = potion_str2(P, yytext, yyleng); }
+path = '/' < utfw+ > -       { $$ = PN_STRN(yytext, yyleng); }
+message = < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
       | lick
@@ -268,7 +268,7 @@ unq-char = '{' unq-char+ '}'
          | '(' unq-char+ ')'
          | !'{' !'[' !'(' !'}' !']' !')' utf8
 unq-sep = sep !'{' !'[' !'('
-unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = potion_str2(P, yytext, yyleng); }
+unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = PN_STRN(yytext, yyleng); }
 
 - = (space | comment)*
 -- = (space | comment | end-of-line)*
@@ -284,7 +284,7 @@ arg-list = arg-set (optional arg-set)?
          | optional arg-set
 arg-set = arg (comma - arg)*
 
-arg-name = < utfw+ > - { $$ = potion_str2(P, yytext, yyleng); }
+arg-name = < utfw+ > - { $$ = PN_STRN(yytext, yyleng); }
 arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
        { $$ = PN_NUM(yytext[0]); }
 arg = n:arg-name assign t:arg-type

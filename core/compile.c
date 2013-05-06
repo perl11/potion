@@ -763,7 +763,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
         ptr += len; \
       } else { \
         size_t len = (val >> 4) - 1; \
-        val = potion_str2(P, (char *)ptr, len); \
+        val = PN_STRN((char *)ptr, len); \
         ptr += len; \
       } \
     } \

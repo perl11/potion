@@ -158,7 +158,7 @@ void potion_file_init(Potion *P) {
 #endif
   while (*env != NULL) {
     for (key = *env; *key != '='; key++);
-    potion_table_put(P, PN_NIL, pe, potion_str2(P, *env, key - *env),
+    potion_table_put(P, PN_NIL, pe, PN_STRN(*env, key - *env),
       potion_str(P, key + 1));
     env++;
   }

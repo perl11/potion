@@ -194,7 +194,7 @@ static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) 
  \return PNString one char <255 */
 static PN potion_num_chr(Potion *P, PN cl, PN self) {
   char c = PN_INT(self);
-  return potion_str2(P, &c, 1);
+  return PN_STRN(&c, 1);
 }
 /**\memberof PNNumber
   "integer?"
