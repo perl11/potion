@@ -182,14 +182,14 @@ static void p2_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
 
       if (exec == EXEC_COMPILE)
 	//TODO: use source dumpbc,dumpc,dumpexec,dump (serializable ascii) methods
-	//code = potion_send(P, code, "dumpbc");
+	//code = potion_send(code, "dumpbc");
 	code = potion_source_dumpbc(P, PN_NIL, code);
       else if (exec == EXEC_COMPILE_C) {
-	//code = potion_send(P, code, "dumpc");
+	//code = potion_send(code, "dumpc");
 	potion_fatal("--compile-c not yet implemented\n");
       }
       else if (exec == EXEC_COMPILE_NATIVE) {
-	//code = potion_send(P, code, "dumpexec");
+	//code = potion_send(code, "dumpexec");
 	potion_fatal("--compile-native not yet implemented\n");
       }
 

@@ -30,22 +30,44 @@ PN potion_any_is_nil(Potion *P, PN closure, PN self) {
 }
 #endif
 
-///\memberof Lobby
-/// "cmp" method. compare given value against argument, possibly casting value
-///\param value PN
-///\return PNNumber 1, 0 or -1
+/**\memberof Lobby
+  "cmp" method. compare given value against argument.
+  \param value PN
+  \return PNNumber -1 if less, 0 if equal or 1 if greater */
 PN potion_any_cmp(Potion *P, PN cl, PN self, PN value) {
-  return potion_send(P, PN_cmp, self, value);
+  return potion_send(self, PN_cmp, value);
 }
-///memberof PN_NIL
-/// "cmp" method. nil is 0 as cmp context
+/** memberof NilKind
+ "cmp" method. nil is 0 or "" or FALSE as cmp context
+  otherwise it is always less.
+ */
 static PN potion_nil_cmp(Potion *P, PN cl, PN self, PN value) {
-  return potion_send(P, PN_cmp, PN_NUM(0), value);
+  switch (potion_type(value)) {
+  case PN_TNIL:
+    return 0;
+  case PN_TNUMBER:
+    return potion_send(PN_NUM(0), PN_cmp, value);
+  case PN_TBOOLEAN:
+    return potion_send(PN_FALSE, PN_cmp, value);
+  case PN_TSTRING:
+    return potion_send(PN_STR(""), PN_cmp, value);
+  default:
+    return PN_NUM(-1);
+  }
 }
 
 /// fw to num
 static PN potion_bool_cmp(Potion *P, PN cl, PN self, PN value) {
-  return potion_send(P, PN_cmp, PN_NUM(PN_TEST(self)), value);
+  switch (potion_type(value)) {
+  case PN_TBOOLEAN:
+    return self < value ? -1 : self == value ? 0 : 1;
+  case PN_TNUMBER:
+    return potion_send(PN_NUM(PN_TEST(self)), PN_cmp, value);
+  case PN_TNIL:
+  case PN_TSTRING: // false < ".." < true
+  default:
+    return value == PN_FALSE ? -1 : 1; //false < any < true
+  }
 }
 
 ///\memberof PNBoolean

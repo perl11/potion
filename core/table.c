@@ -270,7 +270,7 @@ PN potion_tuple_string(Potion *P, PN cl, PN self) {
 ///\memberof PNTuple
 /// "pop" method. remove the last element and return it
 ///\return last PN
-PN potion_tuple_pop(Potion *P, PN cl, PN self, PN key) {
+PN potion_tuple_pop(Potion *P, PN cl, PN self) {
   vPN(Tuple) t = PN_GET_TUPLE(self);
   PN obj = t->set[t->len - 1];
   PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len - 1));
@@ -572,6 +572,37 @@ PN potion_tuple_ins_sort(Potion *P, PN cl, PN self, PN cmp) {
   return self;
 }
 
+static PN potion_tuple_cmp(Potion *P, PN cl, PN self, PN value) {
+  switch (potion_type(value)) {
+  case PN_TBOOLEAN: // false < () < true
+    return value == PN_FALSE ? -1 : 1;
+  case PN_TNIL:
+    return -1; //nil < () < (...)
+  case PN_TTUPLE: // recurse
+    if(PN_TUPLE_LEN(self) && PN_TUPLE_LEN(value)) {
+      PN cmp;
+      if ((cmp = potion_send(potion_tuple_first(P,cl,self), PN_cmp,
+			     potion_tuple_first(P,cl,value)))
+	  == PN_NUM(0))
+	{
+	  PN t1 = potion_tuple_clone(P,cl,self);
+	  PN t2 = potion_tuple_clone(P,cl,value);
+	  return potion_send(potion_tuple_pop(P,cl,t1), PN_cmp, potion_tuple_pop(P,cl,t2));
+	}
+      else {
+	return cmp;
+      }
+    }
+    else {
+      if (PN_TUPLE_LEN(value)) return -1;
+      else if (PN_TUPLE_LEN(self)) return 1;
+      else return 0;
+    }
+  default:
+    potion_fatal("Invalid tuple cmp type");
+  }
+}
+
 #undef SWAP
 #undef GET
 #undef SET
@@ -619,6 +650,7 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "bsearch", potion_tuple_bsearch, "value=o");
   potion_method(tpl_vt, "sort", potion_tuple_sort, "|block=&");
   potion_method(tpl_vt, "ins_sort", potion_tuple_ins_sort, "|block=&");
+  potion_method(tpl_vt, "cmp", potion_tuple_cmp, "value=o");
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
   potion_method(P->lobby, "list", potion_lobby_list, "length=N");
 }

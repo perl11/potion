@@ -351,6 +351,22 @@ static PN potion_bytes_at(Potion *P, PN cl, PN self, PN index) {
   return potion_byte_str2(P, &c, 1);
 }
 
+/**\memberof PNString
+  "cmp" a string to argument str, casted to a string
+   \code "a" cmp "b" #=> -1 \endcode
+   \code "a" cmp "a" #=>  0 \endcode
+   \code "z" cmp "a" #=>  1 \endcode
+ \param str PN string compared to
+ \return PNNumber (positive, negative or 0)
+ \sa potion_tuple_sort. */
+static PN potion_str_cmp(Potion *P, PN cl, PN self, PN str) {
+  if (PN_IS_STR(str)) {
+    return strcmp(PN_STR_PTR(self), PN_STR_PTR(str));
+  } else {
+    return strcmp(PN_STR_PTR(self), PN_STR_PTR(potion_send(PN_string, str)));
+  }
+}
+
 void potion_str_hash_init(Potion *P) {
   P->strings = PN_CALLOC_N(PN_TSTRINGS, struct PNTable, 0);
 }
@@ -368,6 +384,7 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "bytes", potion_str_bytes, 0);
   potion_method(str_vt, "+", potion_str_add, "str=S");
   potion_method(str_vt, "ord", potion_str_ord, 0);
+  potion_method(str_vt, "cmp", potion_str_cmp, "str=o");
   
   potion_type_call_is(byt_vt, PN_FUNC(potion_bytes_at, 0));
   potion_method(byt_vt, "append", potion_bytes_append, "str=S");
