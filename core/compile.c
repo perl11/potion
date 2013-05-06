@@ -784,14 +784,14 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 	if (rhs->part == AST_EXPR && PN_TUPLE_LEN(rhs->a[0]) == 1) {
 	  rhs = SRC_TUPLE_AT(rhs, 0);
 	  if (rhs->part == AST_MSG) {
-	    name = PN_NUM(PN_STR_PTR(PN_S(rhs,0))[0]); // = type
-	    DBG_c("%s)\n", AS_STR(name));
-	    sig = PN_PUSH(sig, name);
+	    PN v = PN_NUM(PN_STR_PTR(PN_S(rhs,0))[0]); // = type. TODO: one-char => VTABLE
+	    DBG_c("%s)\n", AS_STR(v));
+	    sig = PN_PUSH(sig, v);
 	  }
 	} else if (rhs->part == AST_VALUE) {           // :=default
-	  name = PN_S(rhs,0);
-	  DBG_c(": %s)\n", AS_STR(name));
-	  sig = PN_PUSH(PN_PUSH(sig, PN_NUM(':')), name);
+	  PN v = PN_S(rhs,0);
+	  DBG_c(": %s)\n", AS_STR(v));
+	  sig = PN_PUSH(PN_PUSH(sig, PN_NUM(':')), v);
 	} else {
 	  potion_syntax_error(P, "in signature: unexpected AST %s", AS_STR(expr));
 	}
