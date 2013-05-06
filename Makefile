@@ -62,7 +62,7 @@ ECHO = /bin/echo
 MV   = /bin/mv
 SED  = sed
 EXPR = expr
-GREG = bin/greg${EXE}
+GREG = syn/greg${EXE}
 
 RUNPRE = bin/
 # perl11.org only
@@ -469,6 +469,7 @@ release: dist
 	@${ECHO} "</div></body></html>" >> $@
 
 doc: ${DOCHTML} doc/html/files.html
+docall: doc GTAGS
 
 doxygen: doc/html/files.html
 	@${ECHO} DOXYGEN -f core

@@ -21,6 +21,8 @@
 /syn/*.o2
 /syn/*.opic
 /syn/*.opic2
+/syn/greg.exe
+/syn/greg
 /test/api/*.o
 /config.inc
 /.gdbinit
