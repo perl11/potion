@@ -517,9 +517,7 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f {core,syn,front,test/api}/*.o {core,syn,front,test/api}/*.o2 \
-	       {core,syn,front,test/api}/*.${OPIC} {core,syn,front,test/api}/*.${OPIC}2 \
-	       {core,syn,front,test/api}/*.i
+	@rm -f $(foreach ext,o o2 opic opic2 i, $(foreach dir,core syn front test/api,${dir}/*.${ext}))
 	@rm -f bin/* lib/potion/* lib/*.a
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f tools/*.o core/config.h core/version.h
