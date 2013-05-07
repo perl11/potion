@@ -54,7 +54,6 @@
 			 int,
 			 unsigned int*);
 
-    _DecodeResult res;
     _DecodedInst disassembled[MAX_INSTRUCTIONS];
     unsigned int decodedInstructionsCount = 0;
     _OffsetType offset = 0;
@@ -69,7 +68,7 @@
       &decodedInstructionsCount);
     for (i = 0; i < decodedInstructionsCount; i++) {
       printf("0x%04x (%02d) %-24s %s%s%s\r\n",
-	     disassembled[i].offset,
+	     (unsigned int)disassembled[i].offset,
 	     disassembled[i].size,
 	     (char*)disassembled[i].instructionHex.p,
 	     (char*)disassembled[i].mnemonic.p,
