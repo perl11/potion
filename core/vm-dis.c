@@ -24,7 +24,8 @@
     ud_set_syntax(&ud_obj, UD_SYN_ATT);
 
     while (ud_disassemble(&ud_obj)) {
-      printf("0x%lx\t%s\n", (long)ud_insn_off(&ud_obj), ud_insn_asm(&ud_obj));
+      printf("0x%012lx 0x%lx %-24s \t%s\n", ud_insn_off(&ud_obj)+(unsigned long)asmb->ptr,
+	     (long)ud_insn_off(&ud_obj), ud_insn_hex(&ud_obj), ud_insn_asm(&ud_obj));
     }
   }
 #  else
@@ -67,7 +68,8 @@
       MAX_INSTRUCTIONS,
       &decodedInstructionsCount);
     for (i = 0; i < decodedInstructionsCount; i++) {
-      printf("0x%04x (%02d) %-24s %s%s%s\r\n",
+      printf("0x%012lx 0x%04x (%02d) %-24s %s%s%s\r\n",
+	     disassembled[i].offset + (unsigned long)asmb->ptr,
 	     (unsigned int)disassembled[i].offset,
 	     disassembled[i].size,
 	     (char*)disassembled[i].instructionHex.p,
