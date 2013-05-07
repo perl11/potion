@@ -147,23 +147,23 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
 	ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));
 	ASM(0x89); ASM(0x14); ASM(0x24);
       }
-    } else {
+    }
+    else {
       if (out == 2) {
-	ASM(0x8b); ASM(0x55); ASM(regn); // TODO push imm
+	ASM(0xc7); ASM(0x44); ASM(0x24); ASM(argn * sizeof(PN)); ASMI(regn); //mov $regn, argn(%esp)
       } else if (out) {
-	ASM(0x8b); ASM(0x55); ASM(RBP(regn));
+	ASM(0x8b); ASM(0x55); ASM(RBP(regn)); //mov -0x8(%ebp), %edx
+      }
+      if (!out) argn += 2;
+      if (out == 1) {
+	ASM(0x89); ASM(0x54); ASM(0x24); ASM(argn * sizeof(PN)); //mov %edx, argn(%esp)
+      } else if (!out) {
+	ASM(0x8b); ASM(0x55); ASM(argn * sizeof(PN));
+      }
+      if (!out) {
+	ASM(0x89); ASM(0x55); ASM(RBP(regn));
       }
     }
-    if (!out) argn += 2;
-    if (out) {
-      ASM(0x89); ASM(0x54); ASM(0x24); ASM(argn * sizeof(PN));
-    } else {
-      ASM(0x8b); ASM(0x55); ASM(argn * sizeof(PN));
-    }
-    if (!out) {
-      ASM(0x89); ASM(0x55); ASM(RBP(regn));
-    }
-  }
 #else
   // sysv amd64 only (rdi,rsi,rdx,rcx,r8,r9), windows msvc not supported (rcx,rdx,r8,r9)
   // xmm0-7 not yet
@@ -688,6 +688,7 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   X86_ARGO(op.a, 2);
   X86_PRE(); ASM(0xB8); ASMN(potion_object_new); // mov &potion_object_new %rax
   ASM(0xFF); ASM(0xD0); // callq %rax
+  //[c]:
   X86_MOV_RBP(0x89, op.a + 1); // mov %rax local
   X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(A) %rax
   X86_PRE(); ASM(0x8B); ASM(0x40);
@@ -696,7 +697,7 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 
   // check type of the closure
   ASM(0x81); ASM(0x38); ASMI(PN_TCLOSURE); // cmpq CLOSURE (%eax)
-  ASM(0x74); ASM(X86C(22, 30)); // je [a]
+  ASM(0x74); ASM(X86C(22, 30)); // jz [a]
 
   // if not a closure, get the type's closure
   X86_MOV_RBP(0x8B, op.a);
@@ -707,8 +708,9 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   ASM(0xFF); ASM(0xD0); // [b] callq *%rax
   ASM(0xEB); ASM(X86C(3, 4)); // jmp [b]
 
-  // get the closure's function
+  //[a]: get the closure's function
   X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(A) %rax
+  //[b]: got the method, call it (first special slot from PNClosure)
   X86_PRE(); ASM(0x8B); ASM(0x40); ASM(sizeof(struct PNObject)); // mov N(%rax) %rax
 
   // (Potion *, CL) as the first argument
@@ -730,7 +732,7 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 	  X86_ARGO_IMM(PN_TUPLE_AT(sig, 2), i+1); // value as immmediate
 	}}}}
   DBG_t("\n");
-  ASM(0xFF); ASM(0xD0); // [b] callq *%rax
+  ASM(0xFF); ASM(0xD0); // callq *%rax
   X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op.a)); /* mov %rbp(A) %rax */
 }
 
