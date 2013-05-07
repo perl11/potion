@@ -24,7 +24,7 @@
     ud_set_syntax(&ud_obj, UD_SYN_ATT);
 
     while (ud_disassemble(&ud_obj)) {
-      printf("0x%012lx 0x%lx %-24s \t%s\n", ud_insn_off(&ud_obj)+(unsigned long)asmb->ptr,
+      printf("0x%012lx 0x%lx %-24s \t%s\n", (unsigned long)(ud_insn_off(&ud_obj)+(unsigned long)asmb->ptr),
 	     (long)ud_insn_off(&ud_obj), ud_insn_hex(&ud_obj), ud_insn_asm(&ud_obj));
     }
   }
