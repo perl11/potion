@@ -153,26 +153,30 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   PN_SIZE pos;
   PNJumps jmps[JUMPS_MAX]; size_t offs[JUMPS_MAX]; int jmpc = 0, jmpi = 0;
   vPN(Proto) f = (struct PNProto *)proto;
-  int upc = PN_TUPLE_LEN(f->upvals);
+  long upc = PN_TUPLE_LEN(f->upvals);
   PNAsm * volatile asmb = potion_asm_new(P);
   u8 *fn;
   PNTarget *target = &P->target;
   target->setup(P, f, &asmb);
+  DBG_t("-- run-time --\n");
 
   // calculate needed stackspace. nested protos may need more.
   if (PN_TUPLE_LEN(f->protos) > 0) {
     PN_SIZE j;
     vPN(Tuple) tp = (vPN(Tuple)) potion_fwd(f->protos);
+    DBG_vt(";  %d subprotos\n", tp->len);
     for (j=0; j < tp->len; j++) {
       PN proto2 = (PN)tp->set[j];
       vPN(Proto) f2 = (struct PNProto *)proto2;
-      int p2args;
+      long p2args;
       f2->arity = potion_sig_arity(P, f2->sig);
       p2args = 3 + f2->arity;
       if (f2->jit == NULL)
         potion_jit_proto(P, proto2);
-      if (p2args > protoargs)
+      if (p2args > protoargs) {
+	DBG_vt(";  extend stack from %ld to %ld\n", protoargs, p2args);
         protoargs = p2args;
+      }
     }
   }
 
@@ -198,6 +202,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       }
     }
   }
+  DBG_t("; %ld locals, %ld regs, %ld upc, sig=%s\n", argx, regs, upc, AS_STR(f->sig));
   f->arity = argx;
 
   // if CL passed in with upvals, load them
