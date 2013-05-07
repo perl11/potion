@@ -182,17 +182,17 @@ $(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/p2.h core/config.h cor
 	@${ECHO} CPP $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
 %.o: %.c core/p2.h
-	@${ECHO} CC $<
+	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 %.o2: %.c core/config.h
-	@${ECHO} CC -DP2 $<
+	@${ECHO} CC -DP2 $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 ifneq (${FPIC},)
 %.${OPIC}: %.c core/p2.h
-	@${ECHO} CC ${FPIC} $<
+	@${ECHO} CC ${FPIC} $@
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 %.${OPIC}2: %.c core/p2.h
-	@${ECHO} CC -DP2 ${FPIC} $<
+	@${ECHO} CC -DP2 ${FPIC} $@
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
 
@@ -203,24 +203,24 @@ endif
 	@${ECHO} CPP $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
 .c.o: core/p2.h
-	@${ECHO} CC $<
+	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 .c.o2: core/p2.h
-	@${ECHO} CC -DP2 $<
+	@${ECHO} CC -DP2 $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 ifneq (${FPIC},)
 .c.${OPIC}: core/p2.h
-	@${ECHO} CC ${FPIC} $<
+	@${ECHO} CC ${FPIC} $@
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 .c.${OPIC}2: core/p2.h
 	@${ECHO} CC -DP2 ${FPIC} $<
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
 %.c: %.y ${GREG}
-	@${ECHO} GREG $<
+	@${ECHO} GREG $@
 	@${GREG} $< > $@-new && ${MV} $@-new $@
 .y.c: ${GREG}
-	@${ECHO} GREG $<
+	@${ECHO} GREG $@
 	@${GREG} $< > $@-new && ${MV} $@-new $@
 
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/potion/libpotion${DLL}
