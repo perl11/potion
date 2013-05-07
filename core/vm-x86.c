@@ -604,6 +604,7 @@ void potion_x86_testjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile
 
 void potion_x86_notjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, PNJumps *jmps, size_t *offs, int *jmpc) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
+  DBG_t("; notjmp %d => %d\n", op.a, op.b);
   X86_MOV_RBP(0x8B, op.a); // mov -A(%rbp) %rax
   X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); // cmp FALSE %rax
   ASM(0x74); ASM(X86C(4, 5)); // je +5
@@ -614,9 +615,10 @@ void potion_x86_notjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 
 void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_ARGO(start - 3, 0);
-  X86_ARGO(op.a, 1);
-  X86_ARGO(op.b - 1, 2);
+  DBG_t("; named %d %d\n", op.a, op.b);
+  X86_ARGO(start - 3, 0); //P
+  X86_ARGO(op.a, 1);      //cl
+  X86_ARGO(op.b - 1, 2);  //name
   X86_PRE(); ASM(0xB8); ASMN(potion_sig_find); // mov &potion_sig_find %rax
   ASM(0xFF); ASM(0xD0); // callq %eax
   ASM(0x85); ASM(0xC0); // test %eax %eax
@@ -676,12 +678,27 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   // (Potion *, CL) as the first argument
   X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
-  {
-    if ((argc < f->arity) && f->arity) { // fill in defaults backwards
-      DBG_c("jit: defaults argc=%d sig=%s\n", argc, AS_STR(f->sig));
+  DBG_t("; call %d[1] ", op.a);
+  // arity from protos[op.a], not f
+  if (!PN_IS_EMPTY(f->protos) && op.a < PN_TUPLE_LEN(f->protos)) {
+    vPN(Proto) c = (vPN(Proto)) PN_TUPLE_AT(f->protos, op.a);
+    if ((argc < c->arity) && c->arity) { // fill in defaults
+      int j = c->arity + 1; //2: [0,1],3,2
+      while (j >= argc+1) { //3>=2, 2>=2
+	PN sig = potion_sig_at(P, c->sig, j-2);
+	if (sig) {
+	  DBG_t(":=%s[%d] ", AS_STR(PN_TUPLE_AT(sig, 2)), j);
+	  //todo: asm fill absolute at j, or push defaults also to stack.
+	  X86_ARGO(PN_TUPLE_AT(sig, 2), j--); // fill default value
+	}
+      }
     }
-    while (--argc >= 0) X86_ARGO(op.a + argc + 1, argc + 2);
   }
+  while (--argc >= 0) {
+    DBG_t("%d[%d] ", op.a + argc + 1, argc + 2);
+    X86_ARGO(op.a + argc + 1, argc + 2);
+  }
+  DBG_t("\n");
   ASM(0xFF); ASM(0xD0); // [b] callq *%rax
   X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op.a)); /* mov %rbp(A) %rax */
 }

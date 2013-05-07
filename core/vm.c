@@ -165,16 +165,17 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
     DBG_vt(";  %lu subprotos\n", PN_TUPLE_LEN(f->protos));
     PN_SIZE j;
     vPN(Tuple) tp = (vPN(Tuple)) potion_fwd(f->protos);
+    DBG_vt(";  %d subprotos\n", tp->len);
     for (j=0; j < tp->len; j++) {
       PN proto2 = (PN)tp->set[j];
       vPN(Proto) f2 = (struct PNProto *)proto2;
-      int p2args;
+      long p2args;
       f2->arity = potion_sig_arity(P, f2->sig);
       p2args = 3 + f2->arity;
       if (f2->jit == NULL)
         potion_jit_proto(P, proto2);
       if (p2args > protoargs) {
-        DBG_vt(";  extend stack from %ld to %ld\n", protoargs, p2args);
+	DBG_vt(";  extend stack from %ld to %ld\n", protoargs, p2args);
         protoargs = p2args;
       }
     }
@@ -202,7 +203,6 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       }
     }
   }
-
   DBG_t("; %ld locals, %ld regs, %ld upc, sig=%s\n", argx, regs, upc, AS_STR(f->sig));
   f->arity = argx;
 

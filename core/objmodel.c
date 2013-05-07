@@ -84,6 +84,39 @@ int potion_sig_arity(Potion *P, PN sig) {
   }
 }
 
+///\return sig tuple at index, zero-based
+PN potion_sig_at(Potion *P, PN sig, int index) {
+  PN result = PN_NIL;
+  if (PN_IS_TUPLE(sig)) {
+    int count = -1;
+    struct PNTuple * volatile t = (struct PNTuple *)potion_fwd(sig);
+    if (t->len > 0) {
+      PN_SIZE i;
+      for (i = 0; i < t->len; i++) {
+	PN v = (PN)t->set[i];
+	if (PN_IS_STR(v)) count++;
+	if (PN_IS_NUM(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
+	if (count == index) {
+	  result = potion_tuple_new(P, v);
+	  if (i+1 < t->len && PN_IS_NUM((PN)t->set[i+1])) {
+	    PN typ = (PN)t->set[i+1];
+	    result = potion_tuple_push(P, result, typ);
+	    if (i+2 < t->len && typ == PN_NUM(':'))
+	      result = potion_tuple_push(P, result, (PN)t->set[i+2]);
+	  }
+	  return result;
+	}
+      }
+    }
+    return result;
+  }
+  else if (sig == PN_NIL)
+    return result;
+  else {
+    potion_fatal("wrong sig type for sig_at");
+  }
+}
+
 PN potion_no_call(Potion *P, PN cl, PN self) {
   return self;
 }

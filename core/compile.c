@@ -339,6 +339,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           breg++;
           PN_BLOCK(breg, PN_S(t,2), PN_NIL);
         }
+	DBG_c("; call %d %d VALUE\n", reg, breg);
         PN_ASM2(OP_CALL, reg, breg);
       }
     }
@@ -391,10 +392,12 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       if (lhs->a[1] != PN_NIL) {
         breg = reg;
         PN_ASM2(opcode, ++breg, num);
+	DBG_c("; callset %d %d ASSIGN\n", reg, breg);
         PN_ASM2(OP_CALLSET, reg, breg);
         PN_ARG_TABLE(PN_S(lhs,1), breg, 1);
         // TODO: no block allowed here?
         potion_source_asmb(P, f, loop, 0, t->a[1], ++breg);
+	DBG_c("; call %d %d ASSIGN\n", reg, breg);
         PN_ASM2(OP_CALL, reg, breg);
       } else {
         potion_source_asmb(P, f, loop, 0, t->a[1], breg);
@@ -618,9 +621,11 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           }
 #undef LOAD_ARG
           if (t->part == AST_MSG) {
+	    DBG_c("; call %d %d MSG\n", reg, breg);
             PN_ASM2(OP_CALL, reg, breg);
           } else
             if (PN_S(t,1) != PN_NIL) {
+	      DBG_c("; call %d %d !MSG\n", reg, breg);
               PN_ASM2(OP_CALL, reg, breg);
               PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
             } else {
@@ -636,6 +641,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
               breg++;
               PN_BLOCK(breg, PN_S(t,2), PN_NIL);
             }
+	    DBG_c("; call %d %d\n", reg, breg);
             PN_ASM2(OP_CALL, reg, breg);
           }
         }
