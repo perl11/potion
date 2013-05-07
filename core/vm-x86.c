@@ -73,6 +73,7 @@ the x86 and x86_64 jit.
         ASM(0xEB); ASM(X86C(7, 14)); /*  jmp +7 */ \
         X86_MOVQ(op.a, PN_FALSE) /*  -A(%rbp) = FALSE */
 #define X86_ARGO(regn, argn) potion_x86_c_arg(P, asmp, 1, regn, argn)
+#define X86_ARGO_IMM(regn, argn) potion_x86_c_arg(P, asmp, 2, regn, argn)
 #define X86_ARGI(regn, argn) potion_x86_c_arg(P, asmp, 0, regn, argn)
 #define TAG_JMP(jpos) \
         ASM(0xE9); \
@@ -132,18 +133,26 @@ again:
   }
 }
 
-// mimick c calling convention
+/** mimick c calling convention
+  \see http://en.wikipedia.org/wiki/X86_calling_conventions
+  \param out: 1 out, 2 out+immediate, 0 in also
+  \param regn: value (relative to ebp)
+  \param argn: argument index (0-5 in regs) */
 static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int regn, int argn) {
 #if __WORDSIZE != 64
-  if (argn == 0) {
-    // OPT: the first argument is always (Potion *)
-    if (!out) {
-      ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));
-      ASM(0x89); ASM(0x14); ASM(0x24);
-    }
-  } else {
-    if (out) {
-      ASM(0x8b); ASM(0x55); ASM(RBP(regn));
+    // IA-32 cdecl ABI, non-microsoft only. TODO: win32 stdcall for the w32api ffi
+    if (argn == 0) {
+      // OPT: the first argument is always (Potion *)
+      if (!out) {
+	ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));
+	ASM(0x89); ASM(0x14); ASM(0x24);
+      }
+    } else {
+      if (out == 2) {
+	ASM(0x8b); ASM(0x55); ASM(regn); // TODO push imm
+      } else if (out) {
+	ASM(0x8b); ASM(0x55); ASM(RBP(regn));
+      }
     }
     if (!out) argn += 2;
     if (out) {
@@ -156,36 +165,62 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
     }
   }
 #else
+  // sysv amd64 only (rdi,rsi,rdx,rcx,r8,r9), windows msvc not supported (rcx,rdx,r8,r9)
+  // xmm0-7 not yet
   switch (argn) {
-    case 0:
+  case 0: //rdi Potion *P
+    if (out == 2) { // unused - mov $regn, %rdi
+      X86_PRE(); ASM(0xc7); ASM(0xc7); ASMI(regn);
+    } else { // mov -regn(%rbp), %rdi
       X86_PRE(); ASM(out ? 0x8b : 0x89); ASM(0x7d); ASM(RBP(regn));
+    }
     break;
-    case 1:
+  case 1: //rsi PN cl
+    if (out == 2) { // unused - mov $regn, %rsi
+      X86_PRE(); ASM(0xc7); ASM(0xc6); ASMI(regn);
+    } else { // mov -regn(%rbp), %rsi
       X86_PRE(); ASM(out ? 0x8b : 0x89); ASM(0x75); ASM(RBP(regn));
+    }
     break;
-    case 2:
+  case 2: //rdx self
+    if (out == 2) { // unused - mov $regn, %rdx
+      X86_PRE(); ASM(0xc7); ASM(0xc2); ASMI(regn);
+    } else { // mov -regn(%rbp), %rdx
       X86_PRE(); ASM(out ? 0x8b : 0x89); ASM(0x55); ASM(RBP(regn));
+    }
     break;
-    case 3:
+  case 3: //rcx
+    if (out == 2) { // 1st default arg - mov $regn, %rcx
+      X86_PRE(); ASM(0xc7); ASM(0xc1); ASMI(regn);
+    } else { // mov -regn(%rbp), %rcx
       X86_PRE(); ASM(out ? 0x8b : 0x89); ASM(0x4d); ASM(RBP(regn));
+    }
     break;
-    case 4:
+  case 4: //r8
+    if (out == 2) { // 2nd default arg - mov $regn, %r8
+      ASM(0x49); ASM(0xc7); ASM(0xc0); ASMI(regn);
+    } else { // mov -regn(%rbp), %r8
       ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM(0x45); ASM(RBP(regn));
+    }
     break;
-    case 5:
+  case 5: //r9
+    if (out == 2) { // 3rd default arg - mov $regn, %r9
+      ASM(0x49); ASM(0xc7); ASM(0xc1); ASMI(regn);
+    } else { // mov -regn(%rbp), %r9
       ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM(0x4d); ASM(RBP(regn));
+    }
     break;
-    default:
+    default: // can only pass max 6 arg via regs, rest on stack
       if (out) {
-        X86_PRE(); ASM(0x8B); ASM(0x5d); ASM(RBP(regn)); // mov %rbp(A) %rbx
-        if (argn == 6) {
-          X86_PRE(); ASM(0x89); ASM(0x1c); ASM(0x24);    // mov %rbx (%rsp)
-        } else {
-          X86_PRE(); ASM(0x89); ASM(0x5c); ASM(0x24); ASM((argn - 6) * sizeof(PN)); // mov %rbx N(%rsp)
-        }
+	X86_PRE(); ASM(0x8B); ASM(0x5d); ASM(RBP(regn)); // mov %rbp(A) %rbx
+	if (argn == 6) {
+	  X86_PRE(); ASM(0x89); ASM(0x1c); ASM(0x24);    // mov %rbx (%rsp)
+	} else {
+	  X86_PRE(); ASM(0x89); ASM(0x5c); ASM(0x24); ASM((argn - 6) * sizeof(PN)); // mov %rbx N(%rsp)
+	}
       } else {
-        X86_PRE(); ASM(0x8b); ASM(0x5d); ASM((argn - 4) * sizeof(PN));
-        X86_PRE(); ASM(0x89); ASM(0x5d); ASM(RBP(regn)); // mov %rbp(A) %rbx
+	X86_PRE(); ASM(0x8b); ASM(0x5d); ASM((argn - 4) * sizeof(PN));
+	X86_PRE(); ASM(0x89); ASM(0x5d); ASM(RBP(regn)); // mov %rbp(A) %rbx
       }
     break;
   }
@@ -635,7 +670,8 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 // TODO: check for bytecode nodes and jit them as well?
 void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  int argc = op.b - op.a;
+  int argc = op.b - op.a; // including self
+  int i;
 
   // check type of the closure
   X86_PRE(); ASM(0x8B); ASM(0x45); ASM(RBP(op.a)); // mov %rbp(A) %rax
@@ -678,26 +714,21 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   // (Potion *, CL) as the first argument
   X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
-  DBG_t("; call %d[1] ", op.a);
-  // arity from protos[op.a], not f
+  DBG_t("; call %ld[0] %d[1] ", start-3, op.a);
+  for (i=2; i <= argc+1; i++) {
+    DBG_t("%d[%d] ", op.a + i - 1, i);
+    X86_ARGO(op.a + i - 1, i);
+  }
+  // fill in defaults, arity from protos[op.a], not f
   if (!PN_IS_EMPTY(f->protos) && op.a < PN_TUPLE_LEN(f->protos)) {
     vPN(Proto) c = (vPN(Proto)) PN_TUPLE_AT(f->protos, op.a);
-    if ((argc < c->arity) && c->arity) { // fill in defaults
-      int j = c->arity + 1; //2: [0,1],3,2
-      while (j >= argc+1) { //3>=2, 2>=2
-	PN sig = potion_sig_at(P, c->sig, j-2);
-	if (sig) {
-	  DBG_t(":=%s[%d] ", AS_STR(PN_TUPLE_AT(sig, 2)), j);
-	  //todo: asm fill absolute at j, or push defaults also to stack.
-	  X86_ARGO(PN_TUPLE_AT(sig, 2), j--); // fill default value
-	}
-      }
-    }
-  }
-  while (--argc >= 0) {
-    DBG_t("%d[%d] ", op.a + argc + 1, argc + 2);
-    X86_ARGO(op.a + argc + 1, argc + 2);
-  }
+    if ((argc-1 < c->arity) && c->arity) {
+      for (i = argc+1; i <= c->arity+1; i++) { //2: [0,1],2,3
+	PN sig = potion_sig_at(P, c->sig, i-2);
+	if (sig && PN_TUPLE_LEN(sig) == 3) {
+	  DBG_t(":=*%s[%d] ", AS_STR(PN_TUPLE_AT(sig, 2)), i+1);
+	  X86_ARGO_IMM(PN_TUPLE_AT(sig, 2), i+1); // value as immmediate
+	}}}}
   DBG_t("\n");
   ASM(0xFF); ASM(0xD0); // [b] callq *%rax
   X86_PRE(); ASM(0x89); ASM(0x45); ASM(RBP(op.a)); /* mov %rbp(A) %rax */
