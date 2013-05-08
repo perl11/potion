@@ -191,7 +191,7 @@ config.h.echo:
 	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_NAME " $(shell echo ${JIT_TARGET} | tr A-Z a-z)
 	@${ECHO} ${DEFINES} | perl -lpe's/-D(\w+)/\n#define \1 1/g; s/=/ /g; s{-I[a-z/:]* }{}g;'
 	@${ECHO}
-	@./tools/config.sh ${CC}
+	@./tools/config.sh "${CC}"
 
 # bootstrap config.inc via `make -f config.mak`
 config.inc: tools/config.sh config.mak
