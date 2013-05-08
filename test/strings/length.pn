@@ -3,4 +3,4 @@ b = "hello, world\n"
 c = "naïve"
 d = "こんにちは"
 (a length, b length, c length, d length)
-# (3, 13, 5, 5)
+#=> (3, 13, 5, 5)

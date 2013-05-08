@@ -8,4 +8,4 @@ ary kind sum = ():
   i.
 
 ary sum + ary extra
-# 159
+#=> 159

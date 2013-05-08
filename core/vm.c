@@ -3,6 +3,7 @@
 // the vm execution loop
 //
 // (c) 2008 why the lucky stiff, the freelance professor
+// (c) 2013 by perl11 org
 //
 #include <stdio.h>
 #include <stdarg.h>
@@ -15,7 +16,47 @@
 #include "khash.h"
 #include "table.h"
 
-extern PNTarget potion_target_x86, potion_target_ppc;
+#if defined(POTION_JIT_TARGET) && defined(JIT_DEBUG)
+#  if defined(HAVE_LIBDISASM)
+#    include <libdis.h>
+#  else
+#    if defined(HAVE_LIBUDIS86)
+#      include <udis86.h>
+#    endif
+// libdistorm64 has no usable headers yet
+#  endif
+#endif
+
+#if DEBUG
+extern const struct {
+  const char *name;
+  const u8 args;
+} potion_ops[];
+
+#define STRINGIFY(_obj) PN_STR_PTR(potion_send(_obj, PN_string))
+#endif
+
+#ifdef POTION_JIT_TARGET
+#if (POTION_JIT_TARGET == POTION_X86)
+extern PNTarget potion_target_x86;
+#elif (POTION_JIT_TARGET == POTION_PPC)
+extern PNTarget potion_target_ppc;
+#elif (POTION_JIT_TARGET == POTION_ARM)
+extern PNTarget potion_target_arm;
+#endif
+#endif
+
+void potion_vm_init(Potion *P) {
+#ifdef POTION_JIT_TARGET
+#if (POTION_JIT_TARGET == POTION_X86)
+  P->target = potion_target_x86;
+#elif (POTION_JIT_TARGET == POTION_PPC)
+  P->target = potion_target_ppc;
+#elif (POTION_JIT_TARGET == POTION_ARM)
+  P->target = potion_target_arm;
+#endif
+#endif
+}
 
 PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   PN ary = PN_NIL;
@@ -50,14 +91,9 @@ PN potion_vm_class(Potion *P, PN cl, PN self) {
 #define STACK_MAX 4096
 #define JUMPS_MAX 1024
 
-void potion_vm_init(Potion *P) {
-  P->targets[POTION_X86] = potion_target_x86;
-  P->targets[POTION_PPC] = potion_target_ppc;
-}
-
 #define CASE_OP(name, args) case OP_##name: target->op[OP_##name]args; break;
 
-PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
+PN_F potion_jit_proto(Potion *P, PN proto) {
   long regs = 0, lregs = 0, need = 0, rsp = 0, argx = 0, protoargs = 4;
   PN_SIZE pos;
   PNJumps jmps[JUMPS_MAX]; size_t offs[JUMPS_MAX]; int jmpc = 0, jmpi = 0;
@@ -65,7 +101,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
   int upc = PN_TUPLE_LEN(f->upvals);
   PNAsm * volatile asmb = potion_asm_new(P);
   u8 *fn;
-  PNTarget *target = &P->targets[target_id];
+  PNTarget *target = &P->target;
   target->setup(P, f, &asmb);
 
   if (PN_TUPLE_LEN(f->protos) > 0) {
@@ -79,7 +115,7 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
         });
       }
       if (f2->jit == NULL)
-        potion_jit_proto(P, proto2, target_id);
+        potion_jit_proto(P, proto2);
       if (p2args > protoargs)
         protoargs = p2args;
     });
@@ -118,65 +154,67 @@ PN_F potion_jit_proto(Potion *P, PN proto, PN target_id) {
       }
     }
 
+    // See http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
+    // or http://www.lua.org/doc/jucs05.pdf
+    // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
     switch (PN_OP_AT(f->asmb, pos).code) {
-      CASE_OP(MOVE, (P, f, &asmb, pos))
-      CASE_OP(LOADPN, (P, f, &asmb, pos)) 
-      CASE_OP(LOADK, (P, f, &asmb, pos, need))
-      CASE_OP(SELF, (P, f, &asmb, pos, need))
-      CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs))
-      CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))
-      CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))
-      CASE_OP(SETUPVAL, (P, f, &asmb, pos, lregs))
-      CASE_OP(GLOBAL, (P, f, &asmb, pos, need))
-      CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))
-      CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))
-      CASE_OP(SETTABLE, (P, f, &asmb, pos, need))
-      CASE_OP(NEWLICK, (P, f, &asmb, pos, need))
-      CASE_OP(GETPATH, (P, f, &asmb, pos, need))
-      CASE_OP(SETPATH, (P, f, &asmb, pos, need))
-      CASE_OP(ADD, (P, f, &asmb, pos, need))
-      CASE_OP(SUB, (P, f, &asmb, pos, need))
+      CASE_OP(MOVE, (P, f, &asmb, pos))		// copy value between registers
+      CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
+      CASE_OP(LOADK, (P, f, &asmb, pos, need))  // load a constant into a register
+      CASE_OP(SELF, (P, f, &asmb, pos, need))   // prepare an object method for calling
+						// R(A+1) := R(B); R(A) := R(B)[RK(C)]
+      CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs))// read a local into a register
+      CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))// write a register value into a local
+      CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))// read an upvalue (upper scope)
+      CASE_OP(SETUPVAL, (P, f, &asmb, pos, lregs))// write to an upvalue
+      CASE_OP(GLOBAL, (P, f, &asmb, pos, need))	// returns a global (for get or set)
+      CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))// create tuple
+      CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))// write register into tuple key
+      CASE_OP(SETTABLE, (P, f, &asmb, pos, need))// write register into a table entry
+      CASE_OP(NEWLICK, (P, f, &asmb, pos, need))// create lick. R(A) := {} (size = B,C)
+      CASE_OP(GETPATH, (P, f, &asmb, pos, need))// read obj field into register
+      CASE_OP(SETPATH, (P, f, &asmb, pos, need))// write into obj field
+      CASE_OP(ADD, (P, f, &asmb, pos, need))	// a = b + c
+      CASE_OP(SUB, (P, f, &asmb, pos, need))	// a = b - c
       CASE_OP(MULT, (P, f, &asmb, pos, need))
       CASE_OP(DIV, (P, f, &asmb, pos, need))
       CASE_OP(REM, (P, f, &asmb, pos, need))
       CASE_OP(POW, (P, f, &asmb, pos, need))
       CASE_OP(NEQ, (P, f, &asmb, pos))
-      CASE_OP(EQ, (P, f, &asmb, pos))
-      CASE_OP(LT, (P, f, &asmb, pos))
-      CASE_OP(LTE, (P, f, &asmb, pos))
+      CASE_OP(EQ, (P, f, &asmb, pos))		// if ((RK(B) == RK(C)) ~= A) then PC++
+      CASE_OP(LT, (P, f, &asmb, pos))		// if ((RK(B) < RK(C)) ~= A) then PC++
+      CASE_OP(LTE, (P, f, &asmb, pos))		// if ((RK(B) <= RK(C)) ~= A) then PC++
       CASE_OP(GT, (P, f, &asmb, pos))
       CASE_OP(GTE, (P, f, &asmb, pos))
       CASE_OP(BITN, (P, f, &asmb, pos, need))
       CASE_OP(BITL, (P, f, &asmb, pos, need))
       CASE_OP(BITR, (P, f, &asmb, pos, need))
-      CASE_OP(DEF, (P, f, &asmb, pos, need))
-      CASE_OP(BIND, (P, f, &asmb, pos, need))
-      CASE_OP(MESSAGE, (P, f, &asmb, pos, need))
-      CASE_OP(JMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
-      CASE_OP(TEST, (P, f, &asmb, pos))
-      CASE_OP(NOT, (P, f, &asmb, pos))
+      CASE_OP(DEF, (P, f, &asmb, pos, need))	// define a method for an object
+      CASE_OP(BIND, (P, f, &asmb, pos, need))   // extend obj by set a binding
+						// http://piumarta.com/software/cola/colas-whitepaper.pdf
+      CASE_OP(MESSAGE, (P, f, &asmb, pos, need))// call a method of an object
+      CASE_OP(JMP, (P, f, &asmb, pos, jmps, offs, &jmpc)) // PC += sBx
+      CASE_OP(TEST, (P, f, &asmb, pos))		// if not (R(A) <=> C) then PC++
+      CASE_OP(NOT, (P, f, &asmb, pos))		// a = not b
       CASE_OP(CMP, (P, f, &asmb, pos))
       CASE_OP(TESTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(NOTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
-      CASE_OP(NAMED, (P, f, &asmb, pos, need))
-      CASE_OP(CALL, (P, f, &asmb, pos, need))
-      CASE_OP(CALLSET, (P, f, &asmb, pos, need))
-      CASE_OP(RETURN, (P, f, &asmb, pos))
-      CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))
-      CASE_OP(CLASS, (P, f, &asmb, pos, need))
+      CASE_OP(NAMED, (P, f, &asmb, pos, need))	// assign named args before a CALL
+      CASE_OP(CALL, (P, f, &asmb, pos, need))	// call a function. R(A),...:= R(A)(R(A+1),...,R(A+B-1))
+      CASE_OP(CALLSET, (P, f, &asmb, pos, need))//? set return register to write to
+      CASE_OP(RETURN, (P, f, &asmb, pos))	// return R(A), ... ,R(A+B-2)
+      CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))// define function prototype
+      CASE_OP(CLASS, (P, f, &asmb, pos, need)) // find class for register value
     }
   }
 
   target->finish(P, f, &asmb);
 
   fn = PN_ALLOC_FUNC(asmb->len);
-#ifdef JIT_DEBUG
-  printf("JIT(%p): ", fn);
-  long ai = 0;
-  for (ai = 0; ai < asmb->len; ai++) {
-    printf("%x ", asmb->ptr[ai]);
+#if defined(JIT_DEBUG)
+  if (P->flags & DEBUG_JIT) {
+    #include "vm-dis.c"
   }
-  printf("\n");
 #endif
   PN_MEMCPY_N(fn, asmb->ptr, u8, asmb->len);
 
@@ -216,6 +254,8 @@ reentry:
 
   if (pos == 0) {
     reg[-1] = reg[0] = self;
+    if (f->localsize)
+      memset((void*)locals, 0, sizeof(PN) * f->localsize);
     if (upc > 0 && upargs != NULL) {
       PN_SIZE i;
       for (i = 0; i < upc; i++) {
@@ -234,8 +274,21 @@ reentry:
     }
   }
 
+#ifdef DEBUG
+    if (P->flags & DEBUG_TRACE)
+      fprintf(stderr, "-- run-time --\n");
+#endif
+
   while (pos < PN_OP_LEN(f->asmb)) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
+#ifdef DEBUG
+    if (P->flags & DEBUG_TRACE) {
+      fprintf(stderr, "[%2d] %-8s %d", pos+1, potion_ops[op.code].name, op.a);
+      if (potion_ops[op.code].args > 1)
+	fprintf(stderr, " %d", op.b);
+    }
+#endif
+    // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
     switch (op.code) {
       case OP_MOVE:
         reg[op.a] = reg[op.b];
@@ -458,6 +511,14 @@ reentry:
         reg[op.a] = potion_vm_class(P, reg[op.b], reg[op.a]);
       break;
     }
+#ifdef DEBUG
+    if (P->flags & DEBUG_TRACE) {
+      if (op.code == OP_JMP || op.code == OP_NOTJMP || op.code == OP_TESTJMP)
+	fprintf(stderr, "\n");
+      else
+	fprintf(stderr, "\t; %s\n", STRINGIFY(reg[op.a]));
+    }
+#endif
     pos++;
   }
 

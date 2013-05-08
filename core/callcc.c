@@ -12,9 +12,8 @@
 #include "internal.h"
 
 PN potion_continuation_yield(Potion *P, PN cl, PN self) {
-  int i = 0, diff;
   struct PNCont *cc = (struct PNCont *)self;
-  PN rcx, *start, *end, *sp1 = P->mem->cstack, *sp2 = NULL;
+  PN *start, *end, *sp1 = P->mem->cstack;
 #if POTION_STACK_DIR > 0
   start = (PN *)cc->stack[0];
   end = (PN *)cc->stack[1];
@@ -81,11 +80,12 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
           );
 #endif
 #else
-  fprintf(stderr, "** TODO: callcc does not work outside of X86.\n");
+  fprintf(stderr, "** TODO: callcc/yield does not work outside of X86 yet.\n");
 #endif
   return self;
 }
 
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
   PN_SIZE n;
@@ -121,7 +121,19 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
            "mov %%ebx, 0x18(%0)"::"r"(cc->stack));
 #endif
 #endif
+
+// avoid wrong asan stack underflow, caught in memcpy
+#if defined(__clang__) && defined(__SANITIZE_ADDRESS__)
+  {
+    PN *s = start + 1;
+    PN *d = cc->stack + 4 + PN_SAVED_REGS;
+    for (int i=0; i < n - 1; i++) {
+      *d++ = *s++;
+    }
+  }
+#else
   PN_MEMCPY_N((char *)(cc->stack + 4 + PN_SAVED_REGS), start + 1, PN, n - 1);
+#endif
   return (PN)cc;
 }
 

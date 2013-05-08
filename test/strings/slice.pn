@@ -7,4 +7,4 @@
   "abcde" slice(3,2)
   "乔纳森莱特" slice(0, 3)
 )
-# (bcde, abc, abc, abc, bc, de, 乔纳森)
+#=> (bcde, abc, abc, abc, bc, de, 乔纳森)

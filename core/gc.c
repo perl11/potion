@@ -16,7 +16,14 @@
 #include "khash.h"
 #include "table.h"
 
-#define info(x, ...)
+#if defined(DEBUG)
+#define info(P,...)	       \
+    if (P->flags & DEBUG_GC) { \
+      printf(__VA_ARGS__);   \
+    }
+#else
+#define info(...)
+#endif
 
 PN_SIZE potion_stack_len(Potion *P, _PN **p) {
   _PN *esp, *c = P->mem->cstack;
@@ -27,6 +34,7 @@ PN_SIZE potion_stack_len(Potion *P, _PN **p) {
 
 #define HAS_REAL_TYPE(v) (P->vts == NULL || (((struct PNFwd *)v)->fwd == POTION_COPIED || PN_TYPECHECK(PN_VTYPE(v))))
 
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int forward) {
   _PN v;
   PN_SIZE i = 0;
@@ -38,19 +46,23 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
       v = potion_fwd(v);
       switch (forward) {
         case 0: // count only
-          if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v))
+          if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
             i++;
+	    info(P,"GC mark count only\n");
+	  }
         break;
         case 1: // minor
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
+	    info(P,"GC mark minor\n");
           }
         break;
         case 2: // major
           if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
+	    info(P,"GC mark major\n");
           }
         break;
       }
@@ -60,10 +72,11 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
   return i;
 }
 
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN_SIZE potion_mark_stack(Potion *P, int forward) {
   PN_SIZE n;
+  _PN *end, *start = P->mem->cstack;
   struct PNMemory *M = P->mem;
-  _PN *end, *start = M->cstack;
   POTION_ESP(&end);
 #if POTION_STACK_DIR > 0
   n = end - start;
@@ -113,7 +126,7 @@ static int potion_gc_minor(Potion *P, int sz) {
     return POTION_NO_MEM;
 
   scanptr = (void *) M->old_cur;
-  info("running gc_minor\n"
+  info(P,"running gc_minor\n"
     "(young: %p -> %p = %ld)\n"
     "(old: %p -> %p = %ld)\n"
     "(storeptr len = %ld)\n",
@@ -142,7 +155,7 @@ static int potion_gc_minor(Potion *P, int sz) {
   sz = NEW_BIRTH_REGION(M, wb, sz);
   M->minors++;
 
-  info("(new young: %p -> %p = %d)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
+  info(P,"(new young: %p -> %p = %ld)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
   return POTION_OK;
 }
 
@@ -169,7 +182,7 @@ static int potion_gc_major(Potion *P, int siz) {
   prevoldhi = (void *)M->old_hi;
   prevoldcur = (void *)M->old_cur;
 
-  info("running gc_major\n"
+  info(P,"running gc_major\n"
     "(young: %p -> %p = %ld)\n"
     "(old: %p -> %p = %ld)\n",
     M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
@@ -179,7 +192,7 @@ static int potion_gc_major(Potion *P, int siz) {
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
   newold = pngc_page_new(&newoldsiz, 0);
   M->old_cur = scanptr = newold + (sizeof(PN) * 2);
-  info("(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
+  info(P,"(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
 
   potion_mark_stack(P, 2);
 
@@ -259,8 +272,16 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
   }
 
   if (ptr->vt > PN_TUSER) {
-    sz = sizeof(struct PNObject) +
-      (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen * sizeof(PN));
+    if (P->vts && PN_VTABLE(ptr->vt) && PN_TYPECHECK(ptr->vt))
+      sz = sizeof(struct PNObject) +
+	(((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen * sizeof(PN));
+    else if (P->flags & (DEBUG_VERBOSE
+#ifdef DEBUG
+			 |DEBUG_GC
+#endif
+			 ))
+      fprintf(stderr, "** Invalid User Object 0x%lx vt: 0x%lx\n",
+	      (unsigned long)ptr, (unsigned long)ptr->vt);
     goto done;
   }
 

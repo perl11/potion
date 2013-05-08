@@ -1,0 +1,11 @@
+#!/bin/sh
+test -f config.inc && mv config.inc config.inc.bak
+test -f core/config.h && mv core/config.h core/config.h.bak
+if make --version 2>/dev/null | grep GNU
+then
+  make -f config.mak $@
+else
+  sed -e's, ?= , = ,;s,-lm -ldl,-lm,;s,config.mak,config.mk,g;s,makefile-gmake,makefile-bsdmake,;' config.mak > config.mk
+  sed -e's, ?= , = ,;s,config.mak,config.mk,g;' Makefile > BSDmakefile
+  make -f config.mk $@
+fi

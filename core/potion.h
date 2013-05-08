@@ -6,9 +6,8 @@
 #ifndef POTION_H
 #define POTION_H
 
-#define POTION_VERSION  "0.0"
-#define POTION_MINOR    0
 #define POTION_MAJOR    0
+#define POTION_MINOR    1
 #define POTION_SIG      "p\07\10n"
 #define POTION_VMID     0x79
 
@@ -20,6 +19,21 @@
 #include <string.h>
 #include <fcntl.h>
 #include "config.h"
+
+#define _XSTR(s) _STR(s)
+#define _STR(s)  #s
+#define POTION_VERSION  _XSTR(POTION_MAJOR) "." _XSTR(POTION_MINOR)
+
+#if defined(__clang__) || defined (__GNUC__)
+# define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS __attribute__((no_address_safety_analysis))
+#else
+# define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+#endif
+#ifdef DEBUG
+# ifndef YY_DEBUG
+#  define YY_DEBUG
+# endif
+#endif
 
 //
 // types
@@ -346,7 +360,13 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
-  return ((struct PNObject *)potion_fwd(obj))->vt;
+  while (1) {
+    struct PNFwd *o = (struct PNFwd *)obj;
+    if (o->fwd != POTION_FWD)
+      return ((struct PNObject *)o)->vt;
+    obj = o->ptr;
+  }
+  //return ((struct PNObject *)potion_fwd(obj))->vt;
 }
 
 // macro for doing a single fwd check after a possible realloc
@@ -396,9 +416,37 @@ typedef struct {
 // the interpreter
 // (one per thread, houses its own garbage collector)
 //
+
+
+typedef enum {
+  EXEC_VM = 0,  // bytecode (switch or cgoto)
+  EXEC_JIT,
+  EXEC_DEBUG,   // -d: instrumented bytecode (line stepping) or just slow runloop?
+  EXEC_CHECK,
+  EXEC_COMPILE, // to bytecode
+  EXEC_COMPILE_C,
+  EXEC_COMPILE_NATIVE,
+} exec_mode_t;
+
+typedef enum {
+  MODE_P5       = 0,  // plain p5
+  MODE_P2       = 1,  // use p2
+  MODE_P6       = 2,  // syntax p6. other via use syntax <string>
+
+  DEBUG_INSPECT = 1<<8,
+  DEBUG_VERBOSE = 1<<9,
+#ifdef DEBUG
+  DEBUG_TRACE  = 1<<10,
+  DEBUG_PARSE  = 1<<11,
+  DEBUG_PARSE_VERBOSE = 1<<12,
+  DEBUG_GC     = 1<<13,
+  DEBUG_JIT    = 1<<14,
+#endif
+} Potion_Flags;
+
 struct Potion_State {
   PN_OBJECT_HEADER
-  PNTarget targets[POTION_TARGETS];
+  PNTarget target;
   struct PNTable *strings; /* table of all strings */
   PN lobby; /* root namespace */
   PNFlex * volatile vts; /* built in types */
@@ -409,6 +457,7 @@ struct Potion_State {
   PN call, callset; /* generic call and callset */
   int prec; /* decimal precision */
   struct PNMemory *mem; /* allocator/gc */
+  Potion_Flags flags;
 };
 
 //
@@ -622,6 +671,7 @@ void potion_file_init(Potion *);
 void potion_loader_init(Potion *);
 void potion_cont_init(Potion *);
 void potion_dump_stack(Potion *);
+void potion_loader_add(Potion *, PN path);
 
 PN potion_any_is_nil(Potion *, PN, PN);
 PN potion_num_string(Potion *, PN, PN);
@@ -629,12 +679,12 @@ PN potion_gc_reserved(Potion *, PN, PN);
 PN potion_gc_actual(Potion *, PN, PN);
 PN potion_gc_fixed(Potion *, PN, PN);
 
-PN potion_parse(Potion *, PN);
+PN potion_parse(Potion *, PN, char *);
 PN potion_vm_proto(Potion *, PN, PN, ...);
 PN potion_vm_class(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
 PN potion_eval(Potion *, PN, int);
 PN potion_run(Potion *, PN, int);
-PN_F potion_jit_proto(Potion *, PN, PN);
+PN_F potion_jit_proto(Potion *, PN);
 
 #endif

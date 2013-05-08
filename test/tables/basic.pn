@@ -7,4 +7,4 @@ b = p at('platform')
 p remove('date')
 
 (a, b, p length, (i_exist=1) at ('nonexistant'), p('commit'), p('date'))
-# (i686-apple-darwin8, i386-undermydesk-freebsd, 3, nil, 0cd914e, nil)
+#=> (i686-apple-darwin8, i386-undermydesk-freebsd, 3, nil, 0cd914e, nil)

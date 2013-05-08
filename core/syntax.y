@@ -292,17 +292,20 @@ arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')); }
 
 %%
 
-PN potion_parse(Potion *P, PN code) {
-  GREG *G = potion_code_parse_new(P);
+PN potion_parse(Potion *P, PN code, char *filename) {
+  GREG *G = YY_NAME(parse_new)(P);
   P->yypos = 0;
   P->input = code;
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
+#ifdef YY_DEBUG
+  G->debug = P->flags & (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
+#endif
 
-  G->pos = G->limit = 0;
-  if (!potion_code_parse(G))
+  //G->filename = filename;
+  if (!YY_NAME(parse)(G))
     printf("** Syntax error!\n%s", PN_STR_PTR(code));
-  potion_code_parse_free(G);
+  YY_NAME(parse_free)(G);
 
   code = P->source;
   P->source = PN_NIL;
@@ -314,16 +317,16 @@ PN potion_sig(Potion *P, char *fmt) {
   if (fmt == NULL) return PN_NIL; // no signature, arg check off
   if (fmt[0] == '\0') return PN_FALSE; // empty signature, no args
 
-  GREG *G = potion_code_parse_new(P);
+  GREG *G = YY_NAME(parse_new)(P);
   P->yypos = 0;
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
 
   G->pos = G->limit = 0;
-  if (!potion_code_parse_from(G, yy_sig))
+  if (!YY_NAME(parse_from)(G, yy_sig))
     printf("** Syntax error!\n");
-  potion_code_parse_free(G);
+  YY_NAME(parse_free)(G);
 
   out = P->source;
   P->source = PN_NIL;

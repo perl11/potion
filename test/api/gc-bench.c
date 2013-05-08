@@ -27,7 +27,9 @@ static const int max_tree = 20;
 
 static PNType tree_type;
 
-#define ALLOC_NODE() PN_ALLOC_N(tree_type, struct PNObject, 2 * sizeof(PN))
+//#define PN_ALLOC_N(V,T,C) (T *)potion_gc_alloc(P, V, sizeof(T)+C)
+//#define ALLOC_NODE() PN_ALLOC_N(tree_type, struct PNObject, 2 * sizeof(PN))
+#define ALLOC_NODE() (PN)potion_gc_alloc(P, tree_type, sizeof(struct PNObject)+ (2*sizeof(PN)))
 
 unsigned
 current_time(void)
@@ -47,13 +49,13 @@ PN gc_make_tree(int depth, PN PN_left, PN PN_right) {
   vPN(Object) x;
   PN l, r;
   if (depth <= 0)
-    return (PN)ALLOC_NODE();
+    return ALLOC_NODE();
 
   l = gc_make_tree(depth - 1, PN_left, PN_right);
   r = gc_make_tree(depth - 1, PN_left, PN_right);
   x = ALLOC_NODE();
-  potion_obj_set(P, PN_NIL, x, PN_left, l);
-  potion_obj_set(P, PN_NIL, x, PN_right, r);
+  potion_obj_set(P, PN_NIL, (PN)x, PN_left, l);
+  potion_obj_set(P, PN_NIL, (PN)x, PN_right, r);
   return (PN)x;
 }
 
@@ -62,15 +64,15 @@ PN gc_populate_tree(PN node, int depth, PN PN_left, PN PN_right) {
     return;
 
   depth--;
-  potion_obj_set(P, PN_NIL, node, PN_left, (PN)ALLOC_NODE());
+  potion_obj_set(P, PN_NIL, node, PN_left, ALLOC_NODE());
   PN_TOUCH(node);
 #ifdef HOLES
-  n = (PN)ALLOC_NODE();
+  n = ALLOC_NODE();
 #endif
-  potion_obj_set(P, PN_NIL, node, PN_right, (PN)ALLOC_NODE());
+  potion_obj_set(P, PN_NIL, node, PN_right, ALLOC_NODE());
   PN_TOUCH(node);
 #ifdef HOLES
-  n = (PN)ALLOC_NODE();
+  n = ALLOC_NODE();
 #endif
   gc_populate_tree(potion_obj_get(P, PN_NIL, node, PN_left), depth, PN_left, PN_right);
   gc_populate_tree(potion_obj_get(P, PN_NIL, node, PN_right), depth, PN_left, PN_right);
@@ -105,7 +107,7 @@ int main(void) {
 
   printf("Creating a long-lived binary tree of depth %d\n",
     tree_long_lived);
-  long_lived = (PN)ALLOC_NODE();
+  long_lived = ALLOC_NODE();
   gc_populate_tree(long_lived, tree_long_lived, PN_left, PN_right);
 
   printf("Creating a long-lived array of %d doubles\n",
@@ -121,7 +123,7 @@ int main(void) {
 
     start = current_time();
     for (j = 0; j < iter; ++j) {
-      temp = (PN)ALLOC_NODE();
+      temp = ALLOC_NODE();
       gc_populate_tree(temp, i, PN_left, PN_right);
     }
     finish = current_time();
