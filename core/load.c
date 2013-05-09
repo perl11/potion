@@ -224,7 +224,7 @@ void potion_loader_init(Potion *P) {
   // relocatable path - relative to exe in argv[0]
   //PN arg0 = potion_send(potion_str(P, "$^X")); // but too early for argv[0]
   //if (arg0) PN_PUSH(pn_loader_path, potion_strcat(P, basename(PN_STR_PTR(arg0)), "../lib/potion"));
-  PN_PUSH(pn_loader_path, potion_str(P, "lib/potion"));
+  PN_PUSH(pn_loader_path, potion_str(P, "lib"));
   PN_PUSH(pn_loader_path, potion_str(P, POTION_PREFIX"/lib/potion"));
   PN_PUSH(pn_loader_path, potion_str(P, "."));
 

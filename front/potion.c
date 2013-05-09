@@ -185,57 +185,56 @@ static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
 
     if (exec >= MAX_EXEC)
       potion_fatal("fatal: stack overwrite (exec > MAX_EXEC)\n");
-    if (exec >= EXEC_COMPILE) { // needs an inputfile. TODO: -e"" -ofile
-      char pnbpath[255];
+
+    if (exec == EXEC_COMPILE) { // needs an inputfile. TODO: -e"" -ofile
+      char outpath[255];
       FILE *pnb;
-      char *opts = NULL;
+      PN opts;
+      char *c_opts = NULL;
       PN_SIZE written = 0;
       if (compile) { // --compile=c[,OPTS]
-	if ((opts = strchr(compile,','))) {
-	  opts[0] = '\0';
-	  opts++;
+	if ((c_opts = strchr(compile,','))) {
+	  c_opts[0] = '\0';
+	  c_opts++;
+          //TODO check -o for outpath
 	}
       }
-      if (exec == EXEC_COMPILE) {
-        if (!compile || !strcmp(compile, "bc"))
-	  sprintf(pnbpath, "%sb", filename);  // .pnb
-        else if (!strcmp(compile, "c"))
-	  sprintf(pnbpath, "%s.c", filename); // .pn.c
-        else if (!strcmp(compile, "exe"))
-	  sprintf(pnbpath, "%s.out", filename); // TODO: strip ext
-      }
-      pnb = fopen(pnbpath, "wb");
+      if (!compile || !strcmp(compile, "bc"))
+        sprintf(outpath, "%sb", filename);  // .pnb
+      else if (!strcmp(compile, "c"))
+        sprintf(outpath, "%s.c", filename); // .pn.c
+      else if (!strcmp(compile, "exe"))
+        sprintf(outpath, "%s.out", filename); // TODO: strip ext
+      opts = c_opts
+        ? pn_printf(P, potion_bytes(P,0), "%s,-o%s", c_opts, outpath)
+        : potion_strcat(P, "-o", outpath);
+
+      pnb = fopen(outpath, "wb");
       if (!pnb) {
-        fprintf(stderr, "** could not open %s for writing. check permissions.\n", pnbpath);
+        fprintf(stderr, "** could not open %s for writing. check permissions.\n", outpath);
         goto done;
       }
-
-      if (exec == EXEC_COMPILE) { // compile backend. default: bc
-        if (!compile)
-	  code = potion_source_dumpbc(P, PN_NIL, code, PN_NIL);
-        else
-	  code = potion_source_dump(P, 0, code,
-				    potion_str(P, compile),
-				    opts ? potion_str(P, opts) : PN_NIL);
-      }
-
+      if (!compile)
+        code = potion_source_dumpbc(P, 0, code, PN_NIL);
+      else
+        code = potion_source_dump(P, 0, code,
+                                  potion_str(P, compile),
+                                  opts ? opts : PN_NIL);
       if (code &&
 	  (written = fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code))) {
-        printf("** compiled code saved to %s\n", pnbpath);
+        printf("** compiled code saved to %s\n", outpath);
         fclose(pnb);
 
-	if (exec == EXEC_COMPILE) {
-	  if (!compile || !strcmp(compile, "bc"))
-	    printf("** run it with: potion %s\n", pnbpath);
-	  // TODO: let the compilers write its own hints (,-ooutfile)
-	  else if (!strcmp(compile, "c"))
-	    printf("** compile it with: %s %s %s\n", POTION_CC, POTION_CFLAGS, pnbpath);
-	  else if (!strcmp(compile, "exe"))
-	    printf("** run it with: ./%s\n", pnbpath);
-	}
+        if (!compile || !strcmp(compile, "bc"))
+          printf("** run it with: potion %s\n", outpath);
+        // TODO: let the compilers write its own hints (,-ooutfile)
+        else if (!strcmp(compile, "c"))
+          printf("** compile it with: %s %s %s\n", POTION_CC, POTION_CFLAGS, outpath);
+        else if (!strcmp(compile, "exe"))
+          printf("** run it with: ./%s\n", outpath);
       } else {
         fprintf(stderr, "** could not write all %s compiled code (%u/%u) to %s\n",
-		compile?compile:"bytecode", written, code?PN_STR_LEN(code):0, pnbpath);
+		compile?compile:"bytecode", written, code?PN_STR_LEN(code):0, outpath);
       }
     }
 
