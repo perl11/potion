@@ -186,6 +186,7 @@ lib/libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
 	  ${PIC_OBJ} -Llib ${LIBPTH} ${LIBS} > /dev/null
+	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
