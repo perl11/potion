@@ -2,7 +2,7 @@
 # usage: test/runtests.sh [testfile]
 #        cmd="valgrind ./potion" test/runtests.sh
 
-cmd=${cmd:-bin/potion}
+cmd=${cmd:-bin/potion-s}
 ECHO=/bin/echo
 SED=sed
 EXPR=expr

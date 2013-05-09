@@ -728,9 +728,9 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
     DBG_t("%d[%d] ", op.a + i - 1, i);
     X86_ARGO(op.a + i - 1, i);				// mov regn, i(%esp)
   }
-  // fill in defaults, arity from protos[op.a], not f
-  if (!PN_IS_EMPTY(f->protos) && op.a < PN_TUPLE_LEN(f->protos)) {
-    vPN(Proto) c = (vPN(Proto)) PN_TUPLE_AT(f->protos, op.a);
+  // fill in defaults, arity from protos[0], not f
+  if (!PN_IS_EMPTY(f->protos)) {
+    vPN(Proto) c = (vPN(Proto)) PN_TUPLE_AT(f->protos, 0);
     if ((argc-1 < c->arity) && c->arity) {
       for (i = argc+1; i <= c->arity+1; i++) { //2: [0,1],2,3
 	PN sig = potion_sig_at(P, c->sig, i-2);
