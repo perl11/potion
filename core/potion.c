@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
       } else if (i <= argc) {
 	arg = argv[i]+2;
       } else { // or go into interactive mode?
-	potion_fatal("** Missing argument for -e");
+	potion_fatal("Missing argument for -e");
 	goto END;
       }
       buf = potion_str(P, arg);
