@@ -138,11 +138,11 @@ syn/greg.c: syn/greg.y
 	  ${MV} syn/greg-new syn/greg; \
         fi
 
-core/callcc.o core/callcc.o2: core/callcc.c core/p2.h core/internal.h
+core/callcc.o core/callcc.o2: core/callcc.c core/config.h core/p2.h core/internal.h
 	@${ECHO} CC $< +frame-pointer
 	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 ifneq (${FPIC},)
-core/callcc.${OPIC} core/callcc.${OPIC}2: core/callcc.c core/p2.h core/internal.h
+core/callcc.${OPIC} core/callcc.${OPIC}2: core/callcc.c core/config.h core/p2.h core/internal.h
 	@${ECHO} CC ${FPIC} $< +frame-pointer
 	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 endif
@@ -175,44 +175,44 @@ $(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/p2.h core/config.h cor
 #	@${ECHO} CC ${FPIC} $< +frame-pointer
 #	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE ${FPIC} ${INCS} -o $@ $<
 
-%.i: %.c core/p2.h
+%.i: %.c core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
-%.i2: %.c core/p2.h
+%.i2: %.c core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
-%.o: %.c core/p2.h
+%.o: %.c core/config.h
 	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 %.o2: %.c core/config.h
 	@${ECHO} CC -DP2 $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 ifneq (${FPIC},)
-%.${OPIC}: %.c core/p2.h
+%.${OPIC}: %.c core/config.h
 	@${ECHO} CC ${FPIC} $@
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
-%.${OPIC}2: %.c core/p2.h
+%.${OPIC}2: %.c core/config.h
 	@${ECHO} CC -DP2 ${FPIC} $@
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
 
-.c.i: core/p2.h
+.c.i: core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
-.c.i2: core/p2.h
+.c.i2: core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
-.c.o: core/p2.h
+.c.o: core/config.h
 	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-.c.o2: core/p2.h
+.c.o2: core/config.h
 	@${ECHO} CC -DP2 $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 ifneq (${FPIC},)
-.c.${OPIC}: core/p2.h
+.c.${OPIC}: core/config.h
 	@${ECHO} CC ${FPIC} $@
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
-.c.${OPIC}2: core/p2.h
+.c.${OPIC}2: core/config.h
 	@${ECHO} CC -DP2 ${FPIC} $<
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
@@ -248,12 +248,12 @@ ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@[ -d bin ] || mkdir bin
 	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
-bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${LIBHACK}
+bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} lib/libpotion.a ${LIBS}
 
-bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${LIBHACK}
+bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS}
@@ -518,7 +518,7 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f $(foreach ext,o o2 opic opic2 i, $(foreach dir,core syn front test/api,${dir}/*.${ext}))
+	@rm -f $(foreach ext,o o2 opic opic2 i gcda gcno,$(foreach dir,core syn front test/api lib/*,${dir}/*.${ext}))
 	@rm -f bin/* lib/potion/* lib/*.a
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f tools/*.o core/config.h core/version.h
@@ -529,4 +529,5 @@ clean:
 # also config.inc and files needed for cross-compilation
 realclean: clean
 	@rm -f config.inc ${SRC_SYN} ${SRC_P2_SYN} ${GREG}
+	@find . -name \*.gcov -delete
 
