@@ -41,6 +41,11 @@
            PN_STR_PTR(potion_send(yy, PN_string))));\
   G->val[count]= yy;
 #endif
+
+#define SRC_TPL1(x)       P->source = PN_PUSH(P->source, x)
+#define SRC_TPL2(x,y)     P->source = PN_PUSH(PN_PUSH(P->source, x), y)
+#define SRC_TPL3(x,y,z)   P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, x), y), z)
+
 %}
 
 potion = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s) }
@@ -291,18 +296,25 @@ arg-list = arg-set (optional arg-set)?
          | optional arg-set
 arg-set = arg (comma - arg)*
 
-arg-name = < utfw+ > - { $$ = potion_str2(P, yytext, yyleng); }
+arg-name = < utfw+ > -    { $$ = PN_STRN(yytext, yyleng); }
+# not with :=, const '-' would make sense, \ and * not
+arg-modifier = < ('-' | '\\' | '*' ) >  { $$ = PN_NUM(yytext[0]); }
+# for FFIs, map to potion and C types
 arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
        { $$ = PN_NUM(yytext[0]) }
-arg = n:arg-name assign t:arg-type
-                        { P->source = PN_PUSH(PN_PUSH(P->source, n), t) }
-    | n:arg-name defassign d:value
-                        { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n),PN_NUM(':')), PN_S(d,0)) }
-    # single types without name (N,o) as for FFIs forbidden, use (x=N) instead
-    # | assign t:arg-type { P->source = PN_PUSH(PN_PUSH(P->source, PN_STR("")), t) }
-    | n:arg-name        { P->source = PN_PUSH(P->source, n) }
-optional = '|' -        { P->source = PN_PUSH(P->source, PN_NUM('|')) }
-arg-sep = '.' -         { P->source = PN_PUSH(P->source, PN_NUM('.')) }
+arg = m:arg-modifier n:arg-name assign t:arg-type
+                        { SRC_TPL3(n,t,m) }
+    | m:arg-modifier n:arg-name
+                        { SRC_TPL3(n,0,m) }
+    | n:arg-name assign t:arg-type
+                        { SRC_TPL2(n,t) }
+    | n:arg-name defassign d:value     # x:=0, optional
+                        { SRC_TPL3(n, PN_NUM(':'), PN_S(d,0)) }
+    # single types without name (N,o) as for FFIs forbidden, use (dummy=N) instead
+    # | assign t:arg-type { SRC_TPL2(PN_STR(""),t) }
+    | n:arg-name        { SRC_TPL1(n) }
+optional = '|' -        { SRC_TPL1(PN_NUM('|')) }
+arg-sep = '.' -         { SRC_TPL1(PN_NUM('.')) } #x,y... ignore rest
 
 %%
 
@@ -334,21 +346,28 @@ PN potion_parse(Potion *P, PN code, char *filename) {
 }
 
 /** convert signature string to sig tuple.
-  Old:
+  x,y x=N x:=0 |x=o x,y... -x,y
+
+  Currently:
     (name type|modifier default)
     name = PNString - variable name
     type = NUM of potion_type_char, currently used: oNS&
     modifier = NUM of '|' optional, '.' end, ':' default
     \see potion_sig_arity
-  New:
-    "=type" empty name (?)
-    "|name=type := default." accept type (such as o)
-    "|name := default."      type = typeof default
-    (name type|modifier default)
+
+  TODO:
+    ((name,type,attr,default),...)
+    attr:
+      |     optional
+      :=    default value
+      -     declare parameter as const, is ro
+      \     reference, alias. modifies caller
+      *     slurpy list or hash to consume the rest (i.e. &rest from LISP)
+    ...   ignore additional params (varargs)
     name: PNString of variable
-    type: PNString with prepended modifier, accept old type abbrevs: oNS&
-          and Num, String, Closure, PN
-    modifier: |:.
+    type: PNVTable. Accept old type abbrevs: oNS&
+          Num, String, Closure, Any, Bool
+    attr: ord of first char
     default: any single value, even nil, a closure, tuple, table, lick, ...
     arity: number of any non-default-value strings
  */
