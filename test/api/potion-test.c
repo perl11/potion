@@ -164,7 +164,7 @@ void potion_test_eval(CuTest *T) {
 
 void potion_test_allocated(CuTest *T) {
   struct PNMemory *M = P->mem;
-  void *prev;
+  void *prev = NULL;
   void *scanptr = (void *)((char *)M->birth_lo + PN_ALIGN(sizeof(struct PNMemory), 8));
   while ((PN)scanptr < (PN)M->birth_cur) {
     if (((struct PNFwd *)scanptr)->fwd != POTION_FWD && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
