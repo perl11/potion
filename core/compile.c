@@ -1029,7 +1029,7 @@ PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
     return potion_source_dumpbc(P, cl, self, options);
   if (potion_load(P, P->lobby, self, potion_strcat(P, "compile-", cb))) {
     DBG_c("loaded compile-%s\n", cb);
-    DBG_c("source dump%s %s\n", cb, options ? PN_STR_PTR(options) : "");
+    DBG_c("source dump%s %s\n", cb, PN_IS_STR(options) ? PN_STR_PTR(options) : "");
     return potion_send(self, potion_strcat(P, "dump", cb), options);
   } else {
     DBG_c("failed loading the compile-%s module\n", cb);
@@ -1066,5 +1066,6 @@ void potion_compiler_init(Potion *P) {
   potion_method(pro_vt, "call", potion_proto_call, 0); // TODO: args sig missing here
   potion_method(pro_vt, "tree", potion_proto_tree, 0);
   potion_method(pro_vt, "string", potion_proto_string, 0);
-  potion_method(src_vt, "dump", potion_source_dump, "backend=S");
+  potion_method(src_vt, "dump", potion_source_dump, "backend=S|options=S");
+  potion_method(src_vt, "dumpbc", potion_source_dumpbc, "|options=S");
 }
