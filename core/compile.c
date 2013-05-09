@@ -1029,10 +1029,10 @@ PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
     return potion_source_dumpbc(P, cl, self, options);
   if (potion_load(P, P->lobby, self, potion_strcat(P, "compile-", cb))) {
     DBG_c("loaded compile-%s\n", cb);
-    DBG_c("source dump%s %s\n", cb, PN_IS_STR(options) ? PN_STR_PTR(options) : "");
+    DBG_c("Source dump%s(%s)\n", cb, PN_IS_STR(options) ? PN_STR_PTR(options) : "");
     return potion_send(self, potion_strcat(P, "dump", cb), options);
   } else {
-    DBG_c("failed loading the compile-%s module\n", cb);
+    fprintf(stderr, "** failed loading the compile-%s module\n", cb);
     return PN_NIL;
   }
 }
