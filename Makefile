@@ -518,6 +518,10 @@ sloc: clean
 todo:
 	@grep -rInso 'TODO: \(.\+\)' core syn front
 
+analyze:
+	-rm -f core/*.o syn/*.o front/*.o
+	${MAKE} DEBUGFLAGS=--analyze ${OBJ} ${OBJ_SYN} ${OBJ_POTION} ${OBJ_P2} ${OBJ_P2_SYN}
+
 clean:
 	@${ECHO} cleaning
 	@rm -f $(foreach ext,o o2 opic opic2 i gcda gcno,$(foreach dir,core syn front test/api lib/*,${dir}/*.${ext}))

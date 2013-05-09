@@ -207,9 +207,10 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   if (PN_IS_TUPLE(ivars))
     potion_ivars(P, PN_NIL, self, ivars);
 
-  if (!PN_IS_CLOSURE(cl))
+  if (!PN_IS_CLOSURE(cl) && parent) {
     cl = ((struct PNVtable *)parent)->ctor;
-  ((struct PNVtable *)self)->ctor = cl;
+    ((struct PNVtable *)self)->ctor = cl;
+  }
 
   PN_TOUCH(P->vts);
   return self;

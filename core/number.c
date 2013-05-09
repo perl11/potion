@@ -242,8 +242,12 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
 static PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
   if (PN_IS_DECIMAL(self)) {
     double d1 = PN_DBL(self);
-    double d2 = PN_DBL(potion_send(PN_number, n));
-    return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_NUM(0) : PN_NUM(1);
+    PN n1 = potion_send(PN_number, n);
+    if (PN_IS_NUM(n1) || PN_IS_DECIMAL(n1)) {
+      double d2 = PN_DBL(n1);
+      return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_NUM(0) : PN_NUM(1);
+    }
+    else return 0;
   } else {
     long n1, n2;
     n1 = PN_INT(self);

@@ -109,6 +109,7 @@ static PN potion_str_eval(Potion *P, PN cl, PN self) {
 ///\memberof PNString
 /// "number" method. as atoi/atof
 static PN potion_str_number(Potion *P, PN cl, PN self) {
+  if (!PN_IS_STR(self)) return PN_ZERO;
   char *str = PN_STR_PTR(self);
   int i = 0, dec = 0, sign = 0, len = PN_STR_LEN(self);
   if (len < 1) return PN_ZERO;
@@ -136,6 +137,7 @@ static PN potion_str_string(Potion *P, PN cl, PN self) {
 ///\memberof PNString
 /// "print" method. fwrite to stdout
 static PN potion_str_print(Potion *P, PN cl, PN self) {
+  if (!PN_IS_STR(self)) return PN_NIL;
   fwrite(PN_STR_PTR(self), 1, PN_STR_LEN(self), stdout);
   return PN_NIL;
 }
@@ -173,6 +175,7 @@ inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
 ///\param end   PNNumber
 ///\return PNString substring
 static PN potion_str_slice(Potion *P, PN cl, PN self, PN start, PN end) {
+  if (!PN_IS_STR(self)) return PN_NIL;
   char *str = PN_STR_PTR(self);
   size_t len = potion_cp_strlen_utf8(str);
   size_t startoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(start, len, 0)));
@@ -188,6 +191,7 @@ static PN potion_str_slice(Potion *P, PN cl, PN self, PN start, PN end) {
 ///\memberof PNString
 /// "bytes" method. Convert PNString to PNBytes
 static PN potion_str_bytes(Potion *P, PN cl, PN self) {
+  if (!PN_IS_STR(self)) return PN_NIL;
   return potion_byte_str2(P, PN_STR_PTR(self), PN_STR_LEN(self));
 }
 
@@ -196,9 +200,10 @@ static PN potion_str_bytes(Potion *P, PN cl, PN self) {
 ///\param x PNString
 ///\return concat PNString
 static PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
-  char *s = malloc(PN_STR_LEN(self) + PN_STR_LEN(x));
   PN str;
-  if (s == NULL) potion_allocation_error();
+  if (!PN_IS_STR(self)) return PN_NIL;
+  char *s = malloc(PN_STR_LEN(self) + PN_STR_LEN(x));
+  if (!s) potion_allocation_error();
   PN_MEMCPY_N(s, PN_STR_PTR(self), char, PN_STR_LEN(self));
   PN_MEMCPY_N(s + PN_STR_LEN(self), PN_STR_PTR(x), char, PN_STR_LEN(x));
   str = potion_str2(P, s, PN_STR_LEN(self) + PN_STR_LEN(x));
@@ -211,6 +216,7 @@ static PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
 /// "ord" method for PNString and PNBytes. return nil on strings longer than 1 char
 ///\return PNNumber
 static PN potion_str_ord(Potion *P, PN cl, PN self) {
+  if (!PN_IS_STR(self)) return PN_ZERO;
   self = potion_fwd(self);
   if (PN_STR_LEN(self) != 1)
     return PN_NIL;
@@ -305,7 +311,7 @@ static PN potion_bytes_length(Potion *P, PN cl, PN self) {
 // TODO: ensure it's UTF-8 data
 PN potion_bytes_string(Potion *P, PN cl, PN self) {
   PN exist = potion_lookup_str(P, PN_STR_PTR(self = potion_fwd(self)));
-  if (exist == PN_NIL) {
+  if (!exist && PN_IS_PTR(self)) {
     PN_SIZE len = PN_STR_LEN(self);
     vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
     s->len = len;
@@ -320,6 +326,7 @@ PN potion_bytes_string(Potion *P, PN cl, PN self) {
 /// "print" method.
 static PN potion_bytes_print(Potion *P, PN cl, PN self) {
   self = potion_fwd(self);
+  if (!PN_IS_STR(self)) return PN_NIL;
   fwrite(PN_STR_PTR(self), 1, PN_STR_LEN(self), stdout);
   return PN_NIL;
 }
@@ -329,9 +336,9 @@ static PN potion_bytes_print(Potion *P, PN cl, PN self) {
 ///\param block=&
 ///\return PN_NIL
 static PN potion_bytes_each(Potion *P, PN cl, PN self, PN block) {
-  self = potion_fwd(self);
-  char *s = PN_STR_PTR(self);
   int i;
+  char *s = PN_STR_PTR(potion_fwd(self));
+  if (!s) return PN_NIL;
   for (i = 0; i < PN_STR_LEN(self); i++) {
     PN_CLOSURE(block)->method(P, block, P->lobby, potion_byte_str2(P, &s[i], 1));
   }

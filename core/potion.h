@@ -472,15 +472,16 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
-#if 0
+#if 1
   while (1) {
     struct PNFwd *o = (struct PNFwd *)obj;
     if (o->fwd != POTION_FWD)
       return ((struct PNObject *)o)->vt;
     obj = o->ptr;
   }
-#endif
+#else
   return ((struct PNObject *)potion_fwd(obj))->vt;
+#endif
 }
 
 /// PN_QUICK_FWD - doing a single fwd check after a possible realloc
@@ -497,10 +498,9 @@ static inline PN potion_fwd(PN obj) {
 
 /// quick access to either PNString or PNByte pointer
 static inline char *potion_str_ptr(PN s) {
-  if (((struct PNString *)s)->vt == PN_TSTRING)
+  if (s && (((struct PNString *)s)->vt == PN_TSTRING))
     return ((struct PNString *)s)->chars;
-  s = potion_fwd(s);
-  return ((struct PNBytes *)s)->chars;
+  return ((struct PNBytes *)potion_fwd(s))->chars;
 }
 
 PN_FLEX(PNFlex, PN);

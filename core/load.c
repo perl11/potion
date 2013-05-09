@@ -49,7 +49,7 @@ static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE le
   char *allocated_str, *ext_name, *func_name;
   while (*(filename + ++ext_name_len) != '.' && ext_name_len <= len);
   allocated_str = ext_name = malloc(ext_name_len + 1);
-  if (allocated_str == NULL) potion_allocation_error();
+  if (!ext_name) potion_allocation_error();
   strncpy(ext_name, filename, ext_name_len);
   ext_name[ext_name_len] = '\0';
   ext_name += ext_name_len;
@@ -157,6 +157,10 @@ char *potion_find_file(char *str, PN_SIZE str_len) {
 
 #ifndef P2
 PN potion_load(Potion *P, PN cl, PN self, PN file) {
+  if (!PN_IS_STR(file)) {
+    fprintf(stderr, "** load: invalid type for file argument\n");
+    return PN_NIL;
+  }
   char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
   if (filename == NULL) {
     fprintf(stderr, "** can't find %s\n", PN_STR_PTR(file));

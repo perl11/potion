@@ -107,8 +107,10 @@ PN potion_file_read(Potion *P, PN cl, pn_file self, PN n) {
 ///\param str PNString
 ///\return PNNumber written bytes or PN_NIL
 PN potion_file_write(Potion *P, PN cl, pn_file self, PN str) {
+  if (!str) goto write_err;
   int r = write(self->fd, PN_STR_PTR(str), PN_STR_LEN(str));
   if (r == -1) {
+  write_err:
     perror("write");
     // TODO: error
     return PN_NIL;
