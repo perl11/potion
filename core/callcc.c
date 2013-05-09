@@ -10,6 +10,11 @@
 #include "potion.h"
 #include "internal.h"
 
+/**\memberof PNCont
+  "yield" method
+  \param self PNCont
+  \see potion_callcc()
+  \returns does not return, continues execution at the position of the given PNCont */
 PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   struct PNCont *cc = (struct PNCont *)self;
   PN *start, *end, *sp1 = P->mem->cstack;
@@ -26,6 +31,7 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
       sp1, (void *)(cc->stack[0]));
     return PN_NIL;
   }
+  DBG_vt("\nyield: start=%p, end=%p, cc=%p\n", start, end, cc->stack);
 
   //
   // move stack pointer, fill in stack, resume
@@ -76,19 +82,34 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
            :"r"(start), "r"(end), "r"(cc->stack)
            :"%eax", "%esp", /*"%ebp",*/ "%esi"
           );
+  //DBG_vt("yield => start=%p, end=%p, cc=%p\n", start, end, cc->stack);
 #endif
 #else
   fprintf(stderr, "** TODO: callcc/yield does not work outside of X86 yet.\n");
 #endif
+#ifdef DEBUG
+  if (!P->strings || !P->lobby || !P->mem)
+    potion_fatal("fatal: yield stack underflow\n");
+#endif
   return self;
 }
 
+/**\memberof PNVtable
+   global "here" method
+   \see potion_continuation_yield()
+   \returns a PNCont continuation object which can be yield'ed to later */
 ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
   PN_SIZE n;
   PN *start, *sp1 = P->mem->cstack, *sp2, *sp3;
-  POTION_ESP(&sp2);
+#if defined(DEBUG) && (__WORDSIZE == 64)
+  if ((_PN)sp1 & 0xF) {
+    fprintf(stderr,"P->mem->cstack=0x%lx ", (_PN)sp1);
+    potion_fatal("stack not 16byte aligned");
+  }
+#endif
+  POTION_ESP(&sp2); // usually P
   POTION_EBP(&sp3);
 #if POTION_STACK_DIR > 0
   n = sp2 - sp1;
@@ -104,6 +125,7 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   cc->stack[1] = (PN)sp2;
   cc->stack[2] = (PN)sp3;
   cc->stack[3] = PN_NIL;
+  DBG_vt("\ncallcc: start=%p, end=%p, cc=%p\n", start, sp2, cc->stack);
 #if POTION_X86 == POTION_JIT_TARGET
 #if __WORDSIZE == 64
   __asm__ ("mov %%rbx, 0x20(%0);"
