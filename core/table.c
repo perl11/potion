@@ -133,8 +133,7 @@ PN potion_table_length(Potion *P, PN cl, PN self) {
   t->len = size
 
 PN potion_tuple_empty(Potion *P) {
-  NEW_TUPLE(t, 0);
-  return (PN)t;
+  return PN_tup0;
 }
 
 PN potion_tuple_with_size(Potion *P, unsigned long size) {
@@ -150,6 +149,8 @@ PN potion_tuple_new(Potion *P, PN value) {
 
 PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   vPN(Tuple) t = PN_GET_TUPLE(tuple);
+  if (tuple == PN_tup0)
+    return potion_tuple_new(P, value);
   PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len + 1));
   t->set[t->len] = value;
   t->len++;
@@ -260,6 +261,7 @@ PN potion_tuple_last(Potion *P, PN cl, PN self) {
 ///\return PNString
 PN potion_tuple_string(Potion *P, PN cl, PN self) {
   int licks = 0;
+  if (self == PN_tup0) return PN_STR("()");
   PN out = potion_byte_str(P, "(");
   PN_TUPLE_EACH(self, i, v, {
     if (i > 0) pn_printf(P, out, ", ");
