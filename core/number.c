@@ -10,7 +10,7 @@
 #include "p2.h"
 #include "internal.h"
 
-/// new PNDecimal
+/// new PNDecimal (double)
 PN potion_real(Potion *P, double v) {
   vPN(Decimal) d = PN_ALLOC_N(PN_TNUMBER, struct PNDecimal, 0);
   d->value = v;
@@ -23,8 +23,9 @@ PN potion_decimal(Potion *P, char *str, int len) {
   return potion_real(P, strtod(str, &ptr));
 }
 /**\memberof PNNumber
-  "**" method. not static, needed in x86 jit.
- \param sup PNDecimal
+  "**" method.
+  not static, needed in x86 jit.
+ \param sup PNNumber
  \return PNNumber or PNDecimal */
 PN potion_pow(Potion *P, PN cl, PN self, PN sup) {
   double x = PN_DBL(self), y = PN_DBL(sup);
@@ -34,7 +35,7 @@ PN potion_pow(Potion *P, PN cl, PN self, PN sup) {
   return potion_real(P, z);
 }
 /**\memberof PNNumber
-  "sqrt"
+  "sqrt" as double
  \return PNDecimal */
 static PN potion_sqrt(Potion *P, PN cl, PN self) {
   return potion_real(P, sqrt(PN_DBL(self)));
