@@ -285,7 +285,7 @@ void potion_dump_stack(Potion *P) {
   end = M->cstack;
 #endif
 
-  printf("-- dumping %u from %p to %p --\n", n, start, end);
+  printf("-- dumping %u stack from %p to %p --\n", n, start, end);
   printf("   ebp = %p, *ebp = %lx\n", ebp, *ebp);
   while (n--) {
     printf("   stack(%u) = %lx", n, *start);
