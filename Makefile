@@ -274,7 +274,7 @@ lib/potion/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
 	  ${PIC_OBJ} ${PIC_OBJ_SYN} ${LIBS} > /dev/null
-	@if [ x${DLL} == x.dll ]; then cp $@ bin/; fi
+	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/potion/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ} ${PIC_OBJ_P2_SYN}) core/config.h core/potion.h
 	@${ECHO} LD $@
@@ -282,7 +282,7 @@ lib/potion/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ} ${PIC_OBJ_P2_SYN})
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ $(subst libpotion,libp2,${LDDLLFLAGS}) ${RPATH} \
 	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ} ${PIC_OBJ_P2_SYN}) ${LIBS} > /dev/null
-	@if [ x${DLL} == x.dll ]; then cp $@ bin/; fi
+	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/potion/libsyntax${DLL}: syn/syntax.${OPIC}
 	@${ECHO} LD $@
