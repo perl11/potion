@@ -160,14 +160,33 @@ void potion_test_eval(CuTest *T) {
     PN_INT(num), 8);
 }
 
+#include "gc.h"
+
 void potion_test_allocated(CuTest *T) {
-  void *scanptr = (void *)((char *)P->mem->birth_lo + PN_ALIGN(sizeof(struct PNMemory), 8));
-  while ((PN)scanptr < (PN)P->mem->birth_cur) {
+  struct PNMemory *M = P->mem;
+  void *scanptr = (void *)((char *)M->birth_lo + PN_ALIGN(sizeof(struct PNMemory), 8));
+  while ((PN)scanptr < (PN)M->birth_cur) {
     if (((struct PNFwd *)scanptr)->fwd != POTION_FWD && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
+      if (((struct PNObject *)scanptr)->vt > PN_TUSER) {
+	vPN(Object) o = (struct PNObject *)scanptr;
+	fprintf(stderr, "error: scanning heap from %p to %p\n",
+		M->birth_lo, M->birth_cur);
+	fprintf(stderr, "%p in %s region\n", scanptr,
+		IS_GC_PROTECTED(scanptr) ? "protected"
+		: IN_BIRTH_REGION(scanptr) ? "birth"
+		: IN_OLDER_REGION(scanptr) ? "older"
+		: "gc");
+	fprintf(stderr, "%p { uniq:0x%08x vt:0x%08x ivars[0]:0x%08lx type:0x%x}\n",
+		scanptr, o->uniq, o->vt, o->ivars[0],
+		potion_type((PN)scanptr));
+#ifdef DEBUG
+	potion_dump_stack(P);
+#endif
+      }
       CuAssert(T, "wrong type for allocated object", ((struct PNObject *)scanptr)->vt <= PN_TUSER);
     }
     scanptr = (void *)((char *)scanptr + potion_type_size(P, scanptr));
-    CuAssert(T, "allocated object goes beyond GC pointer", (PN)scanptr <= (PN)P->mem->birth_cur);
+    CuAssert(T, "allocated object goes beyond GC pointer", (PN)scanptr <= (PN)M->birth_cur);
   }
 }
 
