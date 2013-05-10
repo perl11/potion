@@ -185,14 +185,14 @@ $(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/p2.h core/config.h cor
 	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 %.o2: %.c core/config.h
-	@${ECHO} CC -DP2 $@
+	@${ECHO} CC $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 ifneq (${FPIC},)
 %.${OPIC}: %.c core/config.h
-	@${ECHO} CC ${FPIC} $@
+	@${ECHO} CC $@
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 %.${OPIC}2: %.c core/config.h
-	@${ECHO} CC -DP2 ${FPIC} $@
+	@${ECHO} CC $@
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
 
@@ -206,14 +206,14 @@ endif
 	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 .c.o2: core/config.h
-	@${ECHO} CC -DP2 $@
+	@${ECHO} CC $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ $<
 ifneq (${FPIC},)
 .c.${OPIC}: core/config.h
-	@${ECHO} CC ${FPIC} $@
+	@${ECHO} CC $@
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 .c.${OPIC}2: core/config.h
-	@${ECHO} CC -DP2 ${FPIC} $<
+	@${ECHO} CC $<
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
 %.c: %.y ${GREG}

@@ -28,4 +28,7 @@ do
     dotest "$c"
 done
 
-dotest "gcc -m32"
+testdebug "gcc -m32" 0
+if [ `uname -o` = Darwin ]; then
+    DYLD_LIBRARY_PATH=/usr/local/lib32 testdebug "gcc -m32" 1
+fi

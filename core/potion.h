@@ -16,7 +16,7 @@ or a ptr to an object.
 
 ops use a three-addresss layout: dest =  op src what
 
-The root class is P->lobby, which holds global values.
+The root class is P->lobby, which holds global values and methods.
 
 # Methods use as first three params:
  - Potion *P - the global interpeter singleton (not threaded yet)

@@ -234,10 +234,10 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
 		potion_type_size(P, scanptr));
 	if (((struct PNFwd *)scanptr)->fwd != POTION_FWD
 	    && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
-	  if ((signed long)(((struct PNObject *)scanptr)->vt) < 0
-	      || ((struct PNObject *)scanptr)->vt > PN_TUSER) {
+	  PNType vt = ((struct PNObject *)scanptr)->vt;
+	  if ((signed int)vt < 0 || vt > PN_TUSER) {
 	    fprintf(stderr, "** wrong type for allocated object: %p.vt = %x\n",
-		    scanptr, ((struct PNObject *)scanptr)->vt);
+		    scanptr, vt);
 	    break;
 	  }
 	}
