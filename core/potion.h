@@ -544,9 +544,11 @@ typedef enum {
 } exec_mode_t;
 
 typedef enum {
-  MODE_P5       = 0,  ///< plain p5
+  MODE_STD      = 0,  ///< plain p5
+#ifdef P2
   MODE_P2       = 1,  ///< use p2
   MODE_P6       = 2,  ///< syntax p6. other via use syntax ""
+#endif
 
   DEBUG_INSPECT = 1<<8,
   DEBUG_VERBOSE = 1<<9,

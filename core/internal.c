@@ -111,7 +111,7 @@ Potion *potion_create(void *sp) {
   PN_FLEX_NEW(P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
   PN_FLEX_SIZE(P->vts) = PN_TYPE_ID(PN_TUSER) + 1;
   P->prec = PN_PREC;
-  P->flags = MODE_P5;
+  P->flags = 0;
   potion_init(P);
   return P;
 }
