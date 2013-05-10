@@ -61,9 +61,11 @@ void gc_test_forward(CuTest *T) {
 CuSuite *gc_suite() {
   CuSuite *S = CuSuiteNew();
   SUITE_ADD_TEST(S, gc_test_start);
+#ifndef __SANITIZE_ADDRESS__
   SUITE_ADD_TEST(S, gc_test_alloc1);
   SUITE_ADD_TEST(S, gc_test_alloc4);
   SUITE_ADD_TEST(S, gc_test_forward);
+#endif
   return S;
 }
 
