@@ -547,11 +547,10 @@ typedef enum {
 #define EXEC_BITS 4 ///< 0-4
 
 typedef enum {
-  //syntax
-  MODE_STD      = 1<<EXEC_BITS,    ///< 0x10 16 plain potion/p5
+  MODE_STD    = 1<<EXEC_BITS,   ///< 0x10 16 plain potion/p5
 #ifdef P2
-  MODE_P2       = MODE_STD+1,      ///< 0x11 17 use p2 extensions
-  MODE_P6       = MODE_STD+2,      ///< 0x12 18 syntax p6. other via use syntax ""
+  MODE_P2     = MODE_STD+1,     ///< 0x11 17 use p2 extensions
+  MODE_P6     = MODE_STD+2,     ///< 0x12 18 syntax p6. other via use syntax ""
 #endif
   // room for registered syntax modules 18-63 (45 modules: sql, c, ...)
   MAX_SYNTAX  = (1<<(EXEC_BITS+2))-1,     ///< sanity-check
