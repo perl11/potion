@@ -226,22 +226,14 @@ endif
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/potion/libpotion${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} \
-	  -lpotion ${LIBS}
-	@if [ "${DEBUG}" != "1" ]; then \
-		${ECHO} STRIP $@; \
-	  ${STRIP} $@; \
-	fi
+	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion ${LIBS}
+	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 bin/p2${EXE}: ${OBJ_P2} lib/potion/libp2${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} \
-	  -lp2 ${LIBS}
-	@if [ "${DEBUG}" != "1" ]; then \
-		${ECHO} STRIP $@; \
-	  ${STRIP} $@; \
-	fi
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
+	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@${ECHO} CC $@
