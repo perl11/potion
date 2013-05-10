@@ -35,13 +35,13 @@ endif
 OBJ = ${SRC:.c=.o}
 OBJ_SYN = ${SRC_SYN:.c=.o}
 OBJ_POTION = ${SRC_POTION:.c=.o}
-OBJ_P2 = ${SRC_P2:.c=.${OPIC}}
-OBJ_P2_SYN = ${SRC_P2_SYN:.c=.o}
+OBJ_P2 = ${SRC_P2:.c=.${OPIC}2}
+OBJ_P2_SYN = ${SRC_P2_SYN:.c=.o2}
 PIC_OBJ = ${SRC:.c=.${OPIC}}
 PIC_OBJ_SYN = ${SRC_SYN:.c=.${OPIC}}
 PIC_OBJ_POTION = ${SRC_POTION:.c=.${OPIC}}
-PIC_OBJ_P2 = ${SRC_P2:.c=.${OPIC}}
-PIC_OBJ_P2_SYN = ${SRC_P2_SYN:.c=.${OPIC}}
+PIC_OBJ_P2 = ${SRC_P2:.c=.${OPIC}2}
+PIC_OBJ_P2_SYN = ${SRC_P2_SYN:.c=.${OPIC}2}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_P2_TEST = test/api/p2-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
@@ -276,12 +276,12 @@ lib/potion/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.
 	  ${PIC_OBJ} ${PIC_OBJ_SYN} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
-lib/potion/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ} ${PIC_OBJ_P2_SYN}) core/config.h core/potion.h
+lib/potion/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ $(subst libpotion,libp2,${LDDLLFLAGS}) ${RPATH} \
-	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ} ${PIC_OBJ_P2_SYN}) ${LIBS} > /dev/null
+	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/potion/libsyntax${DLL}: syn/syntax.${OPIC}
