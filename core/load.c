@@ -46,18 +46,21 @@ void potion_load_code(Potion *P, const char *filename) {
 
 static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE len) {
   PN_SIZE ext_name_len = 0;
-  char *allocated_str, *ext_name, *func_name;
+  char *allocated_str, *ext_name, *func_name = NULL;
   while (*(filename + ++ext_name_len) != '.' && ext_name_len <= len);
   allocated_str = ext_name = malloc(ext_name_len + 1);
-  if (!ext_name) potion_allocation_error();
-  strncpy(ext_name, filename, ext_name_len);
-  ext_name[ext_name_len] = '\0';
-  ext_name += ext_name_len;
-  while (*--ext_name != '/' && ext_name >= allocated_str);
-  ext_name++;
-  if (asprintf(&func_name, "Potion_Init_%s", ext_name) == -1)
+  if (!ext_name)
     potion_allocation_error();
-  free(allocated_str);
+  else {
+    strncpy(ext_name, filename, ext_name_len);
+    ext_name[ext_name_len] = '\0';
+    ext_name += ext_name_len;
+    while (*--ext_name != '/' && ext_name >= allocated_str);
+    ext_name++;
+    if (asprintf(&func_name, "Potion_Init_%s", ext_name) == -1)
+      potion_allocation_error();
+    free(allocated_str);
+  }
   return func_name;
 }
 
