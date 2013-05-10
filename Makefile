@@ -33,6 +33,7 @@ ifneq (${WIN32},1)
   endif
 endif
 OBJ = ${SRC:.c=.o}
+OBJ2 = ${SRC:.c=.o2}
 OBJ_SYN = ${SRC_SYN:.c=.o}
 OBJ_POTION = ${SRC_POTION:.c=.o}
 OBJ_P2 = ${SRC_P2:.c=.${OPIC}2}
@@ -58,11 +59,12 @@ endif
 
 GREGCFLAGS = -O3 -DNDEBUG
 CAT  = /bin/cat
-ECHO = /bin/echo
+ECHO ?= /bin/echo
 MV   = /bin/mv
 SED  = sed
 EXPR = expr
 GREG = syn/greg${EXE}
+RANLIB ?= ranlib
 
 RUNPRE = bin/
 # perl11.org only
@@ -254,11 +256,15 @@ lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_SYN} ${OBJ} > /dev/null
+	@${ECHO} RANLIB $@
+	@-${RANLIB} $@
 
 lib/libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
+	@${ECHO} RANLIB $@
+	@-${RANLIB} $@
 
 lib/potion/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
@@ -418,9 +424,11 @@ test.p2: bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
+# for LTO gold -O4
 bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}
+	@if ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}; then true; else \
+	  ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBS}; fi
 
 bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a
 	@${ECHO} LINK $@
@@ -432,7 +440,8 @@ bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
 
 bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}
+	@if ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}; then true; else \
+	  ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ ${OBJ2} ${OBJ_P2_SYN} ${LIBS}; fi
 
 dist: bins libs static doc ${SRC_SYN} ${SRC_P2_SYN}
 	@if [ -n "${RPATH}" ]; then \

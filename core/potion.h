@@ -189,8 +189,12 @@ struct PNVtable;
 #define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0)
 #define PN_DEREF(x)     ((struct PNWeakRef *)(x))->data
 #define PN_TOUCH(x)     potion_gc_update(P, (PN)(x))
-
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
+
+#define PN_OBJECT_HEADER \
+  PNType vt; \
+  PNUniq uniq
+
 #define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[0]; } N;
 #define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
 #define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
@@ -248,10 +252,6 @@ struct PNVtable;
       } \
     } \
   })
-
-#define PN_OBJECT_HEADER \
-  PNType vt; \
-  PNUniq uniq
 
 ///
 /// standard objects act like C structs
@@ -505,7 +505,8 @@ static inline char *potion_str_ptr(PN s) {
 }
 
 PN_FLEX(PNFlex, PN);
-PN_FLEX(PNAsm, unsigned char);
+//PN_FLEX(PNAsm, unsigned char);
+typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; unsigned char ptr[0]; } PNAsm;
 
 ///
 /// the jit

@@ -16,17 +16,17 @@ http://starynkevitch.net/Basile/qishintro.html
 #include "table.h"
 
 #if defined(DEBUG)
-#define dbg_Gv(P,...)				\
+#define DBG_Gv(P,...)				\
   if (P->flags & (DEBUG_GC | DEBUG_VERBOSE)) {	\
     printf(__VA_ARGS__);			\
   }
-#define dbg_G(P,...)	       \
+#define DBG_G(P,...)	       \
   if (P->flags & DEBUG_GC) {   \
     printf(__VA_ARGS__);       \
   }
 #else
-#define dbg_Gv(...)
-#define dbg_G(...)
+#define DBG_Gv(...)
+#define DBG_G(...)
 #endif
 
 PN_SIZE potion_stack_len(Potion *P, _PN **p) {
@@ -52,7 +52,7 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
         case 0: // count only
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
             i++;
-	    dbg_Gv(P,"GC mark count only\n");
+	    DBG_Gv(P,"GC mark count only\n");
 	  }
         break;
         case 1: // minor
@@ -60,14 +60,14 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
 	    // gc-test crash: P->vts = NULL
             GC_FORWARD(x, v);
             i++;
-	    dbg_Gv(P,"GC mark minor\n");
+	    DBG_Gv(P,"GC mark minor\n");
           }
         break;
         case 2: // major
           if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
-	    dbg_Gv(P,"GC mark major\n");
+	    DBG_Gv(P,"GC mark major\n");
           }
         break;
       }
@@ -131,7 +131,7 @@ static int potion_gc_minor(Potion *P, int sz) {
     return POTION_NO_MEM;
 
   scanptr = (void *) M->old_cur;
-  dbg_G(P,"running gc_minor\n"
+  DBG_G(P,"running gc_minor\n"
 	"(young: %p -> %p = %ld)\n"
 	"(old: %p -> %p = %ld)\n"
 	"(storeptr len = %ld)\n",
@@ -160,7 +160,7 @@ static int potion_gc_minor(Potion *P, int sz) {
   sz = NEW_BIRTH_REGION(M, wb, sz);
   M->minors++;
 
-  dbg_G(P,"(new young: %p -> %p = %ld)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
+  DBG_G(P,"(new young: %p -> %p = %ld)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
   return POTION_OK;
 }
 
@@ -187,7 +187,7 @@ static int potion_gc_major(Potion *P, int siz) {
   prevoldhi = (void *)M->old_hi;
   prevoldcur = (void *)M->old_cur;
 
-  dbg_G(P,"running gc_major\n"
+  DBG_G(P,"running gc_major\n"
 	"(young: %p -> %p = %ld)\n"
 	"(old: %p -> %p = %ld)\n",
 	M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
@@ -197,7 +197,7 @@ static int potion_gc_major(Potion *P, int siz) {
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
   newold = pngc_page_new(&newoldsiz, 0);
   M->old_cur = scanptr = newold + (sizeof(PN) * 2);
-  dbg_G(P,"(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
+  DBG_G(P,"(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
 
   potion_mark_stack(P, 2);
 
@@ -394,6 +394,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     }
     break;
     case PN_TSTATE:
+      DBG_G(P,"GC mark minor Potion_State\n");  // only with threads
       GC_MINOR_UPDATE(((Potion *)ptr)->strings);
       GC_MINOR_UPDATE(((Potion *)ptr)->lobby);
       GC_MINOR_UPDATE(((Potion *)ptr)->vts);
@@ -489,6 +490,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     }
     break;
     case PN_TSTATE:
+      DBG_G(P,"GC mark major Potion_State\n"); // only with threads
       GC_MAJOR_UPDATE(((Potion *)ptr)->strings);
       GC_MAJOR_UPDATE(((Potion *)ptr)->lobby);
       GC_MAJOR_UPDATE(((Potion *)ptr)->vts);
