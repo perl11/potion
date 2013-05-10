@@ -309,7 +309,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
     if (t->a[0]->part == AST_DEBUG) {
       struct PNSource * volatile v = t->a[0];
       DBG_c("debug %ld %s\n", PN_INT(PN_S(v,1)), PN_STR_PTR(PN_S(v,2)));
-      PN_ASM2(OP_DEBUG, v->a[1], v->a[2]);
+      PN_ASM2(OP_DEBUG, PN_S(v,1), PN_S(v,2));
       return potion_source_asmb(P, f, loop, 0, v->a[0], reg);
     }
   }
