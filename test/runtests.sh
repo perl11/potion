@@ -6,6 +6,7 @@ cmd=${cmd:-bin/potion-s}
 ECHO=/bin/echo
 SED=sed
 EXPR=expr
+test -f $cmd || make -s static
 
 count=0; failed=0; pass=0
 EXT=pn
