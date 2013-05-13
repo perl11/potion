@@ -99,11 +99,11 @@ stmt = PACKAGE arg-name semi {} # TODO: set namespace
     | subrout
     | use
     | ifstmt
-    | assigndecl semi
+    | assigndecl
     | s:sets semi
         ( or x:sets semi      { s = PN_OP(AST_OR, s, x); }
         | and x:sets semi     { s = PN_OP(AST_AND, s, x); })*
-                             { $$ = s; }
+                              { $$ = s; }
     | expr
 
 SUB     = "sub" space+
