@@ -150,7 +150,13 @@ struct PNVtable;
 
 #define PN_FNUMBER      1
 #define PN_FBOOLEAN     2
+#ifdef P2
+// in perl there is lot more false
+#define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL \
+                         && (PN)(v) != PN_NUM(0) && (PN)(v) != PN_STR(""))
+#else
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
+#endif
 ///\class PNBoolean
 /// Immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
 #define PN_BOOL(v)      (PN_TEST(v) ? PN_TRUE : PN_FALSE)

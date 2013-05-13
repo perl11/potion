@@ -519,6 +519,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       int call = (PN_S(t,2) != PN_NIL || arg);
       if (t->part == AST_MSG && PN_S(t,0) == PN_if) {
         int jmp; breg++;
+        //TODO: check for constant expr
         PN_ARG_TABLE(PN_S(t,1), breg, 0);
         jmp = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);

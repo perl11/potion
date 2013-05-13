@@ -611,7 +611,11 @@ void potion_x86_jmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 void potion_x86_test_asm(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, int test) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MOV_RBP(0x8B, op.a); 				// mov -A(%rbp) %rax
+#ifdef P2
+  X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_NUM(0)); 	// cmp 0 %rax
+#else
   X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); 	// cmp FALSE %rax
+#endif
   ASM(0x74); ASM(X86C(13, 21)); 			// je +10
   X86_PRE(); ASM(0x85); ASM(0xC0); 			// test %rax %rax
   ASM(0x74); ASM(X86C(9, 16)); 				// je +5
@@ -635,7 +639,12 @@ void potion_x86_cmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 void potion_x86_testjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, PNJumps *jmps, size_t *offs, int *jmpc) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MOV_RBP(0x8B, op.a); 				// mov -A(%rbp) %rax
+#ifdef P2
+  //TODO besides 0 and also check PN_STR("") and maybe FALSE for backcompat with potion also
+  X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_NUM(0)); 	// cmp 0 %rax
+#else
   X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); 	// cmp FALSE %rax
+#endif
   ASM(0x74); ASM(X86C(9, 10)); 				// jz +10
   X86_PRE(); ASM(0x85); ASM(0xC0); 			// test %rax %rax
   ASM(0x74); ASM(5);
@@ -646,7 +655,11 @@ void potion_x86_notjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   PN_OP op = PN_OP_AT(f->asmb, pos);
   DBG_t("; notjmp %d => %d\n", op.a, op.b);
   X86_MOV_RBP(0x8B, op.a);				// mov -A(%rbp) %rax
+#ifdef P2
+  X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_NUM(0)); 	// cmp 0 %rax
+#else
   X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE);	// cmp FALSE %rax
+#endif
   ASM(0x74); ASM(X86C(4, 5));				// jz +5
   X86_PRE(); ASM(0x85); ASM(0xC0);			// test %rax %rax
   ASM(0x75); ASM(5);					// jnz +5
