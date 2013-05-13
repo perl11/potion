@@ -647,7 +647,7 @@ void potion_x86_testjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile
 #endif
   ASM(0x74); ASM(X86C(9, 10)); 				// jz +10
   X86_PRE(); ASM(0x85); ASM(0xC0); 			// test %rax %rax
-  ASM(0x74); ASM(5);
+  ASM(0x74); ASM(5);					// jz +5
   TAG_JMP(pos + op.b);
 }
 

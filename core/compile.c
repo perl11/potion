@@ -517,28 +517,52 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       u8 breg = reg;
       int arg = (PN_S(t,1) != PN_NIL);
       int call = (PN_S(t,2) != PN_NIL || arg);
-      if (t->part == AST_MSG && PN_S(t,0) == PN_if) {
+      PN ifconst = -1;
+      if (t->part == AST_MSG && PN_S(t,0) == PN_if) { // (if value (1) block
         int jmp; breg++;
-        //TODO: check for constant expr
-        PN_ARG_TABLE(PN_S(t,1), breg, 0);
-        jmp = PN_OP_LEN(f->asmb);
-        PN_ASM2(OP_NOTJMP, breg, 0);
-        potion_source_asmb(P, f, loop, 0, t->a[2], reg);
-        PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
+        // if (const)
+        if (t->a[1]->part == AST_VALUE && !t->a[1]->a[1]) {
+          ifconst = PN_S(t->a[1], 0);
+          if (PN_TEST(ifconst))
+            potion_source_asmb(P, f, loop, 0, t->a[2], reg);
+        } else {
+          ifconst = -1;
+          PN_ARG_TABLE(PN_S(t,1), breg, 0);
+          jmp = PN_OP_LEN(f->asmb);
+          PN_ASM2(OP_NOTJMP, breg, 0);
+          potion_source_asmb(P, f, loop, 0, t->a[2], reg);
+          PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
+        }
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_elsif) {
         int jmp1 = PN_OP_LEN(f->asmb), jmp2; breg++;
-        PN_ASM2(OP_TESTJMP, breg, 0);
-        PN_ARG_TABLE(PN_S(t,1), breg, 0);
-        jmp2 = PN_OP_LEN(f->asmb);
-        PN_ASM2(OP_NOTJMP, breg, 0);
-        potion_source_asmb(P, f, loop, 0, t->a[2], reg);
-        PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
-        PN_OP_AT(f->asmb, jmp2).b = (PN_OP_LEN(f->asmb) - jmp2) - 1;
+        // true ifconst: ignore. use only 1st if
+        if (ifconst != -1 && PN_TEST(ifconst)) ;
+        // elseif (const)
+        else if (t->a[1]->part == AST_VALUE && !t->a[1]->a[1]) {
+          ifconst = PN_S(t->a[1], 0);
+          if (!PN_TEST(ifconst))
+            potion_source_asmb(P, f, loop, 0, t->a[2], reg);
+        }
+        else {
+          PN_ASM2(OP_TESTJMP, breg, 0);
+          PN_ARG_TABLE(PN_S(t,1), breg, 0);
+          jmp2 = PN_OP_LEN(f->asmb);
+          PN_ASM2(OP_NOTJMP, breg, 0);
+          potion_source_asmb(P, f, loop, 0, t->a[2], reg);
+          PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
+          PN_OP_AT(f->asmb, jmp2).b = (PN_OP_LEN(f->asmb) - jmp2) - 1;
+        }
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_else) {
         int jmp = PN_OP_LEN(f->asmb); breg++;
-        PN_ASM2(OP_TESTJMP, breg, 0);
-        potion_source_asmb(P, f, loop, 0, t->a[2], reg);
-        PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
+        if (ifconst != -1) {
+          if (!PN_TEST(ifconst))
+            potion_source_asmb(P, f, loop, 0, t->a[2], reg);
+        }
+        else {
+          PN_ASM2(OP_TESTJMP, breg, 0);
+          potion_source_asmb(P, f, loop, 0, t->a[2], reg);
+          PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
+        }
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_class) {
         u8 breg = reg;
         if (count == 0)
