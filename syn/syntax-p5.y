@@ -125,10 +125,10 @@ subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
 # TODO: compile-time sideeffs (BEGIN block) in the compiler
 use = USE n:id - semi    { $$ = PN_AST2(MSG, PN_STRN("use",3), n); }
 
-ifstmt = IF e:ifexpr s:block - !"els" { s  = PN_OP(AST_AND, e, s); }
-       | IF e:ifexpr s1:block         { s1 = PN_AST(MSG, PN_if); }
-         (ELSIF e1:ifexpr f:block )*  { f = PN_AST(MSG, PN_elsif); }
-         (ELSE s2:block )?            { s2 = PN_AST(MSG, PN_else); }
+ifstmt = IF e:ifexpr s:block - !"els"  { s  = PN_OP(AST_AND, e, s); }
+       | IF e:ifexpr s1:block -        { s1 = PN_AST(MSG, PN_if); }
+         (ELSIF e1:ifexpr f:block - )* { f = PN_AST(MSG, PN_elsif); }
+         (ELSE s2:block )?             { s2 = PN_AST(MSG, PN_else); }
 
 ifexpr = '(' - expr - ')' -
 
@@ -235,14 +235,14 @@ loose = value
 
 # anonymous sub, w or w/o proto (aka list)
 anonsub = 'sub' - t:list? b:block { $$ = PN_AST2(PROTO, t, b); }
-#sub = 'sub' - n:arg-name - t:list? b:block { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)); }
-list = list-start s:statements list-end { $$ = PN_AST(LIST, s); }
-block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s); }
-lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i); }
-group = group-start s:statements group-end { $$ = PN_AST(EXPR, s); }
+#sub = 'sub' - n:arg-name - t:list? b:block  { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)); }
+list = list-start s:statements list-end -    { $$ = PN_AST(LIST, s); }
+block = block-start s:statements block-end - { $$ = PN_AST(BLOCK, s); }
+lick = lick-start i:lick-items lick-end -    { $$ = PN_AST(LIST, i); }
+group = group-start s:statements group-end - { $$ = PN_AST(EXPR, s); }
 
-#path = '/' < utfw+ > -       { $$ = PN_STRN(yytext, yyleng); }
-#path    = < utfw+ > -   { $$ = PN_STRN(yytext, yyleng); }
+#path = '/' < utfw+ > - { $$ = PN_STRN(yytext, yyleng); }
+#path    = < utfw+ > -  { $$ = PN_STRN(yytext, yyleng); }
 message = < utfw+ > -   { $$ = PN_STRN(yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i); }
