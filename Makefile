@@ -259,7 +259,7 @@ lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} RANLIB $@
 	@-${RANLIB} $@
 
-lib/libp2.a: ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) core/config.h core/potion.h
+lib/libp2.a: ${OBJ_P2_SYN} ${OBJ2} core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
