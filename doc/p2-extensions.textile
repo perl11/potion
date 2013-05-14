@@ -29,7 +29,27 @@ my const int @a = (0..9);
 
 h3. const declarations for data, @ISA, classes and functions/methods
 
+class and method will be keywords.
+
 method calls should be inlinable and compile-time optimizable.
+
+a class is final, methods cannot be changed or added later, the @ISA is readonly.
+todo: use oo => options;
+
+h3. function and method signatures
+
+parameters can be declared differently to p5 and p6:
+
+declare constness with a '-' prefix
+declare alias (by ref) with a '\' prefix
+declare default values with '=' [done]
+
+- param is ro    => -param
+- param is alias => \param
+
+bc. int method adder (int \$self, int -$a=1) { $self += $a; }
+# or untyped
+method adder (\$self, -$a=1) { $self += $a; }
 
 h3. sized arrays
 
@@ -100,6 +120,12 @@ bc. if $cmp {
   else say "else";
 }
 
+if statements are expressions, they can be used on the right-hand side.
+
+bc. $s = if ($a < 1) { "less" } else { "more" }; # [done]
+# or simplier
+$s = if $a < 1 "less" else "more";
+
 @for@ lists should not need parens, the expressions are evaluated in list
 context.
 
@@ -153,13 +179,19 @@ expressions.
 
 e.g.
 
-bc. syntax-p5.g:
+bc. syntax-p5.y:
     block = '{' s:statements* '}' { $$ = PN_AST(BLOCK, s); }
 
-bc. macro ifdebug block 'ifdebug' {
+bc. $DEBUG = $Config{ccflags} =~ /-DDEBUGGING/;
+macro ifdebug block "ifdebug" {
     if ($DEBUG) `block`;
 }
 { call() } ifdebug;
+
+bc. macro ifdebug statements "ifdebug" {
+    if ($DEBUG) { `statements` };
+}
+call() ifdebug;
 
 A macro can use valid parser expressions, i.e. strings
 (i.e. terminals) or any valid parser rule (i.e. non-terminals) as argument,
@@ -179,6 +211,8 @@ grammar.
 Most keywords should be defined as macros.  E.g. @for@, @while@ and
 @match@ can be more easily defined as macros. Short circuiting and
 partial evaluation should be possible in macros.
+Currently most keywords are defined as special compiler rules, and not in the parser,
+to keep the parser clean and you are able to override the compiler.
 
 Normal functions or methods do not need to be defined in the language,
 they are library calls. 90% of the ops previously defined in perl5 are
@@ -192,13 +226,13 @@ and extend the expressibility of your code.
 
 @()@ groups list in parse expressions, and does not match perl elements in lists.
 
-bc. macro dbgprint 'dbgprint' ( s:stmt )* {
+bc. macro dbgprint "dbgprint" ( s:stmt )* {
   if ($DEBUG) {
     print @`s`;
   }
 }
 
-bc. macro while 'while' - '(' e:expr ')' - '{' b:block '}' {
+bc. macro while "while" - '(' e:expr ')' - '{' b:block '}' {
   my $label = gensym('WHILE');
   $label: if (`e`) {
     @`b`;
