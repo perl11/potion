@@ -92,7 +92,7 @@ perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s) }
 
 statements =
     s1:stmt          { $$ = s1 = PN_TUP(s1) }
-        (sep s2:stmt { $$ = s1 = PN_PUSH(s1, s2) })* sep?
+        (sep? s2:stmt { $$ = s1 = PN_PUSH(s1, s2) })* sep?
     | ''             { $$ = PN_NIL }
 
 stmt = PACKAGE arg-name semi {} # TODO: set namespace
