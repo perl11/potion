@@ -376,7 +376,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 
       if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
         char first_letter = PN_STR_PTR(PN_S(lhs,0))[0];
-	    DBG_c("assign %s '%s'\n", lhs->part == AST_MSG?"message":"query",
+	    DBG_c("assign %s '%s'\n", lhs->part == AST_MSG?"msg":"query",
                   PN_STR_PTR(PN_S(lhs,0)));
         if ((first_letter & 0x80) == 0 && isupper((unsigned char)first_letter)) {
           num = PN_PUT(f->values, PN_S(lhs,0));
@@ -518,13 +518,16 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       int arg = (PN_S(t,1) != PN_NIL);
       int call = (PN_S(t,2) != PN_NIL || arg);
       PN ifconst = -1;
-      if (t->part == AST_MSG && PN_S(t,0) == PN_if) { // (if value (1) block
+      if (t->part == AST_MSG && PN_S(t,0) == PN_if) {
         int jmp; breg++;
-        // if (const)
         if (t->a[1]->part == AST_VALUE && !t->a[1]->a[1]) {
           ifconst = PN_S(t->a[1], 0);
-          if (PN_TEST(ifconst))
+          if (PN_TEST(ifconst)) {
+            DBG_c("if (true) {block} => block\n");
             potion_source_asmb(P, f, loop, 0, t->a[2], reg);
+          } else {
+            DBG_c("if (false) {block} => \n");
+          }
         } else {
           ifconst = -1;
           PN_ARG_TABLE(PN_S(t,1), breg, 0);
@@ -536,12 +539,16 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_elsif) {
         int jmp1 = PN_OP_LEN(f->asmb), jmp2; breg++;
         // true ifconst: ignore. use only 1st if
-        if (ifconst != -1 && PN_TEST(ifconst)) ;
-        // elseif (const)
-        else if (t->a[1]->part == AST_VALUE && !t->a[1]->a[1]) {
+        if (ifconst != -1 && PN_TEST(ifconst)) {
+          DBG_c("elsif (...) {block} => [false]\n");
+        } else if (t->a[1]->part == AST_VALUE && !t->a[1]->a[1]) {
           ifconst = PN_S(t->a[1], 0);
-          if (!PN_TEST(ifconst))
+          if (!PN_TEST(ifconst)) {
+            DBG_c("elsif (true) {block} => block\n");
             potion_source_asmb(P, f, loop, 0, t->a[2], reg);
+          } else {
+            DBG_c("elsif (false) {block} =>\n");
+          }
         }
         else {
           PN_ASM2(OP_TESTJMP, breg, 0);
@@ -555,8 +562,12 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_else) {
         int jmp = PN_OP_LEN(f->asmb); breg++;
         if (ifconst != -1) {
-          if (!PN_TEST(ifconst))
+          if (!PN_TEST(ifconst)) {
+            DBG_c("else {block} => block [false]\n");
             potion_source_asmb(P, f, loop, 0, t->a[2], reg);
+          } else {
+            DBG_c("else {block} => [true]\n");
+          }
         }
         else {
           PN_ASM2(OP_TESTJMP, breg, 0);
