@@ -24,6 +24,29 @@
 
 extern PN PN_use;
 
+#include "table.h"
+
+/// a namespace is a hash of dynamic symbolnames
+///
+struct PNNamespace {
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
+  PN_TABLE_HEADER;   ///< PN_SIZE n_buckets, size, n_occupied, upper_bound
+  char table[0];
+};
+
+#define PN_TNAMESPACE PN_TUSER+1
+PN potion_nstuple_set(Potion *P, PN name);
+PN potion_nstuple_push(Potion *P, PN name);
+PN potion_nstuple_pop(Potion *P);
+PN potion_pkg(Potion *P, PN cl, PN self);
+PN potion_pkg_create(Potion *P, PN pkg);
+PN potion_pkg_put(Potion *P, PN name, PN value);
+PN potion_pkg_at(Potion *P, PN cl, PN self, PN key);
+PN potion_sym_at(Potion *P, PN name); //not yet
+PN potion_namespace_create(Potion *P, PN cl, PN self, PN pkg);
+PN potion_namespace_put(Potion *P, PN cl, PN self, PN name, PN value);
+PN potion_namespace_at(Potion *P, PN cl, PN self, PN key);
+
 #endif
 
 //

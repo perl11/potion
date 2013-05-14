@@ -22,7 +22,7 @@ endif
 SRC_SYN    = syn/syntax.c
 SRC_P2_SYN = syn/syntax-p5.c
 SRC_POTION = front/potion.c
-SRC_P2     = front/p2.c
+SRC_P2     = core/p2.c front/p2.c
 
 FPIC =
 OPIC = o

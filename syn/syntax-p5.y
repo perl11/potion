@@ -95,15 +95,15 @@ statements =
         (sep? s2:stmt { $$ = s1 = PN_PUSH(s1, s2) })* sep?
     | ''             { $$ = PN_NIL }
 
-stmt = PACKAGE arg-name semi {} # TODO: set namespace
+stmt = package
     | subrout
     | use
     | ifstmt
     | assigndecl
     | s:sets semi
-        ( or x:sets semi      { s = PN_OP(AST_OR, s, x) }
-        | and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
-                              { $$ = s }
+        #( or x:sets semi      { s = PN_OP(AST_OR, s, x) }
+        #| and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
+                               { $$ = s }
     | expr
 
 SUB     = "sub" space+
@@ -114,6 +114,12 @@ ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
 
+# call them in the compiler
+package = PACKAGE n:id - '{' - b:block - '}'
+          { $$ = PN_PUSH(PN_PUSH(PN_AST(EXPR, PN_AST2(MSG, n, PN_STR("nstuple_push"))),
+                                 PN_AST(BLOCK, b)),
+                         PN_AST(EXPR, PN_AST(MSG, PN_STR("nstuple_pop")))) }
+        | PACKAGE n:id - semi { potion_nstuple_set(P, n) }
 subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
         { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_AST(MSG, n)), PN_AST2(PROTO, p, b)) }
 # so far no difference in global or lex assignment

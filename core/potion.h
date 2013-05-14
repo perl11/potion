@@ -582,7 +582,7 @@ struct Potion_State {
   PN_OBJECT_HEADER;        ///< PNType vt; PNUniq uniq
   PNTarget target;         ///< the jit
   struct PNTable *strings; ///< table of all strings
-  PN lobby;                ///< root namespace
+  PN lobby;                ///< root class
   PNFlex * volatile vts;   ///< built in types
   PN source, input;        ///< parser input and output
   int yypos;               ///< parser buffer position
@@ -591,6 +591,9 @@ struct Potion_State {
   PN call, callset;        ///< generic call and callset
   int prec;                ///< decimal precision
   struct PNMemory *mem;    ///< allocator/gc
+#ifdef P2
+  struct PNTuple *nstuple; ///< stack of namespace hashes
+#endif
   Potion_Flags flags;      ///< vm flags: execution model and debug flags
 };
 
@@ -784,6 +787,10 @@ PN potion_tuple_push(Potion *, PN, PN);
 PN_SIZE potion_tuple_push_unless(Potion *, PN, PN);
 PN_SIZE potion_tuple_find(Potion *, PN, PN);
 PN potion_tuple_at(Potion *, PN, PN, PN);
+PN potion_tuple_first(Potion *, PN, PN);
+PN potion_tuple_last(Potion *, PN, PN);
+PN potion_tuple_pop(Potion *, PN, PN);
+PN potion_tuple_put(Potion *, PN, PN, PN, PN);
 PN potion_table_empty(Potion *);
 PN potion_table_put(Potion *, PN, PN, PN, PN);
 PN potion_table_set(Potion *, PN, PN, PN);

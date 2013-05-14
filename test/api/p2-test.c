@@ -104,6 +104,15 @@ void p2_test_eval(CuTest *T) {
     PN_INT(num), 8);
 }
 
+void p2_test_symbols(CuTest *T) {
+  PN tup = potion_tuple_with_size(P, 3);
+  CuAssert(T, "main:: is a hash",  potion_pkg(P, 0, 0));
+  CuAssert(T, "tuple isn't a ref", PN_IS_PTR(tup));
+  CuAssertIntEquals(T, "tuple length is off",
+    PN_INT(potion_send(tup, potion_str(P, "length"))), 3);
+}
+
+
 void p2_test_allocated(CuTest *T) {
   void *scanptr = (void *)((char *)P->mem->birth_lo + PN_ALIGN(sizeof(struct PNMemory), 8));
   while ((PN)scanptr < (PN)P->mem->birth_cur) {
