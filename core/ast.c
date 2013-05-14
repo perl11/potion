@@ -82,7 +82,7 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
 	vPN(Bytes) b = (struct PNBytes *)potion_fwd(out);
 	//DBG_vt("cut at %d, len=%d: \"%s\"\n", cut, b->len, b->chars);
 	if (cut < b->len) {
-	  b->len = cut;
+	  b->len = cut - 1;
 	  if (b->chars[cut-1] == ' ')
 	    b->chars[cut-1] = '\0';
 	  else
