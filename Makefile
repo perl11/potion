@@ -33,7 +33,7 @@ ifneq (${WIN32},1)
   endif
 endif
 OBJ = ${SRC:.c=.o}
-OBJ2 = ${SRC:.c=.o2}
+OBJ2 = ${SRC:.c=.o2} core/p2.o2
 OBJ_SYN = ${SRC_SYN:.c=.o}
 OBJ_POTION = ${SRC_POTION:.c=.o}
 OBJ_P2 = ${SRC_P2:.c=.${OPIC}2}
@@ -262,7 +262,7 @@ lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 lib/libp2.a: ${OBJ_P2_SYN} ${OBJ2} core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
+	@${AR} rcs $@ ${OBJ_P2_SYN} ${OBJ2} > /dev/null
 	@${ECHO} RANLIB $@
 	@-${RANLIB} $@
 
@@ -274,12 +274,12 @@ lib/potion/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.
 	  ${PIC_OBJ} ${PIC_OBJ_SYN} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
-lib/potion/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/config.h core/potion.h
+lib/potion/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) core/p2.opic2 ${PIC_OBJ_P2_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ $(subst libpotion,libp2,${LDDLLFLAGS}) ${RPATH} \
-	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} > /dev/null
+	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) core/p2.opic2 ${PIC_OBJ_P2_SYN} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/potion/libsyntax${DLL}: syn/syntax.${OPIC}

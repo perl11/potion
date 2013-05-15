@@ -24,18 +24,6 @@
 #define CUR_PKG potion_tuple_last(P, 0, (PN)P->nstuple)
 static PN potion_pkg_upper(Potion *P, PN cl, PN name);
 
-void potion_p2_init(Potion *P) {
-  PN ns_vt = potion_type_new2(P, PN_TNAMESPACE, PN_VTABLE(PN_TTABLE), potion_str(P, "Namespace"));
-  potion_method(P->lobby, "package", potion_pkg, 0);
-  // derive all namespace methods from PNTable
-  //potion_method(ns_vt, "name",   potion_namespace_name, 0);
-  potion_method(ns_vt, "create", potion_namespace_create, "name=S"); //intern
-  potion_method(ns_vt, "put",    potion_namespace_put, "name=S,value=o");
-  potion_method(ns_vt, "at",     potion_namespace_at, "key=S");
-  PN main_ns = potion_namespace_create(P, 0, PN_NIL, PN_STR("main::"));
-  potion_tuple_push(P, (PN)P->nstuple, main_ns);
-}
-
 /**\methodof PNNamespace
    create a new subpackage under the given namespace.
    \param PNString pkg */
@@ -156,3 +144,14 @@ PN potion_sym_at(Potion *P, PN name) {
   return potion_table_at(P, 0, ns, PN_STR(p));
 }
 
+void potion_p2_init(Potion *P) {
+  PN ns_vt = potion_type_new2(P, PN_TNAMESPACE, PN_VTABLE(PN_TTABLE), potion_str(P, "Namespace"));
+  potion_method(P->lobby, "package", potion_pkg, 0);
+  // derive all namespace methods from PNTable
+  //potion_method(ns_vt, "name",   potion_namespace_name, 0);
+  potion_method(ns_vt, "create", potion_namespace_create, "name=S"); //intern
+  potion_method(ns_vt, "put",    potion_namespace_put, "name=S,value=o");
+  potion_method(ns_vt, "at",     potion_namespace_at, "key=S");
+  PN main_ns = potion_namespace_create(P, 0, PN_NIL, PN_STR("main::"));
+  potion_tuple_push(P, (PN)P->nstuple, main_ns);
+}

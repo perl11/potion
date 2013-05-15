@@ -9,9 +9,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+
+#ifndef P2
+# define P2
+#endif
 #include "p2.h"
-//#include "potion.h"
-//#include "internal.h"
 #include "CuTest.h"
 
 PN num = PN_NUM(490);
@@ -105,11 +107,10 @@ void p2_test_eval(CuTest *T) {
 }
 
 void p2_test_symbols(CuTest *T) {
-  PN tup = potion_tuple_with_size(P, 3);
-  CuAssert(T, "main:: is a hash",  potion_pkg(P, 0, 0));
-  CuAssert(T, "tuple isn't a ref", PN_IS_PTR(tup));
-  CuAssertIntEquals(T, "tuple length is off",
-    PN_INT(potion_send(tup, potion_str(P, "length"))), 3);
+  PN ns = potion_pkg(P, 0, 0);
+  CuAssert(T, "main:: is a hash", PN_IS_TABLE(ns));
+  CuAssert(T, "main::->name == main::", PN_STR("main::") == potion_send(ns, PN_name));
+  CuAssertIntEquals(T, "nstuple -> len == 1", 1, PN_INT(PN_TUPLE_LEN(P->nstuple)));
 }
 
 
