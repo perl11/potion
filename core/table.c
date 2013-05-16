@@ -1,7 +1,8 @@
 ///\file table.c
-/// implement unordered hashes and ordered lists (PNTable and PNTuple)
-///\class PNTable - unordered hash, the central table type, based on khash
-///\class PNTuple - ordered list (array)
+/// implement unordered hashes and ordered lists (PNTable and PNTuple).
+/// depending on the key type, if number or string
+///\class PNTable - unordered hash, the central table type, based on khash (string key)
+///\class PNTuple - ordered list (array, numeric key)
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 // (c) 2013 perl11 org
@@ -38,7 +39,8 @@ PN potion_table_empty(Potion *P) {
   return (PN)PN_ALLOC_N(PN_TTABLE, struct PNTable, 0);
 }
 
-///\return self PNTable
+/// converts a PNTuple to a PNTable
+///\return self as PNTable
 PN potion_table_cast(Potion *P, PN self) {
   if (PN_IS_TUPLE(self)) {
     int ret; unsigned k;

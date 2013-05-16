@@ -239,7 +239,7 @@ struct PNVtable;
 #define PN_GET(T, X)    potion_tuple_find(P, T, X)
 #define PN_PUT(T, X)    potion_tuple_push_unless(P, T, X)
 #define PN_GET_TUPLE(t) ((struct PNTuple *)potion_fwd((PN)t))
-#define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
+#define PN_TUPLE_LEN(t)   PN_GET_TUPLE(t)->len
 #define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
 #define PN_TUPLE_COUNT(T, I, B) ({ \
     struct PNTuple * volatile __t##I = PN_GET_TUPLE(T); \

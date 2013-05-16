@@ -37,9 +37,9 @@ const struct {
   {"return", 1}, {"proto", 2}, {"class", 2}, {"debug", 3}
 };
 
-///\memberof PNProto
-/// tree method of PNProto
-///\return the original PNSource AST for the closure
+/**\memberof PNProto
+  tree method of PNProto
+  \return the original PNSource AST for the closure */
 PN potion_proto_tree(Potion *P, PN cl, PN self) {
   return PN_PROTO(self)->tree;
 }
@@ -1055,8 +1055,8 @@ PN potion_source_dumpbc(Potion *P, PN cl, PN proto, PN options) {
 }
 
 ///\memberof PNSource
-/// dump (compiler) methods, default "bc". loads compile-<backend> extension.
-///\param backend PNString - load a compile-<backend> module and call its dump<backend> method
+/// dump (compiler) methods, default "bc". loads compile-"backend" extension.
+///\param backend PNString - load a compile-"backend" module and call its dump"backend" method
 ///\param options optional PNString
 /// TODO: serializable ascii, c, exe, jvm, .net
 PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
