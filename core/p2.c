@@ -10,7 +10,7 @@
   the last is always the current package.
 
   - pkg: namespace helpers work on the current active package/namespace via strings
-  - namespace: ie named PNTable, works as method on the given namespace
+  - namespace: ie PNLick with PNTable as attr
   - nstuple: PNTuple, stack of namespaces, first=main::, last=active
 
  (c) 2013 by perl11 org
@@ -24,7 +24,7 @@
 #include "ast.h"
 
 #define CUR_PKG potion_tuple_last(P, 0, (PN)P->nstuple)
-static PN potion_pkg_upper(Potion *P, PN cl, PN name);
+static PN potion_pkg_parent(Potion *P, PN cl, PN name);
 
 /**\methodof PNNamespace
    create a new subpackage or symbol as child of the given namespace.
@@ -34,31 +34,37 @@ PN potion_namespace_create(Potion *P, PN cl, PN self, PN pkg) {
   char *p = PN_STR_PTR(pkg);
   int len = PN_STR_LEN(pkg);
   if (p[len -2] == ':' && p[len - 1] == ':') {
-    PN upper = potion_pkg_upper(P, cl, pkg);
-    PN new = potion_table_set(P, cl, upper, pkg);
-    if (!self) 
-      return potion_table_set(P, cl, new, pkg);
+    PN parent = potion_pkg_parent(P, cl, pkg);
+    PN new = potion_table_set(P, cl, parent, pkg);
+    if (!self) {
+      PN ns = potion_lick(P, pkg, potion_table_set(P, cl, new, pkg), 0);
+      PN_VTYPE(ns) = PN_TNAMESPACE;
+      return ns;
+    }
   }
-  if (self) 
-    return potion_table_set(P, cl, self, pkg);
+  if (self) {
+    PN ns = potion_lick(P, pkg, potion_table_set(P, cl, self, pkg), 0);
+    PN_VTYPE(ns) = PN_TNAMESPACE;
+    return ns;
+  }
 }
 /**\methodof PNNamespace
   put/intern a new symbol and value into the namespace
   \param PNString name */
 PN potion_namespace_put(Potion *P, PN cl, PN self, PN name, PN value) {
-  return potion_table_put(P, cl, self, name, value);
+  return potion_table_put(P, cl, PN_LICK(self)->attr, name, value);
 }
 /**\methodof PNNamespace
    "find" a symbol in the namespace, return its value.
    \param PNString name */
 PN potion_namespace_at(Potion *P, PN cl, PN self, PN key) {
-  return potion_table_at(P, cl, self, key);
+  return potion_table_at(P, cl, PN_LICK(self)->attr, key);
 }
 /**\methodof PNNamespace
   /returns the full name (PNString), such as "main::My::Class::"
  */
 PN potion_namespace_name(Potion *P, PN cl, PN self) {
-  return PN_NIL; //FIXME
+  return PN_LICK(self)->name;
 }
 
 /**
@@ -101,12 +107,12 @@ PN potion_pkg_create(Potion *P, PN pkg) {
 /** put/intern a new symbol and value into the current namespace
    \param PNString name */
 PN potion_pkg_put(Potion *P, PN name, PN value) {
-  return potion_table_put(P, 0, CUR_PKG, name, value);
+  return potion_table_put(P, 0, PN_LICK(CUR_PKG)->attr, name, value);
 }
 /** "find" a symbol in the namespace, return its value.
    \param PNString name */
 PN potion_pkg_at(Potion *P, PN cl, PN self, PN key) {
-  return potion_table_at(P, cl, CUR_PKG, key);
+  return potion_table_at(P, cl, PN_LICK(CUR_PKG)->attr, key);
 }
 
 // sets ns and p for symbol name
@@ -119,22 +125,34 @@ PN potion_pkg_at(Potion *P, PN cl, PN self, PN key) {
     p += 6;                                             \
   }                                                     \
   while ((c = strstr(p, "::"))) {                       \
-    ns1 = potion_table_at(P, 0, ns, PN_STRN(p, p - c)); \
+    ns1 = potion_table_at(P, 0, PN_LICK(ns)->attr, PN_STRN(p, p - c)); \
     if (ns1) ns = ns1;                                  \
     p = c + 2;                                          \
   }
 
 /** 
-    \param PNString name
-    \returns upper the namespace from name.
-    i.e. My::Class => My, My => main */
-static PN potion_pkg_upper(Potion *P, PN cl, PN name) {
-  DO_PKG_TRAVERSE(name)
+   \param PNString name
+   \returns parent the namespace from name.
+   i.e. My::Class => My, My => main */
+static PN potion_pkg_parent(Potion *P, PN cl, PN name) {
+  //DO_PKG_TRAVERSE(name)
+  char *p = PN_STR_PTR(name);                           
+  char *c;                                              
+  PN ns1;                                               
+  PN ns =  potion_tuple_first(P, 0, (PN)P->nstuple);    
+  if (memcmp(p, "main::", 6)) {                         
+    p += 6;                                             
+  }                                                     
+  while ((c = strstr(p, "::"))) {                       
+    ns1 = potion_table_at(P, 0, PN_LICK(ns)->attr, PN_STRN(p, p - c)); 
+    if (ns1) ns = ns1;                                  
+    p = c + 2;                                          
+  }
   return ns;
 }
 
-static PN potion_namespace_upper(Potion *P, PN cl, PN self) {
-  return potion_pkg_upper(P, cl, potion_namespace_name(P, cl, self));
+static PN potion_namespace_parent(Potion *P, PN cl, PN self) {
+  return potion_pkg_parent(P, cl, potion_namespace_name(P, cl, self));
 }
 
 /** PNNamespace i.e. a Hash of names
@@ -157,18 +175,19 @@ PN potion_pkg(Potion *P, PN cl, PN self) {
 PN potion_sym_at(Potion *P, PN name) {
   DO_PKG_TRAVERSE(name)
   if (!ns) return PN_NIL;
-  return potion_table_at(P, 0, ns, PN_STR(p));
+  return potion_table_at(P, 0, PN_LICK(ns)->attr, PN_STR(p));
 }
 
 void potion_p2_init(Potion *P) {
-  PN ns_vt = potion_type_new2(P, PN_TNAMESPACE, PN_VTABLE(PN_TTABLE), potion_str(P, "Namespace"));
+  PN ns_vt = potion_type_new2(P, PN_TNAMESPACE, PN_VTABLE(PN_TLICK), potion_str(P, "Namespace"));
+  //PN sym_vt = potion_type_new2(P, PN_TSYMBOL, PN_VTABLE(PN_TLICK), potion_str(P, "Symbol"));
   potion_method(P->lobby, "package", potion_pkg, 0);
-  // derive all namespace methods from PNTable
-  potion_method(ns_vt, "create", potion_namespace_create, "name=S");      //subpackage or intern
-  potion_method(ns_vt, "put",    potion_namespace_put, "name=S,value=o"); //intern + set
-  potion_method(ns_vt, "at",     potion_namespace_at, "key=S");           //symbol-value by name
-  potion_method(ns_vt, "name",   potion_namespace_name, 0);
-  potion_method(ns_vt, "upper",  potion_namespace_upper, 0);
-  PN main_ns = potion_namespace_create(P, 0, PN_NIL, PN_STR("main::"));
-  potion_tuple_push(P, (PN)P->nstuple, main_ns);
+  potion_method(ns_vt, "create",  potion_namespace_create, "name=S");  //new subpackage or intern
+  potion_method(ns_vt, "name",    potion_namespace_name, 0);
+  potion_method(ns_vt, "parent",  potion_namespace_parent, 0);
+  potion_type_call_is(ns_vt, PN_FUNC(potion_namespace_at, "name=S")); //symbol-value by name
+  potion_type_callset_is(ns_vt, PN_FUNC(potion_namespace_put, "name=S,value=o")); //intern + set
+  PN main_ns = potion_lick(P, PN_STRN("main::",6), potion_table_empty(P), 0);
+  PN_VTYPE(main_ns) = PN_TNAMESPACE;
+  P->nstuple = (struct PNTuple *)potion_tuple_push(P, PN_TUP0(), main_ns);
 }

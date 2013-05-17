@@ -164,9 +164,10 @@ struct PNVtable;
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)
 #define PN_IS_NUM(v)    ((PN)(v) & PN_FNUMBER)
-#define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
+#define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
+#define PN_IS_LICK(v)   (PN_TYPE(v) == PN_TLICK)
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
 #define PN_IS_DECIMAL(v) (PN_IS_PTR(v) && PN_TYPE(v) == PN_TNUMBER)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
@@ -193,6 +194,7 @@ struct PNVtable;
 #define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method
 #define PN_PROTO(x)     ((struct PNProto *)(x))
 #define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0)
+#define PN_LICK(x)      ((struct PNLick *)(x))
 #define PN_DEREF(x)     ((struct PNWeakRef *)(x))->data
 #define PN_TOUCH(x)     potion_gc_update(P, (PN)(x))
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))

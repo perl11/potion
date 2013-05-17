@@ -108,8 +108,9 @@ void p2_test_eval(CuTest *T) {
 
 void p2_test_symbols(CuTest *T) {
   PN ns = potion_pkg(P, 0, 0);
-  CuAssert(T, "main:: is a hash", PN_IS_TABLE(ns));
-  CuAssert(T, "main::->name == main::", PN_STR("main::") == potion_send(ns, PN_name));
+  CuAssert(T, "main:: kind Namespace", PN_TYPE(ns) == PN_TNAMESPACE);
+  CuAssert(T, "main::->name == \"main::\"", PN_STR("main::") == potion_send(ns, PN_name));
+  CuAssert(T, "main::->attr is a table", PN_IS_TABLE(PN_LICK(ns)->attr));
   CuAssertIntEquals(T, "nstuple -> len == 1", 1, PN_INT(PN_TUPLE_LEN(P->nstuple)));
 }
 
@@ -138,6 +139,7 @@ CuSuite *p2_suite() {
   SUITE_ADD_TEST(S, p2_test_empty);
   SUITE_ADD_TEST(S, p2_test_tuple);
   SUITE_ADD_TEST(S, p2_test_sig);
+  SUITE_ADD_TEST(S, p2_test_symbols);
   SUITE_ADD_TEST(S, p2_test_allocated);
   return S;
 }

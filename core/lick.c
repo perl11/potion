@@ -18,17 +18,18 @@ PN potion_lick(Potion *P, PN name, PN inner, PN attr) {
 
 ///\memberof PNLick
 /// "attr" method
-///\return the attached attr member PN
+///\return the attached attr member PN ( any, most likely a PNTable )
 PN potion_lick_attr(Potion *P, PN cl, PN self) {
   return ((struct PNLick *)self)->attr;
 }
 
 ///\memberof PNLick
-/// "licks" method. attached can be a string or PNTuple
-///\return the attached licks PNTuple or PN_NIL
+/// "licks" method. attached can be a string, PNTuple or PNTable
+///\return the attached licks PNTuple, PNTable or PN_NIL. For the string use potion_lick_text()
 PN potion_lick_licks(Potion *P, PN cl, PN self) {
   PN licks = ((struct PNLick *)self)->inner;
   if (PN_IS_TUPLE(licks)) return licks;
+  if (PN_IS_TABLE(licks)) return licks;
   return PN_NIL;
 }
 
@@ -40,7 +41,7 @@ PN potion_lick_name(Potion *P, PN cl, PN self) {
 }
 
 ///\memberof PNLick
-/// "text" method. attached can be a string or PNTuple
+/// "text" method. attached can be a string or PNTuple or PNTable
 ///\return the attached text PNString or PN_NIL
 PN potion_lick_text(Potion *P, PN cl, PN self) {
   PN text = ((struct PNLick *)self)->inner;
