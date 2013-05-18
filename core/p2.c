@@ -8,9 +8,11 @@
   }
   P->nstuple: stack of nested package blocks, beginning with main::
   the last is always the current package.
+  TODO: put namespace into the env (cl closure)
 
   - pkg: namespace helpers work on the current active package/namespace via strings
   - namespace: ie PNLick with PNTable as attr
+                  parent as inner
   - nstuple: PNTuple, stack of namespaces, first=main::, last=active
 
  (c) 2013 by perl11 org
@@ -37,13 +39,13 @@ PN potion_namespace_create(Potion *P, PN cl, PN self, PN pkg) {
     PN parent = potion_pkg_parent(P, cl, pkg);
     PN new = potion_table_set(P, cl, parent, pkg);
     if (!self) {
-      PN ns = potion_lick(P, pkg, potion_table_set(P, cl, new, pkg), 0);
+      PN ns = potion_lick(P, pkg, potion_table_set(P, cl, new, pkg), parent);
       PN_VTYPE(ns) = PN_TNAMESPACE;
       return ns;
     }
   }
   if (self) {
-    PN ns = potion_lick(P, pkg, potion_table_set(P, cl, self, pkg), 0);
+    PN ns = potion_lick(P, pkg, potion_table_set(P, cl, self, pkg), self);
     PN_VTYPE(ns) = PN_TNAMESPACE;
     return ns;
   }
@@ -61,10 +63,15 @@ PN potion_namespace_at(Potion *P, PN cl, PN self, PN key) {
   return potion_table_at(P, cl, PN_LICK(self)->attr, key);
 }
 /**\methodof PNNamespace
-  /returns the full name (PNString), such as "main::My::Class::"
+  \returns the full name (PNString), such as "main::My::Class::"
  */
 PN potion_namespace_name(Potion *P, PN cl, PN self) {
   return PN_LICK(self)->name;
+}
+/**\methodof PNNamespace
+   \returns a string repr */
+PN potion_namespace_string(Potion *P, PN cl, PN self) {
+  return potion_str_format(P, "<Namespace %s>", PN_LICK(self)->name);
 }
 
 /**
@@ -152,7 +159,8 @@ static PN potion_pkg_parent(Potion *P, PN cl, PN name) {
 }
 
 static PN potion_namespace_parent(Potion *P, PN cl, PN self) {
-  return potion_pkg_parent(P, cl, potion_namespace_name(P, cl, self));
+  return PN_LICK(self)->inner;
+  //return potion_pkg_parent(P, cl, potion_namespace_name(P, cl, self));
 }
 
 /** PNNamespace i.e. a Hash of names
@@ -168,6 +176,7 @@ PN potion_pkg(Potion *P, PN cl, PN self) {
     DO_PKG_TRAVERSE(self)
     return ns;
   }
+  return CUR_PKG;
 }
 /** "find" a symbol by traversing the namespace parts+hashes, return its value.
    My::Class::$value => main::->My::->Class->$value
@@ -184,6 +193,7 @@ void potion_p2_init(Potion *P) {
   potion_method(P->lobby, "package", potion_pkg, 0);
   potion_method(ns_vt, "create",  potion_namespace_create, "name=S");  //new subpackage or intern
   potion_method(ns_vt, "name",    potion_namespace_name, 0);
+  potion_method(ns_vt, "string",  potion_namespace_string, 0);
   potion_method(ns_vt, "parent",  potion_namespace_parent, 0);
   potion_type_call_is(ns_vt, PN_FUNC(potion_namespace_at, "name=S")); //symbol-value by name
   potion_type_callset_is(ns_vt, PN_FUNC(potion_namespace_put, "name=S,value=o")); //intern + set
