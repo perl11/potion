@@ -2,6 +2,9 @@
 #
 # syntax-p5.g
 # perl5 tokens and grammar
+# MODE_P2:
+#  - all vars are by default lexical, global lookup only by name *$@%&{"varname"}
+#  - the scalar $ sigil is optional, but not in stringification
 #
 # (c) 2009 _why
 # (c) 2013 by perl11 org
@@ -49,6 +52,8 @@
 #endif
 
 #define DEF_PSRC P->source?P->source:PN_TUP0()
+#define IS_MODE_P2 (P->flags & MODE_P2)
+
 //const char *Nullch = '\0';
 %}
 
@@ -58,7 +63,7 @@ perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s) }
 #
 #lineseq = s1:decl*	{ $$ = s1 = PN_TUP(s1) }
 #    |	s2:line*	{ $$ = s1 = PN_PUSH(s1, s2) }
-#    |	'' 			{ $$ = PN_NIL }
+#    |	'' 		{ $$ = PN_NIL }
 #
 # todo BLOCK => STATE: no scope, just add a label to a cond or sideeff
 #
@@ -139,9 +144,11 @@ ifstmt = IF e:ifexpr s:block - !"els"  { s  = PN_OP(AST_AND, e, s) }
 ifexpr = '(' - expr - ')' -
 
 assigndecl =
-        l:global - assign e:expr       { $$ = PN_AST2(ASSIGN, l, e) }
-      | MY - l:lexical - assign e:expr { $$ = PN_AST2(ASSIGN, l, e) }
-      # no list assignment yet my () = expr
+        l:global - assign e:expr       { $$ = PN_AST2(ASSIGN, potion_find_symbol(P, l), e) }
+      | MY - list-start? - l:lexical - list-end? - assign e:expr { $$ = PN_AST2(ASSIGN, l, e) }
+      | MY - list-start l:lexical      { l = PN_TUP(PN_AST(MSG, l)) }
+        ( comma - l2:lexical           { l = PN_PUSH(l, PN_AST(MSG, l2)) } )+
+        list-end - assign e:expr       { $$ = PN_AST2(ASSIGN, l, e) }
 
 lexical = global
 
@@ -267,7 +274,7 @@ immed = undef { $$ = PN_NIL }
               } }
       | str1 | str2
 
-global  = scalar | listvar | hashvar | listel | hashel | funcvar | globvar
+global  = scalar | listvar | hashvar | listel | hashel | funcvar | globvar # | var
 # FIXME: starting wordchar (no numbers) + wordchars
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
 # send the value a message, every global is a closure (see name)
@@ -275,6 +282,7 @@ scalar  = < '$' i:id > { $$ = PN_AST(MSG, PN_STRCAT("$", PN_STR_PTR(i))) }
 listvar = < '@' i:id > { $$ = PN_AST(MSG, PN_STRCAT("@", PN_STR_PTR(i))) }
 hashvar = < '%' i:id > { $$ = PN_AST(MSG, PN_STRCAT("%", PN_STR_PTR(i))) }
 funcvar = < '&' i:id > { $$ = PN_AST(MSG, PN_STRCAT("&", PN_STR_PTR(i))) }
+#var     = i:id         { $$ = IS_MODE_P2 ? PN_AST(MSG, i) : PN_NIL }
 globvar = < '*' i:id > { $$ = PN_AST(MSG, PN_STRCAT("*", PN_STR_PTR(i))) }
 listel  = < '$' l:id '[' i:value ']' >
         { $$ = PN_AST2(LICK, PN_STRCAT("@", PN_STR_PTR(l)), i) }

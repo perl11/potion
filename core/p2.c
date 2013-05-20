@@ -57,7 +57,7 @@ PN potion_namespace_put(Potion *P, PN cl, PN self, PN name, PN value) {
   return potion_table_put(P, cl, PN_LICK(self)->attr, name, value);
 }
 /**\methodof PNNamespace
-   "find" a symbol in the namespace, return its value.
+   "find" a symbol in the namespace, return its value. (the lookup method)
    \param PNString name */
 PN potion_namespace_at(Potion *P, PN cl, PN self, PN key) {
   return potion_table_at(P, cl, PN_LICK(self)->attr, key);
@@ -187,6 +187,22 @@ PN potion_sym_at(Potion *P, PN name) {
   return potion_table_at(P, 0, PN_LICK(ns)->attr, PN_STR(p));
 }
 
+/// return AST for global or lexical symbol
+PN potion_find_symbol(Potion *P, PN ast) {
+  PN global;
+  if (PN_TYPE(ast) == PN_TSOURCE && PN_SRC(ast)->part == AST_MSG) {
+    PN name = PN_S(ast,0);
+    if ((global = potion_pkg_at(P, 0, 0, name)))
+      PN_S_(ast, 0) = (struct PNSource *)global;
+    return ast;
+  } else if (PN_IS_STR(ast)) {
+    if ((global = potion_pkg_at(P, 0, 0, ast)))
+      return global;
+    else
+      return ast;
+  }
+}
+
 void potion_p2_init(Potion *P) {
   PN main_ns;
   PN ns_vt = potion_type_new2(P, PN_TNAMESPACE, PN_VTABLE(PN_TLICK), potion_str(P, "Namespace"));
@@ -196,6 +212,7 @@ void potion_p2_init(Potion *P) {
   potion_method(ns_vt, "name",    potion_namespace_name, 0);
   potion_method(ns_vt, "string",  potion_namespace_string, 0);
   potion_method(ns_vt, "parent",  potion_namespace_parent, 0);
+  //potion_method(ns_vt, "lookup",  potion_namespace_at, "name=S");
   potion_type_call_is(ns_vt, PN_FUNC(potion_namespace_at, "name=S")); //symbol-value by name
   potion_type_callset_is(ns_vt, PN_FUNC(potion_namespace_put, "name=S,value=o")); //intern + set
   main_ns = potion_lick(P, PN_STRN("main::",6), 0, potion_table_empty(P)); // name, inner, attr
