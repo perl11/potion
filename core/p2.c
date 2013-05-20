@@ -71,7 +71,7 @@ PN potion_namespace_name(Potion *P, PN cl, PN self) {
 /**\methodof PNNamespace
    \returns a string repr */
 PN potion_namespace_string(Potion *P, PN cl, PN self) {
-  return potion_str_format(P, "<Namespace %s>", PN_LICK(self)->name);
+  return potion_str_format(P, "<Namespace %s>", AS_STR(PN_LICK(self)->name));
 }
 
 /**

@@ -115,19 +115,25 @@ struct PNVtable;
 #define PN_TSTATE       (7+PN_TNIL)
 #define PN_TFILE        (8+PN_TNIL)
 #define PN_TOBJECT      (9+PN_TNIL)
-#define PN_TVTABLE      (10+PN_TNIL) //0a
-#define PN_TSOURCE      (11+PN_TNIL) //0b
-#define PN_TBYTES       (12+PN_TNIL) //0c
-#define PN_TPROTO       (13+PN_TNIL) //0d
-#define PN_TLOBBY       (14+PN_TNIL) //0e
-#define PN_TTABLE       (15+PN_TNIL) //0f
-#define PN_TLICK        (16+PN_TNIL) //10
-#define PN_TFLEX        (17+PN_TNIL) //11
-#define PN_TSTRINGS     (18+PN_TNIL) //12
-#define PN_TERROR       (19+PN_TNIL) //13
-#define PN_TCONT        (20+PN_TNIL) //14
-#define PN_TDECIMAL     (21+PN_TNIL) //15 Num. for p2 class definitions only, unused within potion (yet)
-#define PN_TUSER        (22+PN_TNIL) //16
+#define PN_TVTABLE      (10+PN_TNIL) //0x25000a
+#define PN_TSOURCE      (11+PN_TNIL) //0x25000b
+#define PN_TBYTES       (12+PN_TNIL) //0x25000c
+#define PN_TPROTO       (13+PN_TNIL) //0x25000d
+#define PN_TLOBBY       (14+PN_TNIL) //0x25000e
+#define PN_TTABLE       (15+PN_TNIL) //0x25000f
+#define PN_TLICK        (16+PN_TNIL) //0x250010
+#define PN_TFLEX        (17+PN_TNIL) //0x250011
+#define PN_TSTRINGS     (18+PN_TNIL) //0x250012
+#define PN_TERROR       (19+PN_TNIL) //0x250013
+#define PN_TCONT        (20+PN_TNIL) //0x250014
+#ifdef P2
+#define PN_TDECIMAL     (21+PN_TNIL) //0x250015 Num. for p2 class definitions only, unused within potion (yet)
+#define PN_TNAMESPACE   (22+PN_TNIL) //0x250016
+#define PN_TSYMBOL      (23+PN_TNIL) //0x250017
+#define PN_TUSER        (24+PN_TNIL) //0x250018
+#else
+#define PN_TUSER        (21+PN_TNIL) //0x250015
+#endif
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))

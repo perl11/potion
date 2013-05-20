@@ -34,7 +34,6 @@ struct PNNamespace {
   char table[0];
 };
 
-#define PN_TNAMESPACE PN_TUSER+1
 PN potion_nstuple_set(Potion *P, PN name);
 PN potion_nstuple_push(Potion *P, PN name);
 PN potion_nstuple_pop(Potion *P);
