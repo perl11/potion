@@ -8,7 +8,7 @@
   }
   P->nstuple: stack of nested package blocks, beginning with main::
   the last is always the current package.
-  TODO: put namespace into the env (cl closure)
+  TODO: put namespace into the env (cl PNClosure->symbols)
 
   - pkg: namespace helpers work on the current active package/namespace via strings
   - namespace: ie PNLick with PNTable as attr

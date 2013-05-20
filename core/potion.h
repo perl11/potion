@@ -232,12 +232,18 @@ struct PNVtable;
   if (P->flags & (DEBUG_VERBOSE|DEBUG_INSPECT)) fprintf(stderr, __VA_ARGS__)
 #define DBG_c(...) \
   if (P->flags & DEBUG_COMPILE) fprintf(stderr, __VA_ARGS__)
+#define DBG_Gv(...) \
+  if (P->flags & (DEBUG_GC|DEBUG_VERBOSE)) fprintf(stderr,__VA_ARGS__)
+#define DBG_G(...) \
+  if (P->flags & DEBUG_GC) fprintf(stderr,__VA_ARGS__)
 #else
 #define DBG_t(...)
 #define DBG_v(...)
 #define DBG_vt(...)
 #define DBG_vi(...)
 #define DBG_c(...)
+#define DBG_Gv(...)
+#define DBG_G(...)
 #endif
 
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
@@ -354,6 +360,9 @@ struct PNClosure {
   PN sig;            ///< signature PNTuple
   int arity;         ///< cached number of args
   PN_SIZE extra;     ///< 0 or 1 if has code attached at data
+#ifdef P2
+  struct PNLick *symbols; ///< namespace for dynamic symbols
+#endif
   PN data[0];        ///< code
 };
 

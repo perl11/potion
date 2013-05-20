@@ -116,12 +116,22 @@ void p2_test_symbols(CuTest *T) {
 
 
 void p2_test_allocated(CuTest *T) {
+#ifdef DEBUG
+  //P->flags |= (DEBUG_VERBOSE | DEBUG_GC);
+#endif
   void *scanptr = (void *)((char *)P->mem->birth_lo + PN_ALIGN(sizeof(struct PNMemory), 8));
+  int size, i = 0;
   while ((PN)scanptr < (PN)P->mem->birth_cur) {
     if (((struct PNFwd *)scanptr)->fwd != POTION_FWD && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {
+      if (((struct PNObject *)scanptr)->vt <= PN_TUSER)
+        size = potion_type_size(P, scanptr);
+      DBG_G("stack[%d] imm size=%d %p 0x%x\n", i++, size, scanptr, ((struct PNObject *)scanptr)->vt);
       CuAssert(T, "wrong type for allocated object", ((struct PNObject *)scanptr)->vt <= PN_TUSER);
+    } else {
+      size = potion_type_size(P, scanptr);
+      DBG_G("stack[%d] fwd size=%d %p\n", i++, size, scanptr);
     }
-    scanptr = (void *)((char *)scanptr + potion_type_size(P, scanptr));
+    scanptr = (void *)((char *)scanptr + size);
     CuAssert(T, "allocated object goes beyond GC pointer", (PN)scanptr <= (PN)P->mem->birth_cur);
   }
 }
