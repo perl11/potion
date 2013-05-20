@@ -152,24 +152,24 @@ endif
 core/potion.h: core/config.h
 core/p2.h: core/potion.h
 core/table.h: core/potion.h core/internal.h core/khash.h
-$(foreach o,${OBJS},core/asm${o} ): core/asm.c core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h core/asm.h
-$(foreach o,${OBJS},core/ast${o} ): core/ast.c core/p2.h core/config.h core/potion.h core/internal.h core/ast.h
-$(foreach o,${OBJS},core/compile${o} ): core/compile.c core/p2.h core/config.h core/potion.h core/internal.h core/ast.h core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/asm${o} ): core/asm.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/ast${o} ): core/ast.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/ast.h
+$(foreach o,${OBJS},core/compile${o} ): core/compile.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/ast.h core/opcodes.h core/asm.h
 $(foreach o,${OBJS},core/contrib${o} ): core/contrib.c core/config.h
-$(foreach o,${OBJS},core/file${o} ): core/file.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h
-$(foreach o,${OBJS},core/gc${o} ): core/gc.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-$(foreach o,${OBJS},core/internal${o} ): core/internal.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/gc.h
-$(foreach o,${OBJS},core/lick${o} ): core/lick.c core/p2.h core/config.h core/potion.h core/internal.h
-$(foreach o,${OBJS},core/load${o} ): core/load.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h
-$(foreach o,${OBJS},core/mt19937ar${o} ): core/mt19937ar.c core/p2.h
-$(foreach o,${OBJS},core/number${o} ): core/number.c core/p2.h core/config.h core/potion.h core/internal.h
-$(foreach o,${OBJS},core/objmodel${o} ): core/objmodel.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/asm.h
-$(foreach o,${OBJS},core/primitive${o} ): core/primitive.c core/p2.h core/config.h core/potion.h core/internal.h
-$(foreach o,${OBJS},core/string${o} ): core/string.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/khash.h
-$(foreach o,${OBJS},core/table${o} ): core/table.c core/p2.h core/config.h core/potion.h core/internal.h core/khash.h core/table.h
-$(foreach o,${OBJS},core/vm${o} ): core/vm.c core/vm-dis.c core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
-$(foreach o,${OBJS},core/vm-ppc${o} ): core/vm-ppc.c core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h
-$(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/file${o} ): core/file.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/table.h
+$(foreach o,${OBJS},core/gc${o} ): core/gc.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+$(foreach o,${OBJS},core/internal${o} ): core/internal.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/gc.h
+$(foreach o,${OBJS},core/lick${o} ): core/lick.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h
+$(foreach o,${OBJS},core/load${o} ): core/load.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/table.h
+$(foreach o,${OBJS},core/mt19937ar${o} ): core/mt19937ar.c core/potion.h core/p2.h
+$(foreach o,${OBJS},core/number${o} ): core/number.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h
+$(foreach o,${OBJS},core/objmodel${o} ): core/objmodel.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/asm.h
+$(foreach o,${OBJS},core/primitive${o} ): core/primitive.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h
+$(foreach o,${OBJS},core/string${o} ): core/string.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/khash.h
+$(foreach o,${OBJS},core/table${o} ): core/table.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/vm${o} ): core/vm.c core/vm-dis.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/vm-ppc${o} ): core/vm-ppc.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h
+$(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/potion.h core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
 
 
 # no optimizations
