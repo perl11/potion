@@ -168,27 +168,26 @@ PN potion_type_new2(Potion *P, PNType t, PN self, PN name) {
 void potion_type_call_is(PN vt, PN cl) {
   ((struct PNVtable *)vt)->call = cl;
 }
-
+/// get the default accessor (usually "at")
 PN potion_obj_get_call(Potion *P, PN obj) {
   PN cl = ((struct PNVtable *)PN_VTABLE(PN_TYPE(obj)))->call;
   if (cl == PN_NIL) cl = P->call;
   return cl;
 }
-
+/// set default writer
 void potion_type_callset_is(PN vt, PN cl) {
   ((struct PNVtable *)vt)->callset = cl;
 }
-
+/// get default writer
 PN potion_obj_get_callset(Potion *P, PN obj) {
   PN cl = ((struct PNVtable *)PN_VTABLE(PN_TYPE(obj)))->callset;
   if (cl == PN_NIL) cl = P->callset;
   return cl;
 }
-
+/// set default constructor
 void potion_type_constructor_is(PN vt, PN cl) {
   ((struct PNVtable *)vt)->ctor = cl;
 }
-
 /// create a user-class (ie type)
 ///\param cl:   set the ctor
 ///\param self: lobby or another type
