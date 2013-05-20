@@ -39,13 +39,13 @@ PN potion_namespace_create(Potion *P, PN cl, PN self, PN pkg) {
     PN parent = potion_pkg_parent(P, cl, pkg);
     PN new = potion_table_set(P, cl, parent, pkg);
     if (!self) {
-      PN ns = potion_lick(P, pkg, potion_table_set(P, cl, new, pkg), parent);
+      PN ns = potion_lick(P, pkg, parent, potion_table_set(P, cl, new, pkg));
       PN_VTYPE(ns) = PN_TNAMESPACE;
       return ns;
     }
   }
   if (self) {
-    PN ns = potion_lick(P, pkg, potion_table_set(P, cl, self, pkg), self);
+    PN ns = potion_lick(P, pkg, self, potion_table_set(P, cl, self, pkg));
     PN_VTYPE(ns) = PN_TNAMESPACE;
     return ns;
   }
@@ -188,6 +188,7 @@ PN potion_sym_at(Potion *P, PN name) {
 }
 
 void potion_p2_init(Potion *P) {
+  PN main_ns;
   PN ns_vt = potion_type_new2(P, PN_TNAMESPACE, PN_VTABLE(PN_TLICK), potion_str(P, "Namespace"));
   //PN sym_vt = potion_type_new2(P, PN_TSYMBOL, PN_VTABLE(PN_TLICK), potion_str(P, "Symbol"));
   potion_method(P->lobby, "package", potion_pkg, 0);
@@ -197,7 +198,7 @@ void potion_p2_init(Potion *P) {
   potion_method(ns_vt, "parent",  potion_namespace_parent, 0);
   potion_type_call_is(ns_vt, PN_FUNC(potion_namespace_at, "name=S")); //symbol-value by name
   potion_type_callset_is(ns_vt, PN_FUNC(potion_namespace_put, "name=S,value=o")); //intern + set
-  PN main_ns = potion_lick(P, PN_STRN("main::",6), potion_table_empty(P), 0);
+  main_ns = potion_lick(P, PN_STRN("main::",6), 0, potion_table_empty(P)); // name, inner, attr
   PN_VTYPE(main_ns) = PN_TNAMESPACE;
   P->nstuple = (struct PNTuple *)potion_tuple_push(P, PN_TUP0(), main_ns);
 }
