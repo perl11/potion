@@ -727,7 +727,7 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
   PN_lookup, PN_loop, PN_print, PN_return, PN_self, PN_string,
   PN_while;
 extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
-extern PN PN_cmp, PN_number, PN_name;
+extern PN PN_cmp, PN_number, PN_name, PN_global, PN_local;
 
 ///
 /// the potion API

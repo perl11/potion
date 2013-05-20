@@ -192,8 +192,16 @@ PN potion_find_symbol(Potion *P, PN ast) {
   PN global;
   if (PN_TYPE(ast) == PN_TSOURCE && PN_SRC(ast)->part == AST_MSG) {
     PN name = PN_S(ast,0);
-    if ((global = potion_pkg_at(P, 0, 0, name)))
-      PN_S_(ast, 0) = (struct PNSource *)global;
+    if (!PN_IS_STR(name))
+      return ast;
+    if (strstr(PN_STR_PTR(name), "::")) { // absolute name
+      if ((global = potion_sym_at(P, name)))
+        PN_S_(ast, 0) = (struct PNSource *)global;
+    } else { // local name
+      if ((global = potion_pkg_at(P, 0, 0, name)))
+        PN_S_(ast, 0) = (struct PNSource *)global;
+    }
+    //PN_S_(ast, 1) = (struct PNSource *)PN_STR("global");
     return ast;
   } else if (PN_IS_STR(ast)) {
     if ((global = potion_pkg_at(P, 0, 0, ast)))
