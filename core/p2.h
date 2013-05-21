@@ -41,7 +41,8 @@ PN potion_pkg(Potion *P, PN cl, PN self);
 PN potion_pkg_create(Potion *P, PN pkg);
 PN potion_pkg_put(Potion *P, PN name, PN value);
 PN potion_pkg_at(Potion *P, PN cl, PN self, PN key);
-PN potion_sym_at(Potion *P, PN name); //not yet
+PN potion_sym_at(Potion *P, PN cl, PN name);
+PN potion_sym_put(Potion *P, PN cl, PN name, PN value);
 PN potion_namespace_create(Potion *P, PN cl, PN self, PN pkg);
 PN potion_namespace_put(Potion *P, PN cl, PN self, PN name, PN value);
 PN potion_namespace_at(Potion *P, PN cl, PN self, PN key);

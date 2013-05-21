@@ -122,7 +122,9 @@ PN potion_pkg_at(Potion *P, PN cl, PN self, PN key) {
   return potion_table_at(P, cl, PN_LICK(CUR_PKG)->attr, key);
 }
 
-// sets ns and p for symbol name
+// sets ns and p for symbol name.
+// here we traverse the symbol-name, the string, from left to right.
+// alternatively we could also traverse the ns hash chain starting from main:: downwards.
 #define DO_PKG_TRAVERSE(name)                           \
   char *p = PN_STR_PTR(name);                           \
   char *c;                                              \
@@ -181,13 +183,19 @@ PN potion_pkg(Potion *P, PN cl, PN self) {
 /** "find" a symbol by traversing the namespace parts+hashes, return its value.
    My::Class::$value => main::->My::->Class->$value
    \param PNString name */
-PN potion_sym_at(Potion *P, PN name) {
+PN potion_sym_at(Potion *P, PN cl, PN name) {
   DO_PKG_TRAVERSE(name)
   if (!ns) return PN_NIL;
-  return potion_table_at(P, 0, PN_LICK(ns)->attr, PN_STR(p));
+  return potion_table_at(P, cl, PN_LICK(ns)->attr, PN_STR(p));
 }
 
-/// return AST for global or lexical symbol
+PN potion_sym_put(Potion *P, PN cl, PN name, PN value) {
+  return potion_namespace_put(P, cl, CUR_PKG, name, value);
+}
+/// change ast for a symbol, if its global, local or lexical.
+/// return AST for global or lexical symbol.
+/// TODO: lexical lookup
+/// TODO: local env (i.e. shadowed dynamic)
 PN potion_symbol_find(Potion *P, PN cl, PN ast) {
   PN global;
   if (PN_TYPE(ast) == PN_TSOURCE && PN_SRC(ast)->part == AST_MSG) {
@@ -195,16 +203,21 @@ PN potion_symbol_find(Potion *P, PN cl, PN ast) {
     if (!PN_IS_STR(name))
       return ast;
     if (strstr(PN_STR_PTR(name), "::")) { // absolute name
-      if ((global = potion_sym_at(P, name)))
+      if ((global = potion_sym_at(P, cl, name))) {
         PN_S_(ast, 0) = (struct PNSource *)global;
-    } else { // local name
-      if ((global = potion_pkg_at(P, 0, 0, name)))
+      } else { // create name
+        global = potion_sym_put(P, cl, name, PN_NIL);
+      }
+      PN_S_(ast, 1) = (struct PNSource *)PN_global;
+    } else { // name in namespace or TODO lexical lookup
+      if ((global = potion_pkg_at(P, cl, 0, name))) {
         PN_S_(ast, 0) = (struct PNSource *)global;
+        PN_S_(ast, 1) = (struct PNSource *)PN_global;
+      }
     }
-    PN_S_(ast, 1) = (struct PNSource *)PN_global;
     return ast;
   } else if (PN_IS_STR(ast)) {
-    if ((global = potion_pkg_at(P, 0, 0, ast)))
+    if ((global = potion_pkg_at(P, cl, 0, ast)))
       return global;
     else
       return ast;
