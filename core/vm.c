@@ -378,7 +378,8 @@ reentry:
         PN_DEREF(upvals[op.b]) = reg[op.a];
         PN_TOUCH(upvals[op.b]);
       break;
-      case OP_GLOBAL:
+    case OP_GLOBAL: // really: define a non-lexical dynamic value
+        //TODO global in current namespace. currently global in Lobby
         potion_define_global(P, reg[op.a], reg[op.b]);
         reg[op.a] = reg[op.b];
       break;

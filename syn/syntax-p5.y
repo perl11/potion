@@ -54,6 +54,8 @@
 #define DEF_PSRC P->source?P->source:PN_TUP0()
 #define IS_MODE_P2 (P->flags & MODE_P2)
 
+PN env;
+
 //const char *Nullch = '\0';
 %}
 
@@ -92,7 +94,7 @@ perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s) }
 #	| '' 	            { $$ = PN_NIL }
 
 # AST BLOCK needs to capture lexicals, not block_start()
-# Note that if/else blocks (mblock) do not capture lexicals
+# Note that if/else blocks (mblock) should not capture lexicals
 # block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s) }
 
 statements =
@@ -103,8 +105,9 @@ statements =
 stmt = package
     | subrout
     | use
-    | ifstmt
+    | vardecl
     | assigndecl
+    | ifstmt
     | s:sets semi
         #( or x:sets semi      { s = PN_OP(AST_OR, s, x) }
         #| and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
@@ -118,6 +121,9 @@ IF      = "if" space+
 ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
+STATE   = "state" space+
+OUR     = "our" space+
+LOCAL   = "local" space+
 
 # call them in the compiler
 package = PACKAGE n:id - '{' - b:block - '}'
@@ -134,7 +140,8 @@ subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
 #subattrlist = ':' -? arg-name
 
 # TODO: compile-time sideeffs (BEGIN block) in the compiler
-use = USE n:id - semi    { $$ = PN_AST2(MSG, PN_STRN("use",3), n) }
+use = USE n:id - semi                  { $$ = PN_AST2(MSG, PN_use, n) }
+    | USE n:id - '=>' e:expr - semi    { $$ = PN_AST3(MSG, PN_use, n, e) }
 
 ifstmt = IF e:ifexpr s:block - !"els"  { s  = PN_OP(AST_AND, e, s) }
        | IF e:ifexpr s1:block -        { s1 = PN_AST(MSG, PN_if) }
@@ -143,8 +150,15 @@ ifstmt = IF e:ifexpr s:block - !"els"  { s  = PN_OP(AST_AND, e, s) }
 
 ifexpr = '(' - expr - ')' -
 
+vardecl_left  = ( MY | OUR | STATE | LOCAL ) { $$ = PN_STRN(yytext, yyleng) }
+vardecl_right = ( scalar | listvar | hashvar )
+vardecl = l:vardecl_left v:vardecl_right - semi       { $$ = potion_symbol_declare(P, env, v, l) }
+      | l:vardecl_left - list-start - v:vardecl_right { $$ = potion_symbol_declare(P, env, v, l) }
+        ( comma v1:vardecl_right  { $$ = potion_symbol_declare(P, env, v1, l) } )*
+        - list-end - semi
+
 assigndecl =
-        l:global - assign e:expr       { $$ = PN_AST2(ASSIGN, potion_find_symbol(P, l), e) }
+        l:global - assign e:expr       { $$ = PN_AST2(ASSIGN, potion_symbol_find(P, env, l), e) }
       | MY - list-start? - l:lexical - list-end? - assign e:expr { $$ = PN_AST2(ASSIGN, l, e) }
       | MY - list-start l:lexical      { l = PN_TUP(PN_AST(MSG, l)) }
         ( comma - l2:lexical           { l = PN_PUSH(l, PN_AST(MSG, l2)) } )+
@@ -458,6 +472,7 @@ arg2 = n:arg2-name
 %%
 
 PN p2_parse(Potion *P, PN code, char *filename) {
+  env = P->lobby;
   GREG *G = YY_NAME(parse_new)(P);
   P->yypos = 0;
   P->input = code;
@@ -481,6 +496,7 @@ PN p2_parse(Potion *P, PN code, char *filename) {
 
 // duplicate but still needed to compile internal methods
 PN potion_sig(Potion *P, char *fmt) {
+  env = P->lobby;
   PN out = PN_NIL;
   if (fmt == NULL) return PN_NIL;
   if (fmt[0] == '\0') return PN_FALSE;

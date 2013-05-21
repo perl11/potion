@@ -188,7 +188,7 @@ PN potion_sym_at(Potion *P, PN name) {
 }
 
 /// return AST for global or lexical symbol
-PN potion_find_symbol(Potion *P, PN ast) {
+PN potion_symbol_find(Potion *P, PN cl, PN ast) {
   PN global;
   if (PN_TYPE(ast) == PN_TSOURCE && PN_SRC(ast)->part == AST_MSG) {
     PN name = PN_S(ast,0);
@@ -201,7 +201,7 @@ PN potion_find_symbol(Potion *P, PN ast) {
       if ((global = potion_pkg_at(P, 0, 0, name)))
         PN_S_(ast, 0) = (struct PNSource *)global;
     }
-    //PN_S_(ast, 1) = (struct PNSource *)PN_STR("global");
+    PN_S_(ast, 1) = (struct PNSource *)PN_global;
     return ast;
   } else if (PN_IS_STR(ast)) {
     if ((global = potion_pkg_at(P, 0, 0, ast)))
@@ -209,6 +209,20 @@ PN potion_find_symbol(Potion *P, PN ast) {
     else
       return ast;
   }
+}
+
+/**\memberof PNSymbol
+   \param cl closure environment (lobby or another namespace)
+   \param name PNString name of symbol to declare
+   \param mode PNString local, global, my, state or our
+   \returns PNSource AST */
+PN potion_symbol_declare(Potion *P, PN cl, PN name, PN mode) {
+  if (mode == PN_global)
+    potion_send(cl, PN_def, name, PN_NIL);
+  //potion_define_global(P, name, PN_NIL);
+  //else if (mode == PN_local) push/pop to a symbol assoc-list?
+  //else: TODO lexicals in the compiler. 
+  // my is already defined by the compiler, our and state not supported so far
 }
 
 void potion_p2_init(Potion *P) {

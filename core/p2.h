@@ -22,7 +22,7 @@
                     // though it should be compatible for now
 #  define POTION_SIG P2_SIG
 
-extern PN PN_use;
+extern PN PN_global, PN_local, PN_use;
 
 #include "table.h"
 
@@ -45,7 +45,8 @@ PN potion_sym_at(Potion *P, PN name); //not yet
 PN potion_namespace_create(Potion *P, PN cl, PN self, PN pkg);
 PN potion_namespace_put(Potion *P, PN cl, PN self, PN name, PN value);
 PN potion_namespace_at(Potion *P, PN cl, PN self, PN key);
-PN potion_find_symbol(Potion *P, PN sym);
+PN potion_symbol_declare(Potion *P, PN cl, PN sym, PN mode);
+PN potion_symbol_find(Potion *P, PN cl, PN sym);
 void potion_p2_init(Potion *);
 #endif
 
