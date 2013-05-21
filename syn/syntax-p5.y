@@ -108,6 +108,7 @@ stmt = package
     | vardecl
     | assigndecl
     | ifstmt
+    | block
     | s:sets semi
         #( or x:sets semi      { s = PN_OP(AST_OR, s, x) }
         #| and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
