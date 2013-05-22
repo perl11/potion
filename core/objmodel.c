@@ -141,11 +141,11 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
 
 PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
   struct PNVtable *vt = (struct PNVtable *)self;
-#if POTION_JIT == 1
+#ifdef POTION_JIT_TARGET
   // TODO: allocate assembled instructions together into single pages
   // since many times these tables are <100 bytes.
   PNAsm * volatile asmb = potion_asm_new(P);
-  P->targets[POTION_JIT_TARGET].ivars(P, ivars, &asmb);
+  P->target.ivars(P, ivars, &asmb);
   vt->ivfunc = PN_ALLOC_FUNC(asmb->len);
   PN_MEMCPY_N(vt->ivfunc, asmb->ptr, u8, asmb->len);
 #endif
@@ -213,11 +213,11 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   PN_TOUCH(self);
 
 #ifdef JIT_MCACHE
-  // TODO: make this more flexible, store in fixed gc, see ivfunc TODO also
-  // this is disabled until method weakrefs can be stored in fixed memory
-  if (P->targets[POTION_JIT_TARGET].mcache != NULL) {
+  // TODO: make JIT_MCACHE more flexible, store in fixed gc, see ivfunc TODO also
+  // TODO: this is disabled until method weakrefs can be stored in fixed memory
+  if (P->target.mcache != NULL) {
     PNAsm * volatile asmb = potion_asm_new(P);
-    P->targets[POTION_JIT_TARGET].mcache(P, vt, &asmb);
+    P->target.mcache(P, vt, &asmb);
     if (asmb->len <= 4096) {
       if (vt->mcache == NULL)
         vt->mcache = PN_ALLOC_FUNC(4096);
@@ -382,16 +382,16 @@ PN potion_about(Potion *P, PN cl, PN self) {
   PN about = potion_table_empty(P);
   potion_table_put(P, PN_NIL, about, potion_str(P, "_why"),
     potion_str(P, "“I love _why, but learning Ruby from him is like trying to learn to pole vault "
-      "by having Salvador Dali punch you in the face.” - Steven Frank"));
+	           "by having Salvador Dali punch you in the face.” - Steven Frank"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "minimalism"),
     potion_str(P, "“The sad thing about ‘minimalism’ is that it has a name.” "
-      "- Steve Dekorte"));
+	          "- Steve Dekorte"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "stage fright"),
     potion_str(P, "“Recently no move on Potion. I git pull everyday.” "
-      "- matz"));
+	          "- matz"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "terms of use"),
     potion_str(P, "“Setting up my new anarchist bulletin board so that during registration, if you accept "
-      "the terms and conditions, you are banned forever.” - Dr. Casey Hall"));
+	          "the terms and conditions, you are banned forever.” - Dr. Casey Hall"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "help"),
     potion_str(P, "`man which` - Evan Weaver"));
   potion_table_put(P, PN_NIL, about, potion_str(P, "ts"),

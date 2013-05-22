@@ -5,4 +5,4 @@ CTree = BTree class
 c = CTree (81, 9)
 
 (b /left, b /right, c /left, c /right)
-# (7, 52, 9, 81)
+#=> (7, 52, 9, 81)

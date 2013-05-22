@@ -1,1 +1,1 @@
-X = 'X', (X, X kind) # (X, String)
+X = 'X', (X, X kind) #=> (X, String)

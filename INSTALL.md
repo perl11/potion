@@ -1,42 +1,41 @@
 # ~ building potion ~
 
-Normally,
+Normally
 
     $ make
 
-To build with debugging symbols,
+To build with debugging symbols
 
     $ make DEBUG=1
 
-To build with the JIT off,
+To build without JIT
 
     $ make JIT=0
 
-Lastly, to verify your build,
+Lastly, to verify your build
 
     $ make test
 
 ## ~ the latest potion ~
 
 To build the bleeding edge, you will need
-make, binutils and gcc.
+GNU make, binutils and gcc or clang.
+Favor clang over gcc, gcc-4.6.3 is broken, at least on ubuntu.
 
-    $ git clone git://github.com/fogus/potion.git
+    $ git clone --branch master git://github.com/perl11/potion.git
     $ cd potion
     $ make
 
 ## ~ installing ~
 
-Since Potion is only a single binary right now
-and there's no additional libs, I haven't written
-an installation step yet.
+    $ sudo make install
 
 ## ~ building on windows ~
 
 Potion's win32 binaries are built using MinGW.
 <http://mingw.org/>
 
-It's a bit hard to setup mingw and make on Windows.
+It's a bit hard to setup mingw and gmake on Windows.
 I usually run a shell under Cygwin and add MinGW
 to my $PATH.
 
@@ -50,5 +49,30 @@ On Ubuntu, if you have MinGW installed,
 
     $ make CC=i586-mingw32msvc-gcc
 
-You may then rename `potion` to `potion.exe` and
-donate that binary to the needy.
+## ~ building on bsd ~
+
+BSD make is not supported.
+You can either install gnu make (gmake)
+
+    $ sudo port install gmake
+
+or try to merge 'master' with the branch 'bsd'
+
+    $ git merge bsd
+    ... resolve conflicts, or not
+
+and remove then -ldl from config.inc LIBS
+
+    $ make
+    $ cat config.inc | sed 's, -ldl,,' > config.inc
+    $ make
+
+## ~ building with a strict C++ compiler ~
+
+potion does not support strict C++ compilers.
+
+Either add a C dialect to CC in config.inc (i.e. -std=c89),
+
+    g++ --help=C; clang++ -x C -std=gnu89
+
+or try to merge with the branch 'p2-c++'.

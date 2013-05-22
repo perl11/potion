@@ -78,9 +78,9 @@
    * Strings are immutable (like Lua) and byte
      arrays are used for I/O buffers.
 
-   * No floating point support yet.
+   * Limited floating point support yet.
 
-   * No error handling. I'm wary of just tossing
+   * Limited error handling. I'm wary of just tossing
      in exceptions and feeling rather uninspired
      on the matter. Let's hear from you.
 

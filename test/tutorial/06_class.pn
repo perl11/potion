@@ -3,4 +3,4 @@ Person print = ():
   ("My name is ", /name, ".") join print.
 p = Person ()
 p print
-# My name is nil.nil
+#=> My name is nil.nil

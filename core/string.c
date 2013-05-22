@@ -282,7 +282,7 @@ static PN potion_bytes_at(Potion *P, PN cl, PN self, PN index) {
   char c;
   self = potion_fwd(self);
   index = PN_INT(index);
-  if (index >= PN_STR_LEN(self) || index < 0)
+  if (index >= PN_STR_LEN(self) || (signed long)index < 0)
     return PN_NIL;
   c = PN_STR_PTR(self)[index];
   return potion_byte_str2(P, &c, 1);
