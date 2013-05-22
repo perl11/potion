@@ -69,8 +69,8 @@ usage:
 	@${ECHO} " "
 	@${ECHO} "   $$ make test"
 	@${ECHO} " "
-	@${ECHO} " Written by _why <why@whytheluckystiff.net>"
-	@${ECHO} " Maintained at https://github.com/perl11/potion"
+	@${ECHO} " Written by _why "
+	@${ECHO} " Maintained at https://github.com/fogus/potion"
 
 config:
 	@${ECHO} MAKE -f config.mak $@
