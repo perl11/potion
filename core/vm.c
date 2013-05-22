@@ -242,6 +242,8 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   PN *current = stack;
 
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
+  memset((void*)stack, 0, STACK_MAX*sizeof(PN));
+
 reentry:
   if (current - stack >= STACK_MAX) {
     fprintf(stderr, "all registers used up!");
@@ -254,8 +256,8 @@ reentry:
 
   if (pos == 0) {
     reg[-1] = reg[0] = self;
-    if (f->localsize)
-      memset((void*)locals, 0, sizeof(PN) * f->localsize);
+    //if (f->localsize)
+    //  memset((void*)locals, 0, sizeof(PN) * f->localsize);
     if (upc > 0 && upargs != NULL) {
       PN_SIZE i;
       for (i = 0; i < upc; i++) {
