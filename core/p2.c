@@ -27,6 +27,7 @@
 
 #define CUR_PKG potion_tuple_last(P, 0, (PN)P->nstuple)
 static PN potion_pkg_parent(Potion *P, PN cl, PN name);
+static inline PN potion_sym_put(Potion *P, PN cl, PN name, PN value);
 
 /**\methodof PNNamespace
    create a new subpackage or symbol as child of the given namespace.
@@ -189,7 +190,7 @@ PN potion_sym_at(Potion *P, PN cl, PN name) {
   return potion_table_at(P, cl, PN_LICK(ns)->attr, PN_STR(p));
 }
 
-inline PN potion_sym_put(Potion *P, PN cl, PN name, PN value) {
+static inline PN potion_sym_put(Potion *P, PN cl, PN name, PN value) {
   return potion_namespace_put(P, cl, CUR_PKG, name, value);
 }
 /// change ast for a symbol, if its global, local or lexical.
