@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "potion.h"
+#include "p2.h"
 #include "internal.h"
 #include "gc.h"
 #include "CuTest.h"
@@ -49,6 +49,9 @@ void gc_test_forward(CuTest *T) {
   char *fj = "frances johnson.";
   vPN(Data) ptr = potion_data_alloc(P, 16);
   register unsigned long old = (PN)ptr & 0xFFFF;
+#ifdef DEBUG
+  //P->flags += (DEBUG_GC + DEBUG_VERBOSE);
+#endif
   memcpy(ptr->data, fj, 16);
 
   potion_mark_stack(P, 1);

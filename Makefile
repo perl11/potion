@@ -44,9 +44,9 @@ PIC_OBJ_POTION = ${SRC_POTION:.c=.${OPIC}}
 PIC_OBJ_P2 = ${SRC_P2:.c=.${OPIC}2}
 PIC_OBJ_P2_SYN = ${SRC_P2_SYN:.c=.${OPIC}2}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
-OBJ_P2_TEST = test/api/p2-test.o test/api/CuTest.o
-OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
-OBJ_GC_BENCH = test/api/gc-bench.o
+OBJ_P2_TEST = test/api/p2-test.o2 test/api/CuTest.o
+OBJ_GC_TEST = test/api/gc-test.o2 test/api/CuTest.o
+OBJ_GC_BENCH = test/api/gc-bench.o2
 DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/design-decisions.textile
 DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
@@ -430,9 +430,10 @@ bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@if ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBS}; fi
 
-bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a
+# dll to be able use the debugging functions
+bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/potion/libp2${DLL}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/potion/libp2${DLL} ${LIBS}
 
 bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
 	@${ECHO} LINK $@

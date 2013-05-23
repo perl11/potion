@@ -189,7 +189,7 @@ PN potion_sym_at(Potion *P, PN cl, PN name) {
   return potion_table_at(P, cl, PN_LICK(ns)->attr, PN_STR(p));
 }
 
-PN potion_sym_put(Potion *P, PN cl, PN name, PN value) {
+inline PN potion_sym_put(Potion *P, PN cl, PN name, PN value) {
   return potion_namespace_put(P, cl, CUR_PKG, name, value);
 }
 /// change ast for a symbol, if its global, local or lexical.
