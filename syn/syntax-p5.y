@@ -52,7 +52,9 @@
 //const char *Nullch = '\0';
 %}
 
-perl5 = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s) }
+perl5 = -- s:statements end-of-file
+        { $$ = P->source = PN_AST(CODE, s);
+          if (yyleng) YY_ERROR(G,"** Syntax error"); }
 
 #prog  = s:lineseq { $$ = PN_AST(CODE, s) }
 #
@@ -116,10 +118,10 @@ ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
 
-subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
-        # TODO: add name to namespace
+subrout = SUB n:id - ( list-start p:sig_p5 list-end - )? b:block -
         { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_AST(MSG, n)), PN_AST2(PROTO, p, b)) }
-
+anonsub = SUB ( list-start p:sig_p5 list-end - )? b:block -
+        { $$ = PN_AST2(PROTO, p, b) }
 # so far no difference in global or lex assignment
 #subrout = SUB n:id - ( '(' p:sig_p5 ')' )? a:subattrlist? b:block
 #lexsubrout = MY - SUB n:subname p:proto? a:subattrlist? b:subbody
@@ -208,43 +210,46 @@ power = e:expr
         ( pow x:expr { e = PN_OP(AST_POW, e, x) })*
         { $$ = e }
 
-expr = ( not a:expr           { a = PN_AST(NOT, a) }
-       | bitnot a:expr        { a = PN_AST(WAVY, a) }
-       | l:atom times !times r:atom { a = PN_OP(AST_TIMES, l, r) }
-       | l:atom div   !div r:atom   { a = PN_OP(AST_DIV,  l, r) }
-       | l:atom minus !minus r:atom { a = PN_OP(AST_MINUS, l, r) }
-       | l:atom plus  !plus r:atom  { a = PN_OP(AST_PLUS,  l, r) }
-       | mminus a:atom        { a = PN_OP(AST_INC, a, PN_NUM(-1) ^ 1) }
-       | pplus a:atom         { a = PN_OP(AST_INC, a, PN_NUM(1) ^ 1) }
-       | a:atom (pplus        { a = PN_OP(AST_INC, a, PN_NUM(1)) }
-               | mminus       { a = PN_OP(AST_INC, a, PN_NUM(-1)) })?) { a = PN_TUP(a) }
-         (c:call { a = PN_PUSH(a, c) })*
-       { $$ = PN_AST(EXPR, a) }
+expr = ( not e:expr           { e = PN_AST(NOT, e) }
+       | bitnot e:expr        { e = PN_AST(WAVY, e) }
+       | l:atom times !times r:atom { e = PN_OP(AST_TIMES, l, r) }
+       | l:atom div   !div r:atom   { e = PN_OP(AST_DIV,  l, r) }
+       | l:atom minus !minus r:atom { e = PN_OP(AST_MINUS, l, r) }
+       | l:atom plus  !plus r:atom  { e = PN_OP(AST_PLUS,  l, r) }
+       | mminus e:atom        { e = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1) }
+       | pplus e:atom         { e = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
+       | e:atom (pplus        { e = PN_OP(AST_INC, e, PN_NUM(1)) }
+               | mminus       { e = PN_OP(AST_INC, e, PN_NUM(-1)) })?)
+                            { e = PN_IS_TUPLE(e) ? e : PN_TUP(e) }
+         (c:call { e = PN_PUSH(e, c) } )*
+       { $$ = PN_AST(EXPR, e) }
 
-atom = e:value | e:anonsub | e:list | e:call
+# removed lambda (anonsub)
+atom = e:value | e:list | e:call | e:anonsub
 
-call = (n:name { v = PN_NIL; b = PN_NIL } (v:value | v:list)? (b:block | b:anonsub)? |
-       (v:value | v:list) { n = PN_AST(MSG, PN_NIL); b = PN_NIL } b:block?)
-         { $$ = n; PN_SRC(n)->a[1] = PN_SRC(v); PN_SRC(n)->a[2] = PN_SRC(b) }
+#FIXME indirect method. e.g. chr 101 => (expr (value (101), msg (chr)))
+call = (m:name { v = PN_NIL }
+            (v:value | v:list)? |
+            (v:value | v:list)  { m = PN_AST(MSG, PN_NIL) } )
+         { $$ = PN_PUSH(PN_TUP(v), m); }
 
-name = !keyword m:message     { $$ = PN_AST(MSG, m) }
+name = !keyword m:msg     { $$ = PN_AST(MSG, m) }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1) }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2) })*
              sep?
            | ''               { $$ = PN_NIL }
 
-lick-item = m:message t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
-          | m:message t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
-          | m:message v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
-          | m:message v:loose { $$ = PN_AST2(LICK, m, v) }
-          | m:message         { $$ = PN_AST(LICK, m) }
+lick-item = m:msg t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
+          | m:msg t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
+          | m:msg v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
+          | m:msg v:loose { $$ = PN_AST2(LICK, m, v) }
+          | m:msg         { $$ = PN_AST(LICK, m) }
 
 loose = value
       | v:unquoted { $$ = PN_AST(VALUE, v) }
 
 # anonymous sub, w or w/o proto (aka list)
-anonsub = 'sub' - t:list? b:block { $$ = PN_AST2(PROTO, t, b) }
 #sub = 'sub' - n:arg-name - t:list? b:block  { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)) }
 list = list-start s:statements list-end -    { $$ = PN_AST(LIST, s) }
 block = block-start s:statements block-end - { $$ = PN_AST(BLOCK, s) }
@@ -253,7 +258,7 @@ group = group-start s:statements group-end - { $$ = PN_AST(EXPR, s) }
 
 #path = '/' < utfw+ > - { $$ = PN_STRN(yytext, yyleng) }
 #path    = < utfw+ > -  { $$ = PN_STRN(yytext, yyleng) }
-message = < utfw+ > -   { $$ = PN_STRN(yytext, yyleng) }
+msg = < utfw+ > -   { $$ = PN_STRN(yytext, yyleng) }
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
       | global
@@ -274,15 +279,15 @@ immed = undef { $$ = PN_NIL }
 global  = scalar | listvar | hashvar | listel | hashel | funcvar | globvar
 # FIXME: starting wordchar (no numbers) + wordchars
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
-# send the value a message, every global is a closure (see name)
+# send the value a msg, every global is a closure (see name)
 scalar  = < '$' i:id > { $$ = PN_AST(MSG, PN_STRCAT("$", PN_STR_PTR(i))) }
 listvar = < '@' i:id > { $$ = PN_AST(MSG, PN_STRCAT("@", PN_STR_PTR(i))) }
 hashvar = < '%' i:id > { $$ = PN_AST(MSG, PN_STRCAT("%", PN_STR_PTR(i))) }
 funcvar = < '&' i:id > { $$ = PN_AST(MSG, PN_STRCAT("&", PN_STR_PTR(i))) }
 globvar = < '*' i:id > { $$ = PN_AST(MSG, PN_STRCAT("*", PN_STR_PTR(i))) }
-listel  = < '$' l:id '[' i:value ']' >
+listel  = < '$' l:id - '[' - i:value - ']' >
         { $$ = PN_AST2(LICK, PN_STRCAT("@", PN_STR_PTR(l)), i) }
-hashel  = < '$' h:id '{' i:value '}' >
+hashel  = < '$' h:id - '{' - i:value - '}' >
         { $$ = PN_AST2(LICK, PN_STRCAT("%", PN_STR_PTR(h)), i) }
 
 # isWORDCHAR && IDFIRST, no numbers
@@ -434,8 +439,10 @@ optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')) }
 arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')) }
 
 # p5 sigs. used by the seperate p2_sig
-sig_p5 = args2+ end-of-file
-args2 = arg2-list (arg-sep arg2-list)*
+sig_p5 = args2* end-of-file
+args2 = arg2-list (arg2-yada)*
+yada = "..."
+arg2-yada = yada -    { P->source = PN_PUSH(P->source, PN_NUM('.')) }
 arg2-list = arg2-set (optional arg2-set)?
          | optional arg2-set
 arg2-set = arg2 (comma - arg2)*
@@ -465,7 +472,7 @@ PN p2_parse(Potion *P, PN code, char *filename) {
 
   G->filename = filename;
   if (!YY_NAME(parse)(G)) {
-    YY_ERROR(G, "** Syntax error!");
+    YY_ERROR(G, "** Syntax error");
     fprintf(stderr, "%s", PN_STR_PTR(code));
   }
   YY_NAME(parse_free)(G);
@@ -489,7 +496,7 @@ PN potion_sig(Potion *P, char *fmt) {
   yydebug = P->flags;
 
   if (!YY_NAME(parse_from)(G, yy_sig))
-    YY_ERROR(G, "** Signature Syntax error!");
+    YY_ERROR(G, "** Signature syntax error");
   YY_NAME(parse_free)(G);
 
   out = P->source;
@@ -510,7 +517,7 @@ PN p2_sig(Potion *P, char *fmt) {
   yydebug = P->flags;
 
   if (!YY_NAME(parse_from)(G, yy_sig_p5))
-    YY_ERROR(G, "** Signature Syntax error!");
+    YY_ERROR(G, "** Signature syntax error");
   YY_NAME(parse_free)(G);
 
   out = P->source;

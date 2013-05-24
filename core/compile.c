@@ -182,22 +182,24 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   if (PN_PART(t->a[n]) == AST_LIST && PN_PART(PN_TUPLE_AT(PN_S(t->a[n],0), 0)) == AST_EXPR) { \
     PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n],0), 0), 0);			\
     if (!PN_IS_NIL(test)) {						\
+      DBG_c("list (expr x..) => (x..)\n");				\
       PN_TUPLE_EACH(test, i, v, {					\
 	  potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg); });	\
     }									\
   } else {								\
-    potion_source_asmb(P, f, loop, 0, t->a[n], reg);		\
+    potion_source_asmb(P, f, loop, 0, t->a[n], reg);			\
   }
 #else
 #define PN_ARG(n, reg) \
   if (PN_PART(t->a[n]) == AST_EXPR && PN_PART(PN_TUPLE_AT(PN_S(t->a[n],0), 0)) == AST_LIST) { \
-    PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n],0), 0), 0); \
-    if (!PN_IS_NIL(test)) { \
-      PN_TUPLE_EACH(test, i, v, { \
-        potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg); }); \
-    } \
-  } else { \
-    potion_source_asmb(P, f, loop, 0, t->a[n], reg);	\
+    PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n],0), 0), 0);			\
+    if (!PN_IS_NIL(test)) {						\
+      DBG_c("expr (list x..) => (x..)\n");				\
+      PN_TUPLE_EACH(test, i, v, {					\
+	  potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg); });	\
+    }									\
+  } else {								\
+    potion_source_asmb(P, f, loop, 0, t->a[n], reg);			\
   }
 #endif
 #define PN_BLOCK(reg, blk, sig) ({ \

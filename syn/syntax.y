@@ -35,6 +35,13 @@
 #define YY_TDEC 13
 #define YYDEBUG_PARSE   DEBUG_PARSE
 #define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
+#ifdef YY_DEBUG
+# define YY_SET(G, text, count, thunk, P) \
+  yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
+           PN_STR_PTR(potion_send(yy, PN_string))));\
+  G->val[count]= yy;
+#endif
+
 
 #define SRC_TPL1(x)       P->source = PN_PUSH(P->source, x)
 #define SRC_TPL2(x,y)     P->source = PN_PUSH(PN_PUSH(P->source, x), y)
@@ -132,21 +139,21 @@ call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:clos
          { $$ = n; PN_SRC(n)->a[1] = PN_SRC(v); PN_SRC(n)->a[2] = PN_SRC(b) }
 
 name = p:path           { $$ = PN_AST(PATH, p) }
-     | quiz ( m:message { $$ = PN_AST(QUERY, m) }
+     | quiz ( m:msg     { $$ = PN_AST(QUERY, m) }
             | p:path    { $$ = PN_AST(PATHQ, p) })
      | !keyword
-       m:message        { $$ = PN_AST(MSG, m) }
+       m:msg            { $$ = PN_AST(MSG, m) }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1) }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2) })*
              sep?
            | ''               { $$ = PN_NIL; }
 
-lick-item = m:message t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
-          | m:message t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
-          | m:message v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
-          | m:message v:loose { $$ = PN_AST2(LICK, m, v) }
-          | m:message         { $$ = PN_AST(LICK, m) }
+lick-item = m:msg t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
+          | m:msg t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
+          | m:msg v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
+          | m:msg v:loose { $$ = PN_AST2(LICK, m, v) }
+          | m:msg         { $$ = PN_AST(LICK, m) }
 
 loose = value
       | v:unquoted { $$ = PN_AST(VALUE, v) }
@@ -158,7 +165,7 @@ lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i) }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s) }
 
 path = '/' < utfw+ > -       { $$ = PN_STRN(yytext, yyleng); }
-message = < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
+msg  = < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
       | lick
