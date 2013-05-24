@@ -76,7 +76,12 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
       }
       else cut = 0;
     }
-    potion_bytes_obj_string(P, out, (PN)t->a[i]);
+    if (PN_IS_STR(t->a[i])) {
+      pn_printf(P, out, "\"");
+      potion_bytes_obj_string(P, out, (PN)t->a[i]);
+      pn_printf(P, out, "\"");
+    } else
+      potion_bytes_obj_string(P, out, (PN)t->a[i]);
     if (i == n - 1 && n > 1) {
       if (cut > 0) {
 	vPN(Bytes) b = (struct PNBytes *)potion_fwd(out);
