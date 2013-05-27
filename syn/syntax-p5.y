@@ -103,6 +103,7 @@ stmt = pkgdecl
     | use
     | ifstmt
     | assigndecl
+    | block
     | s:sets semi
         ( or x:sets semi      { s = PN_OP(AST_OR, s, x) }
         | and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
@@ -269,11 +270,8 @@ immed = undef { $$ = PN_NIL }
 #      | true  { $$ = PN_TRUE }
 #      | false { $$ = PN_FALSE }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)) }
-      | dec   { if ($$ == YY_TNUM) {
-                  $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10));
-                } else {
-                  $$ = potion_decimal(P, yytext, yyleng);
-              } }
+      | dec   { $$ = ($$ == YY_TNUM) ? PN_NUM(PN_ATOI(yytext, yyleng, 10))
+                   : potion_decimal(P, yytext, yyleng) }
       | str1 | str2
 
 global  = scalar | listvar | hashvar | listel | hashel | funcvar | globvar
