@@ -335,18 +335,21 @@ int main(int argc, char *argv[]) {
       } else if (i <= argc) {
 	arg = argv[i]+2;
       } else { // or go into interactive mode as -de0?
-	potion_fatal("** Missing argument for -e");
-	goto END;
+	interactive = 1;
+	//potion_fatal("** Missing argument for -e");
+	//goto END;
       }
       if (argv[i][1] == 'E') {
 	potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-E"));
-	buf = potion_str(P, arg);
+	if (arg) buf = potion_str(P, arg);
+	else interactive = 1;
 	P->flags = (Potion_Flags)(((int)P->flags & 0xff00) + MODE_P2);
 	//buf = potion_str(P, "use p2;\n");
 	//buf = potion_bytes_append(P, 0, buf, potion_str(P, arg));
       } else {
 	potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-e"));
-	buf = potion_str(P, arg);
+	if (arg) buf = potion_str(P, arg);
+	else interactive = 1;
       }
       continue;
     }
@@ -375,7 +378,7 @@ int main(int argc, char *argv[]) {
       p2_cmd_compile(P, argv[argc-1], compile);
     }
   } else {
-    if (!exec || P->flags & DEBUG_INSPECT) potion_fatal("no filename given");
+    if (P->flags & DEBUG_INSPECT) potion_fatal("no filename given");
     potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-i"));
     // TODO: p5 not yet parsed
     p2_eval(P, potion_byte_str(P,
@@ -384,7 +387,7 @@ int main(int argc, char *argv[]) {
       "  $obj = eval $code;\n" \
       "  if ($@) {\n" \
       "    say $@;\n" \
-      "  } else {\n" \
+      "  } else {\n"  \
       "    say '=> ', $obj;\n" \
       "  }\n"
       "}"));

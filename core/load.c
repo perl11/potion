@@ -163,6 +163,8 @@ char *potion_find_file(char *str, PN_SIZE str_len) {
 
 #ifndef P2
 PN potion_load(Potion *P, PN cl, PN self, PN file) {
+  if (!file && PN_IS_STR(self))
+    file = self;
   char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
   PN result = PN_NIL;
   if (filename == NULL) {
@@ -190,6 +192,8 @@ PN potion_load(Potion *P, PN cl, PN self, PN file) {
 #else
 
 PN p2_load(Potion *P, PN cl, PN self, PN file) {
+  if (!file && PN_IS_STR(self))
+    file = self;
   char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
   PN result = PN_NIL;
   if (filename == NULL) {

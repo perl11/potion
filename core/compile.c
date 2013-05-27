@@ -915,7 +915,6 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   f->sig = (sig == PN_NIL ? PN_TUP0() : potion_sig_compile(P, f, sig));
   f->asmb = (PN)potion_asm_new(P);
 
-  //DBG_c("--- compile ---\n");
   potion_source_asmb(P, f, NULL, 0, t, 0);
   PN_ASM1(OP_RETURN, 0);
 
