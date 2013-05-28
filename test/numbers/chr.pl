@@ -1,3 +1,2 @@
-# method on num, not e yet (compile problem)
-chr 101
-#=> e
+# method on num
+chr 101    #=> e

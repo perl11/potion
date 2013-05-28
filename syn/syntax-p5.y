@@ -44,7 +44,7 @@
 
 # define YY_SET(G, text, count, thunk, P) \
   yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
-           PN_STR_PTR(potion_send(yy, PN_string))));\
+           PN_STR_PTR(potion_send(yy, PN_string, 0)))); \
   G->val[count]= yy;
 #endif
 
@@ -93,9 +93,9 @@ perl5 = -- s:statements end-of-file
 # block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s) }
 
 statements =
-    s1:stmt          { $$ = s1 = PN_TUP(s1) }
+    s1:stmt           { $$ = s1 = PN_TUP(s1) }
         (sep? s2:stmt { $$ = s1 = PN_PUSH(s1, s2) })* sep?
-    | ''             { $$ = PN_NIL }
+    | ''              { $$ = PN_NIL }
 
 stmt = pkgdecl
     | BEGIN b:block           { p2_eval(P, b) }
@@ -136,13 +136,9 @@ pkgdecl = PACKAGE n:arg-name semi          {} # TODO: set namespace
     | PACKAGE n:arg-name v:version? b:block
 
 ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_OP(AST_AND, e, s) }
-    | IF e:ifexpr s1:block -
-        { $$ = e = PN_AST3(MSG, PN_if, PN_AST(LIST, PN_TUP(e)), s1) }
-      (ELSIF e1:ifexpr f:block -
-        { $$ = e = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_elsif, PN_AST(LIST, PN_TUP(e1)), f)) } )*
-      (ELSE s2:block
-        { $$ = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_else, PN_NIL, s2)) } )?
-
+       | IF e:ifexpr s1:block -        { $$ = e = PN_AST3(MSG, PN_if, PN_AST(LIST, PN_TUP(e)), s1) }
+         (ELSIF e1:ifexpr f:block -    { $$ = e = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_elsif, PN_AST(LIST, PN_TUP(e1)), f)) } )*
+         (ELSE s2:block                { $$ = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_else, PN_NIL, s2)) } )?
 ifexpr = '(' - expr - ')' -
 
 assigndecl =
@@ -216,23 +212,27 @@ expr = ( not e:expr           { e = PN_AST(NOT, e) }
        | l:atom times !times r:atom { e = PN_OP(AST_TIMES, l, r) }
        | l:atom div   !div r:atom   { e = PN_OP(AST_DIV,  l, r) }
        | l:atom minus !minus r:atom { e = PN_OP(AST_MINUS, l, r) }
-       | l:atom plus  !plus r:atom  { e = PN_OP(AST_PLUS,  l, r) }
-       | mminus e:atom        { e = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1) }
-       | pplus e:atom         { e = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
-       | e:atom (pplus        { e = PN_OP(AST_INC, e, PN_NUM(1)) }
-               | mminus       { e = PN_OP(AST_INC, e, PN_NUM(-1)) })?)
-                            { e = PN_IS_TUPLE(e) ? e : PN_TUP(e) }
-         (c:call { e = PN_PUSH(e, c) } )*
+       | l:atom plus !plus r:atom  { e = PN_OP(AST_PLUS,  l, r) }
+       | mminus e:value        { e = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1) }
+       | pplus e:value         { e = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
+       | e:value (pplus        { e = PN_OP(AST_INC, e, PN_NUM(1)) }
+                | mminus       { e = PN_OP(AST_INC, e, PN_NUM(-1)) })?)
+                            { e = PN_TUPIF(e) }
+       | e:atom             { e = PN_TUPIF(e) }
+         ( c:call { e = PN_PUSH(e, c) } )*
        { $$ = PN_AST(EXPR, e) }
 
 # removed lambda (anonsub)
 atom = e:value | e:list | e:call | e:anonsub
 
-#FIXME indirect method. e.g. chr 101 => (expr (value (101), msg (chr)))
-call = (m:name { v = PN_NIL }
-            (v:value | v:list)? |
-            (v:value | v:list)  { m = PN_AST(MSG, PN_NIL) } )
-         { $$ = PN_PUSH(PN_TUP(v), m); }
+#FIXME indirect method. e.g. chr 101 => (expr (value (101), msg ("chr")))
+# print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
+call = m:name { v = PN_NIL } (v:value | v:list)?
+        { $$ = PN_PUSH(PN_TUPIF(v), m) }
+    | v:value - arrow m:name l:list
+        { $$ = PN_PUSH(PN_PUSH(PN_TUPIF(v), m), l) }
+    | v:value - arrow m:name
+        { $$ = PN_PUSH(PN_TUPIF(v), m) }
 
 name = !keyword m:msg     { $$ = PN_AST(MSG, m) }
 
@@ -317,6 +317,7 @@ utf8 = [\t\n\r\40-\176]
 
 semi = ';'
 comma = ','
+arrow = "->" -
 block-start = '{' space*
 block-end = semi? space* '}'
 list-start = '(' -
