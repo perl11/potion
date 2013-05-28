@@ -52,7 +52,7 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
         case 0: // count only
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
             i++;
-	    DBG_Gv(P,"GC mark count only\n");
+	    DBG_Gv(P,"GC mark count only %p\n", x);
 	  }
         break;
         case 1: // minor
@@ -60,14 +60,14 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
 	    // gc-test crash: P->vts = NULL
             GC_FORWARD(x, v);
             i++;
-	    DBG_Gv(P,"GC mark minor\n");
+	    DBG_Gv(P,"GC mark minor %p -> %lx\n", x, v);
           }
         break;
         case 2: // major
           if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
-	    DBG_Gv(P,"GC mark major\n");
+	    DBG_Gv(P,"GC mark major %p -> %lx\n", x, v);
           }
         break;
       }
