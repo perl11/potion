@@ -325,6 +325,9 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
     case PN_TTABLE:
       sz = sizeof(struct PNTable) + kh_mem(PN, ptr);
     break;
+    case PN_TLICK:
+      sz = sizeof(struct PNLick);
+    break;
     case PN_TSTRINGS:
       sz = sizeof(struct PNTable) + kh_mem(str, ptr);
     break;
@@ -439,6 +442,11 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     case PN_TTABLE:
       GC_MINOR_UPDATE_TABLE(PN, (struct PNTable *)potion_fwd((PN)ptr), 1);
     break;
+    case PN_TLICK:
+      GC_MINOR_UPDATE(((struct PNLick *)ptr)->name);
+      GC_MINOR_UPDATE(((struct PNLick *)ptr)->attr);
+      GC_MINOR_UPDATE(((struct PNLick *)ptr)->inner);
+    break;
     case PN_TFLEX:
       for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
         GC_MINOR_UPDATE(PN_FLEX_AT(ptr, i));
@@ -534,6 +542,11 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     break;
     case PN_TTABLE:
       GC_MAJOR_UPDATE_TABLE(PN, (struct PNTable *)potion_fwd((PN)ptr), 1);
+    break;
+    case PN_TLICK:
+      GC_MAJOR_UPDATE(((struct PNLick *)ptr)->name);
+      GC_MAJOR_UPDATE(((struct PNLick *)ptr)->attr);
+      GC_MAJOR_UPDATE(((struct PNLick *)ptr)->inner);
     break;
     case PN_TFLEX:
       for (i = 0; i < PN_FLEX_SIZE(ptr); i++)
