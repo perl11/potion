@@ -29,7 +29,7 @@ void gc_test_alloc1(CuTest *T) {
   PN ptr = (PN)potion_gc_alloc(P, PN_TUSER, 16);
   PN_SIZE count = potion_mark_stack(P, 0);
   CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr));
-  CuAssertIntEquals(T, "only one allocation should be found", 1, count);
+  CuAssert(T, "only one or two allocations should be found", count >= 1 && count <= 2);
 }
 
 void gc_test_alloc4(CuTest *T) {
@@ -46,13 +46,12 @@ void gc_test_alloc4(CuTest *T) {
 }
 
 void gc_test_forward(CuTest *T) {
-  PN_SIZE count;
   char *fj = "frances johnson.";
   vPN(Data) ptr = potion_data_alloc(P, 16);
   register unsigned long old = (PN)ptr & 0xFFFF;
   memcpy(ptr->data, fj, 16);
 
-  count = potion_mark_stack(P, 1);
+  potion_mark_stack(P, 1);
   CuAssert(T, "copied location identical to original", (old & 0xFFFF) != (PN)ptr);
   CuAssertIntEquals(T, "copied object not still PN_TUSER", ptr->vt, PN_TUSER);
   CuAssert(T, "copied data not identical to original",
