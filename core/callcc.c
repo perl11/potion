@@ -89,17 +89,15 @@ ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
   PN_SIZE n;
-  PN *start, *end, *sp1 = P->mem->cstack, *sp2, *sp3;
+  PN *start, *sp1 = P->mem->cstack, *sp2, *sp3;
   POTION_ESP(&sp2);
   POTION_EBP(&sp3);
 #if POTION_STACK_DIR > 0
   n = sp2 - sp1;
   start = sp1;
-  end = sp2;
 #else
   n = sp1 - sp2 + 1;
   start = sp2;
-  end = sp1;
 #endif
 
   cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 3 + PN_SAVED_REGS));
