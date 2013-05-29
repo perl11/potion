@@ -37,9 +37,9 @@ RUNPOTION = ./potion
 all: pn
 	+${MAKE} -s usage
 
-pn: potion${EXE} libpotion.a lib/readline${LOADEXT}
-
-rebuild: clean potion${EXE} test
+pn: potion${EXE} libpotion${DLL} lib/readline${LOADEXT}
+static: libpotion.a potion-s${EXE}
+rebuild: clean pn test
 
 usage:
 	@${ECHO} " "
@@ -69,8 +69,8 @@ usage:
 	@${ECHO} " "
 	@${ECHO} "   $$ make test"
 	@${ECHO} " "
-	@${ECHO} " Written by _why <why@whytheluckystiff.net>"
-	@${ECHO} " Maintained at https://github.com/perl11/potion"
+	@${ECHO} " Originally written by _why the lucky stiff"
+	@${ECHO} " Maintained at https://github.com/fogus/potion"
 
 config:
 	@${ECHO} MAKE -f config.mak $@
@@ -133,7 +133,7 @@ ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
-# on darwin we generate a parallel p2/../lib to use @executable_path/../lib/libpotion
+# on darwin we generate a parallel potion/../lib to use @executable_path/../lib/libpotion
 ifeq (${APPLE},1)
 LIBHACK = ../lib/libpotion.dylib
 else
@@ -244,8 +244,7 @@ test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
-dist: core/config.h core/version.h core/syntax.c potion${EXE}  \
-  libpotion.a libpotion${DLL} lib/readline${LOADEXT}
+dist: pn static
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: dist
@@ -269,6 +268,14 @@ release:
 	@${ECHO} "</div></body></html>" >> $@
 
 doc: ${DOCHTML}
+docall: doc GTAGS
+
+MANIFEST:
+	git ls-tree -r --name-only HEAD > $@
+
+# in seperate clean subdir. do not index work files
+GTAGS: ${SRC} core/*.h
+	+${MAKE} -f dist.mak $@
 
 TAGS: ${SRC} core/*.h
 	@rm -f TAGS
@@ -278,17 +285,20 @@ sloc: clean
 	@sloccount core
 
 todo:
-	@grep -rInso 'TODO: \(.\+\)' core
+	@grep -rInso 'TODO: \(.\+\)' core tools
 
 clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o core/*.opic core/*.i test/api/*.o ${DOCHTML}
 	@rm -f ${GREG} tools/*.o tools/*~ doc/*~ example/*~
 	@rm -f core/config.h core/version.h core/syntax.c
-	@rm -f potion${EXE} libpotion.* \
+	@rm -f potion${EXE} potion-s${EXE} libpotion.* \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
+	@rm -rf doc/html doc/latex
 
 realclean: clean
 	@rm -f config.inc
+	@rm -f GPATH GTAGS GRTAGS
+	@rm -rf HTML
 
 .PHONY: all config clean doc rebuild test bench tarball dist release install
