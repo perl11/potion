@@ -16,9 +16,18 @@ ifeq (${JIT_ARM},1)
 SRC += core/vm-arm.c # not yet ready
 endif
 endif
+
+FPIC =
+OPIC = o
+ifneq (${WIN32},1)
+  ifneq (${CYGWIN},1)
+    FPIC = -fPIC
+    OPIC = opic
+  endif
+endif
 OBJ = ${SRC:.c=.o}
-PIC_OBJ = ${SRC:.c=.opic}
-OBJ_POTION = core/potion.opic
+PIC_OBJ = ${SRC:.c=.${OPIC}}
+OBJ_POTION = core/potion.${OPIC}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
@@ -27,12 +36,12 @@ DOCHTML = ${DOC:.textile=.html}
 
 CAT  = /bin/cat
 ECHO = /bin/echo
+MV   = /bin/mv
 SED  = sed
 EXPR = expr
 GREG = tools/greg${EXE}
-
-INCS = -Icore
-RUNPOTION = ./potion
+RANLIB ?= ranlib
+RUNPRE ?= ./
 
 all: pn
 	+${MAKE} -s usage
@@ -87,46 +96,50 @@ core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
 core/callcc.o: core/callcc.c
-	@${ECHO} CC $< +frame-pointer
+	@${ECHO} CC $@ +frame-pointer
 	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/callcc.opic: core/callcc.c
-	@${ECHO} CC -fPIC $< +frame-pointer
-	@${CC} -c ${CFLAGS} -fPIC -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${ECHO} CC ${FPIC} $@ +frame-pointer
+	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/vm.o core/vm.opic: core/vm-dis.c
 
 # no optimizations
 #core/vm-x86.opic: core/vm-x86.c
-#	@${ECHO} CC -fPIC $< +frame-pointer
-#	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE -fPIC ${INCS} -o $@ $<
+#	@${ECHO} CC ${FPIC} $@ +frame-pointer
+#	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE ${FPIC} ${INCS} -o $@ $<
 
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
 %.o: %.c core/config.h
-	@${ECHO} CC $<
+	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-%.opic: %.c core/config.h
-	@${ECHO} CC -fPIC $<
-	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
+ifneq (${FPIC},)
+%.${OPIC}: %.c core/config.h
+	@${ECHO} CC $@
+	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
+endif
 
 .c.i: core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
 .c.o: core/config.h
-	@${ECHO} CC $<
+	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
-.c.opic: core/config.h
-	@${ECHO} CC -fPIC $<
-	@${CC} -c -fPIC ${CFLAGS} ${INCS} -o $@ $<
+ifneq (${FPIC},)
+.c.${OPIC}: core/config.h
+	@${ECHO} CC $@
+	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
+endif
 
 %.c: %.y ${GREG}
-	@${ECHO} GREG $<
-	@${GREG} $< > $@
+	@${ECHO} GREG $@
+	@${GREG} $< > $@-new && ${MV} $@-new $@
 .y.c: ${GREG}
-	@${ECHO} GREG $<
-	@${GREG} $< > $@
+	@${ECHO} GREG $@
+	@${GREG} $< > $@-new && ${MV} $@-new $@
 
 ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
@@ -145,7 +158,7 @@ endif
 
 potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LDEXEFLAGS} -lpotion ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
 		${ECHO} STRIP $@; \
 	  ${STRIP} $@; \
@@ -153,7 +166,7 @@ potion${EXE}: ${OBJ_POTION} libpotion${DLL} ${LIBHACK}
 
 potion-s${EXE}: core/potion.o libpotion.a ${LIBHACK}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} core/potion.o -o $@ ${LDEXEFLAGS} libpotion.a ${LIBS}
+	@${CC} ${CFLAGS} core/potion.o -o $@ ${LIBPTH} ${RPATH} libpotion.a ${LIBS}
 
 libpotion.a: ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
@@ -161,15 +174,15 @@ libpotion.a: ${OBJ} core/config.h core/potion.h
 	@${AR} rcs $@ core/*.o > /dev/null
 
 libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
-	@${ECHO} LD $@ -fpic
+	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} \
+	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
 	  ${PIC_OBJ} ${LIBS} > /dev/null
 
 lib/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
-	@${ECHO} MAKE $@ -fpic
+	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/readline
 	@cp lib/readline/readline${LOADEXT} $@
 
@@ -195,7 +208,7 @@ test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 		   ${ECHO} running compiler tests; \
 		else \
 		   ${ECHO} running JIT tests; \
-			 jit=`${RUNPOTION} -v | ${SED} "/jit=1/!d"`; \
+			 jit=`${RUNPRE}potion -v | ${SED} "/jit=1/!d"`; \
 			 if [ "$$jit" = "" ]; then \
 			   ${ECHO} skipping; \
 			   break; \
@@ -204,14 +217,14 @@ test: potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 		for f in test/**/*.pn; do \
 			look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
 			if [ $$pass -eq 0 ]; then \
-				for=`${RUNPOTION} -I -B $$f | ${SED} "s/\n$$//"`; \
+				for=`${RUNPRE}potion -I -B $$f | ${SED} "s/\n$$//"`; \
 			elif [ $$pass -eq 1 ]; then \
-				${RUNPOTION} -c $$f > /dev/null; \
+				${RUNPRE}potion -c $$f > /dev/null; \
 				fb="$$f"b; \
-				for=`${RUNPOTION} -I -B $$fb | ${SED} "s/\n$$//"`; \
+				for=`${RUNPRE}potion -I -B $$fb | ${SED} "s/\n$$//"`; \
 				rm -rf $$fb; \
 			else \
-				for=`${RUNPOTION} -I -X $$f | ${SED} "s/\n$$//"`; \
+				for=`${RUNPRE}potion -I -X $$f | ${SED} "s/\n$$//"`; \
 			fi; \
 			if [ "$$look" != "$$for" ]; then \
 				${ECHO}; \
@@ -244,16 +257,16 @@ test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} ${OBJ}
 	@${ECHO} LINK gc-bench
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} ${OBJ} ${LIBS} -o $@
 
-dist: pn static
+dist: pn static docall
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: dist
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
-tarball:
+tarball: dist
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
-release:
+release: dist
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
 
 %.html: %.textile
@@ -290,14 +303,14 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o core/*.opic core/*.i test/api/*.o ${DOCHTML}
-	@rm -f ${GREG} tools/*.o tools/*~ doc/*~ example/*~
-	@rm -f core/config.h core/version.h core/syntax.c
+	@rm -f tools/*.o tools/*~ doc/*~ example/*~
+	@rm -f core/config.h core/version.h
 	@rm -f potion${EXE} potion-s${EXE} libpotion.* \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 	@rm -rf doc/html doc/latex
 
 realclean: clean
-	@rm -f config.inc
+	@rm -f config.inc ${GREG} core/syntax.c
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf HTML
 

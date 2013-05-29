@@ -1,25 +1,28 @@
 # -*- makefile -*-
 # create config.inc and core/config.h
 PREFIX = /usr/local
-CC ?= gcc
-CFLAGS = -Wall -fno-strict-aliasing -Wno-return-type -Werror -D_GNU_SOURCE
-LDEXEFLAGS = -L. -Wl,-rpath=. -Wl,-rpath=../lib
+CC    ?= gcc
+WARNINGS = -Wall -Werror -fno-strict-aliasing -Wno-switch -Wno-return-type -Wno-unused-label
+CFLAGS = -D_GNU_SOURCE
+INCS   = -Icore
+LIBPTH = -L.
+RPATH         = -Wl,-rpath=$(shell pwd)
+RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib
+LIBS   = -lm
 LDDLLFLAGS = -shared -fpic
-INCS = -Icore
-LIBS = -lm
-AR ?= ar
+AR    ?= ar
 DEBUG ?= 0
-WIN32 = 0
-CLANG = 0
-JIT = 0
-EXE =
-APPLE = 0
+WIN32  = 0
+CLANG  = 0
+JIT    = 0
+EXE    =
+APPLE  = 0
+RUNPRE = ./
 
 CAT  = /bin/cat
 ECHO = /bin/echo
 SED  = sed
 EXPR = expr
-GREG = tools/greg${EXE}
 
 STRIP ?= `./tools/config.sh "${CC}" strip`
 JIT_TARGET ?= `./tools/config.sh "${CC}" jit`
@@ -27,7 +30,8 @@ ifneq (${JIT_TARGET},)
   JIT = 1
 endif
 
-ifeq (${JIT_TARGET},X86)
+ifeq (${JIT},1)
+#ifeq (${JIT_TARGET},X86)
 ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/ x86 16,32,64 bit
 # port install udis86
@@ -36,11 +40,13 @@ ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h),1)
 	LIBS += -ludis86
 else
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h /opt/local),1)
-	DEFINES += -I/opt/local/include -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	DEFINES += -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	INCS += -I/opt/local/include
 	LIBS += -L/opt/local/lib -ludis86
 else
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h /usr/local),1)
-	DEFINES += -I/usr/local/include -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	DEFINES += -DHAVE_LIBUDIS86 -DJIT_DEBUG
+	INCS += -I/usr/local/include
 	LIBS += -L/usr/local/lib -ludis86
 else
 # http://ragestorm.net/distorm/ x86 16,32,64 bit with all intel/amd extensions
@@ -60,7 +66,8 @@ ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h),1)
 	LIBS += -ldisasm
 else
 ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h /usr/local),1)
-	DEFINES += -I/usr/local/include -DHAVE_LIBDISASM -DJIT_DEBUG
+	DEFINES += -DHAVE_LIBDISASM -DJIT_DEBUG
+	INCS += -I/usr/local/include
 	LIBS += -L/usr/local/lib -ldisasm
 endif
 endif
@@ -73,15 +80,15 @@ endif
 endif
 
 # JIT with -O still fails some tests
-ifneq (${JIT},1)
-       DEBUGFLAGS += -O3
-endif
+#ifneq (${JIT},1)
+#       DEBUGFLAGS += -O3
+#endif
 ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CLANG = 1
-	CFLAGS += -Wno-unused-value
+	WARNINGS += -Wno-unused-value
 endif
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -fno-stack-protector
+	DEBUGFLAGS += -O3 -fno-stack-protector
 else
 	DEFINES += -DDEBUG
 	STRIP = echo
@@ -101,7 +108,7 @@ endif
 ifneq ($(shell ./tools/config.sh "${CC}" bsd),1)
 	LIBS += -ldl
 endif
-# cygwin is not WIN32
+# cygwin is not WIN32. detect mingw target on cross
 ifeq ($(shell ./tools/config.sh "${CC}" mingw),1)
 	WIN32 = 1
 	LDDLLFLAGS = -shared
@@ -110,7 +117,9 @@ ifeq ($(shell ./tools/config.sh "${CC}" mingw),1)
 	DLL  = .dll
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
-	RUNPOTION = potion.exe
+	RUNPRE =
+	RPATH =
+	RPATH_INSTALL =
 else
 ifeq ($(shell ./tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
@@ -118,18 +127,16 @@ ifeq ($(shell ./tools/config.sh "${CC}" cygwin),1)
 	EXE  = .exe
 	LOADEXT = .dll
 	DLL  = .dll
-	RUNPOTION = ./potion
 else
 ifeq ($(shell ./tools/config.sh "${CC}" apple),1)
         APPLE    = 1
 	DLL      = .dylib
 	LOADEXT  = .bundle
-	RUNPOTION = ./potion
-	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace \
-	             -install_name "@executable_path/../lib/libpotion${DLL}"
-	LDEXEFLAGS = -L.
+	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
+	LDDLLFLAGS += -install_name "@executable_path/../lib/libpotion${DLL}"
+	RPATH =
+	RPATH_INSTALL =
 else
-	RUNPOTION = ./potion
 	DLL  = .so
 	LOADEXT = .so
     ifeq (${CC},gcc)
@@ -153,18 +160,23 @@ config.inc.echo:
 	@${ECHO} "CC      = ${CC}"
 	@${ECHO} "DEFINES = ${DEFINES}"
 	@${ECHO} "DEBUGFLAGS = ${DEBUGFLAGS}"
-	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS}
-	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
-	@${ECHO} "LDEXEFLAGS = ${LDEXEFLAGS}"
+	@${ECHO} "WARNINGS   = ${WARNINGS}"
+	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS} "\$$"{WARNINGS}
+	@${ECHO} "INCS    = ${INCS}"
+	@${ECHO} "LIBPTH  = ${LIBPTH}"
+	@${ECHO} "RPATH   = ${RPATH}"
+	@${ECHO} "RPATH_INSTALL = " ${RPATH_INSTALL}
 	@${ECHO} "LIBS    = ${LIBS}"
+	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "STRIP   = ${STRIP}"
+	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "APPLE   = ${APPLE}"
 	@${ECHO} "WIN32   = ${WIN32}"
+	@${ECHO} "CYGWIN  = ${CYGWIN}"
 	@${ECHO} "CLANG   = ${CLANG}"
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
-	@${ECHO} "RUNPOTION = ${RUNPOTION}"
 	@${ECHO} "REVISION  = " $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
 
 config.h.echo:
@@ -179,7 +191,7 @@ config.h.echo:
 	@${ECHO} "#define POTION_LOADEXT \"${LOADEXT}\""
 	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_TARGET POTION_${JIT_TARGET}"
 	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_NAME " $(shell echo ${JIT_TARGET} | tr A-Z a-z)
-	@${ECHO} ${DEFINES} | ${SED} "s,-D\(\w*\),\n#define \1 1,g; s,-I[a-z/:]* ,,g"
+	@${ECHO} ${DEFINES} | perl -lpe's/-D(\w+)/\n#define \1 1/g; s/=/ /g; s{-I[a-z/:]* }{}g;'
 	@${ECHO}
 	@./tools/config.sh "${CC}"
 

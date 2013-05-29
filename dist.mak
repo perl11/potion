@@ -42,7 +42,7 @@ pkg/${PKGBIN}.tar.gz: core/config.h core/version.h core/syntax.c potion${EXE} \
 	-cp README COPYING LICENSE     dist/share/potion/doc/
 	cp example/*                   dist/share/potion/example/
 	-mkdir -p pkg
-	(cd dist && tar czvf ../pkg/${PKGBIN}.tar.gz * && cd ..)
+	(cd dist && tar czf ../pkg/${PKGBIN}.tar.gz * && cd ..)
 	rm -rf dist
 
 pkg/${PKGBIN}-devel.tar.gz: tools/greg${EXE} potion-s${EXE}
@@ -58,7 +58,7 @@ pkg/${PKGBIN}-devel.tar.gz: tools/greg${EXE} potion-s${EXE}
 	-cp -r doc/latex I*.md          dist/share/potion/doc/
 	-cp -r HTML/*                   dist/share/potion/doc/ref/
 	-mkdir -p pkg
-	(cd dist && tar czvf ../pkg/${PKGBIN}-devel.tar.gz * && cd ..)
+	(cd dist && tar czf ../pkg/${PKGBIN}-devel.tar.gz * && cd ..)
 	rm -rf dist
 
 src-dist: pkg/${PKG}-src.tar.gz
@@ -72,7 +72,7 @@ tarball: core/version.h core/syntax.c
 	rm -f ${PKG}/.gitignore
 	cp core/version.h ${PKG}/core/
 	cp core/syntax.c ${PKG}/core/
-	tar czvf pkg/${PKG}-src.tar.gz ${PKG}
+	tar czf pkg/${PKG}-src.tar.gz ${PKG}
 	rm -rf ${PKG}
 
 GTAGS: ${SRC} core/*.h
@@ -82,7 +82,8 @@ GTAGS: ${SRC} core/*.h
 	cd ${PKG} && \
 	  mv tools/greg.c tools/greg-c.tmp && \
 	  gtags && htags && \
-	  sed -i -e's,background-color: #f5f5dc,background-color: #ffffff,' HTML/style.css && \
+	  sed -e's,background-color: #f5f5dc,background-color: #ffffff,' < HTML/style.css > HTML/style.new && \
+	  mv HTML/style.new HTML/style.css && \
 	  mv tools/greg-c.tmp tools/greg.c && \
 	  cd ..  && \
 	  mv ${PKG}/HTML .
