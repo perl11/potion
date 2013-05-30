@@ -80,15 +80,15 @@ endif
 endif
 
 # JIT with -O still fails some tests
-#ifneq (${JIT},1)
-#       DEBUGFLAGS += -O3
-#endif
+ifneq (${JIT},1)
+       DEBUGFLAGS += -O3
+endif
 ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	WARNINGS += -Wno-unused-value
 endif
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -O3 -fno-stack-protector
+	DEBUGFLAGS += -fno-stack-protector
 else
 	DEFINES += -DDEBUG
 	STRIP = echo

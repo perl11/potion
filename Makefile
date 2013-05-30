@@ -100,7 +100,7 @@ core/callcc.o: core/callcc.c
 	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/callcc.opic: core/callcc.c
-	@${ECHO} CC ${FPIC} $@ +frame-pointer
+	@${ECHO} CC $@ +frame-pointer
 	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
 core/vm.o core/vm.opic: core/vm-dis.c
