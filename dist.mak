@@ -49,7 +49,7 @@ pkg/${PKGBIN}-devel.tar.gz: ${GREG} lib/libpotion.a lib/libp2.a bin/p2-s${EXE} b
 	+${MAKE} doxygen GTAGS
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
-                 dist/share/potion/doc dist/share/potion/example
+                 dist/share/potion/doc/ref dist/share/potion/example
 	cp syn/greg${EXE}               dist/bin/
 	cp bin/p*-s${EXE}               dist/bin/
 	cp lib/libp*.a                  dist/lib/

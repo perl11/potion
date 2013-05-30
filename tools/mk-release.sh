@@ -26,10 +26,11 @@ dorelease() {
 docross() {
     make clean
     rm config.inc
-    echo make CC="$1"
+    echo make config CC="$1"
     make -s -f config.mak CC="$1" DEBUG=0
-    touch syn/greg
-    touch syn/syntax.c
+    make -s core/config.h
+    touch syn/greg syn/syntax.c syn/syntax-p5.c
+    echo make CC="$1"
     make CC="$1" DEBUG=0
     make dist
 }
@@ -41,6 +42,7 @@ done
 # build greg and syntax.c native
 make clean
 make syn/syntax.c
+make syn/syntax-p5.c
 
 for c in $CROSS; do
     docross "$c"

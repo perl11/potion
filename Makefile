@@ -1,6 +1,6 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .i2 .o .opic .o2 .opic2 .textile .html
-.PHONY: all libs static default config clean doc rebuild check test test.pn test.p2 \
+.PHONY: all bins libs pn p2 static default config clean doc rebuild check test test.pn test.p2 \
 	bench tarball dist release install grammar doxygen website
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
@@ -50,7 +50,9 @@ OBJ_GC_BENCH = test/api/gc-bench.o
 DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/design-decisions.textile
 DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
-PLIBS = $(foreach l,potion p2 syntax syntax-p5,lib/potion/lib$l${DLL}) lib/potion/readline${LOADEXT}
+PLIBS = $(foreach l,potion p2 syntax syntax-p5,lib/potion/lib$l${DLL})
+# modules:
+PLIBS += lib/potion/readline${LOADEXT}
 OBJS = .o .o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
@@ -74,10 +76,10 @@ default: pn p2
 	+${MAKE} -s usage
 
 all: default libs static doc test
-pn: bin/potion${EXE} lib/potion/readline${LOADEXT}
-p2: bin/p2${EXE} lib/potion/readline${LOADEXT}
 bins: ${BINS}
 libs: ${PLIBS}
+pn: bin/potion${EXE} libs
+p2: bin/p2${EXE} libs
 static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
 
 rebuild: clean default test
