@@ -3,7 +3,7 @@
 
 AC="tools/config.c"
 AOUT="tools/config.out"
-if [ -z $CC ]; then
+if [ -z "$CC" ]; then
     if [ -z "$1" -o "$1" = "compiler" ]; then
         case `uname -o` in
             *Linux) CC=clang ;;
