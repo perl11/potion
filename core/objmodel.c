@@ -256,6 +256,7 @@ static inline long potion_obj_find_ivar(Potion *P, PN self, PN ivar) {
 
 /// implements OP_GETPATH
 PN potion_obj_get(Potion *P, PN cl, PN self, PN ivar) {
+  self = potion_fwd(self);
   long i = potion_obj_find_ivar(P, self, ivar);
   if (i >= 0)
     return ((struct PNObject *)self)->ivars[i];
@@ -263,6 +264,7 @@ PN potion_obj_get(Potion *P, PN cl, PN self, PN ivar) {
 }
 /// implements OP_SETPATH
 PN potion_obj_set(Potion *P, PN cl, PN self, PN ivar, PN value) {
+  self = potion_fwd(self);
   long i = potion_obj_find_ivar(P, self, ivar);
   if (i >= 0) {
     ((struct PNObject *)self)->ivars[i] = value;
