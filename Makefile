@@ -527,10 +527,12 @@ clean:
 	@rm -f tools/*.o core/config.h core/version.h
 	@rm -f tools/*~ doc/*~ example/*~ core/*~ config.inc~ tools/config.c
 	@rm -f lib/readline/readline${LOADEXT}
-	@rm -rf doc/html doc/latex HTML
+	@rm -rf doc/html doc/latex
 
 # also config.inc and files needed for cross-compilation
 realclean: clean
 	@rm -f config.inc ${SRC_SYN} ${SRC_P2_SYN} ${GREG}
+	@rm -f GPATH GTAGS GRTAGS
+	@rm -rf HTML
 	@find . -name \*.gcov -delete
 

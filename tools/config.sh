@@ -65,11 +65,15 @@ elif [ "$2" = "bsd" ]; then
   if [ "$BSD" = "" ]; then echo "0"
   else echo "1"; fi
 elif [ "$2" = "version" ]; then
-  cat core/potion.h | sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//"
+  sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//" < core/potion.h
 elif [ "$2" = "p2version" ]; then
-  cat core/p2.h | sed "/P2_VERSION/!d; s/\\\"$//; s/.*\\\"//"
+  sed "/P2_VERSION/!d; s/\\\"$//; s/.*\\\"//" < core/p2.h
 elif [ "$2" = "target" ]; then
-  echo "$TARGET"
+  if [ "$CC" = "gcc -m32" ]; then
+      echo "$TARGET" | sed -e "s,x86_64,i686,; s,-unknown,,"
+  else
+      echo "$TARGET" | sed -e"s,-unknown,,"
+  fi
 elif [ "$2" = "jit" ]; then
   if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
     echo "X86"

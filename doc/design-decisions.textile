@@ -56,12 +56,18 @@ it is an object, which means getting the value is done by sending it a message w
 an empty name,
 and setting the value is done by sending it the "def" message.
 
-  (message %ENV) => return value of %ENV
-  (message %ENV "def" &env) => set new value of %ENV
+  (msg %ENV) => return value of %ENV
+  (msg %ENV "def" &env) => set new value of %ENV
+
+same for keys (accessor support):
+
+  (msg %ENV key) => return a %ENV element
+  (msg %ENV "def" key value) => set new value of a %ENV element
 
 Yes, you smell Smalltalk.
 This is needed to be able to support a proper object system, types and esp.
-proper multi-threading.
+proper multi-threading. There are special MOP methods for default
+readers and writers, type_call_is: key, type_callset_is: key+value.
 
 On the user-side some side-effect-only functions will be changed to return the
 changed argument.
