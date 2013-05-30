@@ -100,7 +100,9 @@ void *pngc_page_new(int *sz, const char exec) {
 }
 
 void pngc_page_delete(void *mem, int sz) {
-  potion_munmap(mem, PN_ALIGN(sz, POTION_PAGESIZE));
+  potion_mprotect(mem, PN_ALIGN(sz, POTION_PAGESIZE), 0);
+  //this causes access errors, we need to read, but are not allowed to write
+  //potion_munmap(mem, PN_ALIGN(sz, POTION_PAGESIZE));
 }
 
 static inline int NEW_BIRTH_REGION(struct PNMemory *M, void **wb, int sz) {
@@ -499,6 +501,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     break;
     case PN_TSTATE:
       DBG_G(P,"GC mark major Potion_State\n"); // only with threads
+      //#if POTION_THREADS
       GC_MAJOR_UPDATE(((Potion *)ptr)->strings);
       GC_MAJOR_UPDATE(((Potion *)ptr)->lobby);
       GC_MAJOR_UPDATE(((Potion *)ptr)->vts);
@@ -508,6 +511,11 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((Potion *)ptr)->unclosed);
       GC_MAJOR_UPDATE(((Potion *)ptr)->call);
       GC_MAJOR_UPDATE(((Potion *)ptr)->callset);
+      DBG_G(P,"GC mark major Potion_State done\n");
+      //#else
+      //GC_MAJOR_UPDATE(((Potion *)ptr)->lobby); /* cyclic ref? */
+      //DBG_G(P,"GC mark major Potion_State ignored\n");
+      //#endif
     break;
     case PN_TFILE:
       GC_MAJOR_UPDATE(((struct PNFile *)ptr)->path);

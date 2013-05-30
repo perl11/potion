@@ -17,6 +17,7 @@ JIT    = 0
 EXE    =
 APPLE  = 0
 CYGWIN = 0
+THREADS = 0
 RUNPRE = ./
 
 CAT  = /bin/cat
@@ -182,6 +183,7 @@ config.inc.echo:
 	@${ECHO} "WIN32   = ${WIN32}"
 	@${ECHO} "CYGWIN  = ${CYGWIN}"
 	@${ECHO} "CLANG   = ${CLANG}"
+	@${ECHO} "THREADS = ${THREADS}"
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
@@ -196,6 +198,7 @@ config.h.echo:
 	@${ECHO} "#define POTION_DLL    \"${DLL}\""
 	@${ECHO} "#define POTION_LOADEXT \"${LOADEXT}\""
 	@${ECHO} "#define POTION_WIN32  ${WIN32}"
+	@${ECHO} "#define POTION_THREADS ${THREADS}"
 	@${ECHO} "#define POTION_JIT    ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_TARGET POTION_${JIT_TARGET}"
 	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_NAME " $(shell echo ${JIT_TARGET} | tr A-Z a-z)

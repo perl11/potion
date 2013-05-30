@@ -330,6 +330,8 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   YY_NAME(parse_free)(G);
 
   code = P->source;
+  PN_TOUCH(P->pbuf);
+  P->pbuf = NULL;
   P->source = PN_NIL;
   return code;
 }
@@ -377,6 +379,8 @@ PN potion_sig(Potion *P, char *fmt) {
   YY_NAME(parse_free)(G);
 
   out = P->source;
+  PN_TOUCH(P->pbuf);
+  P->pbuf = NULL;
   P->source = PN_NIL;
   return out;
 }

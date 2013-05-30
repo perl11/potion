@@ -64,6 +64,11 @@ int potion_munmap(void *mem, size_t len)
   return VirtualFree(mem, len, MEM_DECOMMIT) != 0 ? 0 : -1;
 }
 
+int potion_mprotect(void *mem, size_t len, int write)
+{
+  void *mem = VirtualAlloc(mem, len, MEM_COMMIT, PAGE_READ);
+}
+
 #else
 #include <sys/mman.h>
 
@@ -79,6 +84,11 @@ void *potion_mmap(size_t length, const char exec)
 int potion_munmap(void *mem, size_t len)
 {
   return munmap(mem, len);
+}
+
+int potion_mprotect(void *mem, size_t len, int write)
+{
+  return mprotect(mem, len, write ? PROT_READ|PROT_WRITE : PROT_READ);
 }
 
 #endif

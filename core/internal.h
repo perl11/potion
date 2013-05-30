@@ -78,6 +78,7 @@ struct PNBHeader {
 size_t potion_cp_strlen_utf8(const char *);
 void *potion_mmap(size_t, const char);
 int potion_munmap(void *, size_t);
+int potion_mprotect(void *, size_t, int);
 #if POTION_WIN32
 int vasprintf (char **strp, const char *fmt, ...);
 int asprintf (char **string_ptr, const char *format, ...);

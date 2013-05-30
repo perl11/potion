@@ -479,25 +479,30 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
-#if 0
+#if 1
   while (1) {
     struct PNFwd *o = (struct PNFwd *)obj;
-    if (o->fwd != POTION_FWD)
+    if (o->fwd != POTION_FWD && o->fwd != POTION_COPIED)
       return ((struct PNObject *)o)->vt;
     obj = o->ptr;
   }
-#endif
+#else
   return ((struct PNObject *)potion_fwd(obj))->vt;
+#endif
 }
 
 /// PN_QUICK_FWD - doing a single fwd check after a possible realloc
+/// TODO: POTION_COPIED
 #define PN_QUICK_FWD(t, obj) \
   if (((struct PNFwd *)obj)->fwd == POTION_FWD) \
     obj = (t)(((struct PNFwd *)obj)->ptr);
 
 /// resolve forwarding pointers for mutable types (PNTuple, PNBytes, etc.)
+/// TODO: POTION_COPIED
 static inline PN potion_fwd(PN obj) {
-  while (PN_IS_PTR(obj) && ((struct PNFwd *)obj)->fwd == POTION_FWD)
+  while (PN_IS_PTR(obj) &&
+         (((struct PNFwd *)obj)->fwd == POTION_FWD ||
+          ((struct PNFwd *)obj)->fwd == POTION_COPIED))
     obj = ((struct PNFwd *)obj)->ptr;
   return obj;
 }
