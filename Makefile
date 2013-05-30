@@ -1,5 +1,6 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .o .opic .textile .html
+.PHONY: all pn static usage config clean doc rebuild test bench tarball dist release install
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
 
@@ -315,5 +316,3 @@ realclean: clean
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf HTML
 	@find . -name \*.gcov -delete
-
-.PHONY: all config clean doc rebuild test bench tarball dist release install

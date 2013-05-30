@@ -1,7 +1,7 @@
 # -*- makefile -*-
 # create config.inc and core/config.h
 PREFIX = /usr/local
-CC    ?= gcc
+CC     = $(shell tools/config.sh compiler)
 WARNINGS = -Wall -Werror -fno-strict-aliasing -Wno-switch -Wno-return-type -Wno-unused-label
 CFLAGS = -D_GNU_SOURCE
 INCS   = -Icore
@@ -26,8 +26,8 @@ RANLIB = ranlib
 SED  = sed
 EXPR = expr
 
-STRIP ?= `tools/config.sh "${CC}" strip`
-JIT_TARGET ?= `tools/config.sh "${CC}" jit`
+STRIP ?= $(shell tools/config.sh "${CC}" strip)
+JIT_TARGET ?= $(shell tools/config.sh "${CC}" jit)
 ifneq (${JIT_TARGET},)
   JIT = 1
 endif
