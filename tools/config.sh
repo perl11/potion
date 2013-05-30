@@ -22,6 +22,8 @@ JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
 JIT_I686=`echo "$TARGET" | sed "/i686/!d"`
 JIT_AMD64=`echo "$TARGET" | sed "/amd64/!d"`
 JIT_ARM=`echo "$TARGET" | sed "/arm/!d"`
+JIT_X86_64=`echo "$TARGET" | sed "/x86_64/!d"`
+CROSS=0
 
 if [ $MINGW -eq 0 ]; then
   EXE=""
@@ -47,6 +49,10 @@ else
   LOADEXT=".dll"
   DLL=".dll"
   LIBEXT=".a"
+  case `uname -o` in
+      *Linux|Cygwin|Darwin) CROSS=1 ;;
+      *) CROSS=0 ;;
+  esac
 fi
 
 if [ "$2" = "mingw" ]; then
@@ -74,6 +80,8 @@ elif [ "$2" = "target" ]; then
   else
       echo "$TARGET" | sed -e"s,-unknown,,"
   fi
+elif [ "$2" = "cross" ]; then
+    echo $CROSS
 elif [ "$2" = "jit" ]; then
   if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
     echo "X86"
@@ -90,7 +98,11 @@ elif [ "$2" = "strip" ]; then
       echo "strip"
     fi
   else
-    echo "echo"
+    if [ $CROSS -eq 1 ]; then
+      echo "$CC" | sed -e"s,-gcc,-strip,"
+    else
+      echo "echo"
+    fi
   fi
 elif [ "$2" = "lib" ]; then
   prefix=$5
@@ -116,10 +128,14 @@ else
     if [ "$HAVE_ASAN" != "" ]; then HAVE_ASAN=0; else HAVE_ASAN=1; fi
   else
       # hard coded win32 values
-      CHAR="1"
-      SHORT="2"
-      LONG="4"
+      if [ "$JIT_X86_64" != "" -o "$JIT_AMD64" != "" ]; then
+        LONG="8"
+      else
+        LONG="4"
+      fi
       INT="4"
+      SHORT="2"
+      CHAR="1"
       DOUBLE="8"
       LLONG="8"
       LILEND="1"

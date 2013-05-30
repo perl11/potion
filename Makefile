@@ -82,7 +82,7 @@ pn: bin/potion${EXE} libs
 p2: bin/p2${EXE} libs
 static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
 
-rebuild: clean default test
+rebuild: clean pn p2 test
 
 usage:
 	@${ECHO} " "
