@@ -17,15 +17,17 @@ CLANG  = 0
 JIT    = 0
 EXE    =
 APPLE  = 0
+CYGWIN = 0
 RUNPRE = ./
 
 CAT  = /bin/cat
 ECHO = /bin/echo
+RANLIB = ranlib
 SED  = sed
 EXPR = expr
 
-STRIP ?= `./tools/config.sh "${CC}" strip`
-JIT_TARGET ?= `./tools/config.sh "${CC}" jit`
+STRIP ?= `tools/config.sh "${CC}" strip`
+JIT_TARGET ?= `tools/config.sh "${CC}" jit`
 ifneq (${JIT_TARGET},)
   JIT = 1
 endif
@@ -35,37 +37,37 @@ ifeq (${JIT},1)
 ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/ x86 16,32,64 bit
 # port install udis86
-ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h),1)
+ifeq ($(shell tools/config.sh "${CC}" lib -ludis86 udis86.h),1)
 	DEFINES += -DHAVE_LIBUDIS86 -DJIT_DEBUG
 	LIBS += -ludis86
 else
-ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h /opt/local),1)
+ifeq ($(shell tools/config.sh "${CC}" lib -ludis86 udis86.h /opt/local),1)
 	DEFINES += -DHAVE_LIBUDIS86 -DJIT_DEBUG
 	INCS += -I/opt/local/include
 	LIBS += -L/opt/local/lib -ludis86
 else
-ifeq ($(shell ./tools/config.sh "${CC}" lib -ludis86 udis86.h /usr/local),1)
+ifeq ($(shell tools/config.sh "${CC}" lib -ludis86 udis86.h /usr/local),1)
 	DEFINES += -DHAVE_LIBUDIS86 -DJIT_DEBUG
 	INCS += -I/usr/local/include
 	LIBS += -L/usr/local/lib -ludis86
 else
 # http://ragestorm.net/distorm/ x86 16,32,64 bit with all intel/amd extensions
 # apt-get install libdistorm64-dev
-ifeq ($(shell ./tools/config.sh "${CC}" lib -ldistorm64 stdlib.h),1)
+ifeq ($(shell tools/config.sh "${CC}" lib -ldistorm64 stdlib.h),1)
 	DEFINES += -DHAVE_LIBDISTORM64 -DJIT_DEBUG
 	LIBS += -ldistorm64
 else
-ifeq ($(shell ./tools/config.sh "${CC}" lib -ldistorm64 stdlib.h /usr/local),1)
+ifeq ($(shell tools/config.sh "${CC}" lib -ldistorm64 stdlib.h /usr/local),1)
 	DEFINES += -DHAVE_LIBDISTORM64 -DJIT_DEBUG
 	LIBS += -L/usr/local/lib -ldistorm64
 else
 # http://bastard.sourceforge.net/libdisasm.html 386 32bit only
 # apt-get install libdisasm-dev
-ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h),1)
+ifeq ($(shell tools/config.sh "${CC}" lib -ldisasm libdis.h),1)
 	DEFINES += -DHAVE_LIBDISASM -DJIT_DEBUG
 	LIBS += -ldisasm
 else
-ifeq ($(shell ./tools/config.sh "${CC}" lib -ldisasm libdis.h /usr/local),1)
+ifeq ($(shell tools/config.sh "${CC}" lib -ldisasm libdis.h /usr/local),1)
 	DEFINES += -DHAVE_LIBDISASM -DJIT_DEBUG
 	INCS += -I/usr/local/include
 	LIBS += -L/usr/local/lib -ldisasm
@@ -79,11 +81,11 @@ endif
 endif
 endif
 
-# JIT with -O still fails some tests
+# JIT with -O still fails callcc tests
 ifneq (${JIT},1)
        DEBUGFLAGS += -O3
 endif
-ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
+ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	WARNINGS += -Wno-unused-value
 endif
@@ -105,30 +107,37 @@ endif
 
 # CFLAGS += \${DEFINES} \${DEBUGFLAGS}
 
-ifneq ($(shell ./tools/config.sh "${CC}" bsd),1)
+ifneq ($(shell tools/config.sh "${CC}" bsd),1)
 	LIBS += -ldl
 endif
+CROSS = $(shell tools/config.sh "${CC}" cross)
 # cygwin is not WIN32. detect mingw target on cross
-ifeq ($(shell ./tools/config.sh "${CC}" mingw),1)
+ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 	WIN32 = 1
 	LDDLLFLAGS = -shared
 	EXE  = .exe
-	LOADEXT = .dll
 	DLL  = .dll
+	LOADEXT = .dll
 	INCS += -Itools/dlfcn-win32/include
 	LIBS += -Ltools/dlfcn-win32/lib
-	RUNPRE =
 	RPATH =
 	RPATH_INSTALL =
+    ifneq (${CROSS},1)
+	ECHO = echo
+	CAT = type
+	RUNPRE =
+    else
+        RANLIB = $(shell echo "${CC}" | sed -e "s,-gcc,-ranlib,")
+    endif
 else
-ifeq ($(shell ./tools/config.sh "${CC}" cygwin),1)
+ifeq ($(shell tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
 	LDDLLFLAGS = -shared
-	EXE  = .exe
 	LOADEXT = .dll
+	EXE  = .exe
 	DLL  = .dll
 else
-ifeq ($(shell ./tools/config.sh "${CC}" apple),1)
+ifeq ($(shell tools/config.sh "${CC}" apple),1)
         APPLE    = 1
 	DLL      = .dylib
 	LOADEXT  = .bundle
@@ -170,6 +179,7 @@ config.inc.echo:
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "STRIP   = ${STRIP}"
 	@${ECHO} "RUNPRE  = ${RUNPRE}"
+	@${ECHO} "CROSS   = ${CROSS}"
 	@${ECHO} "APPLE   = ${APPLE}"
 	@${ECHO} "WIN32   = ${WIN32}"
 	@${ECHO} "CYGWIN  = ${CYGWIN}"
@@ -182,18 +192,18 @@ config.inc.echo:
 config.h.echo:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
 	@${ECHO} "#define POTION_CFLAGS \"${CFLAGS}\""
-	@${ECHO} "#define POTION_JIT    ${JIT}"
 	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
 	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
-	@${ECHO} "#define POTION_WIN32  ${WIN32}"
 	@${ECHO} "#define POTION_EXE    \"${EXE}\""
 	@${ECHO} "#define POTION_DLL    \"${DLL}\""
 	@${ECHO} "#define POTION_LOADEXT \"${LOADEXT}\""
+	@${ECHO} "#define POTION_WIN32  ${WIN32}"
+	@${ECHO} "#define POTION_JIT    ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_TARGET POTION_${JIT_TARGET}"
 	@test -n ${JIT_TARGET} && ${ECHO} "#define POTION_JIT_NAME " $(shell echo ${JIT_TARGET} | tr A-Z a-z)
 	@${ECHO} ${DEFINES} | perl -lpe's/-D(\w+)/\n#define \1 1/g; s/=/ /g; s{-I[a-z/:]* }{}g;'
 	@${ECHO}
-	@./tools/config.sh "${CC}"
+	@tools/config.sh "${CC}"
 
 # bootstrap config.inc via `make -f config.mak`
 config.inc: tools/config.sh config.mak

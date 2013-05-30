@@ -31,6 +31,7 @@ OBJ_POTION = core/potion.${OPIC}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
+PLIBS = libpotion${DLL} lib/readline${LOADEXT}
 DOC = doc/start.textile
 DOCHTML = ${DOC:.textile=.html}
 
@@ -46,7 +47,7 @@ RUNPRE ?= ./
 all: pn
 	+${MAKE} -s usage
 
-pn: potion${EXE} libpotion${DLL} lib/readline${LOADEXT}
+pn: potion${EXE} ${PLIBS}
 static: libpotion.a potion-s${EXE}
 rebuild: clean pn test
 
@@ -313,5 +314,6 @@ realclean: clean
 	@rm -f config.inc ${GREG} core/syntax.c
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf HTML
+	@find . -name \*.gcov -delete
 
 .PHONY: all config clean doc rebuild test bench tarball dist release install

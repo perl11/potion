@@ -37,6 +37,10 @@
 #ifndef __LINENOISE_H
 #define __LINENOISE_H
 
+#ifdef _WIN32
+#  define off off_t
+#endif
+
 typedef struct linenoiseCompletions {
   size_t len;
   char **cvec;
