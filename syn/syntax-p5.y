@@ -199,11 +199,8 @@ atom = e:value | e:list | e:call | e:anonsub
 #   chr 101 => (expr (value (101), msg ("chr")))
 #   print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
-call = m:name l:list l1:list?
-        { l1 = PN_IS_TUPLE(PN_S(l,0))?potion_tuple_shift(P,0,PN_S(l,0)):PN_AST(VALUE,0);
-          if (!PN_S(l,0)) { PN_SRC(m)->a[1] = PN_SRC(l); }
-          $$ = PN_AST(EXPR, PN_PUSH(PN_TUP(l1), m)); }
-     | m:name        { $$ = PN_AST(EXPR, PN_TUP(m)) }
+call = m:name        { $$ = m }
+     | m:name l:list { PN_SRC(m)->a[1] = PN_SRC(l); $$ = m }
 
 method = v:value - arrow m:name l:list  { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
        | v:value - arrow m:name         { $$ = PN_PUSH(PN_TUPIF(v), m) }
