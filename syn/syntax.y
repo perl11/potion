@@ -159,12 +159,12 @@ loose = value
       | v:unquoted { $$ = PN_AST(VALUE, v) }
 
 closure = t:list? b:block { $$ = PN_AST2(PROTO, t, b) }
-list = list-start s:statements list-end { $$ = PN_AST(LIST, s) }
+list  = list-start s:statements list-end   { $$ = PN_AST(LIST, s) }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s) }
-lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i) }
+lick  = lick-start i:lick-items lick-end   { $$ = PN_AST(LIST, i) }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s) }
 
-path = '/' < utfw+ > -       { $$ = PN_STRN(yytext, yyleng); }
+path = '/' < utfw+ > -    { $$ = PN_STRN(yytext, yyleng); }
 msg  = < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }

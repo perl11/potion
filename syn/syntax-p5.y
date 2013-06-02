@@ -93,7 +93,7 @@ perl5 = -- s:statements end-of-file
 # block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s) }
 
 statements =
-    s1:stmt           { $$ = s1 = PN_TUP(s1) }
+    s1:stmt           { $$ = s1 = PN_IS_TUPLE(s1) ? s1 : PN_TUP(s1) }
         (sep? s2:stmt { $$ = s1 = PN_PUSH(s1, s2) })* sep?
     | ''              { $$ = PN_NIL }
 
@@ -120,7 +120,8 @@ ELSE    = "else" space+
 MY      = "my" space+
 
 subrout = SUB n:id - ( list-start p:sig_p5 list-end - )? b:block -
-        { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_AST(MSG, n)), PN_AST2(PROTO, p, b)) }
+        { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_TUP(PN_AST(MSG, n))),
+                               PN_AST(EXPR, PN_TUP(PN_AST2(PROTO, p, b)))) }
 anonsub = SUB ( list-start p:sig_p5 list-end - )? b:block -
         { $$ = PN_AST2(PROTO, p, b) }
 # so far no difference in global or lex assignment
@@ -217,22 +218,22 @@ expr = ( not e:expr           { e = PN_AST(NOT, e) }
        | pplus e:value         { e = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
        | e:value (pplus        { e = PN_OP(AST_INC, e, PN_NUM(1)) }
                 | mminus       { e = PN_OP(AST_INC, e, PN_NUM(-1)) })?)
-                            { e = PN_TUPIF(e) }
-       | e:atom             { e = PN_TUPIF(e) }
-         ( c:call { e = PN_PUSH(e, c) } )*
+       | e:atom ( c:call { e = PN_PUSH(PN_TUPIF(e), c) } )*
+       | e:method
        { $$ = PN_AST(EXPR, e) }
 
 # removed lambda (anonsub)
 atom = e:value | e:list | e:call | e:anonsub
 
-#FIXME indirect method. e.g. chr 101 => (expr (value (101), msg ("chr")))
-# print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
-call = m:name { v = PN_NIL } (v:value | v:list)?
-        { $$ = PN_PUSH(PN_TUPIF(v), m) }
-    | v:value - arrow m:name l:list
-        { $$ = PN_PUSH(PN_PUSH(PN_TUPIF(v), m), l) }
-    | v:value - arrow m:name
-        { $$ = PN_PUSH(PN_TUPIF(v), m) }
+#FIXME methods and indirect methods:
+#   chr 101 => (expr (value (101), msg ("chr")))
+#   print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
+#   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
+call = m:name        { $$ = m }
+     | m:name l:list { PN_SRC(m)->a[1] = PN_SRC(l); $$ = m }
+
+method = v:value - arrow m:name l:list  { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
+       | v:value - arrow m:name         { $$ = PN_PUSH(PN_TUPIF(v), m) }
 
 name = !keyword m:msg     { $$ = PN_AST(MSG, m) }
 
