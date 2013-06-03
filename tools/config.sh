@@ -5,7 +5,7 @@ AC="tools/config.c"
 AOUT="tools/config.out"
 if [ -z "$CC" ]; then
     if [ -z "$1" -o "$1" = "compiler" ]; then
-        case `uname -o` in
+        case `uname -s` in
             *Linux) CC=clang ;;
             *) CC=cc ;;
         esac
@@ -59,8 +59,8 @@ else
   LOADEXT=".dll"
   DLL=".dll"
   LIBEXT=".a"
-  case `uname -o` in
-      *Linux|Cygwin|Darwin) CROSS=1 ;;
+  case `uname -s` in
+      *Linux|CYGWIN*|Darwin) CROSS=1 ;;
       *) CROSS=0 ;;
   esac
 fi
