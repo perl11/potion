@@ -1,5 +1,5 @@
-sub msg (){ print "no arguments"}
-msg ()
+sub msg1 (){ print "no arguments"}
+msg1 ()
 
 sub msg2 {" and highly sparse"}
 msg2 ()

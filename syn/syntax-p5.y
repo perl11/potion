@@ -119,13 +119,15 @@ ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
 
-subrout = SUB n:id - ( list-start p:sig_p5 list-end - )? b:block -
+p5-siglist = list-start p:sig_p5 list-end - 
+        { P->source = PN_NIL; $$ = PN_AST(LIST, P->source) }
+subrout = SUB n:id - l:p5-siglist? b:block -
         { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_TUP(PN_AST(MSG, n))),
-                               PN_AST(EXPR, PN_TUP(PN_AST2(PROTO, p, b)))) }
-anonsub = SUB ( list-start p:sig_p5 list-end - )? b:block -
-        { $$ = PN_AST2(PROTO, p, b) }
+                               PN_AST(EXPR, PN_TUP(PN_AST2(PROTO, l, b)))) }
+anonsub = SUB l:p5-siglist? b:block -
+        { $$ = PN_AST2(PROTO, l, b) }
 # so far no difference in global or lex assignment
-#subrout = SUB n:id - ( '(' p:sig_p5 ')' )? a:subattrlist? b:block
+#subrout = SUB n:id - l:p5-siglist?? a:subattrlist? b:block
 #lexsubrout = MY - SUB n:subname p:proto? a:subattrlist? b:subbody
 #        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)) }
 #subattrlist = ':' -? arg-name
