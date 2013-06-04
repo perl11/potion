@@ -107,6 +107,8 @@ PN potion_num_string(Potion *P, PN closure, PN self) {
 
 static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
   long i, j = PN_INT(self);
+  if (PN_TYPE(block) != PN_TCLOSURE)
+    potion_fatal("block argument for times is not a closure");
   for (i = 0; i < j; i++)
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(i);
@@ -115,6 +117,8 @@ static PN potion_num_times(Potion *P, PN cl, PN self, PN block) {
 PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
   long i, s = 1, j = PN_INT(self), k = PN_INT(end);
   if (k < j) s = -1;
+  if (PN_TYPE(block) != PN_TCLOSURE)
+    potion_fatal("block argument for to is not a closure");
   for (i = j; i != k + s; i += s)
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   return PN_NUM(abs(i - j));
