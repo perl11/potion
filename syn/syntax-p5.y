@@ -56,39 +56,7 @@ perl5 = -- s:statements end-of-file
         { $$ = P->source = PN_AST(CODE, s);
           if (yyleng) YY_ERROR(G,"** Syntax error"); }
 
-#prog  = s:lineseq { $$ = PN_AST(CODE, s) }
-#
-#lineseq = s1:decl*	{ $$ = s1 = PN_TUP(s1) }
-#    |	s2:line*	{ $$ = s1 = PN_PUSH(s1, s2) }
-#    |	'' 			{ $$ = PN_NIL }
-#
-# todo BLOCK => STATE: no scope, just add a label to a cond or sideeff
-#
-#line = 	l:label c:cond       { $$ = PN_AST2(BLOCK, l, c) }
-#	|	loop	{} # loops add their own labels
-#	|	l:label semi          { $$ = PN_AST2(BLOCK, l, PN_NIL) }
-#	|	l:label s:sideff semi { $$ = PN_AST2(BLOCK, l, s) }
-#
-#sideff = stmt
-#    | expr
-#loop = --
-#cond = --
-#
-#label = arg-name?
-#
-#decl =	subrout
-#	|	lexsubrout
-#	|	package
-#	|	use
-#   |   format
-#
-#format	=	FORMAT s:startformsub f:formname b:block
-#			{ $$ = PN_AST2(ASSIGN, f, YY_NAME(format)(s, b)) }
-#
-#formname =	w:WORD		{ $$ = w }
-#	| '' 	            { $$ = PN_NIL }
-
-# AST BLOCK needs to capture lexicals, not block_start()
+# AST BLOCK captures lexicals
 # Note that if/else blocks (mblock) do not capture lexicals
 # block = '{' s:lineseq '}' { $$ = PN_AST(BLOCK, s) }
 
@@ -231,8 +199,11 @@ atom = e:value | e:list | e:call | e:anonsub
 #   chr 101 => (expr (value (101), msg ("chr")))
 #   print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
-call = m:name        { $$ = m }
-     | m:name l:list { PN_SRC(m)->a[1] = PN_SRC(l); $$ = m }
+call = m:name l:list l1:list?
+        { l1 = PN_IS_TUPLE(PN_S(l,0))?potion_tuple_shift(P,0,PN_S(l,0)):PN_AST(VALUE,0);
+          if (!PN_S(l,0)) { PN_SRC(m)->a[1] = PN_SRC(l); }
+          $$ = PN_AST(EXPR, PN_PUSH(PN_TUP(l1), m)); }
+     | m:name        { $$ = PN_AST(EXPR, PN_TUP(m)) }
 
 method = v:value - arrow m:name l:list  { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
        | v:value - arrow m:name         { $$ = PN_PUSH(PN_TUPIF(v), m) }
