@@ -117,7 +117,7 @@ usage:
 
 config:
 	@${ECHO} MAKE -f config.mak $@
-	@${MAKE} -s -f config.mak
+	@${MAKE} -s -f config.mak config.inc core/config.h
 
 # bootstrap config.inc
 config.inc: tools/config.sh config.mak
