@@ -101,7 +101,7 @@ stmt = PACKAGE arg-name semi {} # TODO: set namespace
     | ifstmt
     | assigndecl
     | s:sets semi
-        ( or x:sets semi      { s = PN_OP(AST_OR, s, x) }
+        ( or x:sets semi       { s = PN_OP(AST_OR, s, x) }
         | and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
                               { $$ = s }
     | expr
@@ -125,10 +125,13 @@ subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
 # TODO: compile-time sideeffs (BEGIN block) in the compiler
 use = USE n:id - semi    { $$ = PN_AST2(MSG, PN_STRN("use",3), n) }
 
-ifstmt = IF e:ifexpr s:block - !"els"  { s  = PN_OP(AST_AND, e, s) }
-       | IF e:ifexpr s1:block -        { s1 = PN_AST(MSG, PN_if) }
-         (ELSIF e1:ifexpr f:block - )* { f = PN_AST(MSG, PN_elsif) }
-         (ELSE s2:block )?             { s2 = PN_AST(MSG, PN_else) }
+ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_OP(AST_AND, e, s) }
+    | IF e:ifexpr s1:block -
+        { $$ = e = PN_AST3(MSG, PN_if, PN_AST(LIST, PN_TUP(e)), s1) }
+      (ELSIF e1:ifexpr f:block -
+        { $$ = e = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_elsif, PN_AST(LIST, PN_TUP(e1)), f)) } )*
+      (ELSE s2:block
+        { $$ = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_else, PN_NIL, s2)) } )?
 
 ifexpr = '(' - expr - ')' -
 
