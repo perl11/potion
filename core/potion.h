@@ -584,7 +584,7 @@ struct Potion_State {
   struct PNTable *strings; ///< table of all strings
   PN lobby;                ///< root namespace
   PNFlex * volatile vts;   ///< built in types
-  PN source, input;        ///< parser input and output
+  PN input, source, decl;  ///< parser input, output (AST) and 1st pass declarations
   int yypos;               ///< parser buffer position
   PNAsm * volatile pbuf;   ///< parser buffer
   PN unclosed;             ///< used by parser for named block endings

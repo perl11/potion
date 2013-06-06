@@ -95,27 +95,31 @@ statements =
         (sep? s2:stmt { $$ = s1 = PN_PUSH(s1, s2) })* sep?
     | ''             { $$ = PN_NIL }
 
-stmt = PACKAGE arg-name semi {} # TODO: set namespace
+stmt = pkgdecl
+    | BEGIN b:block           { p2_eval(P, b, POTION_JIT) }
     | subrout
     | use
     | ifstmt
     | assigndecl
     | s:sets semi
-        ( or x:sets semi       { s = PN_OP(AST_OR, s, x) }
+        ( or x:sets semi      { s = PN_OP(AST_OR, s, x) }
         | and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
                               { $$ = s }
     | expr
 
-SUB     = "sub" space+
+BEGIN   = "BEGIN" space+
 PACKAGE = "package" space+
 USE     = "use" space+
+SUB     = "sub" space+
 IF      = "if" space+
 ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
 
 subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
+        # TODO: add name to namespace
         { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_AST(MSG, n)), PN_AST2(PROTO, p, b)) }
+
 # so far no difference in global or lex assignment
 #subrout = SUB n:id - ( '(' p:sig_p5 ')' )? a:subattrlist? b:block
 #lexsubrout = MY - SUB n:subname p:proto? a:subattrlist? b:subbody
@@ -124,6 +128,9 @@ subrout = SUB n:id - ( '(' p:sig_p5 ')' )? - b:block -
 
 # TODO: compile-time sideeffs (BEGIN block) in the compiler
 use = USE n:id - semi    { $$ = PN_AST2(MSG, PN_STRN("use", 3), n) }
+
+pkgdecl = PACKAGE n:arg-name semi          {} # TODO: set namespace
+    | PACKAGE n:arg-name v:version? b:block
 
 ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_OP(AST_AND, e, s) }
     | IF e:ifexpr s1:block -
@@ -351,6 +358,8 @@ hex = '0x' < hexl+ >
 dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM }
         ('.' [0-9]+ { $$ = YY_TDEC })?
         ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
+version = 'v'? < ('0' | [1-9][0-9]*) { $$ = YY_TNUM }
+          ('.' [0-9]+ { $$ = YY_TDEC })? >
 
 q1 = [']   # ' emacs highlight problems
 c1 = < (!q1 utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng) }
