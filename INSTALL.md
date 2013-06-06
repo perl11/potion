@@ -83,7 +83,7 @@ or try to merge with the branch 'p2-c++'.
 
 ## ~ creating documentation ~
 
-This is required for release admins.
+This is required for make install and release admins.
 You'll need
 
     redcloth to convert .textile to html,
