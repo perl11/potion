@@ -43,11 +43,19 @@ Once that's all done,
 
     $ make
 
-The easiest way to do this, actually, is on Linux.
-
+The easiest way to do this, actually, is on Linux or Darwin.
 On Ubuntu, if you have MinGW installed,
 
-    $ make CC=i586-mingw32msvc-gcc
+    $ make; make clean
+    $ make config CC=i586-mingw32msvc-gcc
+    $ touch core/syntax.c
+    $ make && make dist
+
+This will first create a native greg and core/syntax.c,
+sets CROSS=1 and cross-compile with the given CC.
+See tools/mk-release.sh
+make test will not work, you need to copy a make dist tarball
+to the machine and test it there.
 
 ## ~ building on bsd ~
 
@@ -56,16 +64,12 @@ You can either install gnu make (gmake)
 
     $ sudo port install gmake
 
+or try ./configure which creates a special BSD config.mk
+
 or try to merge 'master' with the branch 'bsd'
 
     $ git merge bsd
     ... resolve conflicts, or not
-
-and remove then -ldl from config.inc LIBS
-
-    $ make
-    $ cat config.inc | sed 's, -ldl,,' > config.inc
-    $ make
 
 ## ~ building with a strict C++ compiler ~
 
@@ -76,3 +80,13 @@ Either add a C dialect to CC in config.inc (i.e. -std=c89),
     g++ --help=C; clang++ -x C -std=gnu89
 
 or try to merge with the branch 'p2-c++'.
+
+## ~ creating documentation ~
+
+This is required for release admins.
+You'll need
+
+    redcloth to convert .textile to html,
+    doxygen (1.8 or 1.9), and
+    GNU global for gtags and htags
+
