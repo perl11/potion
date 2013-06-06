@@ -36,14 +36,14 @@
      implementations and compilers it needs to be adjusted. The
      perl6 testsuite is in a better shape.
 
-   * signatures, types, native threads for perl5. Hopefully macros also.
+   * signatures, types, native threads, call-replacing macros for perl5.
 
    * Using most of Damian Conway's p5i recommendations:
      i.e. classes are immutable and final by default.
      See <http://web.archive.org/web/20040207072905/http://www.yetanother.org/damian/Perl5+i/>
 
-   * libp2 is usable as a fast backend for nqp/perl6, parsing p6
-     natively should also be possible.
+   * libp2 is usable as a fast backend for nqp/perl6, but parsing and supporting
+     p6 natively without going through nqp should be easier (and faster).
 
    * Native and fast calling convention, no XS stack args on the heap.
      XS is replaced by dlcall (dynamic ffi), and/or shared libraries
@@ -51,7 +51,7 @@
 
    * int, str, num are objects, you can optionally type all args and
      lexical variables.  In fact everything is an object as in parrot,
-     even the compiler, the parser, the vm.
+     even the parsed AST, the vm state.
 
    * Sized arrays are non-autovivifying and initialized with undef,
      resp. if typed 0, 0.0, "".
@@ -78,11 +78,15 @@
      instead.
 
    * p6model: via scoped mixins, :multi, roles. Like Moose, just better
-     and much faster. (roughly estimated 800x faster)
+     and much faster. (roughly estimated 800x faster).
+     No multiple inheritance yet, @ISA == 1.
+     Only one parent, depending on another parent, rather multiple
+     mixin compositions.
 
-   * smartmatch works because all data are typed objects.
+   * ~~ match works because all data are typed objects.
      A destructuring-bind alike new match operator which matches
-     structures (list, trees, hashes of hashes) against structures.
+     structures (list, trees, hashes of hashes) against structures,
+     values and types.
 
    * Just-in-time compilation for x86, x86-64 and ppc done. arm later.
 
@@ -100,16 +104,16 @@
      languages.  This means everything in the language, including
      object allocation, parser, compiler and interpreter state are
      part of the object model.  (See COPYING for citations.)
-     In fact are all objects and classes closures, which simplifies
+     In fact all objects and classes are closures, which simplifies
      scoping, and makes p2 a functional vm.
 
-   * Planned is an extensibe parser to implement macros and scoped
-     syntax blocks (for ffi, p6, and other languages).
+   * parsers are scoped and run-time loadable for ffi, p6, and
+     other languages.
 
    * Interpreter is thread-safe and reentrant.  I hope this will
      facilitate coroutines, parallel interpreters and sandboxing.
 
-   * Small. Under 10kloc. Right now we're like 6,000 or
+   * Small core. Under 10kloc. Right now we're like 6,000 or
      something. Install sloccount and run: make sloc.
 
    * Reified AST and bytecode structures. This is very important to
@@ -137,13 +141,14 @@
 
    * Limited error handling.
 
-   * No signal handling, ffi, thread-safe GC, asynchronuous IO yet.
+   * No signal handling, ffi, thread-safe GC, asynchronuous IO yet,
+     but in planning.
 
 
   ~ thankyous ~
 
   why the lucky stiff left the ruby community. potion was his last
-  public project. It's a work of art and mastership. I could not
+  public project. It's a work of great art and mastership. I could not
   think of anything better. I think it is better than Go, if potion
   would have had added auto-threads and channels.
 
