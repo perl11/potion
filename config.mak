@@ -158,7 +158,7 @@ endif
 # let an existing config.inc overwrite everything
 include config.inc
 
-config: config.inc
+config: config.inc core/config.h
 
 config.inc.echo:
 	@${ECHO} "PREFIX  = ${PREFIX}"
