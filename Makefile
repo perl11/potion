@@ -50,9 +50,10 @@ OBJ_GC_BENCH = test/api/gc-bench.o
 DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/design-decisions.textile
 DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
-PLIBS = $(foreach l,potion p2 syntax syntax-p5,lib/potion/lib$l${DLL})
+PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
+PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 # modules:
-PLIBS += lib/potion/readline${LOADEXT}
+PLIBS += $(foreach m,readline libuv m_apm libtommath,lib/potion/$m${LOADEXT})
 OBJS = .o .o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
@@ -227,7 +228,7 @@ endif
 	@${ECHO} GREG $@
 	@${GREG} $< > $@-new && ${MV} $@-new $@
 
-bin/potion${EXE}: ${PIC_OBJ_POTION} lib/potion/libpotion${DLL}
+bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion ${LIBS}
@@ -268,7 +269,7 @@ lib/libp2.a: ${OBJ_P2_SYN} ${OBJ2} core/config.h core/potion.h
 	@${ECHO} RANLIB $@
 	@-${RANLIB} $@
 
-lib/potion/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
+lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
@@ -288,14 +289,14 @@ lib/potion/libsyntax${DLL}: syn/syntax.${OPIC}
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@$(CC) ${DEBUGFLAGS} -o $@ $(INCS) \
-	  $(subst libpotion,libsyntax,${LDDLLFLAGS}) ${RPATH} \
+	  $(subst libpotion,potion/libsyntax,${LDDLLFLAGS}) ${RPATH} \
 	  $< ${LIBPTH} -lpotion $(LIBS)
 
 lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) \
-	  $(subst libpotion,libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
+	  $(subst libpotion,potion/libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
 	  $< ${LIBPTH} -lp2 $(LIBS)
 
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
@@ -305,6 +306,31 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@${MAKE} -s -C lib/readline
 	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
+
+lib/potion/libuv${LOADEXT}: core/config.h core/potion.h \
+  lib/libuv/Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C lib/libuv
+	@[ -d lib/potion ] || mkdir lib/potion
+	@cp lib/libuv/libuv${LOADEXT} $@
+
+lib/potion/m_apm${LOADEXT}: core/config.h core/potion.h \
+  lib/m_apm/Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C lib/m_apm
+	@[ -d lib/potion ] || mkdir lib/potion
+	@cp lib/m_apm/m_apm${LOADEXT} $@
+
+lib/potion/libtommath${LOADEXT}: core/config.h core/potion.h \
+  lib/libtommath/makefile.shared
+	@${ECHO} MAKE $@
+	cd lib/libtommath; ${CC} -c -I. ${FPIC} ${CFLAGS} *.c; \
+	  ${CC} ${DEBUGFLAGS} -o libtommath${LOADEXT} \
+	  $(subst libpotion,potion/libtommath,${LDDLLFLAGS}) ${RPATH} \
+	  *.o ${LIBS}; cd ../..
+	@${ECHO} @${MAKE} -s -C lib/libtommath -f makefile.shared
+	@[ -d lib/potion ] || mkdir lib/potion
+	@cp lib/libtommath/libtommath${LOADEXT} $@
 
 bench: bin/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \

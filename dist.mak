@@ -26,15 +26,16 @@ install: bin-dist
 bin-dist: pkg/${PKGBIN}.tar.gz pkg/${PKGBIN}-devel.tar.gz
 
 pkg/${PKGBIN}.tar.gz: bin/potion${EXE} bin/p2${EXE} doc \
-  lib/potion/libp*${DLL} lib/potion/*${LOADEXT} lib/potion/libsyntax*${DLL}
+  lib/libp*${DLL} lib/potion/*${LOADEXT} lib/potion/libsyntax*${DLL}
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc dist/share/potion/example
 	cp bin/potion${EXE}            dist/bin/
 	cp bin/p2${EXE}                dist/bin/
-	cp lib/potion/readline${LOADEXT} dist/lib/potion/
-	cp lib/potion/lib*${DLL}       dist/lib/potion/
-	if [ ${WIN32} = 1 ]; then mv dist/lib/potion/*.dll dist/bin/; fi
+	cp lib/libp*${DLL}             dist/lib/
+	cp lib/potion/*${LOADEXT}      dist/lib/potion/
+	cp lib/potion/libsyntax*${DLL} dist/lib/potion/
+	if [ ${WIN32} = 1 ]; then mv dist/lib/*.dll dist/bin/; fi
 	cp core/potion.h               dist/include/potion/
 	cp core/config.h               dist/include/potion/
 	-cp doc/*.html doc/*.png       dist/share/potion/doc/
