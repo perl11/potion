@@ -53,7 +53,7 @@ BINS = bin/potion${EXE} bin/p2${EXE}
 PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 # modules:
-PLIBS += $(foreach m,readline libuv m_apm libtommath,lib/potion/$m${LOADEXT})
+PLIBS += $(foreach m,readline libuv libtommath,lib/potion/$m${LOADEXT})
 OBJS = .o .o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
