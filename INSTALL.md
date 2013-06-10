@@ -19,11 +19,49 @@ Lastly, to verify your build
 ## ~ the latest potion ~
 
 To build the bleeding edge, you will need
-GNU make, binutils and gcc or clang.
+GNU make, binutils, perl, sed, and gcc or clang.
 
     $ git clone --branch master git://github.com/perl11/potion.git
     $ cd potion
     $ make
+
+## ~ external dependencies ~
+
+    build-time: gnu make, perl, sed, gcc or clang, echo, cat, expr, git
+    (perl is only needed because of BSD/darwin sed problems)
+
+    run-time:
+    libuv, sregex, libtommath are included, but external packagers
+    should choose to use existing packages. see dist.mak
+
+    optional:
+
+    libudis on x86 (debugging only)
+      http://udis86.sourceforge.net/ x86 16,32,64 bit
+      port install udis86
+
+    libdistorm64 on x86 (debugging only)
+      http://ragestorm.net/distorm/ x86 16,32,64 bit with all intel/amd extensions
+      apt-get install libdistorm64-dev
+
+    libdisasm on i386 (debugging only)
+      http://bastard.sourceforge.net/libdisasm.html 386 32bit only
+      apt-get install libdisasm-dev
+
+    sloccount (for make sloc)
+      apt-get install sloccount
+
+    redcloth (for make doc install)
+      apt-get install ruby-redcloth, or
+      port install rb-redcloth
+
+    doxygen 1.8 or 1.9 (for make doc install)
+      apt-get install doxygen, or
+      port install doxygen
+
+    GNU global (for make docall install)
+      apt-get install global, or
+      port install global
 
 ## ~ installing ~
 
@@ -53,6 +91,7 @@ On Ubuntu, if you have MinGW installed,
 This will first create a native greg and core/syntax.c,
 sets CROSS=1 and cross-compile with the given CC.
 See tools/mk-release.sh
+
 make test will not work, you need to copy a make dist tarball
 to the machine and test it there.
 
