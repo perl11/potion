@@ -144,11 +144,11 @@ syn/greg.c: syn/greg.y
         fi
 
 core/callcc.o core/callcc.o2: core/callcc.c core/config.h core/p2.h core/internal.h
-	@${ECHO} CC $< +frame-pointer
+	@${ECHO} CC $@ +frame-pointer
 	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 ifneq (${FPIC},)
 core/callcc.${OPIC} core/callcc.${OPIC}2: core/callcc.c core/config.h core/p2.h core/internal.h
-	@${ECHO} CC ${FPIC} $< +frame-pointer
+	@${ECHO} CC $@ +frame-pointer
 	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 endif
 
