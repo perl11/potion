@@ -11,3 +11,6 @@
 [submodule "3rd/libtommath"]
 	path = 3rd/libtommath
 	url = git://github.com/libtom/libtommath.git
+[submodule "3rd/pcre"]
+	path = 3rd/pcre
+	url = git://github.com/Distrotech/pcre.git

@@ -53,7 +53,7 @@ BINS = bin/potion${EXE} bin/p2${EXE}
 PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 #EXTLIBS = $(foreach m,uv pcre,lib/lib$m.a)
-#EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv
+#EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv -L3rd/libtommath -llibtommath
 DYNLIBS = $(foreach m,readline buffile,lib/potion/$m${LOADEXT})
 OBJS = .o .o2
 ifneq (${FPIC},)
