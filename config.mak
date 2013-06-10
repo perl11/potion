@@ -26,6 +26,14 @@ RANLIB = ranlib
 SED  = sed
 EXPR = expr
 
+ifeq ("$(V)","1")
+  Q :=
+  VECHO = @true
+else
+  Q := @
+  VECHO = @echo
+endif
+
 STRIP ?= $(shell tools/config.sh "${CC}" strip)
 JIT_TARGET ?= $(shell tools/config.sh "${CC}" jit)
 ifneq (${JIT_TARGET},)
@@ -207,28 +215,28 @@ config.h.echo:
 
 # bootstrap config.inc via `make -f config.mak`
 config.inc: tools/config.sh config.mak
-	@${ECHO} MAKE $@
-	@${ECHO} "# -*- makefile -*-" > config.inc
-	@${ECHO} "# created by ${MAKE} -f config.mak" >> config.inc
-	@${MAKE} -s -f config.mak config.inc.echo >> $@
+	$(VECHO) MAKE $@
+	@$(ECHO) "# -*- makefile -*-" > config.inc
+	@$(ECHO) "# created by ${MAKE} -f config.mak" >> config.inc
+	@$(MAKE) -s -f config.mak config.inc.echo >> $@
 
 # Force sync with config.inc
 core/config.h: config.inc core/version.h tools/config.sh config.mak
-	@${ECHO} MAKE $@
+	$(VECHO) MAKE $@
 	@${CAT} core/version.h > core/config.h
-	@${MAKE} -s -f config.mak config.h.echo >> core/config.h
+	@$(MAKE) -s -f config.mak config.h.echo >> core/config.h
 
 core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
-	@${ECHO} MAKE $@
-	@${ECHO} "/* created by ${MAKE} -f config.mak */" > core/version.h
-	@${ECHO} -n "#define POTION_DATE   \"" >> core/version.h
-	@${ECHO} -n $(shell date +%Y-%m-%d) >> core/version.h
-	@${ECHO} "\"" >> core/version.h
-	@${ECHO} -n "#define POTION_COMMIT \"" >> core/version.h
-	@${ECHO} -n $(shell git rev-list HEAD -1 --abbrev=7 --abbrev-commit) >> core/version.h
-	@${ECHO} "\"" >> core/version.h
-	@${ECHO} -n "#define POTION_REV    " >> core/version.h
-	@${ECHO} -n $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g") >> core/version.h
-	@${ECHO} >> core/version.h
+	$(VECHO) MAKE $@
+	@$(ECHO) "/* created by ${MAKE} -f config.mak */" > core/version.h
+	@$(ECHO) -n "#define POTION_DATE   \"" >> core/version.h
+	@$(ECHO) -n $(shell date +%Y-%m-%d) >> core/version.h
+	@$(ECHO) "\"" >> core/version.h
+	@$(ECHO) -n "#define POTION_COMMIT \"" >> core/version.h
+	@$(ECHO) -n $(shell git rev-list HEAD -1 --abbrev=7 --abbrev-commit) >> core/version.h
+	@$(ECHO) "\"" >> core/version.h
+	@$(ECHO) -n "#define POTION_REV    " >> core/version.h
+	@$(ECHO) -n $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g") >> core/version.h
+	@$(ECHO) >> core/version.h
 
 .PHONY: config config.inc.echo config.h.echo
