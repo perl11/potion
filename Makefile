@@ -54,7 +54,6 @@ PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 EXTLIBS = $(foreach m,sregex uv,lib/lib$m.a)
 DYNLIBS = $(foreach m,readline libtommath m_apm,lib/potion/$m${LOADEXT})
-LIBS += ${EXTLIBS}
 OBJS = .o .o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
@@ -238,7 +237,7 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS} ${EXTLIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 ${GREG}: syn/greg.c syn/compile.c syn/tree.c
@@ -246,7 +245,7 @@ ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@[ -d bin ] || mkdir bin
 	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
-bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${EXTLIBS}
+bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} lib/libpotion.a ${LIBS}
@@ -254,7 +253,7 @@ bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${EXTLIBS}
 bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${EXTLIBS}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS} ${EXTLIBS}
 
 lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
@@ -270,7 +269,7 @@ lib/libp2.a: ${OBJ_P2_SYN} ${OBJ2} core/config.h core/potion.h
 	@${ECHO} RANLIB $@
 	@-${RANLIB} $@
 
-lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h ${EXTLIBS}
+lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
@@ -283,7 +282,7 @@ lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/c
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ $(subst libpotion,libp2,${LDDLLFLAGS}) ${RPATH} \
-	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} > /dev/null
+	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} ${EXTLIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/potion/libsyntax${DLL}: syn/syntax.${OPIC}
@@ -466,18 +465,18 @@ bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@if ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBS}; fi
 
-bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a
+bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a ${EXTLIBS}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${LIBS} ${EXTLIBS}
 
-bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
+bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a ${EXTLIBS}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${LIBS} ${EXTLIBS}
 
-bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
+bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a ${EXTLIBS}
 	@${ECHO} LINK $@
-	@if ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}; then true; else \
-	  ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ ${OBJ2} ${OBJ_P2_SYN} ${LIBS}; fi
+	@if ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS} ${EXTLIBS}; then true; else \
+	  ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ ${OBJ2} ${OBJ_P2_SYN} ${LIBS} ${EXTLIBS}; fi
 
 dist: bins libs static doc ${SRC_SYN} ${SRC_P2_SYN}
 	@if [ -n "${RPATH}" ]; then \
@@ -558,11 +557,11 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f $(foreach ext,o o2 opic opic2 i gcda gcno,$(foreach dir,core syn front test/api lib/*,${dir}/*.${ext}))
-	@rm -f bin/* lib/potion/* lib/*.a
+	@rm -f bin/* lib/potion/* lib/*.a lib/*${DLL} lib/*${LOADEXT}
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f tools/*.o core/config.h core/version.h
 	@rm -f tools/*~ doc/*~ example/*~ core/*~ config.inc~ tools/config.c
-	@rm -f lib/readline/readline${LOADEXT}
+	@rm -f lib/*/*${LOADEXT} lib/*/*.o
 	@rm -rf doc/html doc/latex
 
 # also config.inc and files needed for cross-compilation
