@@ -52,7 +52,7 @@ DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
 PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
-EXTLIBS = $(foreach m,sregex uv,lib/lib$m${DLL})
+EXTLIBS = $(foreach m,sregex uv,lib/lib$m.a)
 DYNLIBS = $(foreach m,readline libtommath m_apm,lib/potion/$m${LOADEXT})
 LIBS += ${EXTLIBS}
 OBJS = .o .o2
@@ -301,17 +301,17 @@ lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2
 	  $< ${LIBPTH} -lp2 $(LIBS)
 
 # 3rdparty EXTLIBS linked
-lib/libuv${DLL}: core/config.h core/potion.h \
+lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C 3rd/libuv libuv${DLL}
-	@cp 3rd/libuv/libuv${DLL} $@
+	@cp 3rd/libuv/libuv.a lib/
 
-lib/libsregex${DLL}: core/config.h core/potion.h \
+lib/libsregex.a: core/config.h core/potion.h \
   3rd/sregex/Makefile
 	@${ECHO} MAKE $@
-	@${MAKE} -s -C 3rd/sregex CC="${CC}" FILE_SO=libsregex${DLL}
-	@cp 3rd/sregex/libsregex${DLL} $@
+	@${MAKE} -s -C 3rd/sregex CC="${CC}"
+	@cp 3rd/sregex/libsregex.a lib/
 
 # DYNLIBS
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
