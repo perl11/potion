@@ -52,8 +52,9 @@ DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
 PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
-# modules:
-PLIBS += $(foreach m,readline libuv libtommath,lib/potion/$m${LOADEXT})
+EXTLIBS = $(foreach m,sregex uv,lib/lib$m${DLL})
+DYNLIBS = $(foreach m,readline libtommath m_apm,lib/potion/$m${LOADEXT})
+LIBS += ${EXTLIBS}
 OBJS = .o .o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
@@ -234,7 +235,7 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
-bin/p2${EXE}: ${OBJ_P2} lib/potion/libp2${DLL}
+bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
@@ -245,12 +246,12 @@ ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@[ -d bin ] || mkdir bin
 	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
-bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a
+bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${EXTLIBS}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} lib/libpotion.a ${LIBS}
 
-bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a
+bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${EXTLIBS}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS}
@@ -269,7 +270,7 @@ lib/libp2.a: ${OBJ_P2_SYN} ${OBJ2} core/config.h core/potion.h
 	@${ECHO} RANLIB $@
 	@-${RANLIB} $@
 
-lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
+lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h ${EXTLIBS}
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
@@ -277,7 +278,7 @@ lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 	  ${PIC_OBJ} ${PIC_OBJ_SYN} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
-lib/potion/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/config.h core/potion.h
+lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/config.h core/potion.h ${EXTLIBS}
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
@@ -299,6 +300,20 @@ lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2
 	  $(subst libpotion,potion/libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
 	  $< ${LIBPTH} -lp2 $(LIBS)
 
+# 3rdparty EXTLIBS linked
+lib/libuv${DLL}: core/config.h core/potion.h \
+  3rd/libuv/Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C 3rd/libuv libuv${DLL}
+	@cp 3rd/libuv/libuv${DLL} $@
+
+lib/libsregex${DLL}: core/config.h core/potion.h \
+  3rd/sregex/Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C 3rd/sregex CC="${CC}" FILE_SO=libsregex${DLL}
+	@cp 3rd/sregex/libsregex${DLL} $@
+
+# DYNLIBS
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
@@ -306,13 +321,6 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@${MAKE} -s -C lib/readline
 	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
-
-lib/potion/libuv${LOADEXT}: core/config.h core/potion.h \
-  lib/libuv/Makefile
-	@${ECHO} MAKE $@
-	@${MAKE} -s -C lib/libuv
-	@[ -d lib/potion ] || mkdir lib/potion
-	@cp lib/libuv/libuv${LOADEXT} $@
 
 lib/potion/m_apm${LOADEXT}: core/config.h core/potion.h \
   lib/m_apm/Makefile
