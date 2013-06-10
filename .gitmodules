@@ -4,6 +4,6 @@
 [submodule "3rd/libuv"]
 	path = 3rd/libuv
 	url = git://github.com/joyent/libuv.git
-[submodule "3rd/sregex"]
-	path = 3rd/sregex
-	url = git://github.com/agentzh/sregex.git
+[submodule "3rd/pcre"]
+	path = 3rd/pcre
+	url = git://github.com/Distrotech/pcre.git
