@@ -1,6 +1,6 @@
 include ../../config.inc
 INCS += -I../../core
-LIBS += -L../potion -lpotion
+LIBS += -L.. -lpotion
 SRC   = linenoise.c
 ifeq ($(WIN32),1)
   SRC  += win32fixes.c
