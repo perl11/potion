@@ -7,3 +7,4 @@
 [submodule "3rd/pcre"]
 	path = 3rd/pcre
 	url = git://github.com/Distrotech/pcre.git
+	branch = master
