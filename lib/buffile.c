@@ -46,7 +46,9 @@ PN potion_buffile_fopen(Potion *P, PN cl, PN ign, PN path, PN modestr) {
   create a temporary file with fdopen for w+
   The file shall be automatically deleted when all references to the file are closed.
   \return a new PNBufFile */
-PN potion_buffile_tmpfile(Potion *P, PN cl, pn_ffile self) {
+PN potion_buffile_tmpfile(Potion *P, PN cl, PN ign) {
+  struct PNBufFile *self;
+  self = (struct PNBufFile *)potion_data_alloc(P, sizeof(struct PNBufFile));
   self->siz = BufFileSize;
   self->file = tmpfile();
   if (!self->file) { perror("tmpfile"); return PN_NIL; } // TODO: error
@@ -101,11 +103,12 @@ PN potion_buffile_freopen(Potion *P, PN cl, pn_ffile self, PN path, PN modestr, 
   \see `man 3 fmemopen`
   \returns PNBufFile or PN_NIL */
 PN potion_buffile_fmemopen(Potion *P, PN cl, PN buf, PN modestr) {
-  pn_ffile self;
   FILE *file;
+  struct PNBufFile *self;
   if (!(file = fmemopen(PN_STR_PTR(buf), PN_STR_LEN(buf), PN_STR_PTR(modestr)))) {
     perror("fmemopen"); return PN_NIL; // TODO: error
   }
+  self = (struct PNBufFile *)potion_data_alloc(P, sizeof(struct PNBufFile));
   self->siz = BufFileSize;
   self->file = file;
   self->path = PN_NIL;
