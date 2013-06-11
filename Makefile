@@ -52,7 +52,7 @@ DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
 PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
-EXTLIBS = $(foreach m,sregex uv,lib/lib$m.a)
+#EXTLIBS = $(foreach m,sregex uv,lib/lib$m.a)
 DYNLIBS = $(foreach m,readline libtommath m_apm,lib/potion/$m${LOADEXT})
 OBJS = .o .o2
 ifneq (${FPIC},)
@@ -281,22 +281,20 @@ lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/c
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -o $@ $(subst libpotion,libp2,${LDDLLFLAGS}) ${RPATH} \
+	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} $(subst libpotion,libp2,${RDLLFLAGS}) ${RPATH} \
 	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} ${EXTLIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/potion/libsyntax${DLL}: syn/syntax.${OPIC}
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
-	@$(CC) ${DEBUGFLAGS} -o $@ $(INCS) \
-	  $(subst libpotion,potion/libsyntax,${LDDLLFLAGS}) ${RPATH} \
+	@$(CC) ${DEBUGFLAGS} -o $@ $(INCS) ${LDDLLFLAGS} ${RPATH} \
 	  $< ${LIBPTH} -lpotion $(LIBS)
 
 lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
-	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) \
-	  $(subst libpotion,potion/libsyntax-p5,${LDDLLFLAGS}) ${RPATH} \
+	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) ${LDDLLFLAGS} ${RPATH} \
 	  $< ${LIBPTH} -lp2 $(LIBS)
 
 # 3rdparty EXTLIBS linked
@@ -332,9 +330,8 @@ lib/potion/libtommath${LOADEXT}: core/config.h core/potion.h \
   lib/libtommath/makefile.shared
 	@${ECHO} MAKE $@
 	cd lib/libtommath; ${CC} -c -I. ${FPIC} ${CFLAGS} *.c; \
-	  ${CC} ${DEBUGFLAGS} -o libtommath${LOADEXT} \
-	  $(subst libpotion,potion/libtommath,${LDDLLFLAGS}) ${RPATH} \
-	  *.o ${LIBS}; cd ../..
+	  ${CC} ${DEBUGFLAGS} -o libtommath${LOADEXT} ${LDDLLFLAGS} \
+	  *.o ${LIBPTH} ${LIBS}; cd ../..
 	@${ECHO} @${MAKE} -s -C lib/libtommath -f makefile.shared
 	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/libtommath/libtommath${LOADEXT} $@
@@ -556,7 +553,7 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f $(foreach ext,o o2 opic opic2 i gcda gcno,$(foreach dir,core syn front test/api lib/*,${dir}/*.${ext}))
+	@rm -f $(foreach ext,o o2 opic opic2 i gcda gcno,$(foreach dir,core syn front lib test/api lib/*,${dir}/*.${ext}))
 	@rm -f bin/* lib/potion/* lib/*.a lib/*${DLL} lib/*${LOADEXT}
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f tools/*.o core/config.h core/version.h

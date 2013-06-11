@@ -8,6 +8,7 @@ LIBPTH = -Llib
 RPATH         = -Wl,-rpath=$(shell pwd)/lib
 RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib
 LIBS   = -lm
+RDLLFLAGS  =
 LDDLLFLAGS = -shared -fpic
 AR    ?= ar
 DEBUG ?= 0
@@ -141,7 +142,7 @@ ifeq ($(shell tools/config.sh "${CC}" apple),1)
 	DLL      = .dylib
 	LOADEXT  = .bundle
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
-	LDDLLFLAGS += -install_name "@executable_path/../lib/libpotion${DLL}"
+	RDLLFLAGS  = -install_name "@executable_path/../lib/libpotion${DLL}"
 	RPATH =
 	RPATH_INSTALL =
 else
@@ -175,6 +176,7 @@ config.inc.echo:
 	@${ECHO} "RPATH_INSTALL = " ${RPATH_INSTALL}
 	@${ECHO} "LIBS    = ${LIBS}"
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
+	@${ECHO} "RDLLFLAGS = ${RDLLFLAGS}"
 	@${ECHO} "STRIP   = ${STRIP}"
 	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "CROSS   = ${CROSS}"
