@@ -8,13 +8,15 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <unistd.h>
+//#include <errno.h>
 #include "p2.h"
 
 struct PNBufFile {
   PN_OBJECT_HEADER;
   PN_SIZE siz;
   FILE * file;
+  PN     path;
 };
 typedef vPN(BufFile) pn_ffile;
 const int BufFileSize = sizeof(struct PNBufFile) - sizeof(struct PNData);
@@ -24,13 +26,16 @@ const int BufFileSize = sizeof(struct PNBufFile) - sizeof(struct PNData);
   \param path PNString
   \param modestr PNString r,r+,w,w+,a,a+
   \returns opened PNBufFile or PN_NIL */
-PN potion_buffile_fopen(Potion *P, PN cl, pn_ffile self, PN path, PN modestr) {
+PN potion_buffile_fopen(Potion *P, PN cl, PN ign, PN path, PN modestr) {
   FILE *file;
+  struct PNBufFile *self;
   if (!(file = fopen(PN_STR_PTR(path), PN_STR_PTR(modestr)))) {
     perror("open"); return PN_NIL; // TODO: error, perm
   }
+  self = (struct PNBufFile *)potion_data_alloc(P, sizeof(struct PNBufFile));
   self->siz = BufFileSize;
   self->file = file;
+  self->path = path;
   return (PN)self;
 }
 /**\memberof Lobby
@@ -40,6 +45,8 @@ PN potion_buffile_fopen(Potion *P, PN cl, pn_ffile self, PN path, PN modestr) {
 PN potion_buffile_tmpfile(Potion *P, PN cl, pn_ffile self) {
   self->siz = BufFileSize;
   self->file = tmpfile();
+  if (!self->file) { perror("tmpfile"); return PN_NIL; } // TODO: error
+  self->path = PN_NIL;
   return (PN)self;
 }
 /**\memberof PNBufFile
@@ -55,6 +62,7 @@ PN potion_buffile_fdopen(Potion *P, PN cl, pn_ffile self, PN fd, PN modestr) {
   }
   self->siz = BufFileSize;
   self->file = file;
+  self->path = PN_NIL;
   return (PN)self;
 }
 
@@ -75,6 +83,7 @@ PN potion_buffile_freopen(Potion *P, PN cl, pn_ffile self, PN path, PN modestr, 
   }
   self->siz = BufFileSize;
   self->file = file;
+  self->path = stream->path;
   return (PN)self;
 }
 
@@ -94,6 +103,7 @@ PN potion_buffile_fmemopen(Potion *P, PN cl, PN buf, PN modestr) {
   }
   self->siz = BufFileSize;
   self->file = file;
+  self->path = PN_NIL;
   return (PN)self;
 }
 
@@ -134,12 +144,16 @@ PN potion_buffile_fread(Potion *P, PN cl, pn_ffile self, PN buf, PN size, PN nit
   return PN_NUM(r);
 }
 /**\memberof PNBufFile
-  \c write nitems of size size pointing to buf to the stream
-  \param buf PNBytes
-  \param size PNNumber
-  \param nitems PNNumber
+  \c write nitems of size size starting at the pointer pointing to buf to the stream.
+  \param buf PNBytes or PNString
+  \param size PNNumber or if PN_NIL the length of buf
+  \param nitems PNNumber, default 1
   \return PNNumber of written items or PN_NIL */
 PN potion_buffile_fwrite(Potion *P, PN cl, pn_ffile self, PN buf, PN size, PN nitems) {
+  if (!size && (!nitems || PN_INT(nitems) == 1)) {
+    size = potion_send(buf, PN_STR("length"));
+    nitems = PN_NUM(1);
+  }
   int r = fwrite(PN_STR_PTR(buf), PN_INT(size), PN_INT(nitems), self->file);
   if (r < PN_INT(nitems)) {
     perror("fwrite"); return PN_NIL; // TODO: error
@@ -205,6 +219,16 @@ PN potion_buffile_fileno(Potion *P, PN cl, pn_ffile self) {
   return PN_NUM(fileno(self->file));
 }
 /**\memberof PNBufFile
+   \c "unlink" the PNBufFile. close it if open.
+   \return true or nil */
+PN potion_buffile_unlink(Potion *P, PN cl, pn_ffile self) {
+  if (fileno(self->file) != -1) fclose(self->file);
+  if (!self->path || unlink(PN_STR_PTR(self->path))) {
+    perror("unlink"); return PN_NIL;
+  }
+  return PN_TRUE;
+}
+/**\memberof PNBufFile
    acquire for a thread ownership of a PNBufFile object */
 PN potion_buffile_flockfile(Potion *P, PN cl, pn_ffile self) {
   flockfile(self->file); return PN_TRUE;
@@ -235,7 +259,9 @@ PN potion_buffile_string(Potion *P, PN cl, pn_ffile self) {
   int fd = fileno(self->file), rv;
   char *buf;
   PN str;
-  if (fd != -1) {
+  if (self->path != PN_NIL && fd != -1) {
+    rv = asprintf(&buf, "<buffile %s fd: %d>", PN_STR_PTR(self->path), fd);
+  } else if (fd != -1) {
     rv = asprintf(&buf, "<buffile %p fd: %d>", self->file, fd);
   } else {
     rv = asprintf(&buf, "<closed buffile %p>", self->file);
@@ -246,16 +272,17 @@ PN potion_buffile_string(Potion *P, PN cl, pn_ffile self) {
   return str;
 }
 
-void potion_buffile_init(Potion *P) {
+void Potion_Init_buffile(Potion *P) {
   PN ffile_vt = potion_type_new2(P, PN_TUSER, PN_VTABLE(PN_TFILE), PN_STR("BufFile"));
   potion_type_constructor_is(ffile_vt, PN_FUNC(potion_buffile_fopen, "path=S,mode=S"));
   //potion_class_method(ffile_vt, "fd", potion_buffile_fdopen, "fd=N,mode=S");
+  potion_method(P->lobby, "fopen", potion_buffile_fopen, "ign=o,path=S,mode=S");
   potion_method(ffile_vt, "fdopen", potion_buffile_fdopen, "fd=N,mode=S");
   potion_method(ffile_vt, "freopen", potion_buffile_freopen, "path=S,mode=S,buffile=o");
   potion_method(PN_VTABLE(PN_TBYTES), "fmemopen", potion_buffile_fmemopen, "mode=S");
   potion_method(ffile_vt, "close", potion_buffile_fclose, 0);
-  potion_method(ffile_vt, "read",  potion_buffile_fread, "buf=S,size=N,n=N");
-  potion_method(ffile_vt, "write", potion_buffile_fwrite, "buf=S,size=N,n=N");
+  potion_method(ffile_vt, "read",  potion_buffile_fread, "buf=S,size=N,n:=1");
+  potion_method(ffile_vt, "write", potion_buffile_fwrite, "buf=S,size=N,n:=1");
   //potion_method(ffile_vt, "fprintf", potion_buffile_fprintf, "fmt=S...");
   potion_method(ffile_vt, "fgetc", potion_buffile_fgetc, 0);
   potion_method(ffile_vt, "fgets", potion_buffile_fgets, 0);
@@ -269,6 +296,7 @@ void potion_buffile_init(Potion *P) {
   potion_method(ffile_vt, "flockfile", potion_buffile_flockfile, 0);
   potion_method(ffile_vt, "ftrylockfile", potion_buffile_ftrylockfile, 0);
   potion_method(ffile_vt, "funlockfile", potion_buffile_funlockfile, 0);
+  potion_method(ffile_vt, "unlink", potion_buffile_unlink, 0);
   potion_method(ffile_vt, "string", potion_buffile_string, 0);
   potion_method(P->lobby, "tmpfile", potion_buffile_tmpfile, 0);
 }

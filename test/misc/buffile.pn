@@ -1,0 +1,6 @@
+load "buffile"
+#f = tmpfile
+f = fopen("tmpfile.tmp", "w")
+buf = "xxx"
+f write(buf,nil,1)
+f unlink #=> true
