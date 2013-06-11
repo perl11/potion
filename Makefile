@@ -54,7 +54,7 @@ PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 #EXTLIBS = $(foreach m,uv pcre,lib/lib$m.a)
 #EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv
-DYNLIBS = $(foreach m,readline libtommath,lib/potion/$m${LOADEXT})
+DYNLIBS = $(foreach m,readline buffile,lib/potion/$m${LOADEXT})
 OBJS = .o .o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
@@ -304,6 +304,12 @@ lib/libuv.a: core/config.h core/potion.h \
 	@${MAKE} -s -C 3rd/libuv libuv${DLL}
 	@cp 3rd/libuv/libuv.a lib/
 
+3rd/libuv/libuv$(DLL): core/config.h core/potion.h \
+  3rd/libuv/Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C 3rd/libuv libuv${DLL}
+	@cp 3rd/libuv/libuv$(DLL) lib/
+
 lib/libsregex.a: core/config.h core/potion.h \
   3rd/sregex/Makefile
 	@${ECHO} MAKE $@
@@ -324,6 +330,22 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@${MAKE} -s -C lib/readline
 	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
+
+lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
+  lib/buffile.${OPIC}2 lib/buffile.c
+	@${ECHO} LD $@
+	@[ -d lib/potion ] || mkdir lib/potion
+	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
+	  lib/buffile.${OPIC}2 ${LIBPTH} ${LIBS} > /dev/null
+
+lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
+  lib/aio.c
+	@[ -d lib/potion ] || mkdir lib/potion
+	@${ECHO} CC lib/aio.${OPIC}2
+	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -I3rd/libuv/include -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
+	@${ECHO} LD $@
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) \
+	  lib/aio.${OPIC}2 ${LIBS} ${EXTLIBS} > /dev/null
 
 lib/potion/pcre${LOADEXT}: core/config.h core/potion.h \
   lib/pcre/Makefile lib/pcre/pcre.c

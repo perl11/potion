@@ -1,13 +1,22 @@
-///\file file.c
-/// PNFile class for file descriptors
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/** \file file.c
+  PNFile class for file descriptors.
+
+  Note that buffered io via FILE* is not supported.
+  Only raw and fast POSIX open,read,write,seek calls on fd,
+  no fopen, fscanf, fprintf, fread, fgets.
+  fgets (aka readline) is only supported on stdin via the \c "read" method.
+  \seealso http://stackoverflow.com/questions/1658476/c-fopen-vs-open
+
+  For async non-blocking io \see the libuv bindings on the PNIO object.
+
+ (c) 2008 why the lucky stiff, the freelance professor
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include "p2.h"
 #include "internal.h"
 #include "table.h"
@@ -79,7 +88,8 @@ PN potion_file_with_fd(Potion *P, PN cl, PN self, PN fd) {
 /// "close" method.
 ///\return PN_NIL
 PN potion_file_close(Potion *P, PN cl, pn_file self) {
-  close(self->fd);
+  int retval;
+  while (retval = close(self->fd), retval == -1 && errno == EINTR) ;
   self->fd = -1;
   return PN_NIL;
 }
@@ -117,6 +127,14 @@ PN potion_file_write(Potion *P, PN cl, pn_file self, PN str) {
 }
 
 ///\memberof PNFile
+/// \c "print" to filehandle.
+///\param obj any
+///\return PN_NIL
+PN potion_file_print(Potion *P, PN cl, pn_file self, PN obj) {
+  return potion_file_write(P, cl, self, potion_send(obj, PN_string));
+}
+
+///\memberof PNFile
 /// "string" method. some internal descr
 PN potion_file_string(Potion *P, PN cl, pn_file self) {
   int fd = self->fd, rv;
@@ -146,6 +164,33 @@ PN potion_lobby_read(Potion *P, PN cl, PN self) {
   return PN_NIL;
 }
 
+#if 0
+// memberof PNFile
+// read next line from PNFile via fgets()
+//\see potion_lobby_read() and potion_file_read()
+//\return PNString or PN_NIL
+PN potion_file_readline(Potion *P, PN cl, pn_file self) {
+  const int linemax = 1024;
+  char line[linemax];
+  if (!(self->mode & (O_RDONLY|O_RDWR))) {
+    perror("readline");
+    return PN_NIL; // TODO: error
+  }
+  switch (self->fd) {
+  case -1:
+    perror("readline from closed handle");
+    return PN_NIL; // TODO: error
+  case 0:
+    if (fgets(line, linemax, stdin) != NULL)
+      return potion_str(P, line);
+  default:
+    perror("readline from unknown handle");
+    return PN_NIL;
+  }
+  return PN_NIL;
+}
+#endif
+
 /// set Env global
 void potion_file_init(Potion *P) {
   PN file_vt = PN_VTABLE(PN_TFILE);
@@ -171,4 +216,7 @@ void potion_file_init(Potion *P) {
   potion_method(file_vt, "close", potion_file_close, 0);
   potion_method(file_vt, "read", potion_file_read, "n=N");
   potion_method(file_vt, "write", potion_file_write, "str=S");
+  potion_method(file_vt, "print", potion_file_print, "obj=o");
+  //potion_method(file_vt, "readline", potion_file_readline, 0);
+  //maybe support buffile FILE* objects also.
 }
