@@ -483,6 +483,28 @@ PN potion_lobby_kind(Potion *P, PN cl, PN self) {
   return PN_VTABLE(t);
 }
 
+/**\memberof Lobby
+ \c "can" the object call the named method?
+ same as potion_bind().
+ \return the found method or nil */
+PN potion_lobby_can(Potion *P, PN cl, PN self, PN method) {
+  return potion_bind(P, self, method);
+}
+
+/**\memberof Lobby
+ \c "print" the stringification of any object */
+PN potion_lobby_print(Potion *P, PN cl, PN self) {
+  return potion_send(potion_send(self, PN_string), PN_print);
+}
+/**\memberof Lobby
+ \c "print" object and newline.
+ \returns nil */
+PN potion_lobby_say(Potion *P, PN cl, PN self) {
+  potion_send(potion_send(self, PN_string), PN_print);
+  printf("\n");
+  return PN_NIL;
+}
+
 static void potion_init_class_reference(Potion *P, PN name, PN vt) {
   potion_send(P->lobby, PN_def, name, vt);
   ((struct PNVtable *)vt)->name = name;
@@ -598,4 +620,7 @@ void potion_lobby_init(Potion *P) {
   potion_method(P->lobby, "rand", potion_rand, 0);
   potion_method(P->lobby, "self", potion_lobby_self, 0);
   potion_method(P->lobby, "string", potion_lobby_string, 0);
+  potion_method(P->lobby, "can", potion_lobby_can, "method=S");
+  potion_method(P->lobby, "print", potion_lobby_print, 0);
+  potion_method(P->lobby, "say", potion_lobby_say, 0);
 }
