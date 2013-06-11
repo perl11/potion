@@ -87,6 +87,7 @@ PN potion_buffile_freopen(Potion *P, PN cl, pn_ffile self, PN path, PN modestr, 
   return (PN)self;
 }
 
+#ifdef __linux__
 /**\memberof PNBytes
   \c fmemopen opens a stream that permits the access specified by mode. 
   The stream allows I/O to be performed on the string or memory buffer
@@ -106,6 +107,7 @@ PN potion_buffile_fmemopen(Potion *P, PN cl, PN buf, PN modestr) {
   self->path = PN_NIL;
   return (PN)self;
 }
+#endif
 
 /**\memberof PNBufFile
   \c flush and \c close a PNBufFile.
@@ -279,7 +281,9 @@ void Potion_Init_buffile(Potion *P) {
   potion_method(P->lobby, "fopen", potion_buffile_fopen, "ign=o,path=S,mode=S");
   potion_method(ffile_vt, "fdopen", potion_buffile_fdopen, "fd=N,mode=S");
   potion_method(ffile_vt, "freopen", potion_buffile_freopen, "path=S,mode=S,buffile=o");
+#ifdef __linux__
   potion_method(PN_VTABLE(PN_TBYTES), "fmemopen", potion_buffile_fmemopen, "mode=S");
+#endif
   potion_method(ffile_vt, "close", potion_buffile_fclose, 0);
   potion_method(ffile_vt, "read",  potion_buffile_fread, "buf=S,size=N,n:=1");
   potion_method(ffile_vt, "write", potion_buffile_fwrite, "buf=S,size=N,n:=1");
