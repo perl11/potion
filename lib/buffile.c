@@ -12,7 +12,7 @@
 //#include <errno.h>
 #include "p2.h"
 
-#if !defined(__APPLE__) && !defined(__MINGW__)
+#if defined(__linux__) || defined(__CYGWIN__)
 #define HAVE_FMEMOPEN
 #endif
 
