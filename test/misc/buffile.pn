@@ -2,5 +2,6 @@ load "buffile"
 #f = tmpfile
 f = fopen("tmpfile.tmp", "w")
 buf = "xxx"
-f write(buf,nil,1)
-f unlink #=> true
+x = f write(buf,nil,1)
+y = f unlink
+(x, y) #=> (1, true)

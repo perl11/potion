@@ -1,16 +1,20 @@
 /** \file lib/buffile.c
-  PNBufFile class for buffered/stream FILE* IO
+  PNBufFile class for buffered stream FILE* IO
 
   fgets, fopen, fscanf, fprintf, fread
   \seealso http://stackoverflow.com/questions/1658476/c-fopen-vs-open
 
- (c) 2013 perl11.org
-*/
+ (c) 2013 perl11.org */
+#define __USE_XOPEN2K8
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 //#include <errno.h>
 #include "p2.h"
+
+#if !defined(__APPLE__) && !defined(__MINGW__)
+#define HAVE_FMEMOPEN
+#endif
 
 struct PNBufFile {
   PN_OBJECT_HEADER;
@@ -87,7 +91,7 @@ PN potion_buffile_freopen(Potion *P, PN cl, pn_ffile self, PN path, PN modestr, 
   return (PN)self;
 }
 
-#ifdef __linux__
+#ifdef HAVE_FMEMOPEN
 /**\memberof PNBytes
   \c fmemopen opens a stream that permits the access specified by mode. 
   The stream allows I/O to be performed on the string or memory buffer
@@ -281,7 +285,7 @@ void Potion_Init_buffile(Potion *P) {
   potion_method(P->lobby, "fopen", potion_buffile_fopen, "ign=o,path=S,mode=S");
   potion_method(ffile_vt, "fdopen", potion_buffile_fdopen, "fd=N,mode=S");
   potion_method(ffile_vt, "freopen", potion_buffile_freopen, "path=S,mode=S,buffile=o");
-#ifdef __linux__
+#ifdef HAVE_FMEMOPEN
   potion_method(PN_VTABLE(PN_TBYTES), "fmemopen", potion_buffile_fmemopen, "mode=S");
 #endif
   potion_method(ffile_vt, "close", potion_buffile_fclose, 0);
