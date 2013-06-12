@@ -89,7 +89,7 @@ extern const struct {
   const u8 args;
 } potion_ops[];
 
-#define STRINGIFY(_obj) PN_STR_PTR(potion_send(_obj, PN_string))
+#define STRINGIFY(_obj) ({PN str=potion_send(_obj,PN_string);str?PN_STR_PTR(str):"";})
 #endif
 
 #ifdef POTION_JIT_TARGET

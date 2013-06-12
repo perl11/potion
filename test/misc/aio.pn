@@ -1,0 +1,6 @@
+load "aio"
+tcp = aio("tcp")
+tcp init
+connect = (req,status): "connected" print.
+tcp connect(aio("connect"), "localhost", 80, connect)
+#=> nil

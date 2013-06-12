@@ -56,6 +56,7 @@ DEF_AIO_INIT_LOOP(signal)
 DEF_AIO_INIT(cond)
 DEF_AIO_INIT(mutex)
 DEF_AIO_INIT(rwlock)
+#undef DEF_AIO_INIT
 
 static PN aio_tty_init(Potion *P, PN cl, PN self, PN loop, PN file, PN readable) {
   int r;
@@ -117,13 +118,19 @@ static PN aio_async_init(Potion *P, PN cl, PN self, PN loop, PN cb) {
   return self;
 }
 
-#if 0
 static PN
-aio_tcp_connect(Potion *P, PN cl, PN self) {
-  uv_tcp_t client;
-  return PN_INT(uv_tcp_init(&connect_req, &client, addr, connect_cb));
+aio_tcp_connect(Potion *P, PN cl, PN self, PN req, PN addr, PN port, PN cb) {
+  uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(self);
+  uv_connect_t *request = (uv_connect_t*)PN_DATA(req);
+  uv_connect_cb connect_cb;
+  struct sockaddr_in ip4 = uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port));
+  if (PN_IS_CLOSURE(cb)) connect_cb = (uv_connect_cb)PN_CLOSURE_F(cb);
+  else if (cb) connect_cb = (uv_connect_cb)PN_DATA(cb);
+  else connect_cb = 0;
+  return PN_NUM(uv_tcp_connect(request, handle, ip4, connect_cb));
 }
 
+#if 0
 static void
 aio_shutdown_cb(Potion *P, PN cl, pn_aio self, int status) {
   uv_stream_t* stream = ((uv_shutdown_t*)req)->handle;
@@ -220,51 +227,59 @@ DEF_AIO_NEW(barrier)
 #undef DEF_AIO_NEW
 
 /**\memberof aio
-   \deprecated
    initialize aio types
    \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
    \see http://nikhilm.github.io/uvbook/networking.html#tcp
    \returns self */
 static PN
-aio_init(Potion *P, PN cl, PN self, PN loop) {
+aio_init_loop(Potion *P, PN cl, PN self, PN loop) {
   PN type = potion_send(PN_VTABLE(self), PN_name);
-  if (type == PN_STR("aio_tcp"))
-    return aio_tcp_init(P, cl, self, loop);
+#define DEF_AIO_INIT(T) \
+  if (type == PN_STR("Aio_tcp")) \
+    return aio_tcp_init(P, cl, self, loop); \
   else
-  if (type == PN_STR("aio_udp"))
-    return aio_udp_init(P, cl, self, loop);
+  DEF_AIO_INIT(tcp)
+  DEF_AIO_INIT(udp)
+  DEF_AIO_INIT(prepare)
+  DEF_AIO_INIT(check)
+  DEF_AIO_INIT(idle)
+  DEF_AIO_INIT(timer)
+  DEF_AIO_INIT(fs_poll)
+  DEF_AIO_INIT(signal)
+    potion_fatal("Invalid aio_init");
 }
 
 void Potion_Init_aio(Potion *P) {
-  aio_vt = potion_type_new2(P, PN_TUSER, PN_VTABLE(PN_TUSER), PN_STR("aio"));
-  potion_method(aio_vt, "init", aio_init, "loop=o");
+  aio_vt = potion_type_new2(P, PN_TUSER, P->lobby, PN_STR("Aio"));
   potion_type_constructor_is(aio_vt, PN_FUNC(aio_new, "type=S"));
   //potion_class_method(aio_vt, "new", potion_aio_new, "type=S");
+  potion_method(P->lobby, "aio", aio_new, "type=S");
+  potion_method(aio_vt, "init", aio_init_loop, "|loop=o");
 #define DEF_AIO_VT(T)                                                            \
-  aio_##T##_vt = potion_type_new2(P, PN_TUSER, aio_vt, PN_STR("aio_" _XSTR(t))); \
+  aio_##T##_vt = potion_type_new2(P, PN_TUSER, aio_vt, PN_STR("Aio_" _XSTR(t))); \
   potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, 0));           \
   potion_method(aio_vt, "new", aio_##T##_new, 0);
 #define DEF_AIO_INIT_VT(T,args) \
   DEF_AIO_VT(T); potion_method(aio_##T##_vt, "init", aio_##T##_init, args);
 
-  DEF_AIO_INIT_VT(tcp, "loop=o");
-  DEF_AIO_INIT_VT(udp, "loop=o");
+  DEF_AIO_INIT_VT(tcp, "|loop=o");
+  DEF_AIO_INIT_VT(udp, "|loop=o");
+  DEF_AIO_INIT_VT(prepare, "|loop=o");
+  DEF_AIO_INIT_VT(check, "|loop=o");
+  DEF_AIO_INIT_VT(idle,  "|loop=o");
+  DEF_AIO_INIT_VT(timer, "|loop=o");
+  DEF_AIO_INIT_VT(fs_poll, "|loop=o");
+  DEF_AIO_INIT_VT(signal, "|loop=o");
   DEF_AIO_VT(loop);
   DEF_AIO_INIT_VT(tty,  "loop=o,file=o,readable=N");
   DEF_AIO_INIT_VT(pipe, "loop=o,ipc=N");
   DEF_AIO_INIT_VT(poll, "loop=o,fd=N");
-  DEF_AIO_INIT_VT(prepare, "loop=o");
-  DEF_AIO_INIT_VT(check, "loop=o");
-  DEF_AIO_INIT_VT(idle,  "loop=o");
   DEF_AIO_INIT_VT(async, "loop=o,cb=o");
-  DEF_AIO_INIT_VT(timer, "loop=o");
-  DEF_AIO_INIT_VT(fs_poll, "loop=o");
-  DEF_AIO_INIT_VT(signal, "loop=o");
   DEF_AIO_INIT_VT(fs_event, "loop=o,filename=S,cb=o,flags=N");
   DEF_AIO_INIT_VT(mutex, 0);
   DEF_AIO_INIT_VT(rwlock, 0);
-  DEF_AIO_INIT_VT(sem, "value=N");
   DEF_AIO_INIT_VT(cond, 0);
+  DEF_AIO_INIT_VT(sem, "value=N");
   DEF_AIO_INIT_VT(barrier, "count=N");
   DEF_AIO_VT(handle);
   DEF_AIO_VT(process);
@@ -283,10 +298,10 @@ void Potion_Init_aio(Potion *P) {
 #undef DEF_AIO_VT
 #undef DEF_AIO_INIT_VT
 
+  potion_method(aio_tcp_vt, "connect", aio_tcp_connect, "req=o,addr=S,port=N|connect_cb=&");
 #if 0
-  potion_method(aio_tcp_vt, "connect", aio_tcp_connect, "req=o,addr=S|connect_cb=&");
-  potion_method(aio_tcp_vt, "connect6", aio_tcp_connect6, "req=o,addr=S|connect_cb=&");
-  potion_method(aio_udp_vt, "connect", aio_udp_connect, "req=o,addr=S|connect_cb=&");
+  potion_method(aio_tcp_vt, "connect6", aio_tcp_connect6, "req=o,addr=S,port=N|connect_cb=&");
+  potion_method(aio_udp_vt, "connect", aio_udp_connect, "req=o,addr=S,port=N|connect_cb=&");
   potion_method(aio_pipe_vt, "open", aio_pipe_open, "file=o");
   potion_method(aio_pipe_vt, "bind", aio_pipe_bind, "name=S");
   potion_method(aio_pipe_vt, "connect", aio_pipe_connect, "req=o,name=S|connect_cb=&");
