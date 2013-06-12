@@ -237,6 +237,19 @@ void potion_error_init(Potion *P) {
   potion_method(err_vt, "string", potion_error_string, 0);
 }
 
+static inline char *potion_type_name(Potion *P, PN obj) {
+  return PN_IS_PTR(obj)
+    ? AS_STR(potion_send(PN_VTABLE(obj), PN_name))
+    : PN_IS_NIL(obj) ? "nil"
+      : PN_IS_NUM(obj) ? "Number"
+        : "Boolean";
+}
+
+PN potion_type_error(Potion *P, PN obj) {
+  return potion_error(P, potion_str_format(P, "Invalid type %s", potion_type_name(P, obj)),
+                      0, 0, 0);
+}
+
 #define PN_EXIT_ERROR 1
 #define PN_EXIT_FATAL 2
 

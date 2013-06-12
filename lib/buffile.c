@@ -29,13 +29,12 @@ const int BufFileSize = sizeof(struct PNBufFile) - sizeof(struct PNData);
   opens a buffered stream
   \param path PNString
   \param modestr PNString r,r+,w,w+,a,a+
-  \returns opened PNBufFile or PN_NIL */
+  \returns opened PNBufFile or PNError */
 PN potion_buffile_fopen(Potion *P, PN cl, PN ign, PN path, PN modestr) {
   FILE *file;
   struct PNBufFile *self;
-  if (!(file = fopen(PN_STR_PTR(path), PN_STR_PTR(modestr)))) {
-    perror("open"); return PN_NIL; // TODO: error, perm
-  }
+  if (!(file = fopen(PN_STR_PTR(path), PN_STR_PTR(modestr))))
+    return potion_io_error(P, PN_STR("open"));
   self = (struct PNBufFile *)potion_data_alloc(P, sizeof(struct PNBufFile));
   self->siz = BufFileSize;
   self->file = file;
@@ -51,7 +50,8 @@ PN potion_buffile_tmpfile(Potion *P, PN cl, PN ign) {
   self = (struct PNBufFile *)potion_data_alloc(P, sizeof(struct PNBufFile));
   self->siz = BufFileSize;
   self->file = tmpfile();
-  if (!self->file) { perror("tmpfile"); return PN_NIL; } // TODO: error
+  if (!self->file)
+    return potion_io_error(P, PN_STR("tmpfile"));
   self->path = PN_NIL;
   return (PN)self;
 }
@@ -60,12 +60,11 @@ PN potion_buffile_tmpfile(Potion *P, PN cl, PN ign) {
   \see potion_buffile_with_fd()
   \param fd PN_NUM
   \param modestr PNString r,r+,w,w+,a,a+
-  \returns PNBufFile or PN_NIL */
+  \returns PNBufFile or PNError */
 PN potion_buffile_fdopen(Potion *P, PN cl, pn_ffile self, PN fd, PN modestr) {
   FILE *file;
-  if (!(file = fdopen(PN_INT(fd), PN_STR_PTR(modestr)))) {
-    perror("fdopen"); return PN_NIL; // TODO: error, perm
-  }
+  if (!(file = fdopen(PN_INT(fd), PN_STR_PTR(modestr))))
+    return potion_io_error(P, PN_STR("fdopen"));
   self->siz = BufFileSize;
   self->file = file;
   self->path = PN_NIL;
@@ -80,12 +79,12 @@ PN potion_buffile_fdopen(Potion *P, PN cl, pn_ffile self, PN fd, PN modestr) {
   \param path PNString
   \param modestr PNString r,r+,w,w+,a,a+
   \param stream PNBufFile
-  \returns PNBufFile or PN_NIL */
+  \returns PNBufFile or PNError */
 PN potion_buffile_freopen(Potion *P, PN cl, pn_ffile self, PN path, PN modestr, pn_ffile stream) {
   FILE *file;
   if ((PN_TYPE(stream) != PN_TUSER) ||
      !(file = freopen(PN_STR_PTR(path), PN_STR_PTR(modestr), stream->file))) {
-    perror("freopen"); return PN_NIL; // TODO: error
+    return potion_io_error(P, PN_STR("freopen"));
   }
   self->siz = BufFileSize;
   self->file = file;
@@ -101,13 +100,12 @@ PN potion_buffile_freopen(Potion *P, PN cl, pn_ffile self, PN path, PN modestr, 
   \param buf PNBytes
   \param modestr PNString r,r+,w,w+,a,a+
   \see `man 3 fmemopen`
-  \returns PNBufFile or PN_NIL */
+  \returns PNBufFile or PNError */
 PN potion_buffile_fmemopen(Potion *P, PN cl, PN buf, PN modestr) {
   FILE *file;
   struct PNBufFile *self;
-  if (!(file = fmemopen(PN_STR_PTR(buf), PN_STR_LEN(buf), PN_STR_PTR(modestr)))) {
-    perror("fmemopen"); return PN_NIL; // TODO: error
-  }
+  if (!(file = fmemopen(PN_STR_PTR(buf), PN_STR_LEN(buf), PN_STR_PTR(modestr))))
+    return potion_io_error(P, PN_STR("fmemopen"));
   self = (struct PNBufFile *)potion_data_alloc(P, sizeof(struct PNBufFile));
   self->siz = BufFileSize;
   self->file = file;
@@ -140,33 +138,37 @@ PN potion_buffile_fgets(Potion *P, PN cl, pn_ffile self) {
   return PN_NIL;
 }
 /**\memberof PNBufFile
-  \c read nitems of size size from the stream into the PNBytes buf
+  \c read nitems of size from the stream into the PNBytes buf
   \param buf PNBytes
   \param size PNNumber
   \param nitems PNNumber
-  \return PNNumber of read items or PN_NIL */
+  \return PNNumber of read items or PNError */
 PN potion_buffile_fread(Potion *P, PN cl, pn_ffile self, PN buf, PN size, PN nitems) {
   int r = fread(PN_STR_PTR(buf), PN_INT(size), PN_INT(nitems), self->file);
-  if (r < PN_INT(nitems)) {
-    perror("fread"); return PN_NIL; // TODO: error
-  }
+  if (r < PN_INT(nitems))
+    return potion_io_error(P, PN_STR("fread"));
   return PN_NUM(r);
 }
 /**\memberof PNBufFile
-  \c write nitems of size size starting at the pointer pointing to buf to the stream.
+  \c write nitems of size starting at the pointer pointing to buf to the stream.
   \param buf PNBytes or PNString
   \param size PNNumber or if PN_NIL the length of buf
   \param nitems PNNumber, default 1
-  \return PNNumber of written items or PN_NIL */
+  \return PNNumber of written items or PNError */
 PN potion_buffile_fwrite(Potion *P, PN cl, pn_ffile self, PN buf, PN size, PN nitems) {
   if (!size && (!nitems || PN_INT(nitems) == 1)) {
     size = potion_send(buf, PN_STR("length"));
     nitems = PN_NUM(1);
   }
-  int r = fwrite(PN_STR_PTR(buf), PN_INT(size), PN_INT(nitems), self->file);
-  if (r < PN_INT(nitems)) {
-    perror("fwrite"); return PN_NIL; // TODO: error
+  switch (PN_TYPE(buf)) {
+    case PN_TSTRING:
+    case PN_TBYTES: break;
+    case PN_NIL:    return PN_NIL;
+    default: return potion_type_error(P, buf);
   }
+  int r = fwrite(PN_STR_PTR(buf), PN_INT(size), PN_INT(nitems), self->file);
+  if (r < PN_INT(nitems))
+    return potion_io_error(P, PN_STR("fwrite"));
   return PN_NUM(r);
 }
 /**\memberof PNBufFile
@@ -179,31 +181,29 @@ PN potion_buffile_fputc(Potion *P, PN cl, pn_ffile self, PN byte) {
 /**\memberof PNBufFile
   \c write line to PNBufFile
   \param str PNString or PNBytes
-  \return PNNumber or PN_NIL */
+  \return PNNumber or PNError */
 PN potion_buffile_fputs(Potion *P, PN cl, pn_ffile self, PN str) {
   int r;
   if (!(r=fputs(PN_STR_PTR(str), self->file)))
-    return PN_NIL;
+    return potion_io_error(P, PN_STR("fputs"));
   return PN_NUM(r);
 }
 /**\memberof PNBufFile
    \c "fflush"
-   \return true or PN_NIL */
+   \return true or PNError */
 PN potion_buffile_fflush(Potion *P, PN cl, pn_ffile self) {
-  if (!fflush(self->file)) {
-    perror("fflush"); return PN_NIL;
-  }
+  if (fflush(self->file))
+    return potion_io_error(P, PN_STR("fflush"));
   return PN_TRUE;
 }
 /**\memberof PNBufFile
    \c "fseek" set the file-position indicator for the stream.
-   If a read or write error occurs, the error indicator for the stream is set and \c fseek returns PN_NIL.
   \param offset PNNumber
   \param whence PNNumber
-  \return true or PN_NIL */
+  \return true or PNError */
 PN potion_buffile_fseek(Potion *P, PN cl, pn_ffile self, PN offset, PN whence) {
-  int r = fseek(self->file, PN_INT(offset), PN_INT(whence));
-  if (r) { perror("fseek"); return PN_NIL; }
+  if (fseek(self->file, PN_INT(offset), PN_INT(whence)))
+    return potion_io_error(P, PN_STR("fseek"));
   return PN_TRUE;
 }
 /**\memberof PNBufFile
@@ -212,7 +212,8 @@ PN potion_buffile_fseek(Potion *P, PN cl, pn_ffile self, PN offset, PN whence) {
   \return PNNumber */
 PN potion_buffile_ftell(Potion *P, PN cl, pn_ffile self) {
   long r = ftell(self->file);
-  if (r == -1) { perror("ftell"); return PN_NIL; }
+  if (r == -1)
+    return potion_io_error(P, PN_STR("ftell"));
   return PN_NUM(r);
 }
 /**\memberof PNBufFile
@@ -233,7 +234,7 @@ PN potion_buffile_fileno(Potion *P, PN cl, pn_ffile self) {
 PN potion_buffile_unlink(Potion *P, PN cl, pn_ffile self) {
   if (fileno(self->file) != -1) fclose(self->file);
   if (!self->path || unlink(PN_STR_PTR(self->path))) {
-    perror("unlink"); return PN_NIL;
+    return potion_io_error(P, PN_STR("unlink"));
   }
   return PN_TRUE;
 }
@@ -292,9 +293,9 @@ void Potion_Init_buffile(Potion *P) {
   potion_method(PN_VTABLE(PN_TBYTES), "fmemopen", potion_buffile_fmemopen, "mode=S");
 #endif
   potion_method(ffile_vt, "close", potion_buffile_fclose, 0);
-  potion_method(ffile_vt, "read",  potion_buffile_fread, "buf=S,size=N,n:=1");
-  potion_method(ffile_vt, "write", potion_buffile_fwrite, "buf=S,size=N,n:=1");
-  //potion_method(ffile_vt, "fprintf", potion_buffile_fprintf, "fmt=S...");
+  potion_method(ffile_vt, "fread",  potion_buffile_fread, "buf=S,size=N,n:=1");
+  potion_method(ffile_vt, "write", potion_buffile_fwrite, "buf=S|size=N,n:=1");
+  //potion_method(ffile_vt, "fprintf", potion_buffile_fprintf, "fmt=S|...");
   potion_method(ffile_vt, "fgetc", potion_buffile_fgetc, 0);
   potion_method(ffile_vt, "fgets", potion_buffile_fgets, 0);
   potion_method(ffile_vt, "fputc", potion_buffile_fputc, "byte=N");

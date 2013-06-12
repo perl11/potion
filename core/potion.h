@@ -717,6 +717,8 @@ void potion_destroy(Potion *);
 PN potion_error(Potion *, PN, long, long, PN);
 void potion_fatal(char *);
 void potion_allocation_error(void);
+PN potion_io_error(Potion *, PN);
+PN potion_type_error(Potion *, PN);
 void potion_syntax_error(Potion *, const char *, ...)
   __attribute__ ((format (printf, 2, 3)));
 PNType potion_kind_of(PN);
