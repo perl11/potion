@@ -374,8 +374,8 @@ bench: bin/gc-bench${EXE} bin/potion${EXE}
 	  ${ECHO} running GC benchmark; \
 	  time bin/gc-bench
 
-check: test.pn test.p2
-test:  test.pn test.p2
+check: libs test.pn test.p2
+test:  libs test.pn test.p2
 
 test.pn: bin/potion${EXE} bin/potion-test${EXE}
 	@${ECHO}; \
