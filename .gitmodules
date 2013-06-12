@@ -1,6 +1,3 @@
-[submodule "lib/libtommath"]
-	path = lib/libtommath
-	url = git://github.com/libtom/libtommath.git
 [submodule "3rd/libuv"]
 	path = 3rd/libuv
 	url = git://github.com/joyent/libuv.git
@@ -8,3 +5,9 @@
 	path = 3rd/pcre
 	url = git://github.com/Distrotech/pcre.git
 	branch = master
+[submodule "3rd/sregex"]
+	path = 3rd/sregex
+	url = git://github.com/agentzh/sregex.git
+[submodule "3rd/libtommath"]
+	path = 3rd/libtommath
+	url = git://github.com/libtom/libtommath.git
