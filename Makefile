@@ -52,13 +52,13 @@ DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
 PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
-#EXTLIBS = $(foreach m,sregex uv,lib/lib$m.a)
-DYNLIBS = $(foreach m,readline libtommath m_apm,lib/potion/$m${LOADEXT})
+#EXTLIBS = $(foreach m,uv pcre,lib/lib$m.a)
+#EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv -L3rd/libtommath -llibtommath
+DYNLIBS = $(foreach m,readline buffile,lib/potion/$m${LOADEXT})
 OBJS = .o .o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
 endif
-
 
 GREGCFLAGS = -O3 -DNDEBUG
 CAT  = /bin/cat
@@ -78,7 +78,7 @@ default: pn p2
 
 all: default libs static doc test
 bins: ${BINS}
-libs: ${PLIBS}
+libs: ${PLIBS} ${DYNLIBS}
 pn: bin/potion${EXE} libs
 p2: bin/p2${EXE} libs
 static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
@@ -250,7 +250,7 @@ bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} lib/libpotion.a ${LIBS}
 
-bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${EXTLIBS}
+bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS} ${EXTLIBS}
@@ -277,7 +277,7 @@ lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 	  ${PIC_OBJ} ${PIC_OBJ_SYN} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
-lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/config.h core/potion.h ${EXTLIBS}
+lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
@@ -297,18 +297,30 @@ lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2
 	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) ${LDDLLFLAGS} ${RPATH} \
 	  $< ${LIBPTH} -lp2 $(LIBS)
 
-# 3rdparty EXTLIBS linked
+# 3rdparty EXTLIBS statically linked
 lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C 3rd/libuv libuv${DLL}
 	@cp 3rd/libuv/libuv.a lib/
 
+3rd/libuv/libuv$(DLL): core/config.h core/potion.h \
+  3rd/libuv/Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C 3rd/libuv libuv${DLL}
+	@cp 3rd/libuv/libuv$(DLL) lib/
+
 lib/libsregex.a: core/config.h core/potion.h \
   3rd/sregex/Makefile
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C 3rd/sregex CC="${CC}"
 	@cp 3rd/sregex/libsregex.a lib/
+
+lib/libpcre.a: core/config.h core/potion.h \
+  3rd/pcre/Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C 3rd/pcre CC="${CC}"
+	@cp 3rd/pcre/libpcre.a lib/
 
 # DYNLIBS
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
@@ -318,6 +330,29 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@${MAKE} -s -C lib/readline
 	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
+
+lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
+  lib/buffile.${OPIC}2 lib/buffile.c
+	@${ECHO} LD $@
+	@[ -d lib/potion ] || mkdir lib/potion
+	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
+	  lib/buffile.${OPIC}2 ${LIBPTH} ${LIBS} > /dev/null
+
+lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
+  lib/aio.c
+	@[ -d lib/potion ] || mkdir lib/potion
+	@${ECHO} CC lib/aio.${OPIC}2
+	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -I3rd/libuv/include -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
+	@${ECHO} LD $@
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) \
+	  lib/aio.${OPIC}2 ${LIBS} ${EXTLIBS} > /dev/null
+
+lib/potion/pcre${LOADEXT}: core/config.h core/potion.h \
+  lib/pcre/Makefile lib/pcre/pcre.c
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C lib/pcre
+	@[ -d lib/potion ] || mkdir lib/potion
+	@cp lib/pcre/pcre${LOADEXT} $@
 
 lib/potion/m_apm${LOADEXT}: core/config.h core/potion.h \
   lib/m_apm/Makefile
@@ -339,8 +374,8 @@ bench: bin/gc-bench${EXE} bin/potion${EXE}
 	  ${ECHO} running GC benchmark; \
 	  time bin/gc-bench
 
-check: test.pn test.p2
-test:  test.pn test.p2
+check: libs test.pn test.p2
+test:  libs test.pn test.p2
 
 test.pn: bin/potion${EXE} bin/potion-test${EXE}
 	@${ECHO}; \
@@ -460,15 +495,15 @@ bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@if ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBS}; fi
 
-bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a ${EXTLIBS}
+bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${LIBS} ${EXTLIBS}
 
-bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a ${EXTLIBS}
+bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${LIBS} ${EXTLIBS}
 
-bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a ${EXTLIBS}
+bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK $@
 	@if ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS} ${EXTLIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ ${OBJ2} ${OBJ_P2_SYN} ${LIBS} ${EXTLIBS}; fi

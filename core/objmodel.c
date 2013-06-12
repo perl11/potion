@@ -485,10 +485,9 @@ PN potion_lobby_kind(Potion *P, PN cl, PN self) {
 
 /**\memberof Lobby
  \c "can" the object call the named method?
- same as potion_bind().
- \return the found method or nil */
+ \return true or false */
 PN potion_lobby_can(Potion *P, PN cl, PN self, PN method) {
-  return potion_bind(P, self, method);
+  return potion_bind(P, self, method) ? PN_TRUE : PN_FALSE;
 }
 
 /**\memberof Lobby

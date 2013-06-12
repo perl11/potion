@@ -1,13 +1,9 @@
 include ../../config.inc
-INCS += -I../../core
-LIBS += -L.. -lpotion
-SRC   = linenoise.c
-ifeq ($(WIN32),1)
-  SRC  += win32fixes.c
-  LIBS += -lws2_32
-endif
+INCS += -I../../core -I../../3rd/pcre
+LIBS += -L.. -lpotion -L../../3rd/pcre -lpcre
+SRC   =
 
-all: readline${LOADEXT}
+all: pcre${LOADEXT}
 
 %${LOADEXT}: %.c
 	@if [ -f ../../libpotion.a ]; then mv ../../libpotion.a ../../libpotion.a.tmp; fi
@@ -17,4 +13,4 @@ all: readline${LOADEXT}
 test:
 
 clean:
-	@rm -f ../readline${LOADEXT} readline${LOADEXT}
+	@rm -f ../pcre${LOADEXT} pcre${LOADEXT} *.o
