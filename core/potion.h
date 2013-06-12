@@ -717,18 +717,21 @@ void potion_destroy(Potion *);
 PN potion_error(Potion *, PN, long, long, PN);
 void potion_fatal(char *);
 void potion_allocation_error(void);
-void potion_syntax_error(Potion *, const char *, ...);
+void potion_syntax_error(Potion *, const char *, ...)
+  __attribute__ ((format (printf, 2, 3)));
 PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
 PN potion_str2(Potion *, char *, size_t);
 PN potion_strcat(Potion *P, char *str, char *str2);
-PN potion_str_format(Potion *, const char *, ...);
+PN potion_str_format(Potion *, const char *, ...)
+  __attribute__ ((format (printf, 2, 3)));
 PN potion_byte_str(Potion *, const char *);
 PN potion_byte_str2(Potion *, const char *, size_t len);
 PN potion_bytes(Potion *, size_t);
 PN potion_bytes_string(Potion *, PN, PN);
-PN_SIZE pn_printf(Potion *, PN, const char *, ...);
+PN_SIZE pn_printf(Potion *, PN, const char *, ...)
+  __attribute__ ((format (printf, 3, 4)));
 void potion_bytes_obj_string(Potion *, PN, PN);
 PN potion_bytes_append(Potion *, PN, PN, PN);
 void potion_release(Potion *, PN);
