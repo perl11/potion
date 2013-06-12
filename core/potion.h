@@ -194,6 +194,8 @@ struct PNVtable;
 #define PN_PROTO(x)     ((struct PNProto *)(x))
 #define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0)
 #define PN_DEREF(x)     ((struct PNWeakRef *)(x))->data
+#define PN_DATA(x)      (PN)((struct PNData *)(x))->data
+#define PN_DATA_t(x,t)  (t)((struct PNData *)(x))->data
 #define PN_TOUCH(x)     potion_gc_update(P, (PN)(x))
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
 
@@ -717,7 +719,7 @@ void potion_destroy(Potion *);
 PN potion_error(Potion *, PN, long, long, PN);
 void potion_fatal(char *);
 void potion_allocation_error(void);
-PN potion_io_error(Potion *, PN);
+PN potion_io_error(Potion *, const char *);
 PN potion_type_error(Potion *, PN);
 void potion_syntax_error(Potion *, const char *, ...)
   __attribute__ ((format (printf, 2, 3)));

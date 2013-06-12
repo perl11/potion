@@ -31,8 +31,8 @@
 
 typedef vPN(File) pn_file;
 
-PN potion_io_error(Potion *P, PN msg) {
-  return potion_error(P, potion_str_format(P, "Error %s: %s", PN_STR_PTR(msg), strerror(errno)),
+PN potion_io_error(Potion *P, const char *msg) {
+  return potion_error(P, potion_str_format(P, "Error %s: %s", msg, strerror(errno)),
                       0, 0, 0);
 }
 
@@ -62,7 +62,7 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
     return PN_NIL;
   }
   if ((fd = open(PN_STR_PTR(path), mode, 0755)) == -1)
-    return potion_io_error(P, PN_STR("open"));
+    return potion_io_error(P, "open");
   ((struct PNFile *)self)->fd = fd;
   ((struct PNFile *)self)->path = path;
   ((struct PNFile *)self)->mode = mode;
@@ -106,7 +106,7 @@ PN potion_file_read(Potion *P, PN cl, pn_file self, PN n) {
   char buf[n];
   int r = read(self->fd, buf, n);
   if (r == -1) {
-    return potion_io_error(P, PN_STR("read"));
+    return potion_io_error(P, "read");
     //perror("read");
     // TODO: error
     //return PN_NUM(-1);
@@ -148,7 +148,7 @@ PN potion_file_write(Potion *P, PN cl, pn_file self, PN obj) {
   }
   int r = write(self->fd, ptr, len);
   if (r == -1)
-    return potion_io_error(P, PN_STR("write"));
+    return potion_io_error(P, "write");
   return PN_NUM(r);
 }
 
