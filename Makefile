@@ -327,14 +327,12 @@ lib/potion/m_apm${LOADEXT}: core/config.h core/potion.h \
 	@cp lib/m_apm/m_apm${LOADEXT} $@
 
 lib/potion/libtommath${LOADEXT}: core/config.h core/potion.h \
-  lib/libtommath/makefile.shared
+  3rd/libtommath/makefile.shared
 	@${ECHO} MAKE $@
-	cd lib/libtommath; ${CC} -c -I. ${FPIC} ${CFLAGS} *.c; \
-	  ${CC} ${DEBUGFLAGS} -o libtommath${LOADEXT} ${LDDLLFLAGS} \
-	  *.o ${LIBPTH} ${LIBS}; cd ../..
-	@${ECHO} @${MAKE} -s -C lib/libtommath -f makefile.shared
 	@[ -d lib/potion ] || mkdir lib/potion
-	@cp lib/libtommath/libtommath${LOADEXT} $@
+	cd 3rd/libtommath; ${CC} -c -I. ${FPIC} ${CFLAGS} *.c; \
+	  ${CC} ${DEBUGFLAGS} -o ../../$@ ${LDDLLFLAGS} \
+	  *.o ${LIBPTH} ${LIBS}; cd ../..
 
 bench: bin/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \
