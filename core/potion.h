@@ -135,6 +135,12 @@ struct PNVtable;
 #define PN_TYPE_ID(t)   ((t)-PN_TNIL)
 #define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, PN_TYPE_ID(t)))
 #define PN_TYPECHECK(t) (PN_TYPE_ID(t) >= 0 && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
+#define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, obj)
+#ifdef DEBUG
+#define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE((PN)obj,type)
+#else
+#define DBG_CHECK_TYPE(obj,type)
+#endif
 
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)
