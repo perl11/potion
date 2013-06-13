@@ -3,7 +3,7 @@
 
   Only raw and fast POSIX open,read,write,seek calls on fd.
   fgets (aka readline) is only supported on stdin via the \c "read" method.
-  \seealso http://stackoverflow.com/questions/1658476/c-fopen-vs-open
+  \see http://stackoverflow.com/questions/1658476/c-fopen-vs-open
 
   \see the \c buffile library (PNBufFile) for buffered io via FILE*
     for fopen, fscanf, fprintf, fread, fgets see there.

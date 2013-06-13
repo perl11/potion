@@ -14,7 +14,7 @@ just local (lexical) variables not.
 PN is either an immediate tagged value for int, bool and nil
 or a ptr to an object.
 
-ops use a three-addresss layout: dest =  op src what
+ops use a three-addresss layout: "dest = op src what" in a single word
 
 The root class is P->lobby, which holds global values and methods.
 
@@ -192,16 +192,15 @@ struct PNVtable;
 #define PN_STR(x)       potion_str(P, x)
 #define PN_STRN(x, l)   potion_str2(P, x, l)
 #define PN_STRCAT(a, b) potion_strcat(P, (a), (b))
-#define PN_STR_PTR(x)   potion_str_ptr(x)
-#define PN_STR_LEN(x)   ((struct PNString *)(x))->len
-#define PN_STR_B(x)     potion_bytes_string(P, PN_NIL, x)
-#define PN_CLOSURE(x)   ((struct PNClosure *)(x))
-#define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method
-#define PN_PROTO(x)     ((struct PNProto *)(x))
-#define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0)
-#define PN_DEREF(x)     ((struct PNWeakRef *)(x))->data
-#define PN_DATA(x)      (PN)((struct PNData *)(x))->data
-#define PN_DATA_t(x,t)  (t)((struct PNData *)(x))->data
+#define PN_STR_PTR(x)   potion_str_ptr(x)                     ///<\memberof PNString \memberof PNBytes
+#define PN_STR_LEN(x)   ((struct PNString *)(x))->len         ///<\memberof PNString
+#define PN_STR_B(x)     potion_bytes_string(P, PN_NIL, x)     ///<\memberof PNBytes
+#define PN_CLOSURE(x)   ((struct PNClosure *)(x))             ///<\memberof PNClosure
+#define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method     ///<\memberof PNClosure
+#define PN_PROTO(x)     ((struct PNProto *)(x))               ///<\memberof PNProto
+#define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0) ///<\memberof PNClosure
+#define PN_DEREF(x)     ((struct PNWeakRef *)(x))->data       ///<\memberof PNWeakRef
+#define PN_DATA(x)      ((struct PNData *)(x))->data          ///<\memberof PNData
 #define PN_TOUCH(x)     potion_gc_update(P, (PN)(x))
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
 
@@ -240,15 +239,16 @@ struct PNVtable;
 #define DBG_c(...)
 #endif
 
-#define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
-#define PN_TUP0()       potion_tuple_empty(P)
-#define PN_TUP(X)       potion_tuple_new(P, X)
-#define PN_PUSH(T, X)   potion_tuple_push(P, T, (PN)X)
-#define PN_GET(T, X)    potion_tuple_find(P, T, X)
-#define PN_PUT(T, X)    potion_tuple_push_unless(P, T, X)
-#define PN_GET_TUPLE(t) ((struct PNTuple *)potion_fwd((PN)t))
-#define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
-#define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
+#define PN_IS_EMPTY(T)  (PN_TUPLE_LEN(T) == 0)           ///<\memberof PNTuple
+#define PN_TUP0()       potion_tuple_empty(P)            ///<\memberof PNTuple
+#define PN_TUP(X)       potion_tuple_new(P, X)           ///<\memberof PNTuple
+#define PN_PUSH(T, X)   potion_tuple_push(P, T, (PN)X)   ///<\memberof PNTuple
+#define PN_GET(T, X)    potion_tuple_find(P, T, X)       ///<\memberof PNTuple
+#define PN_PUT(T, X)    potion_tuple_push_unless(P, T, X) ///<\memberof PNTuple
+#define PN_GET_TUPLE(t) ((struct PNTuple *)potion_fwd((PN)t)) ///<\memberof PNTuple
+#define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len             ///<\memberof PNTuple
+#define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]        ///<\memberof PNTuple
+///\memberof PNTuple
 #define PN_TUPLE_COUNT(T, I, B) ({ \
     struct PNTuple * volatile __t##I = PN_GET_TUPLE(T); \
     if (__t##I->len != 0) { \
@@ -256,6 +256,7 @@ struct PNVtable;
       for (I = 0; I < __t##I->len; I++) B \
     } \
   })
+///\memberof PNTuple
 #define PN_TUPLE_EACH(T, I, V, B) ({ \
     struct PNTuple * volatile __t##V = PN_GET_TUPLE(T); \
     if (__t##V->len != 0) { \
@@ -290,6 +291,9 @@ struct PNFwd {
 ///
 /// struct to wrap arbitrary data that
 /// we may want to allocate from Potion.
+///
+/// constructor: potion_data_alloc()
+/// accessor: PN_DATA()
 ///
 struct PNData {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
@@ -487,15 +491,16 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
-#if 0
+#if 1
   while (1) {
     struct PNFwd *o = (struct PNFwd *)obj;
     if (o->fwd != POTION_FWD)
       return ((struct PNObject *)o)->vt;
     obj = o->ptr;
   }
-#endif
+#else
   return ((struct PNObject *)potion_fwd(obj))->vt;
+#endif
 }
 
 /// PN_QUICK_FWD - doing a single fwd check after a possible realloc
@@ -680,6 +685,9 @@ static inline void *potion_gc_realloc(Potion *P, PNType vt, struct PNObject * vo
   return dst;
 }
 
+///\memberof PNData
+/// default constructor for PNData user-objects, as PN_TUSER type
+/// \see also PNWeakRef to store external pointers only
 static inline struct PNData *potion_data_alloc(Potion *P, int siz) {
   struct PNData *data = potion_gc_alloc(P, PN_TUSER, sizeof(struct PNData) + siz);
   data->siz = siz;

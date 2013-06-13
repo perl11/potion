@@ -79,7 +79,7 @@
 
    * p6model: via scoped mixins, :multi, roles. Like Moose, just better
      and much faster. (roughly estimated 800x faster).
-     No multiple inheritance yet, @ISA == 1.
+     No multiple inheritance yet, \@ISA == 1.
      Only one parent, depending on another parent, rather multiple
      mixin compositions.
 

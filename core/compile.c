@@ -960,7 +960,7 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   f->asmb = (PN)asmb;
   f->localsize = PN_TUPLE_LEN(f->locals);
   f->upvalsize = PN_TUPLE_LEN(f->upvals);
-  f->pathsize = PN_TUPLE_LEN(f->paths);
+  f->pathsize  = PN_TUPLE_LEN(f->paths);
   *ptr += len;
   return (PN)f;
 }
@@ -1055,8 +1055,8 @@ PN potion_source_dumpbc(Potion *P, PN cl, PN proto, PN options) {
 }
 
 ///\memberof PNSource
-/// dump (compiler) methods, default "bc". loads compile-<backend> extension.
-///\param backend PNString - load a compile-<backend> module and call its dump<backend> method
+/// dump (compiler) methods, default "bc". loads compile-"backend" extension.
+///\param backend PNString - load a compile-"backend" module and call its dump"backend" method
 ///\param options optional PNString
 /// TODO: serializable ascii, c, exe, jvm, .net
 PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
