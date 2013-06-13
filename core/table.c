@@ -485,7 +485,9 @@ static void potion_sort_internal(Potion *P, PN cl, PN self, ///< sort data
 	       PN_SIZE to,   ///< last index, usually len-1
 	       PN      cmp)  ///< cmp method for 2 values, returning -1,0,1
 {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+#ifdef DEBUG
+  if (PN_TTUPLE != PN_TYPE(self)) potion_fatal("Invalid type");
+#endif
   if (from < to) {
     struct PNTuple *t = PN_GET_TUPLE(self);
     // which pivot? first is worst case if already sorted.
