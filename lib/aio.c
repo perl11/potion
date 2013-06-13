@@ -1,5 +1,7 @@
-/** \file aio.c
-  \class aio class for asynch non-blocking IO, via libuv.
+/** \file lib/aio.c
+  \class aio
+  asynch event-driven non-blocking IO, via libuv, on files, network streams, processes.
+  \see http://nikhilm.github.io/uvbook/basics.html
 
   For POSIX unbuffered fileio \see file.c open,read,write,seek calls on fd
   and lib/buffile.c for buffered IO.
