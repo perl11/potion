@@ -194,7 +194,7 @@ aio_##N##_cb(uv_##T##_t* req, int status) { \
   memcpy(PN_DATA(data), req, sizeof(uv_##T##_t));      \
   if (cb) cb->method(wrap->P, wrap->cl, data, PN_NUM(status)); \
 }
-//DEF_AIO_CB(write,write)
+DEF_AIO_CB(write,write)
 DEF_AIO_CB(connect,connect)
 //DEF_AIO_CB(shutdown,shutdown)
 //DEF_AIO_CB(connection,stream)
@@ -202,8 +202,8 @@ DEF_AIO_CB(connect,connect)
 //DEF_AIO_CB(async,async)
 
 static PN
-aio_tcp_connect(Potion *P, PN cl, PN self, PN req, PN addr, PN port, PN cb) {
-  uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(self));
+aio_tcp_connect(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
+  uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
   uv_connect_t *request = (uv_connect_t*)PN_DATA(potion_fwd(req));
   uv_connect_cb connect_cb;
   struct sockaddr_in ip4 = uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port));
@@ -214,6 +214,59 @@ aio_tcp_connect(Potion *P, PN cl, PN self, PN req, PN addr, PN port, PN cb) {
   else if (PN_IS_FFIPTR(cb)) connect_cb = (uv_connect_cb)cb; //c-level cb loaded via ffi
   else connect_cb = 0; //none
   return PN_NUM(uv_tcp_connect(request, handle, ip4, connect_cb));
+}
+static PN
+aio_tcp_connect6(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
+  uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
+  uv_connect_t *request = (uv_connect_t*)PN_DATA(potion_fwd(req));
+  uv_connect_cb connect_cb;
+  struct sockaddr_in6 ip6 = uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port));
+  if (PN_IS_CLOSURE(cb)) { //register user-callback. set cb ptr in req
+    request->cb = (uv_connect_cb)PN_CLOSURE(cb);
+    connect_cb = (uv_connect_cb)aio_connect_cb;
+  }
+  else if (PN_IS_FFIPTR(cb)) connect_cb = (uv_connect_cb)cb; //c-level cb loaded via ffi
+  else connect_cb = 0; //none
+  return PN_NUM(uv_tcp_connect6(request, handle, ip6, connect_cb));
+}
+static PN
+aio_pipe_open(Potion *P, PN cl, PN pipe, PN file) {
+  uv_pipe_t *handle = (uv_pipe_t*)PN_DATA(potion_fwd(pipe));
+  return PN_NUM(uv_pipe_open(handle, PN_INT(file)));
+}
+static PN
+aio_pipe_bind(Potion *P, PN cl, PN pipe, PN name) {
+  uv_pipe_t *handle = (uv_pipe_t*)PN_DATA(potion_fwd(pipe));
+  return PN_NUM(uv_pipe_bind(handle, PN_STR_PTR(name)));
+}
+static PN
+aio_pipe_connect(Potion *P, PN cl, PN pipe, PN req, PN name, PN cb) {
+  uv_pipe_t *handle = (uv_pipe_t*)PN_DATA(potion_fwd(pipe));
+  uv_connect_t *request = (uv_connect_t*)PN_DATA(potion_fwd(req));
+  uv_connect_cb connect_cb;
+  if (PN_IS_CLOSURE(cb)) { //register user-callback. set cb ptr in req
+    request->cb = (uv_connect_cb)PN_CLOSURE(cb);
+    connect_cb = (uv_connect_cb)aio_connect_cb;
+  }
+  else if (PN_IS_FFIPTR(cb)) connect_cb = (uv_connect_cb)cb; //c-level cb loaded via ffi
+  else connect_cb = 0; //none
+  uv_pipe_connect(request, handle, PN_STR_PTR(name), connect_cb);
+  return pipe;
+}
+
+static PN
+aio_write(Potion *P, PN cl, PN stream, PN req, PN buf, PN bufcnt, PN cb) {
+  uv_stream_t *stm = (uv_stream_t*)PN_DATA(potion_fwd(stream));
+  uv_write_t *request = (uv_write_t*)PN_DATA(potion_fwd(req));
+  uv_buf_t *bufs = (uv_buf_t*)PN_DATA(potion_fwd(buf));
+  uv_write_cb write_cb;
+  if (PN_IS_CLOSURE(cb)) { //register user-callback. set cb ptr in req
+    request->cb = (uv_write_cb)PN_CLOSURE(cb);
+    write_cb = (uv_write_cb)aio_write_cb;
+  }
+  else if (PN_IS_FFIPTR(cb)) write_cb = (uv_write_cb)cb; //c-level cb loaded via ffi
+  else write_cb = 0; //none
+  return PN_NUM(uv_write(request, stm, bufs, PN_INT(bufcnt), write_cb));
 }
 
 /**
@@ -336,8 +389,12 @@ void Potion_Init_aio(Potion *P) {
 #undef DEF_AIO_INIT_VT
 
   potion_method(aio_tcp_vt, "connect", aio_tcp_connect, "req=o,addr=S,port=N|connect_cb=&");
-#if 0
   potion_method(aio_tcp_vt, "connect6", aio_tcp_connect6, "req=o,addr=S,port=N|connect_cb=&");
+  potion_method(aio_pipe_vt, "open", aio_pipe_open, "fd=N");
+  potion_method(aio_pipe_vt, "bind", aio_pipe_bind, "name=S");
+  potion_method(aio_pipe_vt, "connect", aio_pipe_connect, "req=o,name=S|connect_cb=&");
+  potion_method(aio_stream_vt, "write", aio_write, "req=o,buf=O,bufcnt=N|write_cb=&");
+#if 0
   potion_method(aio_udp_vt, "connect", aio_udp_connect, "req=o,addr=S,port=N|connect_cb=&");
   potion_method(aio_pipe_vt, "open", aio_pipe_open, "file=o");
   potion_method(aio_pipe_vt, "bind", aio_pipe_bind, "name=S");
