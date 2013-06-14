@@ -211,7 +211,7 @@ aio_tcp_connect(Potion *P, PN cl, PN self, PN req, PN addr, PN port, PN cb) {
     request->cb = (uv_connect_cb)PN_CLOSURE(cb);
     connect_cb = (uv_connect_cb)aio_connect_cb;
   }
-  else if (cb) connect_cb = (uv_connect_cb)PN_DATA(cb); //c-level
+  else if (PN_IS_FFIPTR(cb)) connect_cb = (uv_connect_cb)cb; //c-level cb loaded via ffi
   else connect_cb = 0; //none
   return PN_NUM(uv_tcp_connect(request, handle, ip4, connect_cb));
 }

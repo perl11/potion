@@ -182,7 +182,6 @@ struct PNVtable;
 #define PN_IS_FFIPTR(p)  ((PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->birth_hi)) \
 			  || (!PN_IS_PTR(p) && p > (_PN)P->mem->birth_hi))
 
-
 ///\class PNNumber
 /// Either a PN_INT immediate object (no struct) 0x...1
 ///        Integer: 31bit/63bit shifted off the last 1 bit
