@@ -230,6 +230,33 @@ aio_tcp_connect6(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
   return PN_NUM(uv_tcp_connect6(request, handle, ip6, connect_cb));
 }
 static PN
+aio_udp_open(Potion *P, PN cl, PN udp, PN sock) {
+  uv_udp_t *handle = (uv_udp_t*)PN_DATA(potion_fwd(udp));
+  return PN_NUM(uv_udp_open(handle, PN_INT(sock)));
+}
+static PN
+aio_udp_bind(Potion *P, PN cl, PN udp, PN addr, PN port) {
+  uv_udp_t *handle = (uv_udp_t*)PN_DATA(potion_fwd(udp));
+  int flags = 0; //unused
+  struct sockaddr_in ip4 = uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port));
+  int r = uv_udp_bind(handle, ip4, flags);
+  return r ? PN_NIL : udp;
+}
+static PN
+aio_udp_bind6(Potion *P, PN cl, PN udp, PN addr, PN port, PN flags) {
+  uv_udp_t *handle = (uv_udp_t*)PN_DATA(potion_fwd(udp));
+  struct sockaddr_in6 ip6 = uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port));
+  int r = uv_udp_bind6(handle, ip6, PN_INT(flags));
+  return r ? PN_NIL : udp;
+}
+static PN
+aio_udp_getsockname(Potion *P, PN cl, PN udp) {
+  struct sockaddr sock; int len;
+  uv_udp_t *handle = (uv_udp_t*)PN_DATA(potion_fwd(udp));
+  int r = uv_udp_getsockname(handle, &sock, &len);
+  return !r ? potion_str2(P, sock.sa_data, len) : PN_NIL;
+}
+static PN
 aio_pipe_open(Potion *P, PN cl, PN pipe, PN file) {
   uv_pipe_t *handle = (uv_pipe_t*)PN_DATA(potion_fwd(pipe));
   return PN_NUM(uv_pipe_open(handle, PN_INT(file)));
@@ -390,6 +417,10 @@ void Potion_Init_aio(Potion *P) {
 
   potion_method(aio_tcp_vt, "connect", aio_tcp_connect, "req=o,addr=S,port=N|connect_cb=&");
   potion_method(aio_tcp_vt, "connect6", aio_tcp_connect6, "req=o,addr=S,port=N|connect_cb=&");
+  potion_method(aio_udp_vt, "open", aio_udp_open, "sock=N");
+  potion_method(aio_udp_vt, "bind", aio_udp_bind, "addr=S,port=N");
+  potion_method(aio_udp_vt, "bind6", aio_udp_bind6, "addr=S,port=N|ipv6only:=0");
+  potion_method(aio_udp_vt, "getsockname", aio_udp_getsockname, 0);
   potion_method(aio_pipe_vt, "open", aio_pipe_open, "fd=N");
   potion_method(aio_pipe_vt, "bind", aio_pipe_bind, "name=S");
   potion_method(aio_pipe_vt, "connect", aio_pipe_connect, "req=o,name=S|connect_cb=&");
