@@ -118,16 +118,24 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   PN ary = PN_NIL;
   vPN(Proto) f = (struct PNProto *)PN_CLOSURE(cl)->data[0];
   if (PN_IS_TUPLE(f->sig)) {
-    vPN(Tuple) t = (vPN(Tuple))potion_fwd(f->sig);
     PN_SIZE i;
+    int arity = PN_CLOSURE(cl)->arity;
+    int numargs;
     va_list args;
     va_start(args, self);
+    if (PN_IS_NUM(self) && PN_INT(self) >= 0 && PN_INT(self) < 30)
+      numargs = PN_INT(self);
+    else
+      numargs = PN_INT(va_arg(args, PN));
     ary = PN_TUP0();
-    for (i=0; i < t->len; i++) {
-      PN v = (PN)t->set[i];
-      // arg names, except string default
-      if (PN_IS_STR(v) && !(i>0 && PN_IS_NUM(t->set[i-1]) && t->set[i-1] == PN_NUM(':'))) {
+    for (i=0; i < arity; i++) {
+      PN s = potion_sig_at(P, f->sig, i);
+      if (i < numargs) {
         ary = PN_PUSH(ary, va_arg(args, PN));
+      } else if (PN_TUPLE_LEN(s) == 3) {
+        ary = PN_PUSH(ary, PN_TUPLE_AT(s,2));
+      } else {
+	ary = PN_PUSH(ary, PN_TUPLE_AT(s,1) == PN_NUM(78) ? PN_NUM(0) : PN_NIL);
       }
     }
     va_end(args);
@@ -492,7 +500,7 @@ reentry:
             reg[op.a + 1] = potion_object_new(P, PN_NIL, reg[op.a]);
             reg[op.a] = ((struct PNVtable *)reg[op.a])->ctor;
           case PN_TCLOSURE:
-            if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) { //ffi?
+            if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) { //ffi or bytecode -> jit
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);
             } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
               int i;
@@ -508,7 +516,8 @@ reentry:
               self = reg[op.a + 1];
               args = &reg[op.a + 2];
               if (PN_IS_TUPLE(sig)) {
-                for (i=numargs; i < PN_CLOSURE(reg[op.a])->arity; i++) { // fill in defaults
+		int arity = PN_CLOSURE(reg[op.a])->arity;
+                for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
                   if (s && PN_TUPLE_LEN(s) == 3) { // default: && !filled by NAMED (?)
                     reg[op.a + i + 2] = PN_TUPLE_AT(s, 2);

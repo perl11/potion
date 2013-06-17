@@ -160,49 +160,49 @@ void potion_test_eval(CuTest *T) {
   PN add, num;
   PN_F addfn;
 
-#if POTION_JIT
   add = potion_eval(P, potion_str(P, "(x, y): x + y."), 0);
   addfn = PN_CLOSURE_F(add); // c callback
   CuAssertPtrNotNull(T, addfn);
-  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  num = addfn(P, add, PN_NUM(2), PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
 
   add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."), 0);
   addfn = PN_CLOSURE_F(add);
-  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  num = addfn(P, add, PN_NUM(2), PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
-  num = addfn(P, add, 0, PN_NUM(3));
+  num = addfn(P, add, PN_NUM(1), PN_NUM(3));
   CuAssertIntEquals(T, "optional num = 0", 3, PN_INT(num));
 
   add = potion_eval(P, potion_str(P, "(x=N,y:=1): x + y."), 0); //TODO: x=N|y:=1
   addfn = PN_CLOSURE_F(add);
-  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  num = addfn(P, add, PN_NUM(2), PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func failed",
     PN_INT(num), 8);
-  num = addfn(P, add, 0, PN_NUM(3));
+  num = addfn(P, add, PN_NUM(1), PN_NUM(3));
   CuAssertIntEquals(T, "default num = 1", 4, PN_INT(num));
-#endif
 
+#if POTION_JIT
   add = potion_eval(P, potion_str(P, "(x, y): x + y."), POTION_JIT);
   addfn = PN_CLOSURE_F(add); // c callback
   CuAssertPtrNotNull(T, addfn);
-  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  num = addfn(P, add, PN_NUM(2), PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
 
-  P->flags += DEBUG_COMPILE;
-  add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."), 0);
+  //P->flags += DEBUG_COMPILE;
+  add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."), POTION_JIT);
   addfn = PN_CLOSURE_F(add);
-  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  num = addfn(P, add, PN_NUM(2), PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
-  num = addfn(P, add, 0, PN_NUM(3));
-  CuAssertIntEquals(T, "optional num = 0", 3, PN_INT(num));
+  num = addfn(P, add, PN_NUM(2), PN_NUM(3));
+  CuAssertIntEquals(T, "optional num = 0 (jit)", 3, PN_INT(num));
 
   add = potion_eval(P, potion_str(P, "(x=N|y:=1): x + y."), POTION_JIT);
   addfn = PN_CLOSURE_F(add);
-  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  num = addfn(P, add, PN_NUM(2), PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
-  num = addfn(P, add, 0, PN_NUM(3));
-  CuAssertIntEquals(T, "default num = 1", 4, PN_INT(num));
+  num = addfn(P, add, PN_NUM(2), PN_NUM(3));
+  CuAssertIntEquals(T, "default num = 1 (jit)", 4, PN_INT(num));
+#endif
 
 }
 

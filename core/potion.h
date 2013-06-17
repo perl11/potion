@@ -357,7 +357,7 @@ struct PNClosure {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_F method;
   PN sig;            ///< signature PNTuple
-  int arity;         ///< cached number of args
+  int arity;         ///< cached number of declared args, including optional
   PN_SIZE extra;     ///< 0 or 1 if has code attached at data
   PN data[0];        ///< code
 };
