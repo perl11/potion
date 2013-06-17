@@ -750,6 +750,9 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 	if (sig && PN_TUPLE_LEN(sig) == 3) {
 	  DBG_t(":=*%s[%d] ", AS_STR(PN_TUPLE_AT(sig, 2)), i+1);
 	  X86_ARGO_IMM(PN_TUPLE_AT(sig, 2), i+1); 	// mov $value, i(%esp) - default
+	} else if (sig) {
+	  DBG_t("|0 ");                                 // mov 0, i(%esp) - optional
+	  X86_ARGO_IMM((PN_TUPLE_AT(sig, 1) == PN_NUM(78)) ? PN_NUM(0) : 0, i+1);
 	}}}}
   DBG_t("\n");
   ASM(0xFF); ASM(0xD0); 				// callq *%rax

@@ -123,9 +123,10 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
     int numargs;
     va_list args;
     va_start(args, self);
-    if (PN_IS_NUM(self) && PN_INT(self) >= 0 && PN_INT(self) < 30)
+    if (PN_IS_NUM(self) && PN_INT(self) >= 0 && PN_INT(self) < 30) {
       numargs = PN_INT(self);
-    else
+      self = 0;
+    } else
       numargs = PN_INT(va_arg(args, PN));
     ary = PN_TUP0();
     for (i=0; i < arity; i++) {
