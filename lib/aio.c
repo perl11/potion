@@ -1,7 +1,8 @@
 /** \file lib/aio.c
-  \class aio
   asynch event-driven non-blocking IO, via libuv, on files, network streams, processes.
-  \see http://nikhilm.github.io/uvbook/basics.html
+  \class aio
+
+  \see 3rd/libuv/include/uv.h and http://nikhilm.github.io/uvbook/basics.html
 
   The constructor calls the uv_T_init functions already.
 
@@ -20,41 +21,43 @@ PN aio_vt, aio_tcp_vt, aio_udp_vt, aio_loop_vt, aio_tty_vt, aio_pipe_vt, aio_pol
   aio_handle_vt, aio_process_vt, aio_stream_vt, aio_req_vt, aio_connect_vt, aio_write_vt, aio_shutdown_vt,
   aio_udp_send_vt, aio_fs_vt, aio_work_vt, aio_getaddrinfo_vt, aio_cpu_info_vt, aio_interface_address_vt;
 
-#define DEF_AIO_REQ_WRAP(T,H) \
+//with wrapped callback
+#define DEF_AIO_CB_WRAP(T,H) \
 struct aio_##T##_s { \
   struct uv_##H##_s r;   \
   Potion *P;             \
   PN cl;                 \
   uv_##T##_cb cb;        \
 } aio_##T##_t
+//without
 #define DEF_AIO_HANDLE_WRAP(T) \
 struct aio_##T##_s {     \
   uv_##T##_t h;          \
   Potion *P;             \
   PN cl;                 \
 } aio_##T##_t
-DEF_AIO_REQ_WRAP(write,write);
-DEF_AIO_REQ_WRAP(connect,connect);
-DEF_AIO_REQ_WRAP(shutdown,shutdown);
-DEF_AIO_REQ_WRAP(connection,stream);
-DEF_AIO_REQ_WRAP(close,handle);
-DEF_AIO_REQ_WRAP(poll,poll);
-DEF_AIO_REQ_WRAP(timer,timer);
-DEF_AIO_REQ_WRAP(async,async);
-DEF_AIO_REQ_WRAP(prepare,prepare);
-DEF_AIO_REQ_WRAP(check,check);
-DEF_AIO_REQ_WRAP(idle,idle);
-DEF_AIO_REQ_WRAP(exit,process);
-DEF_AIO_REQ_WRAP(walk,handle);
-DEF_AIO_REQ_WRAP(fs,fs);
-DEF_AIO_REQ_WRAP(work,work);
-DEF_AIO_REQ_WRAP(after_work,work);
-DEF_AIO_REQ_WRAP(getaddrinfo,getaddrinfo);
-DEF_AIO_HANDLE_WRAP(fs_poll);
-DEF_AIO_HANDLE_WRAP(signal);
+DEF_AIO_CB_WRAP(write,write);
+DEF_AIO_CB_WRAP(connect,connect);
+DEF_AIO_CB_WRAP(shutdown,shutdown);
+DEF_AIO_CB_WRAP(connection,stream);
+DEF_AIO_CB_WRAP(close,handle);
+DEF_AIO_CB_WRAP(poll,poll);
+DEF_AIO_CB_WRAP(timer,timer);
+DEF_AIO_CB_WRAP(async,async);
+DEF_AIO_CB_WRAP(prepare,prepare);
+DEF_AIO_CB_WRAP(check,check);
+DEF_AIO_CB_WRAP(idle,idle);
+DEF_AIO_CB_WRAP(exit,process);
+DEF_AIO_CB_WRAP(walk,handle);
+DEF_AIO_CB_WRAP(fs,fs);
+DEF_AIO_CB_WRAP(work,work);
+DEF_AIO_CB_WRAP(after_work,work);
+DEF_AIO_CB_WRAP(getaddrinfo,getaddrinfo);
+DEF_AIO_CB_WRAP(fs_poll,fs_poll);
+DEF_AIO_CB_WRAP(signal,signal);
 DEF_AIO_HANDLE_WRAP(handle);
 DEF_AIO_HANDLE_WRAP(loop);
-DEF_AIO_HANDLE_WRAP(fs_event);
+DEF_AIO_CB_WRAP(fs_event,fs_event);
 DEF_AIO_HANDLE_WRAP(pipe);
 DEF_AIO_HANDLE_WRAP(process);
 DEF_AIO_HANDLE_WRAP(stream);
@@ -70,8 +73,23 @@ DEF_AIO_HANDLE_WRAP(barrier);
 DEF_AIO_HANDLE_WRAP(cond);
 DEF_AIO_HANDLE_WRAP(mutex);
 DEF_AIO_HANDLE_WRAP(rwlock);
-#undef DEF_AIO_REQ_WRAP
+#undef DEF_AIO_CB_WRAP
 #undef DEF_AIO_HANDLE_WRAP
+
+/**\memberof aio_fs_event
+   The aio_fs_event callback will receive the following arguments:
+   \param filename
+   \param events UV_RENAME=1 or UV_CHANGE=2
+   \param status
+   \see http://nikhilm.github.io/uvbook/filesystem.html#file-change-events */
+static void
+aio_fs_event_cb(uv_fs_event_t* handle, const char* filename, int events, int status) {
+  struct aio_fs_event_s* wrap = (struct aio_fs_event_s*)handle;
+  vPN(Closure) cb = PN_CLOSURE(wrap->cb);
+  char *data = (char*)(&wrap - sizeof(struct PNData) + sizeof(char*));
+  if (cb) cb->method(wrap->P, wrap->cl, (PN)data, potion_str(wrap->P, filename),
+		     PN_NUM(events), PN_NUM(status));
+}
 
 #define DEF_AIO_NEW_NOINIT(T)					      \
   struct PNData *data = potion_data_alloc(P,			      \
@@ -93,20 +111,20 @@ DEF_AIO_HANDLE_WRAP(rwlock);
   return (PN)data;
 
 /**\class aio_tcp \memberof aio_tcp
-   create and init \c aio_tcp
+   create and init a \c aio_tcp object
    \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
    \see http://nikhilm.github.io/uvbook/networking.html#tcp */
-static PN aio_tcp_new(Potion *P, PN cl, PN loop) {
+static PN aio_tcp_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP(tcp);
 }
 /**\class aio_udp \memberof aio_udp
-   create and init \c aio_udp
+   create and init a \c aio_udp object
    \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
    \see http://nikhilm.github.io/uvbook/networking.html#udp */
-static PN aio_udp_new(Potion *P, PN cl, PN loop) {
+static PN aio_udp_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP(udp);
 }
-static PN aio_prepare_new(Potion *P, PN cl, PN loop) {
+static PN aio_prepare_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP(prepare);
 }
 static PN aio_check_new(Potion *P, PN cl, PN loop) {
@@ -115,6 +133,10 @@ static PN aio_check_new(Potion *P, PN cl, PN loop) {
 static PN aio_idle_new(Potion *P, PN cl, PN loop) {
   DEF_AIO_NEW_LOOP(idle);
 }
+/**\class aio_timer \memberof aio_timer
+   create and init a \c aio_timer object
+   \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
+   \see http://nikhilm.github.io/uvbook/utilities.html#timers */
 static PN aio_timer_new(Potion *P, PN cl, PN loop) {
   DEF_AIO_NEW_LOOP(timer);
 }
@@ -204,9 +226,12 @@ static PN aio_sem_new(Potion *P, PN cl, PN self, PN value) {
 }
 static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN loop, PN filename, PN cb, PN flags) {
   DEF_AIO_NEW(fs_event);
+  uv_fs_event_cb fs_event_cb = aio_fs_event_cb;
   if (!loop) loop = (PN)uv_default_loop();
   else loop = (PN)PN_DATA(loop);
-  r = uv_fs_event_init((uv_loop_t*)loop, handle, PN_STR_PTR(filename), (uv_fs_event_cb)PN_DATA(cb), PN_NUM(flags));
+  if (PN_IS_CLOSURE(cb)) handle->cb = (uv_fs_event_cb)cb;
+  else if (PN_IS_FFIPTR(cb)) fs_event_cb = NULL;
+  r = uv_fs_event_init((uv_loop_t*)loop, handle, PN_STR_PTR(filename), fs_event_cb, PN_NUM(flags));
   if (!r) return potion_io_error(P, "aio_fs_event");
   return (PN)data;
 }
@@ -241,21 +266,50 @@ static PN aio_rwlock_new(Potion *P, PN cl, PN self) {
 #undef DEF_AIO_NEW_LOOP
 
 //cb wrappers
-#define DEF_AIO_CB(N,T)                     \
-static void                                 \
-aio_##N##_cb(uv_##T##_t* req, int status) { \
+#define DEF_AIO_CB(T)				       \
   struct aio_##T##_s* wrap = (struct aio_##T##_s*)req; \
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);              \
-  PN data = aio_##T##_new(wrap->P, wrap->cl, 0);       \
-  memcpy(PN_DATA(data), req, sizeof(uv_##T##_t));      \
-  if (cb) cb->method(wrap->P, wrap->cl, data, PN_NUM(status)); \
+  char *data = (char*)(&wrap - sizeof(struct PNData) + sizeof(char*)); \
+  if (cb) cb->method(wrap->P, wrap->cl, (PN)data, PN_NUM(status))
+
+static void
+aio_write_cb(uv_write_t* req, int status) {
+  DEF_AIO_CB(write);
 }
-DEF_AIO_CB(write,write)
-DEF_AIO_CB(connect,connect)
-//DEF_AIO_CB(shutdown,shutdown)
-//DEF_AIO_CB(connection,stream)
-//DEF_AIO_CB(timer,timer)
-//DEF_AIO_CB(async,async)
+static void
+aio_connect_cb(uv_connect_t* req, int status) {
+  DEF_AIO_CB(connect);
+}
+#if 0 //yet unused
+static void
+aio_shutdown_cb(uv_shutdown_t* req, int status) {
+  DEF_AIO_CB(shutdown);
+}
+static void
+aio_connection_cb(uv_stream_t* req, int status) {
+  DEF_AIO_CB(connection);
+}
+static void
+aio_timer_cb(uv_timer_t* req, int status) {
+  DEF_AIO_CB(timer);
+}
+static void
+aio_async_cb(uv_async_t* req, int status) {
+  DEF_AIO_CB(async);
+}
+static void
+aio_signal_cb(uv_signal_t* req, int status) { //signum really
+  DEF_AIO_CB(signal);
+}
+static void
+aio_fs_poll_cb(uv_fs_poll_t* handle, int status, const uv_stat_t* prev, const uv_stat_t* curr) {
+  struct aio_fs_poll_s* wrap = (struct aio_fs_poll_s*)handle;
+  vPN(Closure) cb = PN_CLOSURE(wrap->cb);
+  char *data = (char*)(&wrap - sizeof(struct PNData) + sizeof(char*));
+  if (cb) cb->method(wrap->P, wrap->cl, (PN)data, PN_NUM(status),
+		     potion_ref(wrap->P, (PN)prev), potion_ref(wrap->P, (PN)curr));
+}
+#endif
 
 static PN
 aio_tcp_open(Potion *P, PN cl, PN tcp, PN sock) {
@@ -499,20 +553,20 @@ void Potion_Init_aio(Potion *P) {
 #define DEF_AIO_NEW_VT(T,args)						\
   DEF_AIO_VT(T); potion_method(P->lobby, "aio_"_XSTR(T), aio_##T##_new, args);
 
-  DEF_AIO_NEW_VT(tcp, "|loop=o");
-  DEF_AIO_NEW_VT(udp, "|loop=o");
-  DEF_AIO_NEW_VT(prepare, "|loop=o");
-  DEF_AIO_NEW_VT(check, "|loop=o");
-  DEF_AIO_NEW_VT(idle,  "|loop=o");
-  DEF_AIO_NEW_VT(timer, "|loop=o");
-  DEF_AIO_NEW_VT(fs_poll, "|loop=o");
-  DEF_AIO_NEW_VT(signal, "|loop=o");
+  DEF_AIO_NEW_VT(tcp, "|loop=&");
+  DEF_AIO_NEW_VT(udp, "|loop=&");
+  DEF_AIO_NEW_VT(prepare, "|loop=&");
+  DEF_AIO_NEW_VT(check, "|loop=&");
+  DEF_AIO_NEW_VT(idle,  "|loop=&");
+  DEF_AIO_NEW_VT(timer, "|loop=&");
+  DEF_AIO_NEW_VT(fs_poll, "|loop=&");
+  DEF_AIO_NEW_VT(signal, "|loop=&");
   DEF_AIO_VT(loop);
-  DEF_AIO_NEW_VT(tty,  "loop=o,file=o,readable=N");
-  DEF_AIO_NEW_VT(pipe, "loop=o,ipc=N");
-  DEF_AIO_NEW_VT(poll, "loop=o,fd=N");
-  DEF_AIO_NEW_VT(async, "loop=o,cb=o");
-  DEF_AIO_NEW_VT(fs_event, "loop=o,filename=S,cb=o,flags=N");
+  DEF_AIO_NEW_VT(tty,  "loop=&,file=o,readable=N");
+  DEF_AIO_NEW_VT(pipe, "loop=&,ipc=N");
+  DEF_AIO_NEW_VT(poll, "loop=&,fd=N");
+  DEF_AIO_NEW_VT(async, "loop=&,cb=o");
+  DEF_AIO_NEW_VT(fs_event, "loop=&,filename=S,cb=o,flags=N");
   DEF_AIO_NEW_VT(mutex, 0);
   DEF_AIO_NEW_VT(rwlock, 0);
   DEF_AIO_NEW_VT(cond, 0);

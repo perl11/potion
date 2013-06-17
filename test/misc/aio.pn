@@ -1,7 +1,6 @@
 #TODO: in work
 load "aio"
-tcp = aio("tcp")
-tcp init
+tcp = aio_tcp()
 connect = (req,status): "connected" print.
 tcp connect(aio("connect"), "localhost", 80, connect)
 #=> nil
