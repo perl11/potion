@@ -852,7 +852,24 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 	    DBG_c("%s)\n", AS_STR(v));
 	    sig = PN_PUSH(sig, v);
 	  }
-	} else if (rhs->part == AST_VALUE) {           // :=default
+        } else if (rhs->part == AST_ASSIGN && rhs->a[0]->part == AST_PIPE) {
+          //x=N|y=o => (assign (pipe (expm x) (expm y)) (expm o))
+          lhs = SRC_TUPLE_AT(rhs, 0);
+	  if (lhs->part == AST_EXPR && SRC_TUPLE_AT(lhs,0)->part == AST_MSG) {
+	    PN v = PN_NUM(PN_STR_PTR(PN_S(PN_S(lhs,0),0)->a[0])[0]); // = type. TODO: one-char => VTABLE
+	    DBG_c("%s)\n", AS_STR(v));
+	    sig = PN_PUSH(sig, v);
+	  }
+	  sig = PN_PUSH(sig, PN_NUM('|'));
+	  SIG_EXPR_MSG(name, rhs->a[0]->a[1]);
+          rhs = rhs->a[1];
+	  if (rhs->part == AST_EXPR && SRC_TUPLE_AT(rhs,0)->part == AST_MSG) {
+            PN v = PN_S(SRC_TUPLE_AT(rhs,0),0);
+	    v = PN_NUM(PN_STR_PTR(v)[0]); // = type. TODO: one-char => VTABLE
+	    DBG_c("%s)\n", AS_STR(v));
+	    sig = PN_PUSH(sig, v);
+          }
+	} else if (rhs->part == AST_VALUE) {    // :=default
 	  PN v = PN_S(rhs,0);
 	  DBG_c(": %s)\n", AS_STR(v));
 	  sig = PN_PUSH(PN_PUSH(sig, PN_NUM(':')), v);

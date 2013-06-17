@@ -158,6 +158,24 @@ void potion_test_eval(CuTest *T) {
   PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func failed",
     PN_INT(num), 8);
+
+  add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."), POTION_JIT);
+  addfn = PN_CLOSURE_F(add);
+  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  CuAssertIntEquals(T, "calling closure as c func failed",
+    PN_INT(num), 8);
+  num = addfn(P, add, 0, PN_NUM(3));
+  CuAssertIntEquals(T, "optional num = 0",
+    PN_INT(num), 3);
+
+  add = potion_eval(P, potion_str(P, "(x=N|y:=1): x + y."), POTION_JIT);
+  addfn = PN_CLOSURE_F(add);
+  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  CuAssertIntEquals(T, "calling closure as c func failed",
+    PN_INT(num), 8);
+  num = addfn(P, add, 0, PN_NUM(3));
+  CuAssertIntEquals(T, "default num = 1",
+    PN_INT(num), 4);
 }
 
 #include "gc.h"
