@@ -118,13 +118,18 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   PN ary = PN_NIL;
   vPN(Proto) f = (struct PNProto *)PN_CLOSURE(cl)->data[0];
   if (PN_IS_TUPLE(f->sig)) {
+    vPN(Tuple) t = (vPN(Tuple))potion_fwd(f->sig);
+    PN_SIZE i;
     va_list args;
     va_start(args, self);
     ary = PN_TUP0();
-    PN_TUPLE_EACH(f->sig, i, v, {
-      if (PN_IS_STR(v))
+    for (i=0; i < t->len; i++) {
+      PN v = (PN)t->set[i];
+      // arg names, except string default
+      if (PN_IS_STR(v) && !(i>0 && PN_IS_NUM(t->set[i-1]) && t->set[i-1] == PN_NUM(':'))) {
         ary = PN_PUSH(ary, va_arg(args, PN));
-    });
+      }
+    }
     va_end(args);
   }
   return potion_vm(P, (PN)f, self, ary,
@@ -505,8 +510,12 @@ reentry:
               if (PN_IS_TUPLE(sig)) {
                 for (i=numargs; i < PN_CLOSURE(reg[op.a])->arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
-                  if (s && PN_TUPLE_LEN(s) == 3) { // && !filled by NAMED (?)
+                  if (s && PN_TUPLE_LEN(s) == 3) { // default: && !filled by NAMED (?)
                     reg[op.a + i + 2] = PN_TUPLE_AT(s, 2);
+                    f->stack = PN_NUM(PN_INT(f->stack)+1);
+                    op.b++;
+                  } else if (s) { // | without default: set to PN_NIL or PN_NUM(0) if =N
+                    reg[op.a + i + 2] = PN_TUPLE_AT(s,1) == PN_NUM(78) ? PN_NUM(0) : PN_NIL;
                     f->stack = PN_NUM(PN_INT(f->stack)+1);
                     op.b++; }}}
               upc = PN_CLOSURE(reg[op.a])->extra - 1;

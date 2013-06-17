@@ -73,7 +73,7 @@ void potion_test_empty(CuTest *T) {
   CuAssert(T, "empty isn't a tuple", PN_IS_TUPLE(empty));
   CuAssert(T, "empty isn't a ref", PN_IS_PTR(empty));
   CuAssertIntEquals(T, "tuple length is off",
-    PN_INT(potion_send(empty, potion_str(P, "length"))), 0);
+                    0, PN_INT(potion_send(empty, potion_str(P, "length"))));
 }
 
 void potion_test_tuple(CuTest *T) {
@@ -84,7 +84,7 @@ void potion_test_tuple(CuTest *T) {
   CuAssert(T, "tuple isn't a tuple", PN_IS_TUPLE(tup));
   CuAssert(T, "tuple isn't a ref", PN_IS_PTR(tup));
   CuAssertIntEquals(T, "tuple length is off",
-    PN_INT(potion_send(tup, potion_str(P, "length"))), 3);
+                    3, PN_INT(potion_send(tup, potion_str(P, "length"))));
 }
 
 void potion_test_sig(CuTest *T) {
@@ -105,6 +105,11 @@ void potion_test_sig(CuTest *T) {
 		    PN_STR_PTR(potion_send(PN_TUPLE_AT(sig,2), PN_string)));
   CuAssertIntEquals(T, "num2=N", 'N',
 		    PN_INT(PN_TUPLE_AT(sig,3)));
+
+  sig = potion_sig(P, "x=N|y=N");
+  CuAssertStrEquals(T, "(x, 78, 124, y, 78)",
+		    PN_STR_PTR(potion_send(sig, PN_string)));
+  CuAssertIntEquals(T, "arity=2", 2, potion_sig_arity(P, sig));
 
   sig = potion_sig(P, "x=N,y=N|r=N");
   CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
@@ -152,30 +157,53 @@ void potion_test_proto(CuTest *T) {
 }
 
 void potion_test_eval(CuTest *T) {
-  PN add = potion_eval(P, potion_str(P, "(x, y): x + y."), POTION_JIT);
-  PN_F addfn = PN_CLOSURE_F(add); // c callback
-  CuAssertPtrNotNull(T, addfn);
-  PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
-  CuAssertIntEquals(T, "calling closure as c func failed",
-    PN_INT(num), 8);
+  PN add, num;
+  PN_F addfn;
 
-  add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."), POTION_JIT);
+#if POTION_JIT
+  add = potion_eval(P, potion_str(P, "(x, y): x + y."), 0);
+  addfn = PN_CLOSURE_F(add); // c callback
+  CuAssertPtrNotNull(T, addfn);
+  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
+
+  add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."), 0);
+  addfn = PN_CLOSURE_F(add);
+  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
+  num = addfn(P, add, 0, PN_NUM(3));
+  CuAssertIntEquals(T, "optional num = 0", 3, PN_INT(num));
+
+  add = potion_eval(P, potion_str(P, "(x=N,y:=1): x + y."), 0); //TODO: x=N|y:=1
   addfn = PN_CLOSURE_F(add);
   num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func failed",
     PN_INT(num), 8);
   num = addfn(P, add, 0, PN_NUM(3));
-  CuAssertIntEquals(T, "optional num = 0",
-    PN_INT(num), 3);
+  CuAssertIntEquals(T, "default num = 1", 4, PN_INT(num));
+#endif
+
+  add = potion_eval(P, potion_str(P, "(x, y): x + y."), POTION_JIT);
+  addfn = PN_CLOSURE_F(add); // c callback
+  CuAssertPtrNotNull(T, addfn);
+  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
+
+  P->flags += DEBUG_COMPILE;
+  add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."), 0);
+  addfn = PN_CLOSURE_F(add);
+  num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+  CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
+  num = addfn(P, add, 0, PN_NUM(3));
+  CuAssertIntEquals(T, "optional num = 0", 3, PN_INT(num));
 
   add = potion_eval(P, potion_str(P, "(x=N|y:=1): x + y."), POTION_JIT);
   addfn = PN_CLOSURE_F(add);
   num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
-  CuAssertIntEquals(T, "calling closure as c func failed",
-    PN_INT(num), 8);
+  CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
   num = addfn(P, add, 0, PN_NUM(3));
-  CuAssertIntEquals(T, "default num = 1",
-    PN_INT(num), 4);
+  CuAssertIntEquals(T, "default num = 1", 4, PN_INT(num));
+
 }
 
 #include "gc.h"
