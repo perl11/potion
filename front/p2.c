@@ -71,9 +71,9 @@ static void p2_cmd_usage(Potion *P) {
 }
 
 static void p2_cmd_stats(Potion *P) {
-  printf("sizeof(PN=%d, PNObject=%d, PNTuple=%d, PNTuple+1=%d, PNTable=%d)\n",
+  printf("sizeof(PN=%d, PNObject=%d, PNTuple=%d, PNTable=%d)\n",
       (int)sizeof(PN), (int)sizeof(struct PNObject), (int)sizeof(struct PNTuple),
-      (int)(sizeof(PN) + sizeof(struct PNTuple)), (int)sizeof(struct PNTable));
+      (int)sizeof(struct PNTable));
   printf("GC (fixed=%ld, actual=%ld, reserved=%ld)\n",
       PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
       PN_INT(potion_gc_reserved(P, 0, 0)));
