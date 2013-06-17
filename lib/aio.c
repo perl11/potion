@@ -3,6 +3,8 @@
   asynch event-driven non-blocking IO, via libuv, on files, network streams, processes.
   \see http://nikhilm.github.io/uvbook/basics.html
 
+  The constructor calls the uv_T_init functions already.
+
   For POSIX unbuffered fileio \see file.c open,read,write,seek calls on fd
   and lib/buffile.c for buffered IO.
 
@@ -48,6 +50,8 @@ DEF_AIO_REQ_WRAP(fs,fs);
 DEF_AIO_REQ_WRAP(work,work);
 DEF_AIO_REQ_WRAP(after_work,work);
 DEF_AIO_REQ_WRAP(getaddrinfo,getaddrinfo);
+DEF_AIO_HANDLE_WRAP(fs_poll);
+DEF_AIO_HANDLE_WRAP(signal);
 DEF_AIO_HANDLE_WRAP(handle);
 DEF_AIO_HANDLE_WRAP(loop);
 DEF_AIO_HANDLE_WRAP(fs_event);
@@ -66,159 +70,175 @@ DEF_AIO_HANDLE_WRAP(barrier);
 DEF_AIO_HANDLE_WRAP(cond);
 DEF_AIO_HANDLE_WRAP(mutex);
 DEF_AIO_HANDLE_WRAP(rwlock);
-//DEF_AIO_HANDLE_WRAP();
 #undef DEF_AIO_REQ_WRAP
 #undef DEF_AIO_HANDLE_WRAP
 
-#define DEF_AIO_NEW(T)					\
-  static PN aio_##T##_new(Potion *P, PN cl, PN self) {	\
-    struct PNData *data = potion_data_alloc(P,		\
-	sizeof(uv_##T##_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*)); \
-    data->vt = aio_##T##_vt;					      \
-    ((struct aio_##T##_s*)data)->P = P;			              \
-    ((struct aio_##T##_s*)data)->cl = cl;			      \
-    return (PN)data;						      \
-  }
-DEF_AIO_NEW(loop)
-DEF_AIO_NEW(async)
-DEF_AIO_NEW(fs_event)
-DEF_AIO_NEW(handle)
-DEF_AIO_NEW(pipe)
-DEF_AIO_NEW(poll)
-DEF_AIO_NEW(process)
-DEF_AIO_NEW(stream)
-DEF_AIO_NEW(tty)
-DEF_AIO_NEW(req)
-DEF_AIO_NEW(connect)
-DEF_AIO_NEW(write)
-DEF_AIO_NEW(shutdown)
-DEF_AIO_NEW(udp_send)
-DEF_AIO_NEW(fs)
-DEF_AIO_NEW(work)
-DEF_AIO_NEW(getaddrinfo)
-DEF_AIO_NEW(cpu_info)
-DEF_AIO_NEW(interface_address)
-DEF_AIO_NEW(sem)
-DEF_AIO_NEW(barrier)
-#undef DEF_AIO_NEW
-
-#define DEF_AIO_INIT(T) \
-  static PN aio_##T##_new(Potion *P, PN cl, PN self) {                \
-    struct PNData *data = potion_data_alloc(P,                        \
-	sizeof(uv_##T##_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*)); \
-    data->vt = aio_##T##_vt;                                          \
-    ((struct aio_##T##_s*)data)->P = P;			              \
-    ((struct aio_##T##_s*)data)->cl = cl;			      \
-    return (PN)data;                                                  \
-  }								      \
-  static PN aio_##T##_init(Potion *P, PN cl, PN self) {               \
-    int r;                                                            \
-    uv_##T##_t *handle = (uv_##T##_t*)PN_DATA(self);                  \
-    r = uv_##T##_init(handle);                                        \
-    if (!r) return potion_io_error(P, _XSTR(t) "_init");              \
-    return self;                                                      \
-  }
-#define DEF_AIO_INIT_LOOP(T) \
-  static PN aio_##T##_new(Potion *P, PN cl, PN self) {                \
-    struct PNData *data = potion_data_alloc(P,                        \
-	sizeof(uv_##T##_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*)); \
-    data->vt = aio_##T##_vt;                                          \
-    return (PN)data;                                                  \
-  }								      \
-  static PN aio_##T##_init(Potion *P, PN cl, PN self, PN loop) {      \
-    int r;                                                            \
-    uv_##T##_t *handle = (uv_##T##_t*)PN_DATA(self);                  \
-    if (!loop) loop = (PN)uv_default_loop();                          \
-    else loop = (PN)PN_DATA(loop);                                    \
-    r = uv_##T##_init((uv_loop_t*)loop, handle);                      \
-    if (!r) return potion_io_error(P, _XSTR(t) "_init");              \
-    return self;                                                      \
-  }
+#define DEF_AIO_NEW_NOINIT(T)					      \
+  struct PNData *data = potion_data_alloc(P,			      \
+    sizeof(uv_##T##_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*));     \
+  data->vt = aio_##T##_vt;					      \
+  ((struct aio_##T##_s*)data)->P = P;			              \
+  ((struct aio_##T##_s*)data)->cl = cl
+#define DEF_AIO_NEW(T)						      \
+  int r;							      \
+  uv_##T##_t *handle;						      \
+  DEF_AIO_NEW_NOINIT(T);					      \
+  handle = (uv_##T##_t*)PN_DATA(data)
+#define DEF_AIO_NEW_LOOP(T)					      \
+  DEF_AIO_NEW(T);						      \
+  if (!loop) loop = (PN)uv_default_loop();			      \
+  else loop = (PN)PN_DATA(loop);				      \
+  r = uv_##T##_init((uv_loop_t*)loop, handle);			      \
+  if (!r) return potion_io_error(P, "aio_"_XSTR(T));		      \
+  return (PN)data;
 
 /**\class aio_tcp \memberof aio_tcp
-   \fn PN aio_tcp_init(PN loop)
-   initialize aio_tcp
+   create and init \c aio_tcp
    \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
-   \see http://nikhilm.github.io/uvbook/networking.html#tcp
-   \returns self */
-DEF_AIO_INIT_LOOP(tcp)
+   \see http://nikhilm.github.io/uvbook/networking.html#tcp */
+static PN aio_tcp_new(Potion *P, PN cl, PN loop) {
+  DEF_AIO_NEW_LOOP(tcp);
+}
 /**\class aio_udp \memberof aio_udp
-   initialize aio_udp
-   \fn PN aio_udp_init(PN loop)
+   create and init \c aio_udp
    \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
-   \see http://nikhilm.github.io/uvbook/networking.html#udp
-   \returns self */
-DEF_AIO_INIT_LOOP(udp)
-DEF_AIO_INIT_LOOP(prepare)
-DEF_AIO_INIT_LOOP(check)
-DEF_AIO_INIT_LOOP(idle)
-DEF_AIO_INIT_LOOP(timer)
-DEF_AIO_INIT_LOOP(fs_poll)
-DEF_AIO_INIT_LOOP(signal)
-DEF_AIO_INIT(cond)
-DEF_AIO_INIT(mutex)
-DEF_AIO_INIT(rwlock)
-#undef DEF_AIO_INIT
-
-static PN aio_tty_init(Potion *P, PN cl, PN self, PN loop, PN file, PN readable) {
-  int r;
-  uv_tty_t *handle = (uv_tty_t*)PN_DATA(self);
+   \see http://nikhilm.github.io/uvbook/networking.html#udp */
+static PN aio_udp_new(Potion *P, PN cl, PN loop) {
+  DEF_AIO_NEW_LOOP(udp);
+}
+static PN aio_prepare_new(Potion *P, PN cl, PN loop) {
+  DEF_AIO_NEW_LOOP(prepare);
+}
+static PN aio_check_new(Potion *P, PN cl, PN loop) {
+  DEF_AIO_NEW_LOOP(check);
+}
+static PN aio_idle_new(Potion *P, PN cl, PN loop) {
+  DEF_AIO_NEW_LOOP(idle);
+}
+static PN aio_timer_new(Potion *P, PN cl, PN loop) {
+  DEF_AIO_NEW_LOOP(timer);
+}
+static PN aio_fs_poll_new(Potion *P, PN cl, PN loop) {
+  DEF_AIO_NEW_LOOP(fs_poll);
+}
+static PN aio_signal_new(Potion *P, PN cl, PN loop) {
+  DEF_AIO_NEW_LOOP(signal);
+}
+static PN aio_loop_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(loop);
+}
+static PN aio_handle_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(handle);
+}
+static PN aio_process_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(process);
+}
+static PN aio_stream_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(stream);
+}
+static PN aio_req_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(req);
+}
+static PN aio_connect_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(connect);
+}
+static PN aio_write_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(write);
+}
+static PN aio_shutdown_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(shutdown);
+}
+static PN aio_udp_send_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(udp_send);
+}
+static PN aio_fs_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(fs);
+}
+static PN aio_work_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(work);
+}
+static PN aio_getaddrinfo_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(getaddrinfo);
+}
+static PN aio_cpu_info_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(cpu_info);
+}
+static PN aio_interface_address_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW_NOINIT(interface_address);
+}
+static PN aio_tty_new(Potion *P, PN cl, PN loop, PN file, PN readable) {
+  DEF_AIO_NEW(tty);
   if (!loop) loop = (PN)uv_default_loop();
   else loop = (PN)PN_DATA(loop);
   r = uv_tty_init((uv_loop_t*)loop, handle, PN_NUM(PN_DATA(file)), PN_NUM(readable));
-  if (!r) return potion_io_error(P, "tty_init");
-  return self;
+  if (!r) return potion_io_error(P, "aio_tty");
+  return (PN)data;
 }
-static PN aio_pipe_init(Potion *P, PN cl, PN self, PN loop, PN ipc) {
-  int r;
-  uv_pipe_t *handle = (uv_pipe_t*)PN_DATA(self);
+static PN aio_pipe_new(Potion *P, PN cl, PN loop, PN ipc) {
+  DEF_AIO_NEW(pipe);
   if (!loop) loop = (PN)uv_default_loop();
   else loop = (PN)PN_DATA(loop);
   r = uv_pipe_init((uv_loop_t*)loop, handle, PN_NUM(ipc));
-  if (!r) return potion_io_error(P, "pipe_init");
-  return self;
+  if (!r) return potion_io_error(P, "aio_pipe");
+  return (PN)data;
 }
-static PN aio_poll_init(Potion *P, PN cl, PN self, PN loop, PN fd) {
-  int r;
-  uv_poll_t *handle = (uv_poll_t*)PN_DATA(self);
+static PN aio_poll_new(Potion *P, PN cl, PN loop, PN fd) {
+  DEF_AIO_NEW(poll);
   if (!loop) loop = (PN)uv_default_loop();
   else loop = (PN)PN_DATA(loop);
   r = uv_poll_init((uv_loop_t*)loop, handle, PN_NUM(fd));
-  if (!r) return potion_io_error(P, "poll_init");
-  return self;
+  if (!r) return potion_io_error(P, "aio_poll");
+  return (PN)data;
 }
-static PN aio_barrier_init(Potion *P, PN cl, PN self, PN count) {
-  int r;
-  uv_barrier_t *handle = (uv_barrier_t*)PN_DATA(self);
+static PN aio_barrier_new(Potion *P, PN cl, PN self, PN count) {
+  DEF_AIO_NEW(barrier);
   r = uv_barrier_init(handle, PN_NUM(count));
-  if (!r) return potion_io_error(P, "barrier_init");
-  return self;
+  if (!r) return potion_io_error(P, "aio_barrier");
+  return (PN)data;
 }
-static PN aio_sem_init(Potion *P, PN cl, PN self, PN value) {
-  int r;
-  uv_sem_t *handle = (uv_sem_t*)PN_DATA(self);
+static PN aio_sem_new(Potion *P, PN cl, PN self, PN value) {
+  DEF_AIO_NEW(sem);
   r = uv_sem_init(handle, PN_NUM(value));
-  if (!r) return potion_io_error(P, "sem_init");
-  return self;
+  if (!r) return potion_io_error(P, "aio_sem");
+  return (PN)data;
 }
-static PN aio_fs_event_init(Potion *P, PN cl, PN self, PN loop, PN filename, PN cb, PN flags) {
-  int r;
-  uv_fs_event_t *handle = (uv_fs_event_t*)PN_DATA(self);
+static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN loop, PN filename, PN cb, PN flags) {
+  DEF_AIO_NEW(fs_event);
   if (!loop) loop = (PN)uv_default_loop();
   else loop = (PN)PN_DATA(loop);
   r = uv_fs_event_init((uv_loop_t*)loop, handle, PN_STR_PTR(filename), (uv_fs_event_cb)PN_DATA(cb), PN_NUM(flags));
-  if (!r) return potion_io_error(P, "fs_event_init");
-  return self;
+  if (!r) return potion_io_error(P, "aio_fs_event");
+  return (PN)data;
 }
-static PN aio_async_init(Potion *P, PN cl, PN self, PN loop, PN cb) {
-  int r;
-  uv_async_t *handle = (uv_async_t*)PN_DATA(self);
+static PN aio_async_new(Potion *P, PN cl, PN self, PN loop, PN cb) {
+  DEF_AIO_NEW(async);
   if (!loop) loop = (PN)uv_default_loop();
   else loop = (PN)PN_DATA(loop);
   r = uv_async_init((uv_loop_t*)loop, handle, (uv_async_cb)PN_DATA(cb));
-  if (!r) return potion_io_error(P, "async_init");
-  return self;
+  if (!r) return potion_io_error(P, "aio_async");
+  return (PN)data;
 }
+static PN aio_cond_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW(cond);
+  r = uv_cond_init(handle);
+  if (!r) return potion_io_error(P, "aio_cond");
+  return (PN)data;
+}
+static PN aio_mutex_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW(mutex);
+  r = uv_mutex_init(handle);
+  if (!r) return potion_io_error(P, "aio_mutex");
+  return (PN)data;
+}
+static PN aio_rwlock_new(Potion *P, PN cl, PN self) {
+  DEF_AIO_NEW(rwlock);
+  r = uv_rwlock_init(handle);
+  if (!r) return potion_io_error(P, "aio_rwlock");
+  return (PN)data;
+}
+
+#undef DEF_AIO_NEW
+#undef DEF_AIO_NEW_LOOP
 
 //cb wrappers
 #define DEF_AIO_CB(N,T)                     \
@@ -471,109 +491,33 @@ aio_write(Potion *P, PN cl, PN stream, PN req, PN buf, PN bufcnt, PN cb) {
   return PN_NUM(uv_write(request, stm, bufs, PN_INT(bufcnt), write_cb));
 }
 
-/**\memberof aio
-   allocate a req or handle struct and return a new \c aio_"type" object.
-   \param type PNString
- */
-static PN
-aio_new(Potion *P, PN cl, PN self, PN type) {
-#define DEF_AIO_OBJ(T)                                                  \
-  if (type == PN_STR(_XSTR(T))) {                                       \
-    struct PNData *data = potion_data_alloc(P, sizeof(uv_##T##_t));     \
-    data->vt = aio_##T##_vt;                                            \
-    return (PN)data;                                                    \
-  } else
-
-  DEF_AIO_OBJ(loop)
-  DEF_AIO_OBJ(async)
-  DEF_AIO_OBJ(check)
-  DEF_AIO_OBJ(fs_event)
-  DEF_AIO_OBJ(fs_poll)
-  DEF_AIO_OBJ(handle)
-  DEF_AIO_OBJ(idle)
-  DEF_AIO_OBJ(pipe)
-  DEF_AIO_OBJ(poll)
-  DEF_AIO_OBJ(prepare)
-  DEF_AIO_OBJ(process)
-  DEF_AIO_OBJ(stream)
-  DEF_AIO_OBJ(tcp)
-  DEF_AIO_OBJ(timer)
-  DEF_AIO_OBJ(tty)
-  DEF_AIO_OBJ(udp)
-  DEF_AIO_OBJ(signal)
-  DEF_AIO_OBJ(req)
-  DEF_AIO_OBJ(connect)
-  DEF_AIO_OBJ(write)
-  DEF_AIO_OBJ(shutdown)
-  DEF_AIO_OBJ(udp_send)
-  DEF_AIO_OBJ(fs)
-  DEF_AIO_OBJ(work)
-  DEF_AIO_OBJ(getaddrinfo)
-  DEF_AIO_OBJ(cpu_info)
-  DEF_AIO_OBJ(interface_address)
-  DEF_AIO_OBJ(mutex)
-  DEF_AIO_OBJ(rwlock)
-  DEF_AIO_OBJ(sem)
-  DEF_AIO_OBJ(cond)
-  DEF_AIO_OBJ(barrier)
-  {}
-#undef DEF_AIO_OBJ
-}
-/**\memberof aio
-   initialize all aio types with an event loop argument
-   \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
-   \see http://nikhilm.github.io/uvbook/networking.html#tcp
-   \returns self */
-static PN
-aio_init_loop(Potion *P, PN cl, PN self, PN loop) {
-  PN type = potion_send(PN_VTABLE(self), PN_name);
-#define DEF_AIO_INIT(T) \
-  if (type == PN_STR("Aio_"#T)) \
-    return aio_##T##_init(P, cl, self, loop); \
-  else
-  DEF_AIO_INIT(tcp)
-  DEF_AIO_INIT(udp)
-  DEF_AIO_INIT(prepare)
-  DEF_AIO_INIT(check)
-  DEF_AIO_INIT(idle)
-  DEF_AIO_INIT(timer)
-  DEF_AIO_INIT(fs_poll)
-  DEF_AIO_INIT(signal)
-    potion_fatal("Invalid aio_init");
-}
-
 void Potion_Init_aio(Potion *P) {
   aio_vt = potion_type_new2(P, PN_TUSER, P->lobby, PN_STR("Aio"));
-  potion_type_constructor_is(aio_vt, PN_FUNC(aio_new, "type=S"));
-  //potion_class_method(aio_vt, "new", potion_aio_new, "type=S");
-  potion_method(P->lobby, "aio", aio_new, "type=S");
-  potion_method(aio_vt, "init", aio_init_loop, "|loop=o");
 #define DEF_AIO_VT(T)                                                            \
   aio_##T##_vt = potion_type_new2(P, PN_TUSER, aio_vt, PN_STR("Aio_" _XSTR(t))); \
-  potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, 0));           \
-  potion_method(aio_vt, "new", aio_##T##_new, 0);
-#define DEF_AIO_INIT_VT(T,args) \
-  DEF_AIO_VT(T); potion_method(aio_##T##_vt, "init", aio_##T##_init, args);
+  potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, 0))
+#define DEF_AIO_NEW_VT(T,args)						\
+  DEF_AIO_VT(T); potion_method(P->lobby, "aio_"_XSTR(T), aio_##T##_new, args);
 
-  DEF_AIO_INIT_VT(tcp, "|loop=o");
-  DEF_AIO_INIT_VT(udp, "|loop=o");
-  DEF_AIO_INIT_VT(prepare, "|loop=o");
-  DEF_AIO_INIT_VT(check, "|loop=o");
-  DEF_AIO_INIT_VT(idle,  "|loop=o");
-  DEF_AIO_INIT_VT(timer, "|loop=o");
-  DEF_AIO_INIT_VT(fs_poll, "|loop=o");
-  DEF_AIO_INIT_VT(signal, "|loop=o");
+  DEF_AIO_NEW_VT(tcp, "|loop=o");
+  DEF_AIO_NEW_VT(udp, "|loop=o");
+  DEF_AIO_NEW_VT(prepare, "|loop=o");
+  DEF_AIO_NEW_VT(check, "|loop=o");
+  DEF_AIO_NEW_VT(idle,  "|loop=o");
+  DEF_AIO_NEW_VT(timer, "|loop=o");
+  DEF_AIO_NEW_VT(fs_poll, "|loop=o");
+  DEF_AIO_NEW_VT(signal, "|loop=o");
   DEF_AIO_VT(loop);
-  DEF_AIO_INIT_VT(tty,  "loop=o,file=o,readable=N");
-  DEF_AIO_INIT_VT(pipe, "loop=o,ipc=N");
-  DEF_AIO_INIT_VT(poll, "loop=o,fd=N");
-  DEF_AIO_INIT_VT(async, "loop=o,cb=o");
-  DEF_AIO_INIT_VT(fs_event, "loop=o,filename=S,cb=o,flags=N");
-  DEF_AIO_INIT_VT(mutex, 0);
-  DEF_AIO_INIT_VT(rwlock, 0);
-  DEF_AIO_INIT_VT(cond, 0);
-  DEF_AIO_INIT_VT(sem, "value=N");
-  DEF_AIO_INIT_VT(barrier, "count=N");
+  DEF_AIO_NEW_VT(tty,  "loop=o,file=o,readable=N");
+  DEF_AIO_NEW_VT(pipe, "loop=o,ipc=N");
+  DEF_AIO_NEW_VT(poll, "loop=o,fd=N");
+  DEF_AIO_NEW_VT(async, "loop=o,cb=o");
+  DEF_AIO_NEW_VT(fs_event, "loop=o,filename=S,cb=o,flags=N");
+  DEF_AIO_NEW_VT(mutex, 0);
+  DEF_AIO_NEW_VT(rwlock, 0);
+  DEF_AIO_NEW_VT(cond, 0);
+  DEF_AIO_NEW_VT(sem, "value=N");
+  DEF_AIO_NEW_VT(barrier, "count=N");
   DEF_AIO_VT(handle);
   DEF_AIO_VT(process);
   DEF_AIO_VT(stream);
