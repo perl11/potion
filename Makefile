@@ -581,7 +581,7 @@ doc: ${DOCHTML} doc/html/files.html
 docall: doc GTAGS
 
 doxygen: doc/html/files.html
-	@${ECHO} DOXYGEN -f core
+	@${ECHO} DOXYGEN -f core lib
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	@doc/footer.sh > doc/footer.inc
 	@doxygen doc/Doxyfile

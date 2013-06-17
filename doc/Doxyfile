@@ -18,11 +18,14 @@ EXTRACT_LOCAL_CLASSES  = YES
 EXTRACT_LOCAL_METHODS  = YES
 SORT_MEMBER_DOCS       = NO
 
+#ENABLE_PREPROCESSING   = YES
+#MACRO_EXPANSION        = YES
+
 QUIET                  = YES
 WARNINGS               = NO
 WARN_IF_UNDOCUMENTED   = NO
 WARN_NO_PARAMDOC       = NO
-INPUT                  = core
+INPUT                  = core lib/aio.c lib/buffile.c lib/readline/readline.c
 INPUT                  += README.md INTERNALS.md INSTALL.md README.p2
 SOURCE_BROWSER         = YES
 #INLINE_SOURCES         = YES
