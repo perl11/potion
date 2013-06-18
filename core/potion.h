@@ -153,7 +153,7 @@ struct PNVtable;
 #define POTION_FWD      0xFFFFFFFE
 #define POTION_COPIED   0xFFFFFFFF
 
-#define NIL_NAME        "nil" // undef in p2
+#define NIL_NAME        "nil" // "undef" in p2
 
 #define PN_FNUMBER      1
 #define PN_FBOOLEAN     2

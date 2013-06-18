@@ -599,11 +599,6 @@ void potion_object_init(Potion *P) {
   potion_method(obj_vt, "string", potion_object_string, 0);
 }
 
-/**\class Lobby
- root namespace, the global environment and parent class of all builtins.
- */
-void potion_lobby_init(Potion *P) {
-
 # ifdef P2
 #   define LOBBY_NAME   "P2"
 #   define NILKIND_NAME "Undef"
@@ -615,6 +610,12 @@ void potion_lobby_init(Potion *P) {
 #   define NUMBER_NAME  "Number"
 #   define STRING_NAME  "String"
 # endif
+
+/**\class Lobby
+ root namespace, the global environment and parent class of all builtins.
+ */
+void potion_lobby_init(Potion *P) {
+
   potion_init_class_reference(P, potion_str(P, LOBBY_NAME),     P->lobby);
   potion_init_class_reference(P, potion_str(P, "Mixin"),        PN_VTABLE(PN_TVTABLE));
   potion_init_class_reference(P, potion_str(P, "Object"),       PN_VTABLE(PN_TOBJECT));
@@ -656,3 +657,15 @@ void potion_lobby_init(Potion *P) {
   potion_method(P->lobby, "print", potion_lobby_print, 0);
   potion_method(P->lobby, "say", potion_lobby_say, 0);
 }
+
+#ifdef DEBUG
+void potion_dump(Potion *P, PN data) {
+  PN pd = potion_send(data, PN_string);
+  PN pt = potion_send(PN_VTABLE(PN_TYPE(data)), PN_string);
+  char *d = pd ? PN_STR_PTR(pd) : NIL_NAME;
+  char *t = pt ? PN_STR_PTR(pt) : NILKIND_NAME;
+  printf("%s (%s)\n", d, t);
+}
+#define pdump(data) potion_dump(P, data)
+#endif
+

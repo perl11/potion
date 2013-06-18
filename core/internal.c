@@ -243,7 +243,7 @@ void potion_error_init(Potion *P) {
 static inline char *potion_type_name(Potion *P, PN obj) {
   return PN_IS_PTR(obj)
     ? AS_STR(potion_send(PN_VTABLE(obj), PN_name))
-    : PN_IS_NIL(obj) ? "nil"
+    : PN_IS_NIL(obj) ? NIL_NAME
       : PN_IS_NUM(obj) ? "Number"
         : "Boolean";
 }
@@ -288,15 +288,6 @@ void potion_esp(void **esp) {
 }
 
 #ifdef DEBUG
-void potion_dump(Potion *P, PN data) {
-  PN pd = potion_send(data, PN_string);
-  PN pt = potion_send(PN_VTABLE(PN_TYPE(data)), PN_string);
-  char *d = pd ? PN_STR_PTR(pd) : "nil";
-  char *t = pt ? PN_STR_PTR(pt) : "NilKind";
-  printf("%s (%s)\n", d, t);
-}
-#define pdump(data) potion_dump(P, data)
-
 void potion_dump_stack(Potion *P) {
   PN_SIZE n;
   PN *end, *ebp, *start = P->mem->cstack;
