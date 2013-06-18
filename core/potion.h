@@ -358,6 +358,7 @@ struct PNClosure {
   PN_F method;
   PN sig;            ///< signature PNTuple
   int arity;         ///< cached number of declared args, including optional
+  int minargs;       ///< cached number of mandatory args, without optional
   PN_SIZE extra;     ///< 0 or 1 if has code attached at data
   PN data[0];        ///< code
 };
@@ -786,7 +787,9 @@ PN potion_num_rand(Potion *, PN, PN);
 PN potion_real(Potion *, double);
 PN potion_sig_at(Potion *, PN, int);
 int potion_sig_arity(Potion *, PN);
+int potion_sig_minargs(Potion *, PN);
 PN potion_closure_arity(Potion *, PN, PN);
+PN potion_closure_minargs(Potion *, PN, PN);
 void potion_define_global(Potion *, PN, PN);
 
 PN potion_obj_add(Potion *, PN, PN);

@@ -501,23 +501,29 @@ reentry:
             reg[op.a + 1] = potion_object_new(P, PN_NIL, reg[op.a]);
             reg[op.a] = ((struct PNVtable *)reg[op.a])->ctor;
           case PN_TCLOSURE:
-            if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) { //ffi or bytecode -> jit
+	  {
+	    vPN(Closure) cl = PN_CLOSURE(reg[op.a]);
+            if (cl->method != (PN_F)potion_vm_proto) { //ffi or bytecode -> jit
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);
             } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
               int i;
               PN argt = potion_tuple_with_size(P, (op.b - op.a) - 1);
               for (i = 2; i < op.b - op.a; i++)
                 PN_TUPLE_AT(argt, i - 2) = reg[op.a + i];
-              reg[op.a] = potion_vm(P, PN_CLOSURE(reg[op.a])->data[0], reg[op.a + 1], argt,
-                PN_CLOSURE(reg[op.a])->extra - 1, &PN_CLOSURE(reg[op.a])->data[1]);
+              reg[op.a] = potion_vm(P, cl->data[0], reg[op.a + 1], argt,
+                cl->extra - 1, &cl->data[1]);
             } else {
               int i;
-              PN sig = PN_CLOSURE(reg[op.a])->sig;
+              PN sig = cl->sig;
               int numargs = op.b - op.a - 1;
+              if (numargs < cl->minargs)
+		return potion_error(P,
+		  potion_str_format(P, "Not enough arguments %s", AS_STR(cl)),
+                  0, 0, 0);
               self = reg[op.a + 1];
               args = &reg[op.a + 2];
               if (PN_IS_TUPLE(sig)) {
-		int arity = PN_CLOSURE(reg[op.a])->arity;
+		int arity = cl->arity;
                 for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
                   if (s && PN_TUPLE_LEN(s) == 3) { // default: && !filled by NAMED (?)
@@ -528,17 +534,18 @@ reentry:
                     reg[op.a + i + 2] = PN_TUPLE_AT(s,1) == PN_NUM(78) ? PN_NUM(0) : PN_NIL;
                     f->stack = PN_NUM(PN_INT(f->stack)+1);
                     op.b++; }}}
-              upc = PN_CLOSURE(reg[op.a])->extra - 1;
-              upargs = &PN_CLOSURE(reg[op.a])->data[1];
+              upc = cl->extra - 1;
+              upargs = &cl->data[1];
               current = reg + PN_INT(f->stack) + 2;
               current[-2] = (PN)f;
               current[-1] = (PN)pos;
 
-              f = PN_PROTO(PN_CLOSURE(reg[op.a])->data[0]);
+              f = PN_PROTO(cl->data[0]);
               pos = 0;
 	      DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
               goto reentry;
             }
+	  }
           break;
           
           default: {

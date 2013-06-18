@@ -1,3 +1,3 @@
 sub = (x=N|y=N): x+y.
-(sub(1), sub(0,1), sub(x=0), sub, sub arity, sub(), sub(y=0))
-#=> (1, 1, 0, function(x=N|y=N), 2, 0, nil)
+(sub(1), sub(0,1), sub(x=0), sub, sub arity, sub minargs)
+#=> (1, 1, 0, function(x=N|y=N), 2, 1)

@@ -21,9 +21,11 @@ PN potion_closure_new(Potion *P, PN_F meth, PN sig, PN_SIZE extra) {
   if (PN_IS_TUPLE(sig) && PN_TUPLE_LEN(sig) > 0) {
     c->sig = sig;
     c->arity = potion_sig_arity(P, sig);
+    c->minargs = potion_sig_minargs(P, sig);
   } else {
     c->sig = PN_NIL;
     c->arity = 0;
+    c->minargs = 0;
   }
   c->extra = extra;
   for (i = 0; i < c->extra; i++)
@@ -66,6 +68,13 @@ PN potion_closure_arity(Potion *P, PN cl, PN self) {
   /// closure_new aka PN_FUNC sets arity, always use the cached value
   return PN_NUM(PN_CLOSURE(self)->arity);
 }
+/**\memberof PNClosure
+ Number of mandatory arguments, without optional args.
+ \return number of args as PNNumber */
+PN potion_closure_minargs(Potion *P, PN cl, PN self) {
+  /// closure_new aka PN_FUNC sets arity, always use the cached value
+  return PN_NUM(PN_CLOSURE(self)->minargs);
+}
 
 /** number of args of sig tuple, implements the potion_closure_arity method.
     sigs are encoded as tuples of len 2-3, (name type|modifier [default-value])
@@ -93,6 +102,29 @@ int potion_sig_arity(Potion *P, PN sig) {
     return 0;
   else {
     potion_fatal("wrong sig type for sig_arity");
+  }
+}
+/** number of mandatory args, without any optional arguments
+  \return number of args as integer */
+int potion_sig_minargs(Potion *P, PN sig) {
+  if (PN_IS_TUPLE(sig)) {
+    int count = 0;
+    struct PNTuple * volatile t = (struct PNTuple *)potion_fwd(sig);
+    if (t->len != 0) {
+      PN_SIZE i;
+      for (i = 0; i < t->len; i++) {
+	PN v = (PN)t->set[i];
+	if (PN_IS_STR(v)) count++; // count only names
+	if (PN_IS_NUM(v) && v == PN_NUM('|')) break;
+	if (PN_IS_NUM(v) && v == PN_NUM(':')) break;
+      }
+    }
+    return count;
+  }
+  else if (sig == PN_NIL)
+    return 0;
+  else {
+    potion_fatal("wrong sig type for sig_minargs");
   }
 }
 
@@ -560,6 +592,7 @@ void potion_object_init(Potion *P) {
   potion_method(clo_vt, "code", potion_closure_code, 0);
   potion_method(clo_vt, "string", potion_closure_string, 0);
   potion_method(clo_vt, "arity", potion_closure_arity, 0);
+  potion_method(clo_vt, "minargs", potion_closure_minargs, 0);
   potion_method(ref_vt, "string", potion_ref_string, 0);
   potion_method(obj_vt, "forward", potion_object_forward, 0);
   potion_method(obj_vt, "send", potion_object_send, 0);
