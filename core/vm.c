@@ -114,6 +114,17 @@ void potion_vm_init(Potion *P) {
 #endif
 }
 
+/**
+ entrypoint for all bytecode methods from the C api. \see potion_test_eval()
+ \verbatim
+   add = potion_eval(P, potion_str(P, "(x=N,y=N): x + y."), 0);
+   addfn = PN_CLOSURE_F(add); // i.e. potion_vm_proto
+   num = addfn(P, add, PN_NUM(3), PN_NUM(5));
+ \endverbatim
+
+ Note that methods with optional arguments ... are not very safe to call.
+ potion_vm_proto() does not know the number of arguments on the stack.
+ So it checks for all optional args the matching type. */
 PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   PN ary = PN_NIL;
   vPN(Proto) f = (struct PNProto *)PN_CLOSURE(cl)->data[0];
@@ -124,6 +135,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
     va_list args;
     ary = PN_TUP0();
     va_start(args, self);
+    //ary = PN_PUSH(ary, self);
     for (i=0; i < arity; i++) {
       PN s = potion_sig_at(P, f->sig, i);
       if (i < minargs || PN_TUPLE_LEN(s) < 2) { //mandatory or no type
@@ -145,6 +157,7 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
 
+/** implements the class op */
 PN potion_vm_class(Potion *P, PN cl, PN self) {
   if (PN_TYPE(cl) == PN_TCLOSURE) {
     vPN(Proto) proto = PN_PROTO(PN_CLOSURE(cl)->data[0]);
@@ -305,6 +318,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   else \
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);
 
+/** the bytecode run-loop */
 PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   vPN(Proto) f = (struct PNProto *)proto;
 
