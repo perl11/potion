@@ -116,7 +116,7 @@ int potion_sig_minargs(Potion *P, PN sig) {
 	PN v = (PN)t->set[i];
 	if (PN_IS_STR(v)) count++; // count only names
 	if (PN_IS_NUM(v) && v == PN_NUM('|')) break;
-	if (PN_IS_NUM(v) && v == PN_NUM(':')) break;
+	if (PN_IS_NUM(v) && v == PN_NUM(':')) { count--; break; }
       }
     }
     return count;

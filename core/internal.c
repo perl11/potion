@@ -16,7 +16,7 @@ PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
    PN_delegated, PN_else, PN_elsif, PN_if, PN_lookup, PN_loop, PN_print,
    PN_return, PN_self, PN_string, PN_while;
 PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
-PN PN_cmp, PN_number, PN_name, PN_length;
+PN PN_cmp, PN_number, PN_name, PN_length, PN_STR0;
 
 PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
   struct PNData *obj = PN_ALLOC_N(PN_TUSER, struct PNData, PN_INT(len));
@@ -81,6 +81,7 @@ static void potion_init(Potion *P) {
   PN_cmp = potion_str(P, "cmp");
   PN_name = potion_str(P, "name");
   PN_length = potion_str(P, "length");
+  PN_STR0 = potion_str(P, "");
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup, 0));
   potion_def_method(P, 0, vtable, PN_def, PN_FUNC(potion_def_method, "name=S,block=&"));
@@ -183,6 +184,7 @@ PN potion_call(Potion *P, PN cl, PN_SIZE argc, PN * volatile argv) {
 PNType potion_kind_of(PN obj) {
   return potion_type(obj);
 }
+
 /// valid signature types
 /// syntax.y: arg-type = ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&')
 /// valid signature modifiers: '|' optional, '.' end, ':' default
@@ -287,7 +289,11 @@ void potion_esp(void **esp) {
 
 #ifdef DEBUG
 void potion_dump(Potion *P, PN data) {
-  printf("%s (%s)\n", AS_STR(data), AS_STR(PN_VTABLE(PN_TYPE(data))));
+  PN pd = potion_send(data, PN_string);
+  PN pt = potion_send(PN_VTABLE(PN_TYPE(data)), PN_string);
+  char *d = pd ? PN_STR_PTR(pd) : "nil";
+  char *t = pt ? PN_STR_PTR(pt) : "NilKind";
+  printf("%s (%s)\n", d, t);
 }
 #define pdump(data) potion_dump(P, data)
 

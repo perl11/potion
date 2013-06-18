@@ -160,7 +160,7 @@ struct PNVtable;
 #ifdef P2
 // in perl there is lot more false
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL \
-                         && (PN)(v) != PN_NUM(0) && (PN)(v) != PN_STR(""))
+                         && (PN)(v) != PN_NUM(0) && (PN)(v) != PN_STR0)
 #else
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 #endif
@@ -179,6 +179,7 @@ struct PNVtable;
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
 #define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
 #define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
+#define PN_IS_FFIPTR(p)  (PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->old_hi))
 
 ///\class PNNumber
 /// Either a PN_INT immediate object (no struct) 0x...1
@@ -725,7 +726,14 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
   PN_lookup, PN_loop, PN_print, PN_return, PN_self, PN_string,
   PN_while;
 extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
-extern PN PN_cmp, PN_number, PN_name, PN_length;
+extern PN PN_cmp, PN_number, PN_name, PN_length, PN_STR0;
+
+/// zero values per type
+static inline PN potion_type_default(char type) {
+  return type == 'N' ? PN_NUM(0)
+       : type == 'S' ? PN_STR0
+                     : PN_NIL;
+}
 
 ///
 /// the potion API

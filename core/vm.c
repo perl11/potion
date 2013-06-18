@@ -120,23 +120,23 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   if (PN_IS_TUPLE(f->sig)) {
     PN_SIZE i;
     int arity = PN_CLOSURE(cl)->arity;
-    int numargs;
+    int minargs = PN_CLOSURE(cl)->minargs;
     va_list args;
     va_start(args, self);
-    if (PN_IS_NUM(self) && PN_INT(self) >= 0 && PN_INT(self) < 30) {
-      numargs = PN_INT(self);
-      self = 0;
-    } else
-      numargs = PN_INT(va_arg(args, PN));
     ary = PN_TUP0();
     for (i=0; i < arity; i++) {
       PN s = potion_sig_at(P, f->sig, i);
-      if (i < numargs) {
+      if (i < minargs) {
         ary = PN_PUSH(ary, va_arg(args, PN));
-      } else if (PN_TUPLE_LEN(s) == 3) {
-        ary = PN_PUSH(ary, PN_TUPLE_AT(s,2));
-      } else {
-	ary = PN_PUSH(ary, PN_TUPLE_AT(s,1) == PN_NUM(78) ? PN_NUM(0) : PN_NIL);
+      } else { //vararg call heuristic: check type of stack var or replace with default
+        char type = (char)PN_INT(PN_TUPLE_AT(s,1));
+        PN arg = va_arg(args, PN);
+        if (PN_IS_FFIPTR(arg) || potion_type_char(PN_TYPE(arg)) != type) { //replace with default
+          // default value or 0
+          ary = PN_PUSH(ary, PN_TUPLE_LEN(s) == 3 ? PN_TUPLE_AT(s,2) : potion_type_default(type));
+        } else {
+          ary = PN_PUSH(ary, arg);
+        }
       }
     }
     va_end(args);
@@ -516,24 +516,32 @@ reentry:
               int i;
               PN sig = cl->sig;
               int numargs = op.b - op.a - 1;
-              if (numargs < cl->minargs)
-		return potion_error(P,
-		  potion_str_format(P, "Not enough arguments %s", AS_STR(cl)),
-                  0, 0, 0);
               self = reg[op.a + 1];
               args = &reg[op.a + 2];
               if (PN_IS_TUPLE(sig)) {
 		int arity = cl->arity;
+                if (numargs > 0) {  //allow fun() to return the closure
+                  if (numargs < cl->minargs)
+                    return potion_error
+                      (P, (cl->minargs == arity
+                           ? potion_str_format(P, "Not enough arguments to %s. Required %d, given %d",
+                                               AS_STR(cl), arity, numargs)
+                           : potion_str_format(P, "Not enough arguments to %s. Required %d to %d, given %d",
+                                               AS_STR(cl), cl->minargs, arity, numargs)),
+                       0, 0, 0);
+                  if (numargs > arity)
+                    return potion_error
+                      (P, potion_str_format(P, "Too many arguments to %s. Allowed %d, given %d",
+                                            AS_STR(cl), arity, numargs), 0, 0, 0);
+                }
                 for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
-                  if (s && PN_TUPLE_LEN(s) == 3) { // default: && !filled by NAMED (?)
-                    reg[op.a + i + 2] = PN_TUPLE_AT(s, 2);
-                    f->stack = PN_NUM(PN_INT(f->stack)+1);
-                    op.b++;
-                  } else if (s) { // | without default: set to PN_NIL or PN_NUM(0) if =N
-                    reg[op.a + i + 2] = PN_TUPLE_AT(s,1) == PN_NUM(78) ? PN_NUM(0) : PN_NIL;
-                    f->stack = PN_NUM(PN_INT(f->stack)+1);
-                    op.b++; }}}
+                  if (s) // default or zero: && !filled by NAMED (?)
+                    reg[op.a + i + 2] = PN_TUPLE_LEN(s) == 3 ? PN_TUPLE_AT(s, 2) : potion_type_default(PN_INT(PN_TUPLE_AT(s,1)));
+                  f->stack = PN_NUM(PN_INT(f->stack)+1);
+                  op.b++;
+                }
+              }
               upc = cl->extra - 1;
               upargs = &cl->data[1];
               current = reg + PN_INT(f->stack) + 2;
