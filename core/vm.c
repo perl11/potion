@@ -122,16 +122,16 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
     int arity = PN_CLOSURE(cl)->arity;
     int minargs = PN_CLOSURE(cl)->minargs;
     va_list args;
-    va_start(args, self);
     ary = PN_TUP0();
+    va_start(args, self);
     for (i=0; i < arity; i++) {
       PN s = potion_sig_at(P, f->sig, i);
-      if (i < minargs) {
+      if (i < minargs || PN_TUPLE_LEN(s) < 2) { //mandatory or no type
         ary = PN_PUSH(ary, va_arg(args, PN));
-      } else { //vararg call heuristic: check type of stack var or replace with default
-        char type = (char)PN_INT(PN_TUPLE_AT(s,1));
+      } else { //vararg call heuristic: check type of stack var, replace with default
         PN arg = va_arg(args, PN);
-        if (PN_IS_FFIPTR(arg) || potion_type_char(PN_TYPE(arg)) != type) { //replace with default
+        char type = (char)(PN_TUPLE_LEN(s) > 1 ? PN_INT(PN_TUPLE_AT(s,1)) : 0);
+        if (PN_IS_FFIPTR(arg) || (type && potion_type_char(PN_TYPE(arg)) != type)) { //replace with default
           // default value or 0
           ary = PN_PUSH(ary, PN_TUPLE_LEN(s) == 3 ? PN_TUPLE_AT(s,2) : potion_type_default(type));
         } else {
