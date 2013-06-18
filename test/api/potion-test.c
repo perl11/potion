@@ -192,14 +192,14 @@ void potion_test_eval(CuTest *T) {
   addfn = PN_CLOSURE_F(add);
   num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func (jit+opt)", 8, PN_INT(num));
-  num = addfn(P, add, 1, PN_NUM(3));
+  num = addfn(P, add, 0, PN_NUM(3));
   CuAssertIntEquals(T, "optional num = 0 (jit)", 3, PN_INT(num));
 
   add = potion_eval(P, potion_str(P, "(x=N|y:=1): x + y."), POTION_JIT);
   addfn = PN_CLOSURE_F(add);
   num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
   CuAssertIntEquals(T, "calling closure as c func (jit+default)", 8, PN_INT(num));
-  num = addfn(P, add, 1, PN_NUM(3));
+  num = addfn(P, add, 0, PN_NUM(3));
   CuAssertIntEquals(T, "default num = 1 (jit)", 4, PN_INT(num));
 #endif
 

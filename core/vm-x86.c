@@ -744,15 +744,18 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   // fill in defaults, arity from protos[0], not f
   if (!PN_IS_EMPTY(f->protos)) {
     vPN(Proto) c = (vPN(Proto)) PN_TUPLE_AT(f->protos, 0);
-    if ((argc-1 < c->arity) && c->arity) {
-      for (i = argc+1; i <= c->arity+1; i++) { //2: [0,1],2,3
+    int arity = c->arity;
+    if (arity && (argc-1 < arity)) {
+      for (i = argc+1; i <= arity+1; i++) { //2: [0,1],2,3
 	PN sig = potion_sig_at(P, c->sig, i-2);
 	if (sig && PN_TUPLE_LEN(sig) == 3) {
 	  DBG_t(":=*%s[%d] ", AS_STR(PN_TUPLE_AT(sig, 2)), i+1);
 	  X86_ARGO_IMM(PN_TUPLE_AT(sig, 2), i+1); 	// mov $value, i(%esp) - default
 	} else if (sig) {
 	  DBG_t("|0 ");                                 // mov 0, i(%esp) - optional
-	  X86_ARGO_IMM((PN_TUPLE_AT(sig, 1) == PN_NUM(78)) ? PN_NUM(0) : 0, i+1);
+	  char type = (char)(PN_TUPLE_LEN(sig) > 1
+			     ? PN_INT(PN_TUPLE_AT(sig,1)) : 0);
+	  X86_ARGO_IMM(type ? potion_type_default(type) : 0, i+1);
 	}}}}
   DBG_t("\n");
   ASM(0xFF); ASM(0xD0); 				// callq *%rax
