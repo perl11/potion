@@ -179,7 +179,9 @@ struct PNVtable;
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
 #define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
 #define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
-#define PN_IS_FFIPTR(p)  (PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->old_hi))
+#define PN_IS_FFIPTR(p)  ((PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->birth_hi)) \
+			  || (!PN_IS_PTR(p) && p > (_PN)P->mem->birth_hi))
+
 
 ///\class PNNumber
 /// Either a PN_INT immediate object (no struct) 0x...1

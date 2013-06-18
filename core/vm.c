@@ -116,15 +116,22 @@ void potion_vm_init(Potion *P) {
 
 /**
  entrypoint for all bytecode methods from the C api. \see potion_test_eval()
+ \param cl PNClosure to be called
+ \param self PN - sets self (ignored for most user defined functions).
+                  if self is a int < 10 it defines the number of args provided
+ \param ... - arguments to the cl
+x
  \verbatim
-   add = potion_eval(P, potion_str(P, "(x=N,y=N): x + y."), 0);
+   add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."), 0);
    addfn = PN_CLOSURE_F(add); // i.e. potion_vm_proto
-   num = addfn(P, add, PN_NUM(3), PN_NUM(5));
+   num = addfn(P, add, 2, PN_NUM(3), PN_NUM(5));
+   num = addfn(P, add, 1, PN_NUM(3)); // 1 arg provided, 2nd arg=0
  \endverbatim
 
  Note that methods with optional arguments ... are not very safe to call.
  potion_vm_proto() does not know the number of arguments on the stack.
- So it checks for all optional args the matching type. */
+ So it checks for all optional args the matching type.
+ You can help by providing numargs as self argument if numargs < 10. */
 PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   PN ary = PN_NIL;
   vPN(Proto) f = (struct PNProto *)PN_CLOSURE(cl)->data[0];
@@ -132,18 +139,27 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
     PN_SIZE i;
     int arity = PN_CLOSURE(cl)->arity;
     int minargs = PN_CLOSURE(cl)->minargs;
+    int numargs = 0;
     va_list args;
     ary = PN_TUP0();
     va_start(args, self);
-    //ary = PN_PUSH(ary, self);
+    if (self < 10) {
+      numargs = self;
+      self = 0;
+    }
     for (i=0; i < arity; i++) {
       PN s = potion_sig_at(P, f->sig, i);
       if (i < minargs || PN_TUPLE_LEN(s) < 2) { //mandatory or no type
         ary = PN_PUSH(ary, va_arg(args, PN));
       } else { //vararg call heuristic: check type of stack var, replace with default
         PN arg = va_arg(args, PN);
-        char type = (char)(PN_TUPLE_LEN(s) > 1 ? PN_INT(PN_TUPLE_AT(s,1)) : 0);
-        if (PN_IS_FFIPTR(arg) || (type && potion_type_char(PN_TYPE(arg)) != type)) { //replace with default
+        char type = (char)(PN_TUPLE_LEN(s) > 2
+			   ? potion_type_char(PN_TYPE(PN_TUPLE_AT(s,2)))
+			   : PN_TUPLE_LEN(s) > 1
+			     ? PN_INT(PN_TUPLE_AT(s,1)) : 0);
+        if ((numargs && (i >= numargs)) //numargs provided via self
+	  || PN_IS_FFIPTR(arg)
+	  || (type && (potion_type_char(PN_TYPE(arg)) != type))) { //replace with default
           // default value or 0
           ary = PN_PUSH(ary, PN_TUPLE_LEN(s) == 3 ? PN_TUPLE_AT(s,2) : potion_type_default(type));
         } else {
