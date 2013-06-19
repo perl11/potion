@@ -389,7 +389,7 @@ int main(int argc, char *argv[]) {
       "  } else {\n" \
       "    say '=> ', $obj;\n" \
       "  }\n"
-      "}"), exec == EXEC_JIT ? 1 : 0);
+      "}"));
   }
 END:
 #if !defined(POTION_JIT_TARGET) || defined(DEBUG)

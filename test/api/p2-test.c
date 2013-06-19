@@ -97,11 +97,10 @@ void p2_test_sig(CuTest *T) {
 }
 
 void p2_test_eval(CuTest *T) {
-  PN add = p2_eval(P, potion_str(P, "sub($x,$y){$x+$y}"), POTION_JIT);
+  PN add = p2_eval(P, potion_str(P, "sub($x,$y){$x+$y}"));
   PN_F addfn = PN_CLOSURE_F(add); // TODO FAIL
   PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
-  CuAssertIntEquals(T, "calling closure as c func failed",
-    PN_INT(num), 8);
+  CuAssertIntEquals(T, "calling closure as c func", 8, PN_INT(num));
 }
 
 void p2_test_allocated(CuTest *T) {

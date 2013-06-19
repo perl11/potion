@@ -96,7 +96,7 @@ statements =
     | ''             { $$ = PN_NIL }
 
 stmt = pkgdecl
-    | BEGIN b:block           { p2_eval(P, b, POTION_JIT) }
+    | BEGIN b:block           { p2_eval(P, b) }
     | subrout
     | use
     | ifstmt
