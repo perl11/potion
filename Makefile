@@ -238,7 +238,7 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS} ${EXTLIBS}
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 ${GREG}: syn/greg.c syn/compile.c syn/tree.c
@@ -254,7 +254,7 @@ bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a
 bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS} ${EXTLIBS}
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS}
 
 lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
@@ -283,7 +283,7 @@ lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/c
 	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} $(subst libpotion,libp2,${RDLLFLAGS}) ${RPATH} \
-	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} ${EXTLIBS} > /dev/null
+	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/potion/libsyntax${DLL}: syn/syntax.${OPIC} lib/libpotion${DLL}
