@@ -533,19 +533,41 @@ reentry:
           case PN_TCLOSURE:
 	  {
 	    vPN(Closure) cl = PN_CLOSURE(reg[op.a]);
-            if (cl->method != (PN_F)potion_vm_proto) { //ffi or bytecode -> jit
+	    int i;
+	    PN sig = cl->sig;
+	    int numargs = op.b - op.a - 1;
+            if (cl->method != (PN_F)potion_vm_proto) { //call into a lib or jit or ffi
+              if (PN_IS_TUPLE(sig)) {
+		int arity = cl->arity;
+                if (numargs > 0) {  //allow fun() to return the closure
+                  if (numargs < cl->minargs)
+                    return potion_error
+                      (P, (cl->minargs == arity
+                           ? potion_str_format(P, "Not enough arguments to %s. Required %d, given %d",
+                                               AS_STR(cl), arity, numargs)
+                           : potion_str_format(P, "Not enough arguments to %s. Required %d to %d, given %d",
+                                               AS_STR(cl), cl->minargs, arity, numargs)),
+                       0, 0, 0);
+                  if (numargs > arity)
+                    return potion_error
+                      (P, potion_str_format(P, "Too many arguments to %s. Allowed %d, given %d",
+                                            AS_STR(cl), arity, numargs), 0, 0, 0);
+                }
+                for (i=numargs; i < arity; i++) { // fill in defaults
+                  PN s = potion_sig_at(P, sig, i);
+                  if (s) // default or zero: && !filled by NAMED (?)
+                    reg[op.a + i + 2] = PN_TUPLE_LEN(s) == 3 ? PN_TUPLE_AT(s, 2) : potion_type_default(PN_INT(PN_TUPLE_AT(s,1)));
+                  op.b++;
+                }
+              }
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);
             } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
-              int i;
               PN argt = potion_tuple_with_size(P, (op.b - op.a) - 1);
               for (i = 2; i < op.b - op.a; i++)
                 PN_TUPLE_AT(argt, i - 2) = reg[op.a + i];
               reg[op.a] = potion_vm(P, cl->data[0], reg[op.a + 1], argt,
                 cl->extra - 1, &cl->data[1]);
             } else {
-              int i;
-              PN sig = cl->sig;
-              int numargs = op.b - op.a - 1;
               self = reg[op.a + 1];
               args = &reg[op.a + 2];
               if (PN_IS_TUPLE(sig)) {
