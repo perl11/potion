@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
       "      obj string print." \
       "    else: ('=> ', obj, \"\\n\") join print.\n" \
       "  .\n"
-      "."), exec == EXEC_JIT ? 1 : 0);
+      "."));
   }
  END:
 #if !defined(POTION_JIT_TARGET) || defined(DEBUG)

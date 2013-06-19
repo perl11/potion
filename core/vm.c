@@ -122,7 +122,7 @@ void potion_vm_init(Potion *P) {
  \param ... - arguments to the cl
 x
  \verbatim
-   add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."), 0);
+   add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."));
    addfn = PN_CLOSURE_F(add); // i.e. potion_vm_proto
    num = addfn(P, add, 2, PN_NUM(3), PN_NUM(5));
    num = addfn(P, add, 1, PN_NUM(3)); // 1 arg provided, 2nd arg=0

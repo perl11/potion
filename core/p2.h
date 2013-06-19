@@ -33,7 +33,7 @@ extern PN PN_use;
 PN p2_source_load(Potion *P, PN cl, PN buf);
 PN p2_parse(Potion *, PN, char*);
 PN p2_run(Potion *, PN, int);
-PN p2_eval(Potion *, PN, int);
+PN p2_eval(Potion *, PN);
 PN p2_sig(Potion *, char *);
 PN p2_load(Potion *, PN, PN, PN);
 
