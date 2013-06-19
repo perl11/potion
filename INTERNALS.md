@@ -168,7 +168,7 @@ into C and call it directly.
     Potion *P = potion_create();
     PN add = potion_eval(P, "(x, y): x + y.");
     PN_F addfn = PN_CLOSURE_F(add);
-    PN num = addfn(P, 0, 0, PN_NUM(3), PN_NUM(5));
+    PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
     printf("3 + 5 = %d\n", PN_INT(num));
 
 The macros are there to allow bytecode to be
@@ -176,7 +176,31 @@ wrapped in a function pointer, if needed. The
 inside story looks like this:
 
     PN num = ((struct PNClosure *)add)->method(
-               P, 0, 0, PN_NUM(3), PN_NUM(5));
+               P, add, 0, PN_NUM(3), PN_NUM(5));
+
+Note that calling from C into such methods directly
+does not fill optional parameter values, it does not
+check the parameter count and types.
+If you need to use closures with optional parameters
+and need to leave them out in the call, you need
+to use the bytecode method.
+
+  Wrong:
+    PN add = potion_eval(P, "(x=N|y=N): x + y.");
+    PN_F addfn = PN_CLOSURE_F(add);
+    PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+    printf("3 + 5 = %d\n", PN_INT(num));     //ok
+    //PN num1 = addfn(P, add, 0, PN_NUM(3)); //wrong num1
+
+  Better:
+    long flags = (long)P->flags;
+    if (P->flags & EXEC_JIT) P->flags -= EXEC_JIT;
+    PN add = potion_eval(P, "(x=N|y=N): x + y.");
+    PN_F addfn = PN_CLOSURE_F(add);
+    PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
+    printf("3 + 5 = %d\n", PN_INT(num));     //ok
+    PN num1 = addfn(P, add, 0, PN_NUM(3));   //ok
+    P->flags = (Potion_Flags)flags;
 
 ## ~ the jit's assembly ~
 
