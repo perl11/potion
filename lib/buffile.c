@@ -286,7 +286,7 @@ void Potion_Init_buffile(Potion *P) {
   PN ffile_vt = potion_type_new2(P, PN_TUSER, PN_VTABLE(PN_TFILE), PN_STR("BufFile"));
   potion_type_constructor_is(ffile_vt, PN_FUNC(potion_buffile_fopen, "path=S,mode=S"));
   //potion_class_method(ffile_vt, "fd", potion_buffile_fdopen, "fd=N,mode=S");
-  potion_method(P->lobby, "fopen", potion_buffile_fopen, "ign=o,path=S,mode=S");
+  potion_method(P->lobby, "fopen", potion_buffile_fopen, "path=S,mode=S");
   potion_method(ffile_vt, "fdopen", potion_buffile_fdopen, "fd=N,mode=S");
   potion_method(ffile_vt, "freopen", potion_buffile_freopen, "path=S,mode=S,buffile=o");
 #ifdef HAVE_FMEMOPEN
