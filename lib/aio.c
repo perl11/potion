@@ -104,8 +104,10 @@ aio_fs_event_cb(uv_fs_event_t* handle, const char* filename, int events, int sta
   handle = (uv_##T##_t*)PN_DATA(data)
 #define DEF_AIO_NEW_LOOP(T)					      \
   DEF_AIO_NEW(T);						      \
-  if (!loop) loop = (PN)uv_default_loop();			      \
-  else loop = (PN)PN_DATA(loop);				      \
+  if (!loop) loop = (PN)&uv_default_loop;			      \
+  else if (PN_TYPE(loop) == PN_TUSER) loop = (PN)PN_DATA(loop);	      \
+  else if (PN_TYPE(loop) == PN_TCLOSURE) loop = (PN)PN_CLOSURE_F(loop); \
+  else return potion_type_error(P, loop);			      \
   r = uv_##T##_init((uv_loop_t*)loop, handle);			      \
   if (!r) return potion_io_error(P, "aio_"_XSTR(T));		      \
   return (PN)data;
@@ -115,7 +117,22 @@ aio_fs_event_cb(uv_fs_event_t* handle, const char* filename, int events, int sta
    \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
    \see http://nikhilm.github.io/uvbook/networking.html#tcp */
 static PN aio_tcp_new(Potion *P, PN cl, PN self, PN loop) {
-  DEF_AIO_NEW_LOOP(tcp);
+  //DEF_AIO_NEW_LOOP(tcp);
+  int r;
+  uv_tcp_t *handle;
+  struct PNData *data = potion_data_alloc(P,
+    sizeof(uv_tcp_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*));
+  data->vt = aio_tcp_vt;
+  ((struct aio_tcp_s*)data)->P = P;
+  ((struct aio_tcp_s*)data)->cl = cl;
+  handle = (uv_tcp_t*)PN_DATA(data);
+  if (!loop) loop = (PN)&uv_default_loop;
+  else if (PN_TYPE(loop) == PN_TUSER) loop = (PN)PN_DATA(loop);
+  else if (PN_TYPE(loop) == PN_TCLOSURE) loop = (PN)PN_CLOSURE_F(loop);
+  else return potion_type_error(P, loop);
+  r = uv_tcp_init((uv_loop_t*)loop, handle);
+  if (!r) return potion_io_error(P, "aio_tcp");
+  return (PN)data;
 }
 /**\class aio_udp \memberof aio_udp
    create and init a \c aio_udp object
