@@ -271,7 +271,7 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "step", potion_num_step, "end=N,step=N,block=&");
   potion_method(num_vt, "string", potion_num_string, 0);
   potion_method(num_vt, "times", potion_num_times, "block=&");
-  potion_method(num_vt, "to", potion_num_to, "end=N");
+  potion_method(num_vt, "to", potion_num_to, "end=N,block=&");
   potion_method(num_vt, "chr", potion_num_chr, 0);
   potion_method(num_vt, "integer?", potion_num_is_integer, 0);
   potion_method(num_vt, "float?", potion_num_is_float, 0);
