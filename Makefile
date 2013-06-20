@@ -285,13 +285,13 @@ lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/c
 	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} ${EXTLIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
-lib/potion/libsyntax${DLL}: syn/syntax.${OPIC}
+lib/potion/libsyntax${DLL}: syn/syntax.${OPIC} lib/libpotion${DLL}
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@$(CC) ${DEBUGFLAGS} -o $@ $(INCS) ${LDDLLFLAGS} ${RPATH} \
 	  $< ${LIBPTH} -lpotion $(LIBS)
 
-lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2
+lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2 lib/libp2${DLL}
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) ${LDDLLFLAGS} ${RPATH} \
