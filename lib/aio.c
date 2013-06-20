@@ -350,52 +350,68 @@ aio_version_string(Potion *P, PN cl, PN self) {
 }
 
 static PN
+aio_run(Potion *P, PN cl, PN self, PN loop, PN mode) {
+  uv_loop_t* l;
+  if (!loop) l = uv_default_loop();
+  else if (PN_VTYPE(loop) == aio_loop_vt) l = (uv_loop_t*)PN_DATA(loop);
+  else return potion_type_error(P, loop);
+  return uv_run(l, mode ? PN_INT(mode) : UV_RUN_DEFAULT)
+    ? aio_last_error(P, "run", l) : self;
+}
+
+static PN
 aio_tcp_open(Potion *P, PN cl, PN tcp, PN sock) {
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
-  return PN_NUM(uv_tcp_open(handle, PN_INT(sock)));
+  return uv_tcp_open(handle, PN_INT(sock))
+    ? aio_last_error(P, "tcp_open", handle->loop) : tcp;
 }
 static PN
 aio_tcp_nodelay(Potion *P, PN cl, PN tcp, PN enable) {
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
-  return PN_NUM(uv_tcp_nodelay(handle, PN_INT(enable)));
+  return uv_tcp_nodelay(handle, PN_INT(enable))
+    ? aio_last_error(P, "tcp_nodelay", handle->loop) : tcp;
 }
 static PN
 aio_tcp_keepalive(Potion *P, PN cl, PN tcp, PN enable, PN delay) {
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
-  return PN_NUM(uv_tcp_keepalive(handle, PN_INT(enable), PN_INT(delay)));
+  return uv_tcp_keepalive(handle, PN_INT(enable), PN_INT(delay))
+    ? aio_last_error(P, "tcp_keepalive", handle->loop) : tcp;
 }
 static PN
 aio_tcp_simultaneous_accepts(Potion *P, PN cl, PN tcp, PN enable) {
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
-  return PN_NUM(uv_tcp_simultaneous_accepts(handle, PN_INT(enable)));
+  return uv_tcp_simultaneous_accepts(handle, PN_INT(enable))
+    ? aio_last_error(P, "tcp_simultaneous_accepts", handle->loop) : tcp;
 }
 static PN
 aio_tcp_bind(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
   struct sockaddr_in ip4 = uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port));
-  int r = uv_tcp_bind(handle, ip4);
-  return r ? PN_NIL : tcp;
+  return uv_tcp_bind(handle, ip4)
+    ? aio_last_error(P, "tcp_bind", handle->loop) : tcp;
 }
 static PN
 aio_tcp_bind6(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
   struct sockaddr_in6 ip6 = uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port));
-  int r = uv_tcp_bind6(handle, ip6);
-  return r ? PN_NIL : tcp;
+  return uv_tcp_bind6(handle, ip6)
+    ? aio_last_error(P, "tcp_bind6", handle->loop) : tcp;
 }
 static PN
 aio_tcp_getsockname(Potion *P, PN cl, PN tcp) {
   struct sockaddr sock; int len;
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
-  int r = uv_tcp_getsockname(handle, &sock, &len);
-  return !r ? potion_str2(P, sock.sa_data, len) : PN_NIL;
+  return (uv_tcp_getsockname(handle, &sock, &len))
+    ? aio_last_error(P, "tcp_getsockname", handle->loop)
+    : potion_str2(P, sock.sa_data, len);
 }
 static PN
 aio_tcp_getpeername(Potion *P, PN cl, PN tcp) {
   struct sockaddr sock; int len;
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
-  int r = uv_tcp_getpeername(handle, &sock, &len);
-  return !r ? potion_str2(P, sock.sa_data, len) : PN_NIL;
+  return (uv_tcp_getpeername(handle, &sock, &len))
+    ? aio_last_error(P, "tcp_getpeername", handle->loop)
+    : potion_str2(P, sock.sa_data, len);
 }
 static PN
 aio_tcp_connect(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
@@ -635,6 +651,7 @@ void Potion_Init_aio(Potion *P) {
 #undef DEF_AIO_VT
 #undef DEF_AIO_INIT_VT
 
+  potion_method(aio_vt, "run", aio_run, "|loop=o,mode=N");
   potion_method(aio_tcp_vt, "open", aio_tcp_open, "sock=N");
   potion_method(aio_tcp_vt, "nodelay", aio_tcp_nodelay, "enable=N");
   potion_method(aio_tcp_vt, "keepalive", aio_tcp_keepalive, "enable=N|delay:=0");
