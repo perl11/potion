@@ -289,6 +289,19 @@ static PN aio_rwlock_new(Potion *P, PN cl, PN self) {
 #undef DEF_AIO_NEW
 #undef DEF_AIO_NEW_LOOP
 
+#define CHECK_AIO_TYPE(self, type) \
+  if (PN_VTYPE(self) != aio_##type##_vt) return potion_type_error_want(P, self, ""_XSTR(type))
+#define CHECK_AIO_STREAM(stream) \
+  { \
+   PNType _t = PN_VTYPE(stream);  \
+   if (_t != aio_stream_vt &&                               \
+       _t != aio_tcp_vt &&                                  \
+       _t != aio_udp_vt &&                                  \
+       _t != aio_pipe_vt &&                                 \
+       _t != aio_tty_vt)                                    \
+     return potion_type_error_want(P, stream, "aio_stream"); \
+  }
+
 //cb wrappers
 #define DEF_AIO_CB(T)				       \
   struct aio_##T##_s* wrap = (struct aio_##T##_s*)req; \
@@ -304,15 +317,23 @@ static void
 aio_connect_cb(uv_connect_t* req, int status) {
   DEF_AIO_CB(connect);
 }
-#if 0 //yet unused
 static void
 aio_shutdown_cb(uv_shutdown_t* req, int status) {
   DEF_AIO_CB(shutdown);
 }
 static void
+aio_prepare_cb(uv_prepare_t* req, int status) {
+  DEF_AIO_CB(prepare);
+}
+static void
+aio_check_cb(uv_check_t* req, int status) {
+  DEF_AIO_CB(check);
+}
+static void
 aio_connection_cb(uv_stream_t* req, int status) {
   DEF_AIO_CB(connection);
 }
+#if 0 //yet unused
 static void
 aio_timer_cb(uv_timer_t* req, int status) {
   DEF_AIO_CB(timer);
@@ -327,13 +348,28 @@ aio_signal_cb(uv_signal_t* req, int status) { //signum really
 }
 static void
 aio_fs_poll_cb(uv_fs_poll_t* handle, int status, const uv_stat_t* prev, const uv_stat_t* curr) {
+  //CHECK_AIO_TYPE(handle,fs_poll);
   struct aio_fs_poll_s* wrap = (struct aio_fs_poll_s*)handle;
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);
   char *data = (char*)(&wrap - sizeof(struct PNData) + sizeof(char*));
+  CHECK_AIO_TYPE(prev,stat);
+  CHECK_AIO_TYPE(curr,stat);
+  PN_CHECK_INT(status);
   if (cb) cb->method(wrap->P, wrap->cl, (PN)data, PN_NUM(status),
 		     potion_ref(wrap->P, (PN)prev), potion_ref(wrap->P, (PN)curr));
 }
 #endif
+static void
+aio_read_cb(uv_stream_t* stream, ssize_t nread, uv_buf_t buf) {
+  //CHECK_AIO_STREAM(stream);
+  struct aio_stream_s* wrap = (struct aio_stream_s*)stream;
+  vPN(Closure) cb = PN_CLOSURE(wrap->h.read_cb);
+  char *data = (char*)(&wrap - sizeof(struct PNData) + sizeof(char*));
+  //PN_CHECK_INT(nread);
+  if (cb)
+    cb->method(wrap->P, wrap->cl, (PN)data, PN_NUM(nread),
+               potion_byte_str2(wrap->P, buf.base, buf.len));
+}
 
 /** Returns the libuv version packed into a single integer. 8 bits are used for
  * each component, with the patch number stored in the 8 least significant
@@ -348,9 +384,6 @@ static PN
 aio_version_string(Potion *P, PN cl, PN self) {
   return PN_STR(uv_version_string());
 }
-
-#define CHECK_AIO_TYPE(self, type) \
-  if (PN_VTYPE(self) != aio_##type##_vt) return potion_type_error_want(P, self, ""_XSTR(type))
 
 static PN
 aio_run(Potion *P, PN cl, PN self, PN loop, PN mode) {
@@ -369,7 +402,7 @@ aio_tcp_open(Potion *P, PN cl, PN tcp, PN sock) {
   CHECK_AIO_TYPE(tcp,tcp);
   PN_CHECK_TYPE(sock,PN_TNUMBER);
   return uv_tcp_open(handle, PN_INT(sock))
-    ? aio_last_error(P, "tcp_open", handle->loop) : tcp;
+    ? aio_last_error(P, "tcp open", handle->loop) : tcp;
 }
 static PN
 aio_tcp_nodelay(Potion *P, PN cl, PN tcp, PN enable) {
@@ -377,7 +410,7 @@ aio_tcp_nodelay(Potion *P, PN cl, PN tcp, PN enable) {
   CHECK_AIO_TYPE(tcp,tcp);
   PN_CHECK_TYPE(enable,PN_TNUMBER);
   return uv_tcp_nodelay(handle, PN_INT(enable))
-    ? aio_last_error(P, "tcp_nodelay", handle->loop) : tcp;
+    ? aio_last_error(P, "tcp nodelay", handle->loop) : tcp;
 }
 static PN
 aio_tcp_keepalive(Potion *P, PN cl, PN tcp, PN enable, PN delay) {
@@ -386,7 +419,7 @@ aio_tcp_keepalive(Potion *P, PN cl, PN tcp, PN enable, PN delay) {
   PN_CHECK_TYPE(enable,PN_TNUMBER);
   PN_CHECK_TYPE(delay,PN_TNUMBER);
   return uv_tcp_keepalive(handle, PN_INT(enable), PN_INT(delay))
-    ? aio_last_error(P, "tcp_keepalive", handle->loop) : tcp;
+    ? aio_last_error(P, "tcp keepalive", handle->loop) : tcp;
 }
 static PN
 aio_tcp_simultaneous_accepts(Potion *P, PN cl, PN tcp, PN enable) {
@@ -394,7 +427,7 @@ aio_tcp_simultaneous_accepts(Potion *P, PN cl, PN tcp, PN enable) {
   CHECK_AIO_TYPE(tcp,tcp);
   PN_CHECK_INT(enable); //TODO bool
   return uv_tcp_simultaneous_accepts(handle, PN_INT(enable))
-    ? aio_last_error(P, "tcp_simultaneous_accepts", handle->loop) : tcp;
+    ? aio_last_error(P, "tcp simultaneous_accepts", handle->loop) : tcp;
 }
 static PN
 aio_tcp_bind(Potion *P, PN cl, PN tcp, PN addr, PN port) {
@@ -404,7 +437,7 @@ aio_tcp_bind(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   PN_CHECK_INT(port);
   struct sockaddr_in ip4 = uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port));
   return uv_tcp_bind(handle, ip4)
-    ? aio_last_error(P, "tcp_bind", handle->loop) : tcp;
+    ? aio_last_error(P, "tcp bind", handle->loop) : tcp;
 }
 static PN
 aio_tcp_bind6(Potion *P, PN cl, PN tcp, PN addr, PN port) {
@@ -414,7 +447,7 @@ aio_tcp_bind6(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   PN_CHECK_INT(port);
   struct sockaddr_in6 ip6 = uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port));
   return uv_tcp_bind6(handle, ip6)
-    ? aio_last_error(P, "tcp_bind6", handle->loop) : tcp;
+    ? aio_last_error(P, "tcp bind6", handle->loop) : tcp;
 }
 static PN
 aio_tcp_getsockname(Potion *P, PN cl, PN tcp) {
@@ -422,7 +455,7 @@ aio_tcp_getsockname(Potion *P, PN cl, PN tcp) {
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
   CHECK_AIO_TYPE(tcp,tcp);
   return (uv_tcp_getsockname(handle, &sock, &len))
-    ? aio_last_error(P, "tcp_getsockname", handle->loop)
+    ? aio_last_error(P, "tcp getsockname", handle->loop)
     : potion_str2(P, sock.sa_data, len);
 }
 static PN
@@ -431,7 +464,7 @@ aio_tcp_getpeername(Potion *P, PN cl, PN tcp) {
   uv_tcp_t *handle = (uv_tcp_t*)PN_DATA(potion_fwd(tcp));
   CHECK_AIO_TYPE(tcp,tcp);
   return (uv_tcp_getpeername(handle, &sock, &len))
-    ? aio_last_error(P, "tcp_getpeername", handle->loop)
+    ? aio_last_error(P, "tcp getpeername", handle->loop)
     : potion_str2(P, sock.sa_data, len);
 }
 static PN
@@ -450,7 +483,7 @@ aio_tcp_connect(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
   else if (PN_IS_FFIPTR(cb)) connect_cb = (uv_connect_cb)cb; //c-level cb loaded via ffi
   else connect_cb = 0; //none
   return uv_tcp_connect(request, handle, ip4, connect_cb)
-    ? aio_last_error(P, "tcp_connect", handle->loop)
+    ? aio_last_error(P, "tcp connect", handle->loop)
     : tcp;
 }
 static PN
@@ -469,7 +502,7 @@ aio_tcp_connect6(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
   else if (PN_IS_FFIPTR(cb)) connect_cb = (uv_connect_cb)cb; //c-level cb loaded via ffi
   else connect_cb = 0; //none
   return uv_tcp_connect6(request, handle, ip6, connect_cb)
-    ? aio_last_error(P, "tcp_connect6", handle->loop)
+    ? aio_last_error(P, "tcp connect6", handle->loop)
     : tcp;
 }
 ///\returns aio_udp or nil
@@ -479,7 +512,7 @@ aio_udp_open(Potion *P, PN cl, PN udp, PN sockfd) {
   CHECK_AIO_TYPE(udp,udp);
   PN_CHECK_INT(sockfd);
   return uv_udp_open(handle, PN_INT(sockfd))
-    ? aio_last_error(P, "udp_open", handle->loop)
+    ? aio_last_error(P, "udp open", handle->loop)
     : udp;
 }
 static PN
@@ -490,7 +523,7 @@ aio_udp_bind(Potion *P, PN cl, PN udp, PN addr, PN port) {
   PN_CHECK_INT(port);
   struct sockaddr_in ip4 = uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port));
   return uv_udp_bind(handle, ip4, 0)
-    ? aio_last_error(P, "udp_bind", handle->loop)
+    ? aio_last_error(P, "udp bind", handle->loop)
     : udp;
 }
 static PN
@@ -502,7 +535,7 @@ aio_udp_bind6(Potion *P, PN cl, PN udp, PN addr, PN port, PN flags) {
   PN_CHECK_INT(flags);
   struct sockaddr_in6 ip6 = uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port));
   return uv_udp_bind6(handle, ip6, PN_INT(flags))
-    ? aio_last_error(P, "udp_bind6", handle->loop)
+    ? aio_last_error(P, "udp bind6", handle->loop)
     : udp;
 }
 static PN
@@ -511,7 +544,7 @@ aio_udp_getsockname(Potion *P, PN cl, PN udp) {
   uv_udp_t *handle = (uv_udp_t*)PN_DATA(potion_fwd(udp));
   CHECK_AIO_TYPE(udp,udp);
   return uv_udp_getsockname(handle, &sock, &len)
-    ? aio_last_error(P, "udp_getsockname", handle->loop)
+    ? aio_last_error(P, "udp getsockname", handle->loop)
     : potion_str2(P, sock.sa_data, len);
 }
 static PN
@@ -522,7 +555,7 @@ aio_udp_set_membership(Potion *P, PN cl, PN udp, PN mcaddr, PN ifaddr, PN member
   PN_CHECK_STR(ifaddr);
   PN_CHECK_INT(membership);
   return uv_udp_set_membership(handle, PN_STR_PTR(mcaddr), PN_STR_PTR(ifaddr), PN_NUM(membership))
-    ? aio_last_error(P, "udp_set_membership", handle->loop)
+    ? aio_last_error(P, "udp set_membership", handle->loop)
     : udp;
 }
 static PN
@@ -531,7 +564,7 @@ aio_udp_set_multicast_loop(Potion *P, PN cl, PN udp, PN on) {
   CHECK_AIO_TYPE(udp,udp);
   PN_CHECK_INT(on);  //TODO boolean
   return uv_udp_set_multicast_loop(handle, PN_NUM(on))
-    ? aio_last_error(P, "udp_set_multicast_loop", handle->loop)
+    ? aio_last_error(P, "udp set_multicast_loop", handle->loop)
     : udp;
 }
 static PN
@@ -540,7 +573,7 @@ aio_udp_set_multicast_ttl(Potion *P, PN cl, PN udp, PN ttl) {
   CHECK_AIO_TYPE(udp,udp);
   PN_CHECK_INT(ttl);
   return uv_udp_set_multicast_ttl(handle, PN_NUM(ttl))
-    ? aio_last_error(P, "udp_set_multicast_ttl", handle->loop)
+    ? aio_last_error(P, "udp set_multicast_ttl", handle->loop)
     : udp;
 }
 static PN
@@ -549,7 +582,7 @@ aio_udp_set_broadcast(Potion *P, PN cl, PN udp, PN on) {
   CHECK_AIO_TYPE(udp,udp);
   PN_CHECK_INT(on);  //TODO boolean
   return uv_udp_set_broadcast(handle, PN_NUM(on))
-    ? aio_last_error(P, "udp_set_broadcast", handle->loop)
+    ? aio_last_error(P, "udp set_broadcast", handle->loop)
     : udp;
 }
 static PN
@@ -558,7 +591,7 @@ aio_udp_set_ttl(Potion *P, PN cl, PN udp, PN ttl) {
   CHECK_AIO_TYPE(udp,udp);
   PN_CHECK_INT(ttl);
   return uv_udp_set_ttl(handle, PN_NUM(ttl))
-    ? aio_last_error(P, "udp_set_ttl", handle->loop)
+    ? aio_last_error(P, "udp set_ttl", handle->loop)
     : udp;
 }
 static PN
@@ -581,7 +614,7 @@ aio_udp_send(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN po
   else if (PN_IS_FFIPTR(cb)) send_cb = (uv_udp_send_cb)cb; //c-level cb loaded via ffi
   else send_cb = 0; //none
   return uv_udp_send(request, handle, bufs, bufcnt, ip4, send_cb)
-    ? aio_last_error(P, "udp_send", handle->loop)
+    ? aio_last_error(P, "udp send", handle->loop)
     : udp;
 }
 static PN
@@ -604,7 +637,7 @@ aio_udp_send6(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN p
   else if (PN_IS_FFIPTR(cb)) send_cb = (uv_udp_send_cb)cb; //c-level cb loaded via ffi
   else send_cb = 0; //none
   return uv_udp_send6(request, handle, bufs, bufcnt, ip6, send_cb)
-    ? aio_last_error(P, "udp_send6", handle->loop)
+    ? aio_last_error(P, "udp send6", handle->loop)
     : udp;
 }
 
@@ -626,7 +659,7 @@ aio_udp_recv_start(Potion *P, PN cl, PN udp, PN cb) {
   else if (PN_IS_FFIPTR(cb)) recv_cb = (uv_udp_recv_cb)cb; //c-level cb loaded via ffi
   else recv_cb = 0; //none
   return uv_udp_recv_start(&handle->h, aio_alloc_cb, recv_cb)
-    ? aio_last_error(P, "udp_recv_start", handle->h.loop)
+    ? aio_last_error(P, "udp recv_start", handle->h.loop)
     : udp;
 }
 static PN
@@ -634,8 +667,88 @@ aio_udp_recv_stop(Potion *P, PN cl, PN udp) {
   uv_udp_t *handle = (uv_udp_t*)PN_DATA(potion_fwd(udp));
   CHECK_AIO_TYPE(udp,udp);
   return uv_udp_recv_stop(handle)
-    ? aio_last_error(P, "udp_recv_stop", handle->loop)
+    ? aio_last_error(P, "udp recv_stop", handle->loop)
     : udp;
+}
+static PN
+aio_prepare_start(Potion *P, PN cl, PN self, PN cb) {
+  struct aio_prepare_s *handle = (struct aio_prepare_s*)PN_DATA(potion_fwd(self));
+  CHECK_AIO_TYPE(self,prepare);
+  uv_prepare_cb prepare_cb;
+  if (PN_IS_CLOSURE(cb)) { //register user-callback. set cb ptr in req
+    handle->r.prepare_cb = (uv_prepare_cb)PN_CLOSURE(cb);
+    prepare_cb = (uv_prepare_cb)aio_prepare_cb;
+  }
+  else if (PN_IS_FFIPTR(cb)) prepare_cb = (uv_prepare_cb)cb; //c-level cb loaded via ffi
+  else prepare_cb = 0; //none
+  return uv_prepare_start(&handle->r, prepare_cb)
+    ? aio_last_error(P, "prepare start", handle->r.loop)
+    : self;
+}
+static PN
+aio_prepare_stop(Potion *P, PN cl, PN self) {
+  uv_prepare_t *handle = (uv_prepare_t*)PN_DATA(potion_fwd(self));
+  CHECK_AIO_TYPE(self,prepare);
+  return uv_prepare_stop(handle)
+    ? aio_last_error(P, "prepare stop", handle->loop)
+    : self;
+}
+static PN
+aio_check_start(Potion *P, PN cl, PN self, PN cb) {
+  struct aio_check_s *handle = (struct aio_check_s*)PN_DATA(potion_fwd(self));
+  CHECK_AIO_TYPE(self,check);
+  uv_check_cb check_cb;
+  if (PN_IS_CLOSURE(cb)) { //register user-callback. set cb ptr in req
+    handle->r.check_cb = (uv_check_cb)PN_CLOSURE(cb);
+    check_cb = (uv_check_cb)aio_check_cb;
+  }
+  else if (PN_IS_FFIPTR(cb)) check_cb = (uv_check_cb)cb; //c-level cb loaded via ffi
+  else check_cb = 0; //none
+  return uv_check_start(&handle->r, check_cb)
+    ? aio_last_error(P, "check start", handle->r.loop)
+    : self;
+}
+static PN
+aio_check_stop(Potion *P, PN cl, PN self) {
+  uv_check_t *handle = (uv_check_t*)PN_DATA(potion_fwd(self));
+  CHECK_AIO_TYPE(self,check);
+  return uv_check_stop(handle)
+    ? aio_last_error(P, "check stop", handle->loop)
+    : self;
+}
+
+/// Set mode. 0 for normal, 1 for raw.
+static PN
+aio_tty_set_mode(Potion *P, PN cl, PN tty, PN mode) {
+  CHECK_AIO_TYPE(tty,tty);
+  uv_tty_t *handle = (uv_tty_t*)PN_DATA(potion_fwd(tty));
+  PN_CHECK_INT(mode);
+  return uv_tty_set_mode(handle, PN_INT(mode))
+    ? aio_last_error(P, "tty set_mode", handle->loop)
+    : tty;
+}
+/// To be called when the program exits. Resets TTY settings to default
+/// values for the next process to take over.
+static PN
+aio_tty_reset_mode(Potion *P, PN cl, PN tty) {
+  uv_tty_reset_mode();
+  return tty;
+}
+static PN
+aio_tty_get_winsize(Potion *P, PN cl, PN tty) {
+  CHECK_AIO_TYPE(tty,tty);
+  uv_tty_t *handle = (uv_tty_t*)PN_DATA(potion_fwd(tty));
+  int width, height;
+  if (uv_tty_get_winsize(handle, &width, &height))
+    aio_last_error(P, "tty get_winsize", handle->loop);
+  else
+    return PN_PUSH(PN_PUSH(PN_TUP0(), PN_NUM(width)), PN_NUM(height));
+}
+static PN
+aio_guess_handle(Potion *P, PN cl, PN file) {
+  PN_CHECK_INT(file);
+  uv_handle_type r = uv_guess_handle(PN_INT(file));
+  return PN_NUM(r);
 }
 
 static PN
@@ -643,7 +756,7 @@ aio_pipe_open(Potion *P, PN cl, PN pipe, PN file) {
   CHECK_AIO_TYPE(pipe,pipe);
   uv_pipe_t *handle = (uv_pipe_t*)PN_DATA(potion_fwd(pipe));
   return uv_pipe_open(handle, PN_INT(file))
-    ? aio_last_error(P, "udp_pipe_open", handle->loop)
+    ? aio_last_error(P, "pipe open", handle->loop)
     : pipe;
 }
 static PN
@@ -652,7 +765,7 @@ aio_pipe_bind(Potion *P, PN cl, PN pipe, PN name) {
   uv_pipe_t *handle = (uv_pipe_t*)PN_DATA(potion_fwd(pipe));
   PN_CHECK_STR(name);
   return uv_pipe_bind(handle, PN_STR_PTR(name))
-    ? aio_last_error(P, "udp_pipe_bind", handle->loop)
+    ? aio_last_error(P, "pipe bind", handle->loop)
     : pipe;
 }
 static PN
@@ -672,13 +785,40 @@ aio_pipe_connect(Potion *P, PN cl, PN pipe, PN req, PN name, PN cb) {
   uv_pipe_connect(request, handle, PN_STR_PTR(name), connect_cb);
   return pipe;
 }
+// Windows only
+static PN
+aio_pipe_pending_instances(Potion *P, PN cl, PN pipe, PN count) {
+  CHECK_AIO_TYPE(pipe,pipe);
+  uv_pipe_t *handle = (uv_pipe_t*)PN_DATA(potion_fwd(pipe));
+  PN_CHECK_INT(count);
+  uv_pipe_pending_instances(handle, PN_INT(count));
+  return pipe;
+}
+
+static PN
+aio_shutdown(Potion *P, PN cl, PN stream, PN req, PN cb) {
+  CHECK_AIO_TYPE(req,shutdown);
+  CHECK_AIO_STREAM(stream);
+  uv_stream_t *handle = (uv_stream_t*)PN_DATA(potion_fwd(stream));
+  uv_shutdown_t *request = (uv_shutdown_t*)PN_DATA(potion_fwd(req));
+  uv_shutdown_cb shutdown_cb;
+  if (PN_IS_CLOSURE(cb)) { //register user-callback. set cb ptr in req
+    request->cb = (uv_shutdown_cb)PN_CLOSURE(cb);
+    shutdown_cb = (uv_shutdown_cb)aio_shutdown_cb;
+  }
+  else if (PN_IS_FFIPTR(cb)) shutdown_cb = (uv_shutdown_cb)cb; //c-level cb loaded via ffi
+  else shutdown_cb = 0; //none
+  return uv_shutdown(request, handle, shutdown_cb)
+    ? aio_last_error(P, "shutdown", handle->loop)
+    : stream;
+}
 
 /**
    TODO: buf should be PNBytes, not PNData wrapping uv_buf_t
  */
 static PN
 aio_write(Potion *P, PN cl, PN stream, PN req, PN buf, PN bufcnt, PN cb) {
-  //CHECK_AIO_TYPE(stream,stream|tcp|udp|pipe|socket);
+  CHECK_AIO_STREAM(stream);
   CHECK_AIO_TYPE(req,write);
   //CHECK_AIO_TYPE(buf,buf); //FIXME buf as PNBytes
   PN_CHECK_INT(bufcnt);
@@ -695,6 +835,75 @@ aio_write(Potion *P, PN cl, PN stream, PN req, PN buf, PN bufcnt, PN cb) {
   return uv_write(request, stm, bufs, PN_INT(bufcnt), write_cb)
     ? aio_last_error(P, "write", stm->loop)
     : stream;
+}
+
+static PN
+aio_listen(Potion *P, PN cl, PN stream, PN backlog, PN cb) {
+  CHECK_AIO_STREAM(stream);
+  uv_stream_t *request = (uv_stream_t*)PN_DATA(potion_fwd(stream));
+  uv_connection_cb connection_cb;
+  if (PN_IS_CLOSURE(cb)) { //register user-callback. set cb ptr in req
+    request->connection_cb = (uv_connection_cb)PN_CLOSURE(cb);
+    connection_cb = (uv_connection_cb)aio_connection_cb;
+  }
+  else if (PN_IS_FFIPTR(cb)) connection_cb = (uv_connection_cb)cb; //c-level cb loaded via ffi
+  else connection_cb = 0; //none
+  PN_CHECK_INT(backlog);
+  return uv_listen(request, PN_INT(backlog), connection_cb)
+    ? aio_last_error(P, "listen", request->loop)
+    : stream;
+}
+/**
+ * This call is used in conjunction with listen() to accept incoming
+ * connections. Call uv_accept after receiving a uv_connection_cb to accept
+ * the connection.
+ *
+ * When the uv_connection_cb is called it is guaranteed that uv_accept will
+ * complete successfully the first time. If you attempt to use it more than
+ * once, it may fail. It is suggested to only call uv_accept once per
+ * uv_connection_cb call. */
+static PN
+aio_accept(Potion *P, PN cl, PN stream, PN client) {
+  CHECK_AIO_STREAM(stream);
+  CHECK_AIO_STREAM(client);
+  uv_stream_t *stream_u = (uv_stream_t*)PN_DATA(potion_fwd(stream));
+  uv_stream_t *client_u = (uv_stream_t*)PN_DATA(potion_fwd(client));
+  return uv_accept(stream_u, client_u)
+    ? aio_last_error(P, "accept", stream_u->loop)
+    : stream;
+}
+/**
+ * Read data from an incoming stream. The callback will be made several
+ * times until there is no more data to read or read_stop is called.
+ * When we've reached EOF nread will be set to -1 and the error is set
+ * to UV_EOF. When nread == -1 the buf parameter might not point to a
+ * valid buffer; in that case buf.len and buf.base are both set to 0.
+ * Note that nread might also be 0, which does *not* indicate an error or
+ * eof; it happens when aio requested a buffer through the alloc callback
+ * but then decided that it didn't need that buffer.
+ */
+static PN
+aio_read_start(Potion *P, PN cl, PN self, PN cb) {
+  struct aio_stream_s *handle = (struct aio_stream_s*)PN_DATA(potion_fwd(self));
+  CHECK_AIO_TYPE(self,stream);
+  uv_read_cb read_cb;
+  if (PN_IS_CLOSURE(cb)) { //register user-callback. set cb ptr in req
+    handle->h.read_cb = (uv_read_cb)PN_CLOSURE(cb);
+    read_cb = (uv_read_cb)aio_read_cb;
+  }
+  else if (PN_IS_FFIPTR(cb)) read_cb = (uv_read_cb)cb; //c-level cb loaded via ffi
+  else read_cb = 0; //none
+  return uv_read_start(&handle->h, aio_alloc_cb, read_cb)
+    ? aio_last_error(P, "read start", handle->h.loop)
+    : self;
+}
+static PN
+aio_read_stop(Potion *P, PN cl, PN self) {
+  uv_stream_t *handle = (uv_stream_t*)PN_DATA(potion_fwd(self));
+  CHECK_AIO_TYPE(self,stream);
+  return uv_read_stop(handle)
+    ? aio_last_error(P, "read stop", handle->loop)
+    : self;
 }
 
 void Potion_Init_aio(Potion *P) {
@@ -721,7 +930,6 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_NEW_VT(timer, "|loop=o");
   DEF_AIO_NEW_VT(fs_poll, "|loop=o");
   DEF_AIO_NEW_VT(signal, "|loop=o");
-  DEF_AIO_VT(loop);
   DEF_AIO_NEW_VT(tty,  "file=o,readable=N|loop=o");
   DEF_AIO_NEW_VT(pipe, "ipc=N|loop=o");
   DEF_AIO_NEW_VT(poll, "fd=N|loop=o");
@@ -732,9 +940,10 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_NEW_VT(cond, 0);
   DEF_AIO_NEW_VT(sem, "value=N");
   DEF_AIO_NEW_VT(barrier, "count=N");
+  DEF_AIO_VT(loop);
   DEF_AIO_VT(handle);
   DEF_AIO_VT(process);
-  DEF_AIO_VT(stream);
+  DEF_AIO_VT(stream); //TODO mixin with tcp,udp,pipe,tty
   DEF_AIO_VT(req);
   DEF_AIO_VT(connect);
   DEF_AIO_VT(write);
@@ -773,11 +982,23 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_udp_vt, "send6", aio_udp_send6, "req=o,buf=O,bufcnt=N,addr=S,port=N|send_cb=&");
   potion_method(aio_udp_vt, "recv_start", aio_udp_recv_start, "recv_cb=&");
   potion_method(aio_udp_vt, "recv_stop", aio_udp_recv_stop, 0);
+  potion_method(aio_pipe_vt, "pending_instances", aio_pipe_pending_instances, "count=N");
+  potion_method(aio_tty_vt, "set_mode", aio_tty_set_mode, "mode=N");
+  potion_method(aio_tty_vt, "reset_mode", aio_tty_reset_mode, 0);
+  potion_method(aio_tty_vt, "get_winsize", aio_tty_get_winsize, 0);
+  potion_method(aio_vt, "guess_handle", aio_guess_handle, "filefd=N");
   potion_method(aio_pipe_vt, "open", aio_pipe_open, "fd=N");
   potion_method(aio_pipe_vt, "bind", aio_pipe_bind, "name=S");
   potion_method(aio_pipe_vt, "connect", aio_pipe_connect, "req=o,name=S|connect_cb=&");
   potion_method(aio_stream_vt, "write", aio_write, "req=o,buf=O,bufcnt=N|write_cb=&");
-#if 0
-  potion_method(aio_pipe_vt, "pending_instances", aio_pipe_pending_instances, "count=N");
-#endif
+  potion_method(aio_stream_vt, "shutdown", aio_shutdown, "req=o|shutdown_cb=&");
+  //potion_method(aio_shutdown_vt, "shutdown", aio_shutdown, "stream=o|cb=&");
+  potion_method(aio_prepare_vt, "start", aio_prepare_start, "cb=&");
+  potion_method(aio_prepare_vt, "stop", aio_prepare_stop, 0);
+  potion_method(aio_check_vt, "start", aio_check_start, "cb=&");
+  potion_method(aio_check_vt, "stop", aio_check_stop, 0);
+  potion_method(aio_stream_vt, "listen", aio_listen, "backlog=N|cb=&");
+  potion_method(aio_stream_vt, "accept", aio_accept, "client=o");
+  potion_method(aio_stream_vt, "start", aio_read_start, "cb=&");
+  potion_method(aio_stream_vt, "stop", aio_read_stop, 0);
 }
