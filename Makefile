@@ -55,7 +55,6 @@ PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 #EXTLIBS = $(foreach m,uv pcre,lib/lib$m.a)
 #EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv -L3rd/libtommath -llibtommath
-DYNLIBS = $(foreach m,readline buffile,lib/potion/$m${LOADEXT})
 OBJS = .o .o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
@@ -305,6 +304,7 @@ lib/libuv.a: core/config.h core/potion.h \
 	@${MAKE} -s -C 3rd/libuv libuv${DLL}
 	@cp 3rd/libuv/libuv.a lib/
 
+# default: shared
 3rd/libuv/libuv$(DLL): core/config.h core/potion.h \
   3rd/libuv/Makefile
 	@${ECHO} MAKE $@
@@ -317,6 +317,7 @@ lib/libsregex.a: core/config.h core/potion.h \
 	@${MAKE} -s -C 3rd/sregex CC="${CC}"
 	@cp 3rd/sregex/libsregex.a lib/
 
+# default: static
 lib/libpcre.a: core/config.h core/potion.h \
   3rd/pcre/Makefile
 	@${ECHO} MAKE $@
@@ -339,17 +340,29 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
 	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
 	  lib/buffile.${OPIC}2 ${LIBPTH} ${LIBS} > /dev/null
 
+ifeq ($(HAVE_LIBUV),1)
+AIO_DEPS =
+else
+AIO_DEPS = 3rd/libuv/libuv$(DLL)
+endif
+
 lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
-  lib/aio.c
+  lib/aio.c $(AIO_DEPS)
 	@[ -d lib/potion ] || mkdir lib/potion
 	@${ECHO} CC lib/aio.${OPIC}2
-	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -I3rd/libuv/include -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
+	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
 	@${ECHO} LD $@
-	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) \
-	  lib/aio.${OPIC}2 ${LIBS} ${EXTLIBS} > /dev/null
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
+	  lib/aio.${OPIC}2 ${LIBPTH} ${LIBS} ${EXTLIBS} > /dev/null
+
+ifeq ($(HAVE_PCRE),1)
+PCRE_DEPS =
+else
+PCRE_DEPS = lib/libpcre.a
+endif
 
 lib/potion/pcre${LOADEXT}: core/config.h core/potion.h \
-  lib/pcre/Makefile lib/pcre/pcre.c
+  lib/pcre/Makefile lib/pcre/pcre.c $(PCRE_DEPS)
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/pcre
 	@[ -d lib/potion ] || mkdir lib/potion

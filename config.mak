@@ -81,6 +81,30 @@ endif
 endif
 endif
 
+ifeq ($(shell tools/config.sh "${CC}" lib -luv uv.h /usr/local),1)
+	HAVE_LIBUV = 1
+	DEFINES += -DHAVE_LIBUV
+	INCS += -I/usr/local/include
+	LIBS += -L/usr/local/lib
+else
+	HAVE_LIBUV = 0
+	INCS += -I3rd/libuv/include
+endif
+
+ifeq ($(shell tools/config.sh "${CC}" lib -lpcre pcre.h /usr/local),1)
+	HAVE_PCRE = 1
+	DEFINES += -DHAVE_PCRE
+	INCS += -I/usr/local/include
+	LIBS += -L/usr/local/lib
+else
+ifeq ($(shell tools/config.sh "${CC}" lib -lpcre pcre.h /usr),1)
+	HAVE_PCRE = 1
+	DEFINES += -DHAVE_PCRE
+else
+	HAVE_PCRE = 0
+endif
+endif
+
 # JIT with -O still fails some tests
 ifneq (${JIT},1)
        DEBUGFLAGS += -O3
@@ -176,7 +200,9 @@ config.inc.echo:
 	@${ECHO} "RPATH_INSTALL = " ${RPATH_INSTALL}
 	@${ECHO} "LIBS    = ${LIBS}"
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
-	@${ECHO} "RDLLFLAGS = ${RDLLFLAGS}"
+	@${ECHO} "RDLLFLAGS  = ${RDLLFLAGS}"
+	@${ECHO} "HAVE_LIBUV = ${HAVE_LIBUV}"
+	@${ECHO} "HAVE_PCRE  = ${HAVE_PCRE}"
 	@${ECHO} "STRIP   = ${STRIP}"
 	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "CROSS   = ${CROSS}"
