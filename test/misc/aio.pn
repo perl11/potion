@@ -2,7 +2,8 @@
 load "aio"
 tcp = aio_tcp()
 connect_cb = (req,status):
-  "connected " print
-  status string print.
+  "connected " print.
+#  status string print.
 tcp connect(aio_connect(), "127.0.0.1", 80, connect_cb)
-#=> connected
+#TODO=> connected
+#=> nil
