@@ -91,6 +91,12 @@ aio_fs_event_cb(uv_fs_event_t* handle, const char* filename, int events, int sta
 		     PN_NUM(events), PN_NUM(status));
 }
 
+static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
+  uv_err_t err = uv_last_error(loop);
+  return potion_error(P, potion_str_format(P, "Error %s: %s", name,
+                                           uv_strerror(err)), 0, 0, 0);
+}
+
 #define DEF_AIO_NEW_NOINIT(T)					      \
   struct PNData *data = potion_data_alloc(P,			      \
     sizeof(uv_##T##_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*));     \
@@ -103,13 +109,13 @@ aio_fs_event_cb(uv_fs_event_t* handle, const char* filename, int events, int sta
   DEF_AIO_NEW_NOINIT(T);					      \
   handle = (uv_##T##_t*)PN_DATA(data)
 #define DEF_AIO_NEW_LOOP(T)					      \
+  uv_loop_t* l;                                                       \
   DEF_AIO_NEW(T);						      \
-  if (!loop) loop = (PN)&uv_default_loop;			      \
-  else if (PN_TYPE(loop) == PN_TUSER) loop = (PN)PN_DATA(loop);	      \
-  else if (PN_TYPE(loop) == PN_TCLOSURE) loop = (PN)PN_CLOSURE_F(loop); \
+  if (!loop) l = uv_default_loop();                                   \
+  else if (PN_TYPE(loop) == PN_TUSER) l = (uv_loop_t*)PN_DATA(loop);  \
   else return potion_type_error(P, loop);			      \
-  r = uv_##T##_init((uv_loop_t*)loop, handle);			      \
-  if (!r) return potion_io_error(P, "aio_"_XSTR(T));		      \
+  r = uv_##T##_init(l, handle);                                       \
+  if (r) return aio_last_error(P, "aio_"_XSTR(T), l);                 \
   return (PN)data;
 
 /**\class aio_tcp \memberof aio_tcp
@@ -122,16 +128,16 @@ static PN aio_tcp_new(Potion *P, PN cl, PN self, PN loop) {
   uv_tcp_t *handle;
   struct PNData *data = potion_data_alloc(P,
     sizeof(uv_tcp_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*));
+  uv_loop_t* l;
   data->vt = aio_tcp_vt;
   ((struct aio_tcp_s*)data)->P = P;
   ((struct aio_tcp_s*)data)->cl = cl;
   handle = (uv_tcp_t*)PN_DATA(data);
-  if (!loop) loop = (PN)&uv_default_loop;
-  else if (PN_TYPE(loop) == PN_TUSER) loop = (PN)PN_DATA(loop);
-  else if (PN_TYPE(loop) == PN_TCLOSURE) loop = (PN)PN_CLOSURE_F(loop);
+  if (!loop) l = uv_default_loop();
+  else if (PN_TYPE(loop) == PN_TUSER) l = (uv_loop_t*)PN_DATA(loop);
   else return potion_type_error(P, loop);
-  r = uv_tcp_init((uv_loop_t*)loop, handle);
-  if (!r) return potion_io_error(P, "aio_tcp");
+  r = uv_tcp_init(l, handle);
+  if (r) return aio_last_error(P, "aio_tcp", l);
   return (PN)data;
 }
 /**\class aio_udp \memberof aio_udp
@@ -279,6 +285,7 @@ static PN aio_rwlock_new(Potion *P, PN cl, PN self) {
   return (PN)data;
 }
 
+#undef DEF_AIO_NEW_NOINIT
 #undef DEF_AIO_NEW
 #undef DEF_AIO_NEW_LOOP
 
