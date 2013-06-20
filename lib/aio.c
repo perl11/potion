@@ -5,6 +5,7 @@
   \see 3rd/libuv/include/uv.h and http://nikhilm.github.io/uvbook/basics.html
 
   The constructor calls the uv_T_init functions already.
+  loop is always the last element, and defaults to uv_default_loop()
 
   For POSIX unbuffered fileio \see file.c open,read,write,seek calls on fd
   and lib/buffile.c for buffered IO.
@@ -111,7 +112,7 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
   uv_loop_t* l;                                                       \
   DEF_AIO_NEW(T);						      \
   if (!loop) l = uv_default_loop();                                   \
-  else if (PN_TYPE(loop) == PN_TUSER) l = (uv_loop_t*)PN_DATA(loop);  \
+  else if (PN_VTYPE(loop) == aio_loop_vt) l = (uv_loop_t*)PN_DATA(loop); \
   else return potion_type_error(P, loop);
 #define DEF_AIO_NEW_LOOP_INIT(T)					      \
   DEF_AIO_NEW_LOOP(T);                                                       \
@@ -133,7 +134,7 @@ static PN aio_tcp_new(Potion *P, PN cl, PN self, PN loop) {
   ((struct aio_tcp_s*)data)->cl = cl;
   handle = (uv_tcp_t*)PN_DATA(data);
   if (!loop) l = uv_default_loop();
-  else if (PN_TYPE(loop) == PN_TUSER) l = (uv_loop_t*)PN_DATA(loop);
+  else if (PN_VTYPE(loop) == aio_loop_vt) l = (uv_loop_t*)PN_DATA(loop);
   else return potion_type_error(P, loop);
   if (uv_tcp_init(l, handle))
     return aio_last_error(P, "aio_tcp", l);
@@ -149,27 +150,37 @@ static PN aio_udp_new(Potion *P, PN cl, PN self, PN loop) {
 static PN aio_prepare_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(prepare);
 }
-static PN aio_check_new(Potion *P, PN cl, PN loop) {
+static PN aio_check_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(check);
 }
-static PN aio_idle_new(Potion *P, PN cl, PN loop) {
+static PN aio_idle_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(idle);
 }
 /**\class aio_timer \memberof aio_timer
    create and init a \c aio_timer object
    \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
    \see http://nikhilm.github.io/uvbook/utilities.html#timers */
-static PN aio_timer_new(Potion *P, PN cl, PN loop) {
+static PN aio_timer_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(timer);
 }
-static PN aio_fs_poll_new(Potion *P, PN cl, PN loop) {
+static PN aio_fs_poll_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(fs_poll);
 }
-static PN aio_signal_new(Potion *P, PN cl, PN loop) {
+static PN aio_signal_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(signal);
 }
 static PN aio_loop_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(loop);
+  uv_loop_t *l;
+  uv_loop_t *def;
+  struct PNData *data = potion_data_alloc(P,
+    sizeof(uv_loop_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*));
+  data->vt = aio_loop_vt;
+  ((struct aio_loop_s*)data)->P = P;
+  ((struct aio_loop_s*)data)->cl = cl;
+  l = (uv_loop_t*)PN_DATA(data);
+  def = uv_default_loop();
+  memcpy(l, def, sizeof(uv_loop_t));
+  return (PN)data;
 }
 static PN aio_handle_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW_NOINIT(handle);
@@ -210,19 +221,19 @@ static PN aio_cpu_info_new(Potion *P, PN cl, PN self) {
 static PN aio_interface_address_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW_NOINIT(interface_address);
 }
-static PN aio_tty_new(Potion *P, PN cl, PN loop, PN file, PN readable) {
+static PN aio_tty_new(Potion *P, PN cl, PN self, PN file, PN readable, PN loop) {
   DEF_AIO_NEW_LOOP(tty);
   if (uv_tty_init(l, handle, PN_NUM(PN_DATA(file)), PN_NUM(readable)))
     return aio_last_error(P, "aio_tty", l);
   return (PN)data;
 }
-static PN aio_pipe_new(Potion *P, PN cl, PN loop, PN ipc) {
+static PN aio_pipe_new(Potion *P, PN cl, PN self, PN ipc, PN loop) {
   DEF_AIO_NEW_LOOP(pipe);
   if (uv_pipe_init(l, handle, PN_NUM(ipc)))
     return aio_last_error(P, "aio_pipe", l);
   return (PN)data;
 }
-static PN aio_poll_new(Potion *P, PN cl, PN loop, PN fd) {
+static PN aio_poll_new(Potion *P, PN cl, PN self, PN fd, PN loop) {
   DEF_AIO_NEW_LOOP(poll);
   if (uv_poll_init((uv_loop_t*)loop, handle, PN_NUM(fd)))
     return aio_last_error(P, "aio_poll", l);
@@ -240,7 +251,7 @@ static PN aio_sem_new(Potion *P, PN cl, PN self, PN value) {
     return potion_io_error(P, "aio_sem");
   return (PN)data;
 }
-static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN loop, PN filename, PN cb, PN flags) {
+static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN filename, PN cb, PN flags, PN loop) {
   DEF_AIO_NEW_LOOP(fs_event);
   uv_fs_event_cb fs_event_cb = aio_fs_event_cb;
   if (PN_IS_CLOSURE(cb)) handle->cb = (uv_fs_event_cb)cb;
@@ -249,7 +260,7 @@ static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN loop, PN filename, PN c
     return aio_last_error(P, "aio_fs_event", l);
   return (PN)data;
 }
-static PN aio_async_new(Potion *P, PN cl, PN self, PN loop, PN cb) {
+static PN aio_async_new(Potion *P, PN cl, PN self, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(async);
   if (uv_async_init(l, handle, (uv_async_cb)PN_DATA(cb)))
     return aio_last_error(P, "aio_async", l);
@@ -323,6 +334,20 @@ aio_fs_poll_cb(uv_fs_poll_t* handle, int status, const uv_stat_t* prev, const uv
 		     potion_ref(wrap->P, (PN)prev), potion_ref(wrap->P, (PN)curr));
 }
 #endif
+
+/** Returns the libuv version packed into a single integer. 8 bits are used for
+ * each component, with the patch number stored in the 8 least significant
+ * bits. E.g. for libuv 1.2.3 this would return 0x010203. */
+static PN
+aio_version(Potion *P, PN cl, PN self) {
+  return PN_NUM(uv_version());
+}
+/** Returns the libuv version number as a string. For non-release versions
+ * "-pre" is appended, so the version number could be "1.2.3-pre". */
+static PN
+aio_version_string(Potion *P, PN cl, PN self) {
+  return PN_STR(uv_version_string());
+}
 
 static PN
 aio_tcp_open(Potion *P, PN cl, PN tcp, PN sock) {
@@ -566,20 +591,28 @@ void Potion_Init_aio(Potion *P) {
 #define DEF_AIO_NEW_VT(T,args)						\
   DEF_AIO_VT(T); potion_method(P->lobby, "aio_"_XSTR(T), aio_##T##_new, args);
 
-  DEF_AIO_NEW_VT(tcp, "|loop=&");
-  DEF_AIO_NEW_VT(udp, "|loop=&");
-  DEF_AIO_NEW_VT(prepare, "|loop=&");
-  DEF_AIO_NEW_VT(check, "|loop=&");
-  DEF_AIO_NEW_VT(idle,  "|loop=&");
-  DEF_AIO_NEW_VT(timer, "|loop=&");
-  DEF_AIO_NEW_VT(fs_poll, "|loop=&");
-  DEF_AIO_NEW_VT(signal, "|loop=&");
+  potion_define_global(P, PN_STR("aio_run_default"), PN_NUM(0));
+  potion_define_global(P, PN_STR("aio_run_once"),   PN_NUM(1));
+  potion_define_global(P, PN_STR("aio_run_nowait"), PN_NUM(2));
+  potion_method(P->lobby, "aio_version", aio_version, 0);
+  potion_method(P->lobby, "aio_version_string", aio_version_string, 0);
+  potion_method(aio_vt, "version", aio_version, 0);
+  potion_method(aio_vt, "version_string", aio_version_string, 0);
+
+  DEF_AIO_NEW_VT(tcp, "|loop=o");
+  DEF_AIO_NEW_VT(udp, "|loop=o");
+  DEF_AIO_NEW_VT(prepare, "|loop=o");
+  DEF_AIO_NEW_VT(check, "|loop=o");
+  DEF_AIO_NEW_VT(idle,  "|loop=o");
+  DEF_AIO_NEW_VT(timer, "|loop=o");
+  DEF_AIO_NEW_VT(fs_poll, "|loop=o");
+  DEF_AIO_NEW_VT(signal, "|loop=o");
   DEF_AIO_VT(loop);
-  DEF_AIO_NEW_VT(tty,  "loop=&,file=o,readable=N");
-  DEF_AIO_NEW_VT(pipe, "loop=&,ipc=N");
-  DEF_AIO_NEW_VT(poll, "loop=&,fd=N");
-  DEF_AIO_NEW_VT(async, "loop=&,cb=o");
-  DEF_AIO_NEW_VT(fs_event, "loop=&,filename=S,cb=o,flags=N");
+  DEF_AIO_NEW_VT(tty,  "file=o,readable=N|loop=o");
+  DEF_AIO_NEW_VT(pipe, "ipc=N|loop=o");
+  DEF_AIO_NEW_VT(poll, "fd=N|loop=o");
+  DEF_AIO_NEW_VT(async, "cb=o|loop=o");
+  DEF_AIO_NEW_VT(fs_event, "filename=S,cb=o,flags=N|loop=o");
   DEF_AIO_NEW_VT(mutex, 0);
   DEF_AIO_NEW_VT(rwlock, 0);
   DEF_AIO_NEW_VT(cond, 0);
