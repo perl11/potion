@@ -135,13 +135,6 @@ struct PNVtable;
 #define PN_TYPE_ID(t)   ((t)-PN_TNIL)
 #define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, PN_TYPE_ID(t)))
 #define PN_TYPECHECK(t) (PN_TYPE_ID(t) >= 0 && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
-//TODO: check parents and mixins
-#define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, obj)
-#ifdef DEBUG
-#define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE((PN)obj,type)
-#else
-#define DBG_CHECK_TYPE(obj,type)
-#endif
 
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)
@@ -181,6 +174,17 @@ struct PNVtable;
 #define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
 #define PN_IS_FFIPTR(p)  ((PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->birth_hi)) \
 			  || (!PN_IS_PTR(p) && p > (_PN)P->mem->birth_hi))
+
+#define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, obj, "string")
+#define PN_CHECK_INT(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, obj, "integer")
+#define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, obj, "bool")
+//TODO: check parents and mixins
+#define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, obj)
+#ifdef DEBUG
+#define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE((PN)obj,type)
+#else
+#define DBG_CHECK_TYPE(obj,type)
+#endif
 
 ///\class PNNumber
 /// Either a PN_INT immediate object (no struct) 0x...1
@@ -747,6 +751,7 @@ void potion_fatal(char *);
 void potion_allocation_error(void);
 PN potion_io_error(Potion *, const char *);
 PN potion_type_error(Potion *, PN);
+PN potion_type_error_want(Potion *, PN, const char *);
 void potion_syntax_error(Potion *, const char *, ...)
   __attribute__ ((format (printf, 2, 3)));
 PNType potion_kind_of(PN);
