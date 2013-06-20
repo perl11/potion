@@ -315,7 +315,7 @@ lib/libuv$(DLL): core/config.h core/potion.h \
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C 3rd/libuv libuv${DLL}
 	@cp 3rd/libuv/libuv${DLL} lib/
-	@if [ x${DLL} = x.so ]; then cd lib; ln -s libuv.so libuv.so.0.11; cd ..; fi
+	@-if [ x${DLL} = x.so ]; then cd lib; ln -s libuv.so libuv.so.0.11; cd ..; fi
 
 lib/libsregex.a: core/config.h core/potion.h \
   3rd/sregex/Makefile
