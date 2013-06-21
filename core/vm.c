@@ -334,7 +334,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   else \
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);
 
-static void potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
+static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
   if (numargs > 0) {  //allow fun() to return the closure
     if (numargs < cl->minargs)
       return potion_error
@@ -349,6 +349,7 @@ static void potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int num
 	(P, potion_str_format(P, "Too many arguments to %s. Allowed %d, given %d",
 			      AS_STR(cl), arity, numargs), 0, 0, 0);
   }
+  return PN_NIL;
 }
 
 /** the bytecode run-loop */
@@ -556,7 +557,8 @@ reentry:
             if (cl->method != (PN_F)potion_vm_proto) { //call into a lib or jit or ffi
               if (PN_IS_TUPLE(sig)) {
 		int arity = cl->arity;
-		potion_sig_check(P, cl, arity, numargs);
+		PN err = potion_sig_check(P, cl, arity, numargs);
+		if (err) return err;
                 for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
                   if (s) // default or zero: && !filled by NAMED (?)
@@ -576,7 +578,8 @@ reentry:
               args = &reg[op.a + 2];
               if (PN_IS_TUPLE(sig)) {
 		int arity = cl->arity;
-		potion_sig_check(P, cl, arity, numargs);
+		PN err = potion_sig_check(P, cl, arity, numargs);
+		if (err) return err;
                 for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
                   if (s) // default or zero: && !filled by NAMED (?)
