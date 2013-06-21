@@ -1,7 +1,8 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .i2 .o .opic .o2 .opic2 .textile .html
 .PHONY: all bins libs pn p2 static default config clean doc rebuild check test test.pn test.p2 \
-	bench tarball dist release install grammar doxygen website
+	bench tarball dist release install grammar doxygen website \
+	testable spectest_checkout spectest_init spectest_update
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
 
@@ -377,7 +378,7 @@ bench: bin/gc-bench${EXE} bin/potion${EXE}
 check: libs test.pn test.p2
 test:  libs test.pn test.p2
 
-test.pn: bin/potion${EXE} bin/potion-test${EXE}
+test.pn: bin/potion${EXE} libs bin/potion-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
 	LD_LIBRARY_PATH=`pwd`/lib/potion:$LD_LIBRARY_PATH \
@@ -432,7 +433,7 @@ test.pn: bin/potion${EXE} bin/potion-test${EXE}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test.p2: bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
+test.p2: bin/p2${EXE} libs bin/p2-test${EXE} bin/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running p2 API tests; \
 	LD_LIBRARY_PATH=`pwd`/lib:`pwd`/lib/potion:$LD_LIBRARY_PATH \
@@ -489,7 +490,7 @@ test.p2: bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-testable : bin/potion${EXE} bin/potion-test${EXE} libs bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
+testable : bin/potion${EXE} bin/p2${EXE} libs bin/potion-test${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 
 spectest_checkout : test/spec
 test/spec :
