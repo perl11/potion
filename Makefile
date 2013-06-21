@@ -489,6 +489,25 @@ test.p2: bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
+testable : bin/potion${EXE} bin/potion-test${EXE} libs bin/p2${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
+
+spectest_checkout : test/spec
+test/spec :
+	@${ECHO} UPDATE $@
+	@git submodule update --init test/spec
+
+spectest_init :
+	@git submodule add https://github.com/rakudo-p5/roast5 test/spec
+
+spectest_update :
+	-cd test/spec && git pull
+
+spectest: testable test/spectest.data
+	 perl test/harness --tests-from-file=test/spectest.data
+
+fulltest: testable test/spectest.data
+	 perl test/harness test/spec/*.t test/spec/*/*.t
+
 # for LTO gold -O4
 bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
