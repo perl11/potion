@@ -248,15 +248,46 @@ escu        = esc 'u' < hexl hexl hexl hexl > {
   int nbuf = 0;
   char utfc[4] = {0, 0, 0, 0};
   unsigned long code = PN_ATOI(yytext, yyleng, 16);
-  if (code < 0x80) {
+  if (code < 0x80) {          // 0xxxxxxx
     utfc[nbuf++] = code;
-  } else if (code < 0x7ff) {
+  } else if (code < 0x7ff) {  // 110xxxxx 10xxxxxx
+    if (code == 0xC0 || code == 0xC1)
+      YY_ERROR(G, "Invalid utf-8 unicode character (U+C0,U+C1)");
     utfc[nbuf++] = (code >> 6) | 0xc0;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
-  } else {
+  } else { // 1110xxxx 10xxxxxx 10xxxxxx
+    if (code >= 0xD800 && code < 0xDFFF) // utf-16 surrogate halves RFC 3629
+      YY_ERROR(G, "Invalid utf-8 unicode character (U+D800-U+DFFF)");
     utfc[nbuf++] = (code >> 12) | 0xe0;
     utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
+  }
+  P->pbuf = potion_asm_write(P, P->pbuf, utfc, nbuf);
+}
+escU       = esc 'U' < hexl hexl hexl hexl hexl? > {
+  int nbuf = 0;
+  char utfc[4] = {0, 0, 0, 0};
+  unsigned long code = PN_ATOI(yytext, yyleng, 16);
+  if (code < 0x80) {          // 0xxxxxxx
+    utfc[nbuf++] = code;
+  } else if (code < 0x7ff) {  // 110xxxxx 10xxxxxx
+    if (code == 0xC0 || code == 0xC1)
+      YY_ERROR(G, "Invalid utf-8 unicode character (U+C0,U+C1)");
+    utfc[nbuf++] = (code >> 6) | 0xc0;
+    utfc[nbuf++] = (code & 0x3f) | 0x80;
+  } else if (code < 0xffff) { // 1110xxxx 10xxxxxx 10xxxxxx
+    if (code >= 0xD800 && code < 0xDFFF) // utf-16 surrogate halves RFC 3629
+      YY_ERROR(G, "Invalid utf-8 unicode character (U+D800-U+DFFF)");
+    utfc[nbuf++] = (code >> 12) | 0xe0;
+    utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
+    utfc[nbuf++] = (code & 0x3f) | 0x80;
+  } else if (code < 0x10ffff) { // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    utfc[nbuf++] = (code >> 18) | 0xf0;
+    utfc[nbuf++] = ((code >> 12) & 0x3f) | 0x80;
+    utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
+    utfc[nbuf++] = (code & 0x3f) | 0x80;
+  } else {
+    YY_ERROR(G, "Invalid utf-8 unicode character (> U+10FFFF)");
   }
   P->pbuf = potion_asm_write(P, P->pbuf, utfc, nbuf);
 }
@@ -266,7 +297,7 @@ q2 = ["]
 e2 = '\\' ["] { P->pbuf = potion_asm_write(P, P->pbuf, "\"", 1) }
 c2 = < (!q2 !esc utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng) }
 str2 = q2 { P->pbuf = potion_asm_clear(P, P->pbuf) }
-       < (e2 | escn | escb | escf | escr | esct | escu | escc | c2)* >
+       < (e2 | escn | escb | escf | escr | esct | escu | escU | escc | c2)* >
        q2 { $$ = potion_bytes_string(P, PN_NIL, (PN)P->pbuf) }
 
 unq-char = '{' unq-char+ '}'
