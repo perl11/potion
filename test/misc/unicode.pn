@@ -1,0 +1,6 @@
+# https://github.com/fogus/potion/issues/33
+"snowman - \u2603 " print
+"bactrian - \u1f42b" print
+#=> snowman - ☃ bactrian - ὂbnil
+#TODO=> snowman - ☃ bactrian - 🐫nil
+
