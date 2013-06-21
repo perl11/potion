@@ -334,6 +334,23 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   else \
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);
 
+static void potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
+  if (numargs > 0) {  //allow fun() to return the closure
+    if (numargs < cl->minargs)
+      return potion_error
+	(P, (cl->minargs == arity
+	     ? potion_str_format(P, "Not enough arguments to %s. Required %d, given %d",
+				 AS_STR(cl), arity, numargs)
+	     : potion_str_format(P, "Not enough arguments to %s. Required %d to %d, given %d",
+				 AS_STR(cl), cl->minargs, arity, numargs)),
+	 0, 0, 0);
+    if (numargs > arity)
+      return potion_error
+	(P, potion_str_format(P, "Too many arguments to %s. Allowed %d, given %d",
+			      AS_STR(cl), arity, numargs), 0, 0, 0);
+  }
+}
+
 /** the bytecode run-loop */
 PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   vPN(Proto) f = (struct PNProto *)proto;
@@ -539,20 +556,7 @@ reentry:
             if (cl->method != (PN_F)potion_vm_proto) { //call into a lib or jit or ffi
               if (PN_IS_TUPLE(sig)) {
 		int arity = cl->arity;
-                if (numargs > 0) {  //allow fun() to return the closure
-                  if (numargs < cl->minargs)
-                    return potion_error
-                      (P, (cl->minargs == arity
-                           ? potion_str_format(P, "Not enough arguments to %s. Required %d, given %d",
-                                               AS_STR(cl), arity, numargs)
-                           : potion_str_format(P, "Not enough arguments to %s. Required %d to %d, given %d",
-                                               AS_STR(cl), cl->minargs, arity, numargs)),
-                       0, 0, 0);
-                  if (numargs > arity)
-                    return potion_error
-                      (P, potion_str_format(P, "Too many arguments to %s. Allowed %d, given %d",
-                                            AS_STR(cl), arity, numargs), 0, 0, 0);
-                }
+		potion_sig_check(P, cl, arity, numargs);
                 for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
                   if (s) // default or zero: && !filled by NAMED (?)
@@ -572,20 +576,7 @@ reentry:
               args = &reg[op.a + 2];
               if (PN_IS_TUPLE(sig)) {
 		int arity = cl->arity;
-                if (numargs > 0) {  //allow fun() to return the closure
-                  if (numargs < cl->minargs)
-                    return potion_error
-                      (P, (cl->minargs == arity
-                           ? potion_str_format(P, "Not enough arguments to %s. Required %d, given %d",
-                                               AS_STR(cl), arity, numargs)
-                           : potion_str_format(P, "Not enough arguments to %s. Required %d to %d, given %d",
-                                               AS_STR(cl), cl->minargs, arity, numargs)),
-                       0, 0, 0);
-                  if (numargs > arity)
-                    return potion_error
-                      (P, potion_str_format(P, "Too many arguments to %s. Allowed %d, given %d",
-                                            AS_STR(cl), arity, numargs), 0, 0, 0);
-                }
+		potion_sig_check(P, cl, arity, numargs);
                 for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
                   if (s) // default or zero: && !filled by NAMED (?)
