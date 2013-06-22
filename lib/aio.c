@@ -942,11 +942,11 @@ aio_read_stop(Potion *P, PN cl, PN self) {
 
 void Potion_Init_aio(Potion *P) {
   aio_vt = potion_type_new2(P, PN_TUSER, P->lobby, PN_STR("Aio"));
-#define DEF_AIO_VT(T)                                                            \
-  aio_##T##_vt = potion_type_new2(P, PN_TUSER, aio_vt, PN_STR("Aio_" _XSTR(t))); \
+#define DEF_AIO_VT(T,paren)							\
+  aio_##T##_vt = potion_type_new2(P, PN_TUSER, paren##_vt, PN_STR("Aio_" _XSTR(t))); \
   potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, 0))
-#define DEF_AIO_NEW_VT(T,args)						\
-  DEF_AIO_VT(T); potion_method(P->lobby, "aio_"_XSTR(T), aio_##T##_new, args);
+#define DEF_AIO_NEW_VT(T,paren,args)					\
+  DEF_AIO_VT(T,paren); potion_method(P->lobby, "aio_"_XSTR(T), aio_##T##_new, args);
 
   potion_define_global(P, PN_STR("AIO_RUN_DEFAULT"), PN_NUM(0));
   potion_define_global(P, PN_STR("AIO_RUN_ONCE"),   PN_NUM(1));
@@ -958,38 +958,38 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_vt, "version", aio_version, 0);
   potion_method(aio_vt, "version_string", aio_version_string, 0);
 
-  DEF_AIO_NEW_VT(tcp, "|loop=o");
-  DEF_AIO_NEW_VT(udp, "|loop=o");
-  DEF_AIO_NEW_VT(prepare, "|loop=o");
-  DEF_AIO_NEW_VT(check, "|loop=o");
-  DEF_AIO_NEW_VT(idle,  "|loop=o");
-  DEF_AIO_NEW_VT(timer, "|loop=o");
-  DEF_AIO_NEW_VT(fs_poll, "|loop=o");
-  DEF_AIO_NEW_VT(signal, "|loop=o");
-  DEF_AIO_NEW_VT(tty,  "file=o,readable=N|loop=o");
-  DEF_AIO_NEW_VT(pipe, "ipc=N|loop=o");
-  //DEF_AIO_NEW_VT(poll, "fd=N|loop=o");
-  DEF_AIO_NEW_VT(async, "cb=o|loop=o");
-  DEF_AIO_NEW_VT(fs_event, "filename=S,cb=o,flags=N|loop=o");
-  DEF_AIO_NEW_VT(mutex, 0);
-  DEF_AIO_NEW_VT(rwlock, 0);
-  DEF_AIO_NEW_VT(cond, 0);
-  DEF_AIO_NEW_VT(sem, "value=N");
-  DEF_AIO_NEW_VT(barrier, "count=N");
-  DEF_AIO_VT(loop);
-  DEF_AIO_VT(handle);
-  DEF_AIO_VT(process);
-  DEF_AIO_VT(stream); //TODO mixin with tcp,udp,pipe,tty
-  DEF_AIO_VT(req);
-  DEF_AIO_VT(connect);
-  DEF_AIO_VT(write);
-  DEF_AIO_VT(shutdown);
-  DEF_AIO_VT(udp_send);
-  DEF_AIO_VT(fs);
-  DEF_AIO_VT(work);
-  DEF_AIO_VT(getaddrinfo);
-  DEF_AIO_VT(cpu_info);
-  DEF_AIO_VT(interface_address);
+  DEF_AIO_VT(handle,aio);
+  DEF_AIO_VT(stream,aio);
+  DEF_AIO_NEW_VT(tcp,aio_stream,"|loop=o");
+  DEF_AIO_NEW_VT(udp,aio_stream,"|loop=o");
+  DEF_AIO_NEW_VT(tty,aio_stream,"file=o,readable=N|loop=o");
+  DEF_AIO_NEW_VT(pipe,aio_stream,"ipc=N|loop=o");
+  DEF_AIO_NEW_VT(prepare,aio,"|loop=o");
+  DEF_AIO_NEW_VT(check,aio,"|loop=o");
+  DEF_AIO_NEW_VT(idle,aio,"|loop=o");
+  DEF_AIO_NEW_VT(timer,aio,"|loop=o");
+  DEF_AIO_NEW_VT(fs_poll,aio,"|loop=o");
+  DEF_AIO_NEW_VT(signal,aio,"|loop=o");
+  //DEF_AIO_NEW_VT(poll,aio,"fd=N|loop=o");
+  DEF_AIO_NEW_VT(async,aio,"cb=o|loop=o");
+  DEF_AIO_NEW_VT(fs_event,aio,"filename=S,cb=o,flags=N|loop=o");
+  DEF_AIO_NEW_VT(mutex,aio,0);
+  DEF_AIO_NEW_VT(rwlock,aio,0);
+  DEF_AIO_NEW_VT(cond,aio,0);
+  DEF_AIO_NEW_VT(sem,aio,"value=N");
+  DEF_AIO_NEW_VT(barrier,aio,"count=N");
+  DEF_AIO_VT(loop,aio);
+  DEF_AIO_VT(process,aio);
+  DEF_AIO_VT(req,aio);
+  DEF_AIO_VT(connect,aio);
+  DEF_AIO_VT(write,aio);
+  DEF_AIO_VT(shutdown,aio);
+  DEF_AIO_VT(udp_send,aio);
+  DEF_AIO_VT(fs,aio);
+  DEF_AIO_VT(work,aio);
+  DEF_AIO_VT(getaddrinfo,aio);
+  DEF_AIO_VT(cpu_info,aio);
+  DEF_AIO_VT(interface_address,aio);
 
 #undef DEF_AIO_VT
 #undef DEF_AIO_INIT_VT
