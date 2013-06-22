@@ -479,10 +479,9 @@ PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
 }
 
 /**\memberof PNVtable
-   PNObject constructor.
-   Fails on metaclass and type.
-   \return PNObject or PN_NIL
-*/
+  PNObject constructor.
+  Fails on metaclass and type.
+  \return PNObject or PN_NIL */
 PN potion_object_new(Potion *P, PN cl, PN self) {
   vPN(Vtable) vt = (struct PNVtable *)self;
   if (PN_IS_METACLASS(vt)) // TODO: error
