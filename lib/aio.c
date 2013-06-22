@@ -24,19 +24,21 @@ PN aio_vt, aio_tcp_vt, aio_udp_vt, aio_loop_vt, aio_tty_vt, aio_pipe_vt, aio_pol
 
 //with wrapped callback
 #define DEF_AIO_CB_WRAP(T,H) \
-struct aio_##T##_s { \
+typedef struct aio_##T##_s aio_##T##_t; \
+struct aio_##T##_s {     \
   struct uv_##H##_s r;   \
   Potion *P;             \
   PN cl;                 \
   uv_##T##_cb cb;        \
-} aio_##T##_t
+}
 //without
 #define DEF_AIO_HANDLE_WRAP(T) \
+typedef struct aio_##T##_s aio_##T##_t; \
 struct aio_##T##_s {     \
   uv_##T##_t h;          \
   Potion *P;             \
   PN cl;                 \
-} aio_##T##_t
+}
 DEF_AIO_CB_WRAP(write,write);
 DEF_AIO_CB_WRAP(connect,connect);
 DEF_AIO_CB_WRAP(shutdown,shutdown);
@@ -90,6 +92,41 @@ aio_fs_event_cb(uv_fs_event_t* handle, const char* filename, int events, int sta
   char *data = (char*)(&wrap - sizeof(struct PNData) + sizeof(char*));
   if (cb) cb->method(wrap->P, wrap->cl, (PN)data, potion_str(wrap->P, filename),
 		     PN_NUM(events), PN_NUM(status));
+}
+/**\memberof aio_udp
+   This callback is invoked when a new UDP datagram is received.
+   \param handle aio_udp handle
+   \param nread int Number of bytes that have been received.
+     0 if there is no more data to read. You may
+     discard or repurpose the read buffer.
+     -1 if a transmission error was detected.
+   \param buf PNBytes with the received data
+   \param addr PNString
+   \param port PNNumber
+   \param flags PNNumber, One or more OR'ed AIO_UDP_* constants,
+      so far only AIO_UDP_PARTIAL is used.
+   \see http://nikhilm.github.io/uvbook/networking.html#udp */
+static void
+aio_udp_recv_cb(uv_udp_t* handle, ssize_t nread, uv_buf_t buf,
+    struct sockaddr* addr, unsigned flags) {
+  struct aio_udp_s* wrap = (struct aio_udp_s*)handle;
+  char ip[46];
+  int port;
+  struct sockaddr_in* addr_in = (struct sockaddr_in*)addr;
+  vPN(Closure) cb = PN_CLOSURE(wrap->h.recv_cb);
+  char *data = (char*)(&wrap - sizeof(struct PNData) + sizeof(char*));
+  if (addr_in->sin_family == AF_INET6) {
+    uv_ip6_name((struct sockaddr_in6*)addr, ip, 46);
+    port = ((struct sockaddr_in6*)addr)->sin6_port;
+  } else {
+    uv_ip4_name(addr_in, ip, 46);
+    port = addr_in->sin_port;
+  }
+  if (cb)
+    cb->method(wrap->P, wrap->cl, (PN)data, PN_NUM(nread),
+	       potion_byte_str2(wrap->P, buf.base, buf.len),
+	       potion_byte_str(wrap->P, ip),
+	       PN_NUM(port), PN_NUM(flags));
 }
 
 static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
@@ -654,7 +691,7 @@ aio_udp_recv_start(Potion *P, PN cl, PN udp, PN cb) {
   uv_udp_recv_cb recv_cb;
   if (PN_IS_CLOSURE(cb)) { //register user-callback. set cb ptr in req
     handle->h.recv_cb = (uv_udp_recv_cb)PN_CLOSURE(cb);
-    recv_cb = (uv_udp_recv_cb)NULL;//aio_udp_recv_cb;
+    recv_cb = aio_udp_recv_cb;
   }
   else if (PN_IS_FFIPTR(cb)) recv_cb = (uv_udp_recv_cb)cb; //c-level cb loaded via ffi
   else recv_cb = 0; //none
@@ -914,9 +951,11 @@ void Potion_Init_aio(Potion *P) {
 #define DEF_AIO_NEW_VT(T,args)						\
   DEF_AIO_VT(T); potion_method(P->lobby, "aio_"_XSTR(T), aio_##T##_new, args);
 
-  potion_define_global(P, PN_STR("aio_run_default"), PN_NUM(0));
-  potion_define_global(P, PN_STR("aio_run_once"),   PN_NUM(1));
-  potion_define_global(P, PN_STR("aio_run_nowait"), PN_NUM(2));
+  potion_define_global(P, PN_STR("AIO_RUN_DEFAULT"), PN_NUM(0));
+  potion_define_global(P, PN_STR("AIO_RUN_ONCE"),   PN_NUM(1));
+  potion_define_global(P, PN_STR("AIO_RUN_NOWAIT"), PN_NUM(2));
+  potion_define_global(P, PN_STR("AIO_UDP_IPV6ONLY"), PN_NUM(1));
+  potion_define_global(P, PN_STR("AIO_UDP_PARTIAL"), PN_NUM(2));
   potion_method(P->lobby, "aio_version", aio_version, 0);
   potion_method(P->lobby, "aio_version_string", aio_version_string, 0);
   potion_method(aio_vt, "version", aio_version, 0);
