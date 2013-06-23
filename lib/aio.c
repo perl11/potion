@@ -114,8 +114,8 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
   struct PNData *data = potion_data_alloc(P,	\
     sizeof(uv_##T##_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*)); \
   data->vt = aio_##T##_vt;			\
-  ((aio_##T##_t*)data)->P = P;			\
-  ((aio_##T##_t*)data)->cl = cl
+  ((aio_##T##_t*)PN_DATA(data))->P = P;		\
+  ((aio_##T##_t*)PN_DATA(data))->cl = cl
 #define DEF_AIO_NEW(T)				\
   uv_##T##_t *handle;				\
   DEF_AIO_NEW_NOINIT(T);			\
@@ -175,14 +175,14 @@ static PN aio_tcp_new(Potion *P, PN cl, PN self, PN loop) {
     sizeof(uv_tcp_t)+sizeof(Potion*)+sizeof(PN)+sizeof(void*));
   uv_loop_t* l;
   data->vt = aio_tcp_vt;
-  ((aio_tcp_t*)data)->P = P;
-  ((aio_tcp_t*)data)->cl = cl;
   handle = (uv_tcp_t*)PN_DATA(data);
   if (!loop) l = uv_default_loop();
   else if (PN_VTYPE(loop) == aio_loop_vt) l = (uv_loop_t*)PN_DATA(loop);
   else return potion_type_error(P, loop);
   if (uv_tcp_init(l, handle))
     return aio_last_error(P, "aio_tcp", l);
+  ((aio_tcp_t*)handle)->P = P;
+  ((aio_tcp_t*)handle)->cl = cl;
   return (PN)data;
 }
 /**\class aio_udp \memberof aio_udp
@@ -1000,12 +1000,17 @@ aio_timer_set_repeat(Potion *P, PN cl, PN self, PN repeat) {
 #undef AIO_CB_SET
 
 void Potion_Init_aio(Potion *P) {
-  aio_vt = potion_type_new2(P, PN_TUSER, P->lobby, PN_STR("Aio"));
-#define DEF_AIO_VT(T,paren)							\
-  aio_##T##_vt = potion_type_new2(P, PN_TUSER, paren##_vt, PN_STR("Aio_" _XSTR(t))); \
-  potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, 0))
-#define DEF_AIO_NEW_VT(T,paren,args)					\
-  DEF_AIO_VT(T,paren); potion_method(P->lobby, "aio_"_XSTR(T), aio_##T##_new, args);
+  aio_vt = potion_type_new(P, PN_TUSER, P->lobby); \
+  potion_define_global(P, PN_STR("Aio"), aio_vt);
+#define DEF_AIO_VT(T,paren) \
+  aio_##T##_vt = potion_type_new(P, PN_TUSER, paren##_vt); \
+  potion_define_global(P, PN_STR("Aio_" _XSTR(T)), aio_##T##_vt); \
+  potion_method(aio_##T##_vt, ""_XSTR(T), aio_##T##_new, 0)
+#define DEF_AIO_GLOBAL_VT(T,paren,args) \
+  DEF_AIO_VT(T,paren); \
+  potion_type_call_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, args)); \
+  potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, args)); \
+  potion_method(P->lobby, "aio_"_XSTR(T), aio_##T##_new, args)
 
   potion_define_global(P, PN_STR("AIO_RUN_DEFAULT"), PN_NUM(0));
   potion_define_global(P, PN_STR("AIO_RUN_ONCE"),   PN_NUM(1));
@@ -1019,31 +1024,31 @@ void Potion_Init_aio(Potion *P) {
 
   DEF_AIO_VT(handle,aio);
   DEF_AIO_VT(stream,aio);
-  DEF_AIO_NEW_VT(tcp,aio_stream,"|loop=o");
-  DEF_AIO_NEW_VT(udp,aio_stream,"|loop=o");
-  DEF_AIO_NEW_VT(tty,aio_stream,"file=o,readable=N|loop=o");
-  DEF_AIO_NEW_VT(pipe,aio_stream,"ipc=N|loop=o");
-  DEF_AIO_NEW_VT(prepare,aio,"|loop=o");
-  DEF_AIO_NEW_VT(check,aio,"|loop=o");
-  DEF_AIO_NEW_VT(idle,aio,"|loop=o");
-  DEF_AIO_NEW_VT(timer,aio,"|loop=o");
-  DEF_AIO_NEW_VT(fs_poll,aio,"|loop=o");
-  DEF_AIO_NEW_VT(signal,aio,"|loop=o");
-  //DEF_AIO_NEW_VT(poll,aio,"fd=N|loop=o");
-  DEF_AIO_NEW_VT(async,aio,"cb=o|loop=o");
-  DEF_AIO_NEW_VT(fs_event,aio,"filename=S,cb=o,flags=N|loop=o");
-  DEF_AIO_NEW_VT(mutex,aio,0);
-  DEF_AIO_NEW_VT(rwlock,aio,0);
-  DEF_AIO_NEW_VT(cond,aio,0);
-  DEF_AIO_NEW_VT(sem,aio,"value=N");
-  DEF_AIO_NEW_VT(barrier,aio,"count=N");
-  DEF_AIO_VT(loop,aio);
-  DEF_AIO_VT(process,aio);
+  DEF_AIO_GLOBAL_VT(tcp,aio_stream,"|loop=o");
+  DEF_AIO_GLOBAL_VT(udp,aio_stream,"|loop=o");
+  DEF_AIO_GLOBAL_VT(tty,aio_stream,"file=o,readable=N|loop=o");
+  DEF_AIO_GLOBAL_VT(pipe,aio_stream,"ipc=N|loop=o");
+  DEF_AIO_GLOBAL_VT(prepare,aio,"|loop=o");
+  DEF_AIO_GLOBAL_VT(check,aio,"|loop=o");
+  DEF_AIO_GLOBAL_VT(idle,aio,"|loop=o");
+  DEF_AIO_GLOBAL_VT(timer,aio,"|loop=o");
+  DEF_AIO_GLOBAL_VT(fs_poll,aio,"|loop=o");
+  DEF_AIO_GLOBAL_VT(signal,aio,"|loop=o");
+  //DEF_AIO_GLOBAL_VT(poll,aio,"fd=N|loop=o");
+  DEF_AIO_GLOBAL_VT(async,aio,"cb=o|loop=o");
+  DEF_AIO_GLOBAL_VT(fs_event,aio,"filename=S,cb=o,flags=N|loop=o");
+  DEF_AIO_GLOBAL_VT(mutex,aio,0);
+  DEF_AIO_GLOBAL_VT(rwlock,aio,0);
+  DEF_AIO_GLOBAL_VT(cond,aio,0);
+  DEF_AIO_GLOBAL_VT(sem,aio,"value=N");
+  DEF_AIO_GLOBAL_VT(barrier,aio,"count=N");
+  DEF_AIO_GLOBAL_VT(loop,aio,0);
+  DEF_AIO_GLOBAL_VT(process,aio,0);
   DEF_AIO_VT(req,aio);
-  DEF_AIO_VT(connect,aio);
+  DEF_AIO_VT(connect,aio_stream);
   DEF_AIO_VT(write,aio);
   DEF_AIO_VT(shutdown,aio);
-  DEF_AIO_VT(udp_send,aio);
+  DEF_AIO_VT(udp_send,aio_udp);
   DEF_AIO_VT(fs,aio);
   DEF_AIO_VT(work,aio);
   DEF_AIO_VT(getaddrinfo,aio);
