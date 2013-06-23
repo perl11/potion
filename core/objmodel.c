@@ -224,9 +224,9 @@ void potion_type_constructor_is(PN vt, PN cl) {
   ((struct PNVtable *)vt)->ctor = cl;
 }
 /// create a user-class (ie type)
-///\param cl:   set the ctor
-///\param self: lobby or another type
-///\param ivars: object members
+///\param cl:   PNClosure or nil, set the ctor, uses the parent ctor if nil
+///\param self: PNVtable the parent class, lobby or another type
+///\param ivars: PNTuple of object members
 PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   PN parent = (self == P->lobby ? PN_VTABLE(PN_TOBJECT) : self);
   PN pvars = ((struct PNVtable *)parent)->ivars;
@@ -249,7 +249,7 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   return self;
 }
 
-/// find class by name. At first only system metaclasses (types), no user classes yet.
+/// find class by name.
 PN potion_class_find(Potion *P, PN name) {
   int i;
   for (i=0; i < PN_FLEX_SIZE(P->vts); i++) {
@@ -318,7 +318,7 @@ PN potion_proto_method(Potion *P, PN cl, PN self, PN args) {
 PN potion_getter_method(Potion *P, PN cl, PN self) {
   return PN_CLOSURE(cl)->data[0];
 }
-
+/// define a method for a class
 PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   int ret;
   PN cl;
@@ -379,6 +379,7 @@ PN potion_bind(Potion *P, PN rcv, PN msg) {
   } else {
     vt = PN_VTABLE(t);
   }
+  //TODO p2: for multiple parents walk the c3 resolution
   while (1) {
     closure = ((msg == PN_lookup) && (t == PN_TVTABLE))
       ? potion_lookup(P, 0, vt, msg)
