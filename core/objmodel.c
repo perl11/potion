@@ -181,7 +181,7 @@ void potion_add_metaclass(Potion *P, vPN(Vtable) vt) {
   meta->meta = PN_NIL;
   PN_TOUCH(P->vts);
 }
-/// create a type derived from self
+/// create a non-user type, derived from self
 PN potion_type_new(Potion *P, PNType t, PN self) {
   vPN(Vtable) vt = PN_CALLOC_N(PN_TVTABLE, struct PNVtable, 0);
   vt->type = t;
@@ -228,7 +228,7 @@ void potion_type_constructor_is(PN vt, PN cl) {
 ///\param self: PNVtable the parent class, lobby or another type
 ///\param ivars: PNTuple of object members
 PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
-  PN parent = (self == P->lobby ? PN_VTABLE(PN_TOBJECT) : self);
+  PN parent = ((!self || self == P->lobby) ? PN_VTABLE(PN_TOBJECT) : self);
   PN pvars = ((struct PNVtable *)parent)->ivars;
   PNType t = PN_FLEX_SIZE(P->vts) + PN_TNIL;
   PN_FLEX_NEEDS(1, P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
