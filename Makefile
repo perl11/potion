@@ -398,8 +398,6 @@ test:  libs test.pn test.p2
 test.pn: bin/potion${EXE} libs bin/potion-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
-	LD_LIBRARY_PATH=`pwd`/lib/potion:$LD_LIBRARY_PATH \
-	export LD_LIBRARY_PATH; \
 	${RUNPRE}potion-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \
@@ -453,8 +451,6 @@ test.pn: bin/potion${EXE} libs bin/potion-test${EXE}
 test.p2: bin/p2${EXE} libs bin/p2-test${EXE} bin/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running p2 API tests; \
-	LD_LIBRARY_PATH=`pwd`/lib:`pwd`/lib/potion:$LD_LIBRARY_PATH \
-	export LD_LIBRARY_PATH; \
 	${RUNPRE}p2-test; \
 	${ECHO} running GC tests; \
 	${RUNPRE}gc-test; \
@@ -638,3 +634,10 @@ realclean: clean
 	@rm -rf HTML
 	@find . -name \*.gcov -delete
 
+test.c: bin/potion${EXE}
+	f=test/classes/creature.pn; \
+	look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
+	for=`bin/potion -I -B $$f | ${SED} "s/\n$$//"`; \
+	if [ "$$look" != "$$for" ]; then \
+	  ${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
+	fi
