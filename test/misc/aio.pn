@@ -1,7 +1,8 @@
 #TODO: in work
 load "aio"
 tcp = aio_tcp
-tcp class name print
+#tcp class name print
+#tcp print
 connected = 0
 connect_cb = (req,status):
   " connected " print
