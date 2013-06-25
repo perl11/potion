@@ -147,12 +147,36 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
 #define CHECK_AIO_STREAM(stream) \
   { \
    PNType _t = PN_VTYPE(stream);  \
-   if (_t != PN_VTABLE(aio_stream_type) &&		    \
-       _t != PN_VTABLE(aio_tcp_type) &&				      \
-       _t != PN_VTABLE(aio_udp_type) &&				      \
-       _t != PN_VTABLE(aio_pipe_type) &&				      \
-       _t != PN_VTABLE(aio_tty_type))				      \
-     return potion_type_error_want(P, stream, "aio_stream"); \
+   if (_t != PN_VTABLE(aio_stream_type) &&                              \
+       _t != PN_VTABLE(aio_tcp_type) &&                                 \
+       _t != PN_VTABLE(aio_udp_type) &&                                 \
+       _t != PN_VTABLE(aio_pipe_type) &&                                \
+       _t != PN_VTABLE(aio_tty_type))                                   \
+     return potion_type_error_want(P, stream, "Aio_stream");            \
+  }
+#define FATAL_AIO_TYPE(self, T) \
+  if (PN_VTYPE(self) != PN_VTABLE(aio_##T##_type)) {                    \
+    fprintf(stderr, "** Invalid type %s, expected %s",                  \
+            PN_IS_PTR(self)? AS_STR(potion_send(PN_VTABLE(self), PN_name)) \
+            : PN_IS_NIL(self) ? NIL_NAME                                \
+            : PN_IS_NUM(self) ? "Number" : "Boolean", ""_XSTR(T));      \
+    exit(1);                                                            \
+  }
+#define FATAL_AIO_STREAM(stream) \
+  { \
+    PNType _t = PN_VTYPE(stream);                                       \
+    if (_t != PN_VTABLE(aio_stream_type) &&                             \
+        _t != PN_VTABLE(aio_tcp_type) &&                                \
+        _t != PN_VTABLE(aio_udp_type) &&                                \
+        _t != PN_VTABLE(aio_pipe_type) &&                               \
+        _t != PN_VTABLE(aio_tty_type))                                  \
+      {                                                                 \
+        fprintf(stderr, "** Invalid type %s, expected %s",              \
+                PN_IS_PTR(stream)? AS_STR(potion_send(PN_VTABLE(stream), PN_name)) \
+                : PN_IS_NIL(stream) ? NIL_NAME                            \
+                : PN_IS_NUM(stream) ? "Number" : "Boolean", "Aio_stream");\
+        exit(1);                                                        \
+      }                                                                 \
   }
 
 //cb wrappers
@@ -161,7 +185,7 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);              \
   PN data = (PN)((char*)&wrap - sizeof(struct PNData) + sizeof(char*)); \
   Potion *P = wrap->P;    \
-  CHECK_AIO_TYPE(data,T); \
+  FATAL_AIO_TYPE(data,T); \
   if (cb) cb->method(P, wrap->cl, data, PN_NUM(status))
 
 /**\class aio_tcp \memberof Lobby
@@ -461,7 +485,7 @@ aio_read_cb(uv_stream_t* stream, ssize_t nread, uv_buf_t buf) {
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);
   PN data = (PN)((char*)&wrap - sizeof(struct PNData) + sizeof(char*));
   Potion *P = wrap->P;
-  CHECK_AIO_STREAM(data);
+  FATAL_AIO_STREAM(data);
   if (cb)
     cb->method(P, wrap->cl, (PN)data, PN_NUM(nread),
                potion_byte_str2(wrap->P, buf.base, buf.len));
@@ -472,7 +496,7 @@ aio_read2_cb(uv_pipe_t* pipe, ssize_t nread, uv_buf_t buf, uv_handle_type pendin
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);
   PN data = (PN)((char*)&wrap - sizeof(struct PNData) + sizeof(char*));
   Potion *P = wrap->P;
-  CHECK_AIO_TYPE(data, pipe);
+  FATAL_AIO_TYPE(data, pipe);
   if (cb)
     cb->method(P, wrap->cl, (PN)data, PN_NUM(nread),
 	       potion_byte_str2(wrap->P, buf.base, buf.len), PN_NUM(pending));
