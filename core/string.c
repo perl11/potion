@@ -150,6 +150,51 @@ static size_t potion_utf8char_offset(const char *s, size_t index) {
   return i;
 }
 
+/* By Bjoern Hoehrmann
+  from http://lists.w3.org/Archives/Public/www-archive/2009Apr/0001.html
+
+  The first 128 entries are tuples of 4 bit values. The lower bits
+  are a mask that when xor'd with a byte removes the leading utf-8
+  bits. The upper bits are a character class number. The remaining
+  160 entries are a minimal deterministic finite automaton. It has
+  10 states and each state has 13 character class transitions, and
+  3 unused transitions for padding reasons. When the automaton en-
+  ters state zero, it has found a complete valid utf-8 code point;
+  if it enters state one then the input sequence is not utf-8. The
+  start state is state nine. Note the mixture of octal and decimal
+  for stylistic reasons.
+  The state is ignored in this code,  since slice already ensures
+  that the utf8 codepoint is not malformed. */
+static const uint8_t utf8d[] = {
+  070,070,070,070,070,070,070,070,070,070,070,070,070,070,070,070,
+  050,050,050,050,050,050,050,050,050,050,050,050,050,050,050,050,
+  030,030,030,030,030,030,030,030,030,030,030,030,030,030,030,030,
+  030,030,030,030,030,030,030,030,030,030,030,030,030,030,030,030,
+  204,204,188,188,188,188,188,188,188,188,188,188,188,188,188,188,
+  188,188,188,188,188,188,188,188,188,188,188,188,188,188,188,188,
+  174,158,158,158,158,158,158,158,158,158,158,158,158,142,126,126,
+  111, 95, 95, 95, 79,207,207,207,207,207,207,207,207,207,207,207,
+
+  0,1,1,1,8,7,6,4,5,4,3,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,4,4,1,1,1,1,1,1,1,1,1,1,1,1,1,1,4,4,4,1,1,1,1,1,1,1,1,1,1,1,1,
+  1,1,1,4,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,8,7,6,4,5,4,3,2,1,1,1,1,
+};
+
+static unsigned long potion_utf8char_decode(const char *s) {
+  unsigned char data, byte;
+  unsigned long unic = 0;
+  while ((byte = *s++)) {
+    if (byte >= 0x80) {
+      data = utf8d[ byte - 0x80 ];
+      byte = (byte ^ (uint8_t)(data << 4));
+    }
+    unic = (unic << 6) | byte;
+  }
+  return unic;
+}
+
 inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
   int i = PN_INT(index);
   int corrected;
@@ -208,22 +253,29 @@ static PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
 }
 
 ///\memberof PNString
-///\memberof PNBytes
-/// "ord" method for PNString and PNBytes. return nil on strings longer than 1 char
-///\return PNNumber
-static PN potion_str_ord(Potion *P, PN cl, PN self) {
-  self = potion_fwd(self);
-  if (PN_STR_LEN(self) != 1)
-    return PN_NIL;
-  return PN_NUM(PN_STR_PTR(self)[0]);
-}
-
-///\memberof PNString
 /// type_call_is for PNString. (?)
 ///\param index PNNumber
 ///\return PNString substring index .. index+1
 static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
   return potion_str_slice(P, cl, self, index, PN_NUM(PN_INT(index) + 1));
+}
+
+///\memberof PNString
+///\memberof PNBytes
+/// "ord" method for PNString and PNBytes. return nil on strings longer than 1 char
+///\param index int (optional, default: 0)
+///\return PNNumber
+static PN potion_str_ord(Potion *P, PN cl, PN self, PN index) {
+  self = potion_fwd(self);
+  long len = potion_cp_strlen_utf8(PN_STR_PTR(self));
+  if (len == PN_STR_LEN(self) && index < len) {
+    char *s = PN_STR_PTR(self);
+    return PN_NUM(s[PN_INT(index)]);
+  }
+  else {
+    return PN_NUM(potion_utf8char_decode
+		  (PN_STR_PTR(potion_str_at(P, cl, self, index))));
+  }
 }
 
 PN potion_byte_str(Potion *P, const char *str) {
@@ -385,7 +437,7 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "slice", potion_str_slice, "start=N,end=N");
   potion_method(str_vt, "bytes", potion_str_bytes, 0);
   potion_method(str_vt, "+", potion_str_add, "str=S");
-  potion_method(str_vt, "ord", potion_str_ord, 0);
+  potion_method(str_vt, "ord", potion_str_ord, "|index=N");
   potion_method(str_vt, "cmp", potion_str_cmp, "str=o");
   
   potion_type_call_is(byt_vt, PN_FUNC(potion_bytes_at, 0));

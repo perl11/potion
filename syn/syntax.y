@@ -264,7 +264,7 @@ escu        = esc 'u' < hexl hexl hexl hexl > {
   }
   P->pbuf = potion_asm_write(P, P->pbuf, utfc, nbuf);
 }
-escU       = esc 'U' < hexl hexl hexl hexl hexl? > {
+escU       = esc 'U' '{' < hexl+ > '}' {
   int nbuf = 0;
   char utfc[4] = {0, 0, 0, 0};
   unsigned long code = PN_ATOI(yytext, yyleng, 16);
