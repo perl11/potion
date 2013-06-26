@@ -1132,11 +1132,11 @@ aio_timer_set_repeat(Potion *P, PN cl, PN self, PN repeat) {
 
 void Potion_Init_aio(Potion *P) {
   PN aio_vt = potion_class(P, 0, 0, 0);
-  aio_type = PN_FLEX_SIZE(P->vts) + PN_TNIL - 1;
+  aio_type = PN_FLEX_SIZE(P->vts) + PN_TNIL;
   potion_define_global(P, PN_STR("Aio"), aio_vt);
 #define DEF_AIO_VT(T,paren) \
   PN aio_##T##_vt = potion_class(P, 0, paren##_vt, 0);	\
-  aio_##T##_type = PN_FLEX_SIZE(P->vts) + PN_TNIL - 1; \
+  aio_##T##_type = PN_FLEX_SIZE(P->vts) + PN_TNIL; \
   potion_define_global(P, PN_STR("Aio_" _XSTR(T)), aio_##T##_vt); \
   potion_method(aio_##T##_vt, ""_XSTR(T), aio_##T##_new, 0)
 #define DEF_AIO_GLOBAL_VT(T,paren,args) \
