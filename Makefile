@@ -545,7 +545,7 @@ bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
 
 bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK $@
-	@if ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS} ${EXTLIBS}; then true; else \
+	@if ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ ${OBJ2} ${OBJ_P2_SYN} ${LIBS}; fi
 
 dist: bins libs static doc ${SRC_SYN} ${SRC_P2_SYN}
