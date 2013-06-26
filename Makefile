@@ -55,7 +55,8 @@ PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 #EXTLIBS = $(foreach m,uv pcre,lib/lib$m.a)
 #EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv -L3rd/libtommath -llibtommath
-#EXTLIBS = -luv -lpcre
+EXTLIBS = -Llib -luv -lpcre
+EXTLIBDEPS = lib/libpcre${DLL} lib/libuv${DLL}
 #DYNLIBS = $(foreach m,readline buffile aio,lib/potion/$m${LOADEXT})
 DYNLIBS = $(foreach m,readline buffile,lib/potion/$m${LOADEXT})
 OBJS = .o .o2
@@ -248,15 +249,15 @@ ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@[ -d bin ] || mkdir bin
 	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
-bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a lib/libpcre.a lib/libuv.a
+bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${EXTLIBDEPS}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} lib/libpotion.a lib/libpcre.a lib/libuv.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} lib/libpotion.a ${LIBS} ${EXTLIBS}
 
-bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a lib/libpcre.a lib/libuv.a
+bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${EXTLIBDEPS}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a lib/libpcre.a lib/libuv.a ${LIBS}
+	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS} ${EXTLIBS}
 
 lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
@@ -327,6 +328,12 @@ lib/libpcre.a: core/config.h core/potion.h \
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C 3rd/pcre CC="${CC}"
 	@cp 3rd/pcre/.libs/libpcre.a lib/
+
+lib/libpcre$(DLL): core/config.h core/potion.h \
+  3rd/pcre/Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C 3rd/pcre CC="${CC}"
+	@cp 3rd/pcre/.libs/libpcre${DLL}* lib/
 
 # DYNLIBS
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \

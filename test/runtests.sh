@@ -12,6 +12,8 @@ count=0; failed=0; pass=0
 EXT=pn
 cmdi="$cmd -I"; cmdx="$cmdi -X"
 cmdc="$cmd -c"; extc=b
+old_LIBRARY_PATH="$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="lib:$LD_LIBRARY_PATH"
 
 if test -z $1; then
     ${ECHO} running potion API tests
@@ -121,3 +123,4 @@ else
     ${ECHO} "OK ($count tests)"
 fi
 	    
+export LD_LIBRARY_PATH="$old_LIBRARY_PATH"
