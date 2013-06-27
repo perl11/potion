@@ -243,8 +243,9 @@ void potion_error_init(Potion *P) {
 }
 
 static inline char *potion_type_name(Potion *P, PN obj) {
+  obj = potion_fwd(obj);
   return PN_IS_PTR(obj)
-    ? AS_STR(potion_send(PN_VTABLE(obj), PN_name))
+    ? AS_STR(potion_send(PN_VTABLE(PN_TYPE(obj)), PN_string))
     : PN_IS_NIL(obj) ? NIL_NAME
       : PN_IS_NUM(obj) ? "Number"
         : "Boolean";

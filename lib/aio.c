@@ -24,7 +24,7 @@ PNType aio_type, aio_tcp_type, aio_udp_type, aio_loop_type, aio_tty_type, aio_pi
 
 #define AIO_DATA(T,ARG) \
   (aio_##T##_t*)PN_DATA(potion_fwd(ARG)); \
-  if (PN_VTYPE(ARG) != PN_VTABLE(aio_##T##_type)) return potion_type_error_want(P, ARG, ""_XSTR(T))
+  if (PN_VTYPE(ARG) != aio_##T##_type) return potion_type_error_want(P, ARG, ""_XSTR(T))
 #define AIO_STREAM(ARG) \
   (aio_stream_t*)PN_DATA(potion_fwd(ARG)); \
   CHECK_AIO_STREAM(ARG)
@@ -75,7 +75,7 @@ DEF_AIO_CB_WRAP(pipe);
 DEF_AIO_HANDLE_WRAP(process);
 DEF_AIO_CB_WRAP1(stream,stream,read);
 DEF_AIO_HANDLE_WRAP(tty);
-DEF_AIO_HANDLE_WRAP(req);
+DEF_AIO_CB_WRAP(req);
 DEF_AIO_CB_WRAP1(tcp,tcp,read);
 DEF_AIO_CB_WRAP1(udp,udp,udp_recv);
 DEF_AIO_CB_WRAP(udp_send);
@@ -123,7 +123,7 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
   uv_loop_t* l;                                 \
   DEF_AIO_NEW(T);				\
   if (!loop) l = uv_default_loop();             \
-  else if (PN_VTYPE(loop) == PN_VTABLE(aio_loop_type))	\
+  else if (PN_VTYPE(loop) == aio_loop_type)	\
     l = (uv_loop_t*)PN_DATA(loop);		\
   else return potion_type_error(P, loop);
 #define DEF_AIO_NEW_LOOP_INIT(T)		 \
@@ -143,19 +143,19 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
 
 //TODO: check inheritence
 #define CHECK_AIO_TYPE(self, T) \
-  if (PN_VTYPE(self) != PN_VTABLE(aio_##T##_type)) return potion_type_error_want(P, self, ""_XSTR(T))
+  if (PN_VTYPE(self) != aio_##T##_type) return potion_type_error_want(P, self, ""_XSTR(T))
 #define CHECK_AIO_STREAM(stream) \
   { \
    PNType _t = PN_VTYPE(stream);  \
-   if (_t != PN_VTABLE(aio_stream_type) &&                              \
-       _t != PN_VTABLE(aio_tcp_type) &&                                 \
-       _t != PN_VTABLE(aio_udp_type) &&                                 \
-       _t != PN_VTABLE(aio_pipe_type) &&                                \
-       _t != PN_VTABLE(aio_tty_type))                                   \
-     return potion_type_error_want(P, stream, "Aio_stream");            \
+   if (_t != aio_stream_type &&                              \
+       _t != aio_tcp_type &&                                 \
+       _t != aio_udp_type &&                                 \
+       _t != aio_pipe_type &&                                \
+       _t != aio_tty_type)                                   \
+     return potion_type_error_want(P, stream, "Aio_stream"); \
   }
 #define FATAL_AIO_TYPE(self, T) \
-  if (PN_VTYPE(self) != PN_VTABLE(aio_##T##_type)) {                    \
+  if (PN_VTYPE(self) != aio_##T##_type) {				\
     fprintf(stderr, "** Invalid type %s, expected %s",                  \
             PN_IS_PTR(self)? AS_STR(potion_send(PN_VTABLE(self), PN_name)) \
             : PN_IS_NIL(self) ? NIL_NAME                                \
@@ -164,23 +164,23 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
   }
 #define FATAL_AIO_STREAM(stream) \
   { \
-    PNType _t = PN_VTYPE(stream);                                       \
-    if (_t != PN_VTABLE(aio_stream_type) &&                             \
-        _t != PN_VTABLE(aio_tcp_type) &&                                \
-        _t != PN_VTABLE(aio_udp_type) &&                                \
-        _t != PN_VTABLE(aio_pipe_type) &&                               \
-        _t != PN_VTABLE(aio_tty_type))                                  \
-      {                                                                 \
-        fprintf(stderr, "** Invalid type %s, expected %s",              \
+    PNType _t = PN_VTYPE(stream);			     \
+    if (_t != aio_stream_type &&                             \
+        _t != aio_tcp_type &&                                \
+        _t != aio_udp_type &&                                \
+        _t != aio_pipe_type &&                               \
+        _t != aio_tty_type)                                  \
+      {                                                      \
+        fprintf(stderr, "** Invalid type %s, expected %s",   \
                 PN_IS_PTR(stream)? AS_STR(potion_send(PN_VTABLE(stream), PN_name)) \
                 : PN_IS_NIL(stream) ? NIL_NAME                            \
                 : PN_IS_NUM(stream) ? "Number" : "Boolean", "Aio_stream");\
-        exit(1);                                                        \
-      }                                                                 \
+        exit(1);                                                          \
+      }                                                                   \
   }
 
 //cb wrappers
-#define DEF_AIO_CB(T)			       \
+#define DEF_AIO_CB(T)				       \
   aio_##T##_t* wrap = (aio_##T##_t*)req;	       \
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);              \
   PN data = (PN)((char*)&wrap - sizeof(struct PNData) + sizeof(char*)); \
@@ -200,7 +200,7 @@ static PN aio_tcp_new(Potion *P, PN cl, PN self, PN loop) {
   handle = (uv_tcp_t*)PN_DATA(data);
   data->vt = aio_tcp_type;
   if (!loop) l = uv_default_loop();
-  else if (PN_VTYPE(loop) == PN_VTABLE(aio_loop_type))
+  else if (PN_VTYPE(loop) == aio_loop_type)
     l = (uv_loop_t*)PN_DATA(loop);
   else return potion_type_error(P, loop);
   if (uv_tcp_init(l, handle))
@@ -523,7 +523,7 @@ static PN
 aio_run(Potion *P, PN cl, PN self, PN loop, PN mode) {
   uv_loop_t* l;
   if (!loop) l = uv_default_loop();
-  else if (PN_VTYPE(loop) == PN_VTABLE(aio_loop_type))
+  else if (PN_VTYPE(loop) == aio_loop_type)
     l = (uv_loop_t*)PN_DATA(loop);
   else return potion_type_error(P, loop);
   if (mode) PN_CHECK_TYPE(mode,PN_TNUMBER);
@@ -606,7 +606,7 @@ aio_tcp_getpeername(Potion *P, PN cl, PN tcp) {
 static PN
 aio_tcp_connect(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
-  aio_connect_t *request = AIO_DATA(connect,req);
+  aio_connect_t *request = (aio_connect_t*)PN_DATA(potion_fwd(req));
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
   struct sockaddr_in ip4 = uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port));
@@ -619,7 +619,7 @@ aio_tcp_connect(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
 static PN
 aio_tcp_connect6(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
-  aio_connect_t *request = AIO_DATA(connect,req);
+  aio_connect_t *request = (aio_connect_t*)PN_DATA(potion_fwd(req));
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
   struct sockaddr_in6 ip6 = uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port));
@@ -738,7 +738,8 @@ aio_udp_send(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN po
 static PN
 aio_udp_send6(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN port, PN cb) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
-  aio_udp_send_t *request = AIO_DATA(udp_send, req);
+  aio_udp_send_t *request = (aio_udp_send_t*)PN_DATA(potion_fwd(req));
+  //aio_udp_send_t *request = AIO_DATA(udp_send, req);
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
   struct sockaddr_in6 ip6 = uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port));
@@ -1132,11 +1133,11 @@ aio_timer_set_repeat(Potion *P, PN cl, PN self, PN repeat) {
 
 void Potion_Init_aio(Potion *P) {
   PN aio_vt = potion_class(P, 0, 0, 0);
-  aio_type = PN_FLEX_SIZE(P->vts) + PN_TNIL;
+  aio_type = PN_FLEX_SIZE(P->vts) + PN_TNIL - 2; //(vPN(Vtable)aio_vt)->type;
   potion_define_global(P, PN_STR("Aio"), aio_vt);
 #define DEF_AIO_VT(T,paren) \
   PN aio_##T##_vt = potion_class(P, 0, paren##_vt, 0);	\
-  aio_##T##_type = PN_FLEX_SIZE(P->vts) + PN_TNIL; \
+  aio_##T##_type = PN_FLEX_SIZE(P->vts) + PN_TNIL - 2; \
   potion_define_global(P, PN_STR("Aio_" _XSTR(T)), aio_##T##_vt); \
   potion_method(aio_##T##_vt, ""_XSTR(T), aio_##T##_new, 0)
 #define DEF_AIO_GLOBAL_VT(T,paren,args) \
