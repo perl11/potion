@@ -868,5 +868,6 @@ PN_F potion_jit_proto(Potion *, PN);
 
 PN potion_load(Potion *, PN, PN, PN);
 PN potion_class_find(Potion *, PN);
+PNType potion_class_type(Potion *, PN);
 
 #endif

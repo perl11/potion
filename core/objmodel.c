@@ -256,6 +256,11 @@ PN potion_class_find(Potion *P, PN name) {
   }
   return PN_NIL;
 }
+/// \return type for the vtable (struct PNVtable only defined in table.h, not exported)
+PNType potion_class_type(Potion *P, PN class) {
+  struct PNVtable *vt = (struct PNVtable *)potion_fwd(class);
+  return vt->type;
+}
 
 PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
   struct PNVtable *vt = (struct PNVtable *)self;
