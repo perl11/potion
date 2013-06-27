@@ -6,9 +6,7 @@ connect_cb = (req,status):
   "connected" print
   connected++
   .
-#tcp class name print
 tcp connect(Aio_connect, "127.0.0.1", 22, connect_cb)
-if (connected == 0): print "connected".
+if (connected == 0): "connected" print.
 ""
-#TODO=> connected
-#=> 
+#=> connected
