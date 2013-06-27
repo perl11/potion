@@ -1,6 +1,6 @@
 /** \file lib/aio.c
   asynch event-driven non-blocking IO, via libuv, on files, network streams, processes.
-  \class aio
+  \class Aio
 
   \see 3rd/libuv/include/uv.h and http://nikhilm.github.io/uvbook/basics.html
 
@@ -21,13 +21,6 @@ PNType aio_type, aio_tcp_type, aio_udp_type, aio_loop_type, aio_tty_type, aio_pi
   aio_rwlock_type, aio_sem_type, aio_cond_type, aio_barrier_type, aio_check_type,
   aio_handle_type, aio_process_type, aio_stream_type, aio_req_type, aio_connect_type, aio_write_type, aio_shutdown_type,
   aio_udp_send_type, aio_fs_type, aio_work_type, aio_getaddrinfo_type, aio_cpu_info_type, aio_interface_address_type;
-
-#define AIO_DATA(T,ARG) \
-  (aio_##T##_t*)PN_DATA(potion_fwd(ARG)); \
-  if (PN_VTYPE(ARG) != aio_##T##_type) return potion_type_error_want(P, ARG, ""_XSTR(T))
-#define AIO_STREAM(ARG) \
-  (aio_stream_t*)PN_DATA(potion_fwd(ARG)); \
-  CHECK_AIO_STREAM(ARG)
 
 //with wrapped callback
 #define DEF_AIO_CB_WRAP(T) \
@@ -88,8 +81,9 @@ DEF_AIO_HANDLE_WRAP(mutex);
 DEF_AIO_HANDLE_WRAP(rwlock);
 #undef DEF_AIO_CB_WRAP
 #undef DEF_AIO_HANDLE_WRAP
+#undef DEF_AIO_CB_WRAP1
 
-/**\memberof aio_fs_event
+/**\memberof Aio_fs_event
   The aio_fs_event callback will receive the following arguments:
   \param filename
   \param events UV_RENAME=1 or UV_CHANGE=2
@@ -110,15 +104,13 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
                                            uv_strerror(err)), 0, 0, 0);
 }
 
-#define DEF_AIO_NEW_NOINIT(T)			\
-  struct PNData *data = potion_data_alloc(P, sizeof(aio_##T##_t)); \
-  data->vt = aio_##T##_type;			\
-  ((aio_##T##_t*)data->data)->P = P;		\
-  ((aio_##T##_t*)data->data)->cl = cl
-#define DEF_AIO_NEW(T)				\
+#define DEF_AIO_NEW(T)                          \
   uv_##T##_t *handle;				\
-  DEF_AIO_NEW_NOINIT(T);			\
-  handle = (uv_##T##_t*)PN_DATA(data)
+  struct PNData * volatile data = potion_data_alloc(P, sizeof(aio_##T##_t)); \
+  data->vt = aio_##T##_type;			\
+  handle = (uv_##T##_t*)PN_DATA(data);          \
+  ((aio_##T##_t*)handle)->P = P;		\
+  ((aio_##T##_t*)handle)->cl = cl
 #define DEF_AIO_NEW_LOOP(T)			\
   uv_loop_t* l;                                 \
   DEF_AIO_NEW(T);				\
@@ -143,33 +135,37 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
 
 //TODO: check inheritence
 #define CHECK_AIO_TYPE(self, T) \
-  if (PN_VTYPE(self) != aio_##T##_type) return potion_type_error_want(P, self, ""_XSTR(T))
-#define CHECK_AIO_STREAM(stream) \
-  { \
-   PNType _t = PN_VTYPE(stream);  \
-   if (_t != aio_stream_type &&                              \
-       _t != aio_tcp_type &&                                 \
-       _t != aio_udp_type &&                                 \
-       _t != aio_pipe_type &&                                \
-       _t != aio_tty_type)                                   \
-     return potion_type_error_want(P, stream, "Aio_stream"); \
+  if (!potion_bind(P, self, PN_STR("Aio_"_XSTR(T)))) return potion_type_error_want(P, self, ""_XSTR(T))
+//if (PN_VTYPE(self) != aio_##T##_type) return potion_type_error_want(P, self, ""_XSTR(T))
+#define CHECK_AIO_STREAM(stream)                             \
+  {                                                          \
+    PNType _t = PN_VTYPE(stream);                            \
+    if (_t != aio_stream_type &&                             \
+        _t != aio_tcp_type &&                                \
+        _t != aio_udp_type &&                                \
+        _t != aio_pipe_type &&                               \
+        _t != aio_tty_type &&                                \
+        !potion_bind(P, stream, PN_STR("readable")))         \
+      return potion_type_error_want(P, stream, "Aio_stream");\
   }
+//if (PN_VTYPE(self) != aio_##T##_type) {
 #define FATAL_AIO_TYPE(self, T) \
-  if (PN_VTYPE(self) != aio_##T##_type) {				\
+  if (!potion_bind(P, self, PN_STR("Aio_"_XSTR(T)))) {                  \
     fprintf(stderr, "** Invalid type %s, expected %s",                  \
             PN_IS_PTR(self)? AS_STR(potion_send(PN_VTABLE(self), PN_name)) \
             : PN_IS_NIL(self) ? NIL_NAME                                \
             : PN_IS_NUM(self) ? "Number" : "Boolean", ""_XSTR(T));      \
     exit(1);                                                            \
   }
-#define FATAL_AIO_STREAM(stream) \
-  { \
+#define FATAL_AIO_STREAM(stream)                             \
+  {                                                          \
     PNType _t = PN_VTYPE(stream);			     \
     if (_t != aio_stream_type &&                             \
         _t != aio_tcp_type &&                                \
         _t != aio_udp_type &&                                \
         _t != aio_pipe_type &&                               \
-        _t != aio_tty_type)                                  \
+        _t != aio_tty_type &&                                \
+        !potion_bind(P, stream, PN_STR("readable")))         \
       {                                                      \
         fprintf(stderr, "** Invalid type %s, expected %s",   \
                 PN_IS_PTR(stream)? AS_STR(potion_send(PN_VTABLE(stream), PN_name)) \
@@ -178,6 +174,13 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
         exit(1);                                                          \
       }                                                                   \
   }
+
+#define AIO_DATA(T,ARG) \
+  (aio_##T##_t*)PN_DATA(potion_fwd(ARG)); \
+  CHECK_AIO_TYPE(potion_fwd(ARG),T)
+#define AIO_STREAM(ARG) \
+  (aio_stream_t*)PN_DATA(potion_fwd(ARG)); \
+  CHECK_AIO_STREAM(potion_fwd(ARG))
 
 //cb wrappers
 #define DEF_AIO_CB(T)				       \
@@ -194,19 +197,19 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
    \see http://nikhilm.github.io/uvbook/networking.html#tcp */
 static PN aio_tcp_new(Potion *P, PN cl, PN self, PN loop) {
   //DEF_AIO_NEW_LOOP(tcp);
+  uv_loop_t* l;
   uv_tcp_t *handle;
   struct PNData * volatile data = potion_data_alloc(P, sizeof(aio_tcp_t));
-  uv_loop_t* l;
-  handle = (uv_tcp_t*)PN_DATA(data);
   data->vt = aio_tcp_type;
+  handle = (uv_tcp_t*)PN_DATA(data);
+  ((aio_tcp_t*)handle)->P = P;
+  ((aio_tcp_t*)handle)->cl = cl;
   if (!loop) l = uv_default_loop();
   else if (PN_VTYPE(loop) == aio_loop_type)
     l = (uv_loop_t*)PN_DATA(loop);
   else return potion_type_error(P, loop);
   if (uv_tcp_init(l, handle))
     return aio_last_error(P, "Aio_tcp", l);
-  ((aio_tcp_t*)handle)->P = P;
-  ((aio_tcp_t*)handle)->cl = cl;
   return (PN)data;
 }
 /**\class aio_udp \memberof Lobby
@@ -267,64 +270,64 @@ static PN aio_loop_new(Potion *P, PN cl, PN self) {
   memcpy(l, def, sizeof(uv_loop_t));
   return (PN)data;
 }
-/**\class aio_handle \memberof aio
+/**\class aio_handle \memberof Aio
    create a \c aio_handle */
 static PN aio_handle_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(handle);
+  DEF_AIO_NEW(handle);
 }
-/**\class aio_process \memberof aio
+/**\class aio_process \memberof Aio
    create a \c aio_stream */
 static PN aio_stream_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(stream);
+  DEF_AIO_NEW(stream);
 }
 /**\class aio_process \memberof Lobby
    create a \c aio_process */
 static PN aio_process_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(process);
+  DEF_AIO_NEW(process);
 }
-/**\class aio_req \memberof aio
-   create a \c aio_req */
+/**\class aio_req \memberof Aio
+   create a \c Aio_req */
 static PN aio_req_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(req);
+  DEF_AIO_NEW(req);
 }
-/**\class aio_connect \memberof aio_stream
-   create a \c aio_connect request */
+/**\class aio_connect \memberof Aio_stream
+   create a \c Aio_connect request */
 static PN aio_connect_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(connect);
+  DEF_AIO_NEW(connect);
 }
-/**\class aio_write \memberof aio
-   create a \c aio_write request */
+/**\class aio_write \memberof Aio
+   create a \c Aio_write request */
 static PN aio_write_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(write);
+  DEF_AIO_NEW(write);
 }
-/**\class aio_shutdown \memberof aio
-   create a \c aio_shutdown request */
+/**\class aio_shutdown \memberof Aio
+   create a \c Aio_shutdown request */
 static PN aio_shutdown_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(shutdown);
+  DEF_AIO_NEW(shutdown);
 }
-/**\class aio_udp_send \memberof aio_udp
+/**\class aio_udp_send \memberof Aio_udp
    create a \c aio_udp_send request */
 static PN aio_udp_send_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(udp_send);
+  DEF_AIO_NEW(udp_send);
 }
-/**\class aio_fs \memberof aio
+/**\class aio_fs \memberof Aio
    create a \c aio_fs filesystem request */
 static PN aio_fs_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(fs);
+  DEF_AIO_NEW(fs);
 }
-/**\class aio_work \memberof aio
+/**\class aio_work \memberof Aio
    create a \c aio_work request */
 static PN aio_work_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(work);
+  DEF_AIO_NEW(work);
 }
 static PN aio_getaddrinfo_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(getaddrinfo);
+  DEF_AIO_NEW(getaddrinfo);
 }
 static PN aio_cpu_info_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(cpu_info);
+  DEF_AIO_NEW(cpu_info);
 }
 static PN aio_interface_address_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW_NOINIT(interface_address);
+  DEF_AIO_NEW(interface_address);
 }
 /**\class aio_tty \memberof Lobby
    create and init a \c aio_tty
@@ -355,7 +358,7 @@ static PN aio_pipe_new(Potion *P, PN cl, PN self, PN ipc, PN loop) {
     return aio_last_error(P, "Aio_poll", l);
   return (PN)data;
   }*/
-/**\class aio_barrier \memberof aio
+/**\class aio_barrier \memberof Aio
    create and init a \c aio_barrier request
    \param count INT
 */
@@ -365,7 +368,7 @@ static PN aio_barrier_new(Potion *P, PN cl, PN self, PN count) {
     return potion_io_error(P, "Aio_barrier");
   return (PN)data;
 }
-/**\class aio_sem \memberof aio
+/**\class aio_sem \memberof Aio
    create and init a \c aio_sem semaphore
    \param value INT
 */
@@ -375,7 +378,7 @@ static PN aio_sem_new(Potion *P, PN cl, PN self, PN value) {
     return potion_io_error(P, "Aio_sem");
   return (PN)data;
 }
-/**\class aio_fs_event \memberof aio
+/**\class aio_fs_event \memberof Aio
    create and init a \c aio_fs_event
    \param filename PNString
    \param cb PNClosure or FFI function
@@ -420,7 +423,6 @@ static PN aio_rwlock_new(Potion *P, PN cl, PN self) {
   return (PN)data;
 }
 
-#undef DEF_AIO_NEW_NOINIT
 #undef DEF_AIO_NEW
 #undef DEF_AIO_NEW_LOOP
 
@@ -502,7 +504,7 @@ aio_read2_cb(uv_pipe_t* pipe, ssize_t nread, uv_buf_t buf, uv_handle_type pendin
 	       potion_byte_str2(wrap->P, buf.base, buf.len), PN_NUM(pending));
 }
 
-/** \memberof aio
+/** \memberof Aio
  * Returns the libuv version packed into a single integer. 8 bits are used for
  * each component, with the patch number stored in the 8 least significant
  * bits. E.g. for libuv 1.2.3 this would return 0x010203. */
@@ -510,15 +512,19 @@ static PN
 aio_version(Potion *P, PN cl, PN self) {
   return PN_NUM(uv_version());
 }
-/** \memberof aio
+/** \memberof Aio
  * Returns the libuv version number as a string. For non-release versions
  * "-pre" is appended, so the version number could be "1.2.3-pre". */
 static PN
 aio_version_string(Potion *P, PN cl, PN self) {
   return PN_STR(uv_version_string());
 }
+static PN aio_size(Potion *P, PN cl, PN self) {
+  struct PNData* data = (struct PNData*)potion_fwd(self);
+  return data->siz;
+}
 
-///\memberof aio
+///\memberof Aio
 static PN
 aio_run(Potion *P, PN cl, PN self, PN loop, PN mode) {
   uv_loop_t* l;
@@ -531,7 +537,7 @@ aio_run(Potion *P, PN cl, PN self, PN loop, PN mode) {
     ? aio_last_error(P, "run", l) : self;
 }
 
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_open(Potion *P, PN cl, PN tcp, PN sock) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
@@ -539,7 +545,7 @@ aio_tcp_open(Potion *P, PN cl, PN tcp, PN sock) {
   return uv_tcp_open(&handle->r, PN_INT(sock))
     ? aio_last_error(P, "tcp open", handle->r.loop) : tcp;
 }
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_nodelay(Potion *P, PN cl, PN tcp, PN enable) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
@@ -547,7 +553,7 @@ aio_tcp_nodelay(Potion *P, PN cl, PN tcp, PN enable) {
   return uv_tcp_nodelay(&handle->r, PN_INT(enable))
     ? aio_last_error(P, "tcp nodelay", handle->r.loop) : tcp;
 }
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_keepalive(Potion *P, PN cl, PN tcp, PN enable, PN delay) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
@@ -556,7 +562,7 @@ aio_tcp_keepalive(Potion *P, PN cl, PN tcp, PN enable, PN delay) {
   return uv_tcp_keepalive(&handle->r, PN_INT(enable), PN_INT(delay))
     ? aio_last_error(P, "tcp keepalive", handle->r.loop) : tcp;
 }
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_simultaneous_accepts(Potion *P, PN cl, PN tcp, PN enable) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
@@ -564,7 +570,7 @@ aio_tcp_simultaneous_accepts(Potion *P, PN cl, PN tcp, PN enable) {
   return uv_tcp_simultaneous_accepts(&handle->r, PN_INT(enable))
     ? aio_last_error(P, "tcp simultaneous_accepts", handle->r.loop) : tcp;
 }
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_bind(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
@@ -574,7 +580,7 @@ aio_tcp_bind(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   return uv_tcp_bind(&handle->r, ip4)
     ? aio_last_error(P, "tcp bind", handle->r.loop) : tcp;
 }
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_bind6(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
@@ -584,7 +590,7 @@ aio_tcp_bind6(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   return uv_tcp_bind6(&handle->r, ip6)
     ? aio_last_error(P, "tcp bind6", handle->r.loop) : tcp;
 }
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_getsockname(Potion *P, PN cl, PN tcp) {
   struct sockaddr sock; int len;
@@ -593,7 +599,7 @@ aio_tcp_getsockname(Potion *P, PN cl, PN tcp) {
     ? aio_last_error(P, "tcp getsockname", handle->r.loop)
     : potion_str2(P, sock.sa_data, len);
 }
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_getpeername(Potion *P, PN cl, PN tcp) {
   struct sockaddr sock; int len;
@@ -602,7 +608,7 @@ aio_tcp_getpeername(Potion *P, PN cl, PN tcp) {
     ? aio_last_error(P, "tcp getpeername", handle->r.loop)
     : potion_str2(P, sock.sa_data, len);
 }
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_connect(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
@@ -615,7 +621,7 @@ aio_tcp_connect(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
     ? aio_last_error(P, "tcp connect", handle->r.loop)
     : tcp;
 }
-///\memberof aio_tcp
+///\memberof Aio_tcp
 static PN
 aio_tcp_connect6(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
@@ -628,7 +634,7 @@ aio_tcp_connect6(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
     ? aio_last_error(P, "tcp connect6", handle->r.loop)
     : tcp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 ///\returns aio_udp or nil
 static PN
 aio_udp_open(Potion *P, PN cl, PN udp, PN sockfd) {
@@ -638,7 +644,7 @@ aio_udp_open(Potion *P, PN cl, PN udp, PN sockfd) {
     ? aio_last_error(P, "udp open", handle->r.loop)
     : udp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_bind(Potion *P, PN cl, PN udp, PN addr, PN port) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -649,7 +655,7 @@ aio_udp_bind(Potion *P, PN cl, PN udp, PN addr, PN port) {
     ? aio_last_error(P, "udp bind", handle->r.loop)
     : udp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_bind6(Potion *P, PN cl, PN udp, PN addr, PN port, PN flags) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -661,7 +667,7 @@ aio_udp_bind6(Potion *P, PN cl, PN udp, PN addr, PN port, PN flags) {
     ? aio_last_error(P, "udp bind6", handle->r.loop)
     : udp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_getsockname(Potion *P, PN cl, PN udp) {
   struct sockaddr sock; int len;
@@ -670,7 +676,7 @@ aio_udp_getsockname(Potion *P, PN cl, PN udp) {
     ? aio_last_error(P, "udp getsockname", handle->r.loop)
     : potion_str2(P, sock.sa_data, len);
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_set_membership(Potion *P, PN cl, PN udp, PN mcaddr, PN ifaddr, PN membership) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -681,7 +687,7 @@ aio_udp_set_membership(Potion *P, PN cl, PN udp, PN mcaddr, PN ifaddr, PN member
     ? aio_last_error(P, "udp set_membership", handle->r.loop)
     : udp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_set_multicast_loop(Potion *P, PN cl, PN udp, PN on) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -690,7 +696,7 @@ aio_udp_set_multicast_loop(Potion *P, PN cl, PN udp, PN on) {
     ? aio_last_error(P, "udp set_multicast_loop", handle->r.loop)
     : udp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_set_multicast_ttl(Potion *P, PN cl, PN udp, PN ttl) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -699,7 +705,7 @@ aio_udp_set_multicast_ttl(Potion *P, PN cl, PN udp, PN ttl) {
     ? aio_last_error(P, "udp set_multicast_ttl", handle->r.loop)
     : udp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_set_broadcast(Potion *P, PN cl, PN udp, PN on) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -708,7 +714,7 @@ aio_udp_set_broadcast(Potion *P, PN cl, PN udp, PN on) {
     ? aio_last_error(P, "udp set_broadcast", handle->r.loop)
     : udp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_set_ttl(Potion *P, PN cl, PN udp, PN ttl) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -718,7 +724,7 @@ aio_udp_set_ttl(Potion *P, PN cl, PN udp, PN ttl) {
     : udp;
 }
 
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_send(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN port, PN cb) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -734,7 +740,7 @@ aio_udp_send(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN po
     ? aio_last_error(P, "udp send", handle->r.loop)
     : udp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_send6(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN port, PN cb) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -758,7 +764,7 @@ static uv_buf_t aio_alloc_cb(uv_handle_t* handle, size_t size) {
   return (uv_buf_t)uv_buf_init(buf->chars, size);
 }
 
-/**\memberof aio_udp
+/**\memberof Aio_udp
    This callback is invoked when a new UDP datagram is received.
    \param handle aio_udp handle
    \param nread int Number of bytes that have been received.
@@ -795,7 +801,7 @@ aio_udp_recv_cb(uv_udp_t* handle, ssize_t nread, uv_buf_t buf,
 	       PN_NUM(port), PN_NUM(flags));
 }
 
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_recv_start(Potion *P, PN cl, PN udp, PN cb) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -804,7 +810,7 @@ aio_udp_recv_start(Potion *P, PN cl, PN udp, PN cb) {
     ? aio_last_error(P, "udp recv_start", handle->r.loop)
     : udp;
 }
-///\memberof aio_udp
+///\memberof Aio_udp
 static PN
 aio_udp_recv_stop(Potion *P, PN cl, PN udp) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -812,7 +818,7 @@ aio_udp_recv_stop(Potion *P, PN cl, PN udp) {
     ? aio_last_error(P, "udp recv_stop", handle->r.loop)
     : udp;
 }
-///\memberof aio_prepare
+///\memberof Aio_prepare
 static PN
 aio_prepare_start(Potion *P, PN cl, PN self, PN cb) {
   aio_prepare_t *handle = AIO_DATA(prepare,self);
@@ -821,7 +827,7 @@ aio_prepare_start(Potion *P, PN cl, PN self, PN cb) {
     ? aio_last_error(P, "prepare start", handle->r.loop)
     : self;
 }
-///\memberof aio_prepare
+///\memberof Aio_prepare
 static PN
 aio_prepare_stop(Potion *P, PN cl, PN self) {
   aio_prepare_t *handle = AIO_DATA(prepare,self);
@@ -829,7 +835,7 @@ aio_prepare_stop(Potion *P, PN cl, PN self) {
     ? aio_last_error(P, "prepare stop", handle->r.loop)
     : self;
 }
-///\memberof aio_check
+///\memberof Aio_check
 static PN
 aio_check_start(Potion *P, PN cl, PN self, PN cb) {
   aio_check_t *handle = AIO_DATA(check, self);
@@ -845,7 +851,7 @@ aio_check_stop(Potion *P, PN cl, PN self) {
     ? aio_last_error(P, "check stop", handle->r.loop)
     : self;
 }
-///\memberof aio_idle
+///\memberof Aio_idle
 static PN
 aio_idle_start(Potion *P, PN cl, PN self, PN cb) {
   aio_idle_t *handle = AIO_DATA(idle, self);
@@ -854,7 +860,7 @@ aio_idle_start(Potion *P, PN cl, PN self, PN cb) {
     ? aio_last_error(P, "idle start", handle->r.loop)
     : self;
 }
-///\memberof aio_idle
+///\memberof Aio_idle
 static PN
 aio_idle_stop(Potion *P, PN cl, PN self) {
   aio_idle_t *handle = AIO_DATA(idle, self);
@@ -863,7 +869,7 @@ aio_idle_stop(Potion *P, PN cl, PN self) {
     : self;
 }
 
-///\memberof aio_tty
+///\memberof Aio_tty
 /// Set mode. 0 for normal, 1 for raw.
 static PN
 aio_tty_set_mode(Potion *P, PN cl, PN tty, PN mode) {
@@ -873,7 +879,7 @@ aio_tty_set_mode(Potion *P, PN cl, PN tty, PN mode) {
     ? aio_last_error(P, "tty set_mode", handle->h.loop)
     : tty;
 }
-///\memberof aio_tty
+///\memberof Aio_tty
 /// To be called when the program exits. Resets TTY settings to default
 /// values for the next process to take over.
 static PN
@@ -881,7 +887,7 @@ aio_tty_reset_mode(Potion *P, PN cl, PN tty) {
   uv_tty_reset_mode();
   return tty;
 }
-///\memberof aio_tty
+///\memberof Aio_tty
 static PN
 aio_tty_get_winsize(Potion *P, PN cl, PN tty) {
   aio_tty_t *handle = AIO_DATA(tty,tty);
@@ -891,7 +897,7 @@ aio_tty_get_winsize(Potion *P, PN cl, PN tty) {
   else
     return PN_PUSH(PN_PUSH(PN_TUP0(), PN_NUM(width)), PN_NUM(height));
 }
-///\memberof aio
+///\memberof Aio
 static PN
 aio_guess_handle(Potion *P, PN cl, PN file) {
   PN_CHECK_INT(file);
@@ -899,7 +905,7 @@ aio_guess_handle(Potion *P, PN cl, PN file) {
   return PN_NUM(r);
 }
 
-///\memberof aio_pipe
+///\memberof Aio_pipe
 static PN
 aio_pipe_open(Potion *P, PN cl, PN pipe, PN file) {
   aio_pipe_t *handle = AIO_DATA(pipe,pipe);
@@ -907,7 +913,7 @@ aio_pipe_open(Potion *P, PN cl, PN pipe, PN file) {
     ? aio_last_error(P, "pipe open", handle->r.loop)
     : pipe;
 }
-///\memberof aio_pipe
+///\memberof Aio_pipe
 static PN
 aio_pipe_bind(Potion *P, PN cl, PN pipe, PN name) {
   aio_pipe_t *handle = AIO_DATA(pipe,pipe);
@@ -916,7 +922,7 @@ aio_pipe_bind(Potion *P, PN cl, PN pipe, PN name) {
     ? aio_last_error(P, "pipe bind", handle->r.loop)
     : pipe;
 }
-///\memberof aio_pipe
+///\memberof Aio_pipe
 static PN
 aio_pipe_connect(Potion *P, PN cl, PN pipe, PN req, PN name, PN cb) {
   aio_pipe_t *handle = AIO_DATA(pipe,pipe);
@@ -926,7 +932,7 @@ aio_pipe_connect(Potion *P, PN cl, PN pipe, PN req, PN name, PN cb) {
   uv_pipe_connect(&request->r, &handle->r, PN_STR_PTR(name), connect_cb);
   return pipe;
 }
-///\memberof aio_pipe
+///\memberof Aio_pipe
 // Windows only
 static PN
 aio_pipe_pending_instances(Potion *P, PN cl, PN pipe, PN count) {
@@ -935,7 +941,7 @@ aio_pipe_pending_instances(Potion *P, PN cl, PN pipe, PN count) {
   uv_pipe_pending_instances(&handle->r, PN_INT(count));
   return pipe;
 }
-///\memberof aio_stream
+///\memberof Aio_stream
 static PN
 aio_shutdown(Potion *P, PN cl, PN stream, PN req, PN cb) {
   aio_stream_t *handle = AIO_DATA(stream,stream);
@@ -946,7 +952,7 @@ aio_shutdown(Potion *P, PN cl, PN stream, PN req, PN cb) {
     : stream;
 }
 
-/**\memberof aio_stream
+/**\memberof Aio_stream
    TODO: buf should be PNBytes, not PNData wrapping uv_buf_t
  */
 static PN
@@ -961,7 +967,7 @@ aio_write(Potion *P, PN cl, PN stream, PN req, PN buf, PN bufcnt, PN cb) {
     ? aio_last_error(P, "write", stm->r.loop)
     : stream;
 }
-///\memberof aio_stream
+///\memberof Aio_stream
 static PN
 aio_listen(Potion *P, PN cl, PN stream, PN backlog, PN cb) {
   aio_stream_t *request = AIO_STREAM(stream);
@@ -971,7 +977,7 @@ aio_listen(Potion *P, PN cl, PN stream, PN backlog, PN cb) {
     ? aio_last_error(P, "listen", request->r.loop)
     : stream;
 }
-/** \memberof aio_stream
+/** \memberof Aio_stream
  * This call is used in conjunction with listen() to accept incoming
  * connections. Call uv_accept after receiving a uv_connection_cb to accept
  * the connection.
@@ -988,7 +994,7 @@ aio_accept(Potion *P, PN cl, PN stream, PN client) {
     ? aio_last_error(P, "accept", stream_u->r.loop)
     : stream;
 }
-/** \memberof aio_stream
+/** \memberof Aio_stream
  * Read data from an incoming stream. The callback will be made several
  * times until there is no more data to read or read_stop is called.
  * When we've reached EOF nread will be set to -1 and the error is set
@@ -1006,7 +1012,7 @@ aio_read_start(Potion *P, PN cl, PN self, PN cb) {
     ? aio_last_error(P, "read start", handle->r.loop)
     : self;
 }
-///\memberof aio_stream
+///\memberof Aio_stream
 static PN
 aio_read_stop(Potion *P, PN cl, PN self) {
   aio_stream_t *handle = AIO_STREAM(self);
@@ -1014,7 +1020,7 @@ aio_read_stop(Potion *P, PN cl, PN self) {
     ? aio_last_error(P, "read stop", handle->r.loop)
     : self;
 }
-///\memberof aio_pipe
+///\memberof Aio_pipe
 static PN
 aio_read2_start(Potion *P, PN cl, PN self, PN cb) {
   aio_pipe_t *handle = AIO_DATA(pipe,self);
@@ -1023,7 +1029,7 @@ aio_read2_start(Potion *P, PN cl, PN self, PN cb) {
     ? aio_last_error(P, "read2 start", handle->r.loop)
     : self;
 }
-/** \memberof aio_stream
+/** \memberof Aio_stream
  * Extended write function for sending handles over a pipe. The pipe must be
  * initialized with ipc == 1.
  * send_handle must be a TCP socket or pipe, which is a server or a connection
@@ -1043,21 +1049,21 @@ aio_write2(Potion *P, PN cl, PN stream, PN req, PN buf, PN bufcnt, PN send_handl
     ? aio_last_error(P, "write", stm->r.loop)
     : stream;
 }
-/** \memberof aio_stream
+/** \memberof Aio_stream
     \returns PNBoolean */
 static PN
 aio_is_readable(Potion *P, PN cl, PN stream) {
   const aio_stream_t *handle = AIO_STREAM(stream);
   return uv_is_readable(&handle->r) ? PN_TRUE : PN_FALSE;
 }
-/** \memberof aio_stream
+/** \memberof Aio_stream
     \returns PNBoolean */
 static PN
 aio_is_writable(Potion *P, PN cl, PN stream) {
   const aio_stream_t *handle = AIO_STREAM(stream);
   return uv_is_writable(&handle->r) ? PN_TRUE : PN_FALSE;
 }
-/** \memberof aio_stream
+/** \memberof Aio_stream
  * Used to determine whether a stream is closing or closed.
  *
  * N.B. is only valid between the initialization of the handle
@@ -1070,7 +1076,7 @@ aio_is_closing(Potion *P, PN cl, PN stream) {
   return uv_is_closing((const uv_handle_t*)&handle->r) ? PN_TRUE : PN_FALSE;
 }
 
-/**\memberof aio_async
+/**\memberof Aio_async
  * This can be called from other threads to wake up a libuv thread.
  * aio/libuv is single threaded at the moment. */
 static PN
@@ -1078,7 +1084,7 @@ aio_async_send(Potion *P, PN cl, PN self) {
   aio_async_t *handle = AIO_DATA(async,self);
   return PN_NUM(uv_async_send(&handle->r));
 }
-///\memberof aio_timer
+///\memberof Aio_timer
 static PN
 aio_timer_start(Potion *P, PN cl, PN self, PN cb, PN timeout, PN repeat) {
   aio_timer_t *handle = AIO_DATA(timer,self);
@@ -1089,7 +1095,7 @@ aio_timer_start(Potion *P, PN cl, PN self, PN cb, PN timeout, PN repeat) {
     ? aio_last_error(P, "timer start", handle->r.loop)
     : self;
 }
-///\memberof aio_timer
+///\memberof Aio_timer
 static PN
 aio_timer_stop(Potion *P, PN cl, PN self) {
   aio_timer_t *handle = AIO_DATA(timer,self);
@@ -1097,7 +1103,7 @@ aio_timer_stop(Potion *P, PN cl, PN self) {
     ? aio_last_error(P, "timer stop", handle->r.loop)
     : self;
 }
-/** \memberof aio_timer
+/** \memberof Aio_timer
  * Stop the timer, and if it is repeating restart it using the repeat value
  * as the timeout. If the timer has never been started before it returns -1 and
  * sets the error to UV_EINVAL.
@@ -1109,14 +1115,14 @@ aio_timer_again(Potion *P, PN cl, PN self) {
     ? aio_last_error(P, "timer again", handle->r.loop)
     : self;
 }
-///\memberof aio_timer
+///\memberof Aio_timer
 //TODO get/set as object ivar
 static PN
 aio_timer_get_repeat(Potion *P, PN cl, PN self) {
   aio_timer_t *handle = AIO_DATA(timer,self);
   return PN_NUM(uv_timer_get_repeat(&handle->r));
 }
-/**\memberof aio_timer
+/**\memberof Aio_timer
  * Set the repeat value in milliseconds. Note that if the repeat value is set
  * from a timer callback it does not immediately take effect. If the timer was
  * non-repeating before, it will have been stopped. If it was repeating, then
@@ -1135,13 +1141,22 @@ void Potion_Init_aio(Potion *P) {
   PN aio_vt = potion_class(P, 0, 0, 0);
   aio_type = potion_class_type(P, aio_vt);
   potion_define_global(P, PN_STR("Aio"), aio_vt);
+#define DEF_AIO__VT(T,paren) \
+  PN aio_##T##_vt = potion_class(P, 0, paren##_vt, 0);	\
+  aio_##T##_type = potion_class_type(P, aio_##T##_vt); \
+  potion_define_global(P, PN_STR("Aio_" _XSTR(T)), aio_##T##_vt); \
+  potion_method(aio_##T##_vt, ""_XSTR(T), aio_##T##_new, 0)
+#define DEF_AIO_CTOR(T) \
+  potion_type_call_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, 0)); \
+  potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, 0));
 #define DEF_AIO_VT(T,paren) \
   PN aio_##T##_vt = potion_class(P, 0, paren##_vt, 0);	\
-  aio_##T##_type = potion_class_type(P, aio_vt); \
+  aio_##T##_type = potion_class_type(P, aio_##T##_vt); \
+  DEF_AIO_CTOR(T); \
   potion_define_global(P, PN_STR("Aio_" _XSTR(T)), aio_##T##_vt); \
   potion_method(aio_##T##_vt, ""_XSTR(T), aio_##T##_new, 0)
 #define DEF_AIO_GLOBAL_VT(T,paren,args) \
-  DEF_AIO_VT(T,paren); \
+  DEF_AIO__VT(T,paren); \
   potion_type_call_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, args)); \
   potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, args)); \
   potion_method(P->lobby, "Aio_"_XSTR(T), aio_##T##_new, args)
@@ -1178,8 +1193,9 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_GLOBAL_VT(barrier,aio,"count=N");
   DEF_AIO_GLOBAL_VT(loop,aio,0);
   DEF_AIO_GLOBAL_VT(process,aio,0);
+  //tcp,udp have connect so we need a global Aio_connect method
+  DEF_AIO_GLOBAL_VT(connect,aio_stream,0);
   DEF_AIO_VT(req,aio);
-  DEF_AIO_VT(connect,aio_stream);
   DEF_AIO_VT(write,aio);
   DEF_AIO_VT(shutdown,aio);
   DEF_AIO_VT(udp_send,aio_udp);
@@ -1189,9 +1205,12 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_VT(cpu_info,aio);
   DEF_AIO_VT(interface_address,aio);
 
+#undef DEF_AIO_VT_1
+#undef DEF_AIO_CTOR
 #undef DEF_AIO_VT
-#undef DEF_AIO_INIT_VT
+#undef DEF_AIO_GLOBAL_VT
 
+  potion_method(aio_vt, "size", aio_size, 0);
   potion_method(aio_vt, "run", aio_run, "|loop=o,mode=N");
   potion_method(aio_stream_vt, "write", aio_write, "req=o,buf=O,bufcnt=N|write_cb=&");
   potion_method(aio_stream_vt, "shutdown", aio_shutdown, "req=o|shutdown_cb=&");
