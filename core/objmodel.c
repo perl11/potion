@@ -489,6 +489,12 @@ PN potion_object_new(Potion *P, PN cl, PN self) {
   return (PN)PN_ALLOC_N(vt->type, struct PNObject,
     potion_type_size(P, (struct PNObject *)self) - sizeof(struct PNObject) + vt->ivlen * sizeof(PN));
 }
+/**\memberof PNObject
+   \returns size in bytes for the gc */
+PN potion_object_size(Potion *P, PN cl, PN self) {
+  vPN(Object) obj = (struct PNObject *)self;
+  return sizeof(struct PNObject) + (((struct PNVtable *)PN_VTABLE(obj->vt))->ivlen * sizeof(PN));
+}
 /**\memberof PNVtable
    \return metaclass */
 PN potion_get_metaclass(Potion *P, PN cl, vPN(Vtable) self) {
@@ -602,6 +608,7 @@ void potion_object_init(Potion *P) {
   potion_method(obj_vt, "forward", potion_object_forward, 0);
   potion_method(obj_vt, "send", potion_object_send, 0);
   potion_method(obj_vt, "string", potion_object_string, 0);
+  potion_method(obj_vt, "size", potion_object_size, 0);
 }
 
 # ifdef P2
