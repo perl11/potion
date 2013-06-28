@@ -274,60 +274,73 @@ static PN aio_loop_new(Potion *P, PN cl, PN self) {
    create a \c aio_handle */
 static PN aio_handle_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(handle);
+  return (PN)data;
 }
 /**\class aio_process \memberof Aio
    create a \c aio_stream */
 static PN aio_stream_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(stream);
+  return (PN)data;
 }
 /**\class aio_process \memberof Lobby
    create a \c aio_process */
 static PN aio_process_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(process);
+  return (PN)data;
 }
 /**\class aio_req \memberof Aio
    create a \c Aio_req */
 static PN aio_req_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(req);
+  return (PN)data;
 }
 /**\class aio_connect \memberof Aio_stream
    create a \c Aio_connect request */
 static PN aio_connect_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(connect);
+  return (PN)data;
 }
 /**\class aio_write \memberof Aio
    create a \c Aio_write request */
 static PN aio_write_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(write);
+  return (PN)data;
 }
 /**\class aio_shutdown \memberof Aio
    create a \c Aio_shutdown request */
 static PN aio_shutdown_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(shutdown);
+  return (PN)data;
 }
 /**\class aio_udp_send \memberof Aio_udp
    create a \c aio_udp_send request */
 static PN aio_udp_send_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(udp_send);
+  return (PN)data;
 }
 /**\class aio_fs \memberof Aio
    create a \c aio_fs filesystem request */
 static PN aio_fs_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(fs);
+  return (PN)data;
 }
 /**\class aio_work \memberof Aio
    create a \c aio_work request */
 static PN aio_work_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(work);
+  return (PN)data;
 }
 static PN aio_getaddrinfo_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(getaddrinfo);
+  return (PN)data;
 }
 static PN aio_cpu_info_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(cpu_info);
+  return (PN)data;
 }
 static PN aio_interface_address_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(interface_address);
+  return (PN)data;
 }
 /**\class aio_tty \memberof Lobby
    create and init a \c aio_tty
@@ -533,7 +546,7 @@ aio_run(Potion *P, PN cl, PN self, PN loop, PN mode) {
     l = (uv_loop_t*)PN_DATA(loop);
   else return potion_type_error(P, loop);
   if (mode) PN_CHECK_TYPE(mode,PN_TNUMBER);
-  return uv_run(l, mode ? PN_INT(mode) : UV_RUN_DEFAULT)
+  return uv_run(l, mode ? (uv_run_mode)PN_INT(mode) : UV_RUN_DEFAULT)
     ? aio_last_error(P, "run", l) : self;
 }
 
@@ -683,7 +696,8 @@ aio_udp_set_membership(Potion *P, PN cl, PN udp, PN mcaddr, PN ifaddr, PN member
   PN_CHECK_STR(mcaddr);
   PN_CHECK_STR(ifaddr);
   PN_CHECK_INT(membership);
-  return uv_udp_set_membership(&handle->r, PN_STR_PTR(mcaddr), PN_STR_PTR(ifaddr), PN_NUM(membership))
+  return uv_udp_set_membership(&handle->r, PN_STR_PTR(mcaddr), PN_STR_PTR(ifaddr),
+                               (uv_membership)PN_NUM(membership))
     ? aio_last_error(P, "udp set_membership", handle->r.loop)
     : udp;
 }
@@ -893,7 +907,7 @@ aio_tty_get_winsize(Potion *P, PN cl, PN tty) {
   aio_tty_t *handle = AIO_DATA(tty,tty);
   int width, height;
   if (uv_tty_get_winsize(&handle->h, &width, &height))
-    aio_last_error(P, "tty get_winsize", handle->h.loop);
+    return aio_last_error(P, "tty get_winsize", handle->h.loop);
   else
     return PN_PUSH(PN_PUSH(PN_TUP0(), PN_NUM(width)), PN_NUM(height));
 }
