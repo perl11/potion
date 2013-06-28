@@ -102,6 +102,7 @@ int potion_sig_arity(Potion *P, PN sig) {
     return 0;
   else {
     potion_fatal("wrong sig type for sig_arity");
+    return 0;
   }
 }
 /** number of mandatory args, without any optional arguments
@@ -125,6 +126,7 @@ int potion_sig_minargs(Potion *P, PN sig) {
     return 0;
   else {
     potion_fatal("wrong sig type for sig_minargs");
+    return 0;
   }
 }
 
@@ -158,6 +160,7 @@ PN potion_sig_at(Potion *P, PN sig, int index) {
     return result;
   else {
     potion_fatal("wrong sig type for sig_at");
+    return 0;
   }
 }
 
@@ -269,7 +272,7 @@ PN potion_ivars(Potion *P, PN cl, PN self, PN ivars) {
   // since many times these tables are <100 bytes.
   PNAsm * volatile asmb = potion_asm_new(P);
   P->target.ivars(P, ivars, &asmb);
-  vt->ivfunc = PN_ALLOC_FUNC(asmb->len);
+  vt->ivfunc = (PN_IVAR_FUNC)PN_ALLOC_FUNC(asmb->len);
   PN_MEMCPY_N(vt->ivfunc, asmb->ptr, u8, asmb->len);
 #endif
   vt->ivlen = PN_TUPLE_LEN(ivars);

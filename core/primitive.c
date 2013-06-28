@@ -9,6 +9,7 @@
 #include "internal.h"
 
 #ifdef P2
+/*
 ///memberof PN_NIL
 /// "defined" method (p2 only)
 ///\return PN_FALSE for PN_NIL, PN_TRUE for PNAny
@@ -28,6 +29,7 @@ static PN potion_nil_is_nil(Potion *P, PN closure, PN self) {
 PN potion_any_is_nil(Potion *P, PN closure, PN self) {
   return PN_FALSE;
 }
+*/
 #endif
 
 /**\memberof Lobby
@@ -89,11 +91,15 @@ void potion_primitive_init(Potion *P) {
   PN nil_vt = PN_VTABLE(PN_TNIL);
   PN boo_vt = PN_VTABLE(PN_TBOOLEAN);
 #ifdef P2
-  potion_method(P->lobby, "defined", potion_any_is_defined, 0);
-  potion_method(nil_vt, "defined", potion_nil_is_defined, 0);
+  potion_send(nil_vt, PN_def, PN_STR("defined"), PN_FALSE);
+  potion_send(P->lobby, PN_def, PN_STR("defined"), PN_TRUE);
+  //potion_method(P->lobby, "defined", potion_any_is_defined, 0);
+  //potion_method(nil_vt, "defined", potion_nil_is_defined, 0);
 #else
-  potion_method(P->lobby, NIL_NAME"?", potion_any_is_nil, 0);
-  potion_method(nil_vt, NIL_NAME"?", potion_nil_is_nil, 0);
+  potion_send(nil_vt, PN_def, PN_STR("nil?"), PN_TRUE);
+  potion_send(P->lobby, PN_def, PN_STR("nil?"), PN_FALSE);
+  //potion_method(P->lobby, NIL_NAME"?", potion_any_is_nil, 0);
+  //potion_method(nil_vt, NIL_NAME"?", potion_nil_is_nil, 0);
 #endif
   potion_method(nil_vt, "number", potion_bool_number, 0);
   potion_send(nil_vt, PN_def, PN_string, potion_str(P, NIL_NAME));

@@ -162,7 +162,7 @@ void potion_test_eval(CuTest *T) {
 
 #if POTION_JIT
   long flags = P->flags;
-  if (P->flags & EXEC_JIT) P->flags -= EXEC_JIT;
+  if (P->flags & EXEC_JIT) P->flags = (Potion_Flags)((int)P->flags - EXEC_JIT);
 #endif
   add = potion_eval(P, potion_str(P, "(x, y): x + y."));
   addfn = PN_CLOSURE_F(add); // c callback
@@ -185,7 +185,7 @@ void potion_test_eval(CuTest *T) {
   CuAssertIntEquals(T, "default num = 1", 4, PN_INT(num));
 
 #if POTION_JIT
-  P->flags = flags; //restore JIT
+  P->flags = (Potion_Flags)flags; //restore JIT
   add = potion_eval(P, potion_str(P, "(x, y): x + y."));
   addfn = PN_CLOSURE_F(add); // c callback
   CuAssertPtrNotNull(T, addfn);

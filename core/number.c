@@ -189,7 +189,9 @@ static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) 
   for (i = PN_INT(self); i <= j; i += k) {
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   }
+  return PN_NUM(abs(i - j) / k);
 }
+
 /**\memberof PNNumber
   "chr" of int only, no UTF-8 multi-byte sequence
  \return PNString one char <255 */

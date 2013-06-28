@@ -115,7 +115,7 @@ Potion *potion_create(void *sp) {
   PN_FLEX_NEW(P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
   PN_FLEX_SIZE(P->vts) = PN_TYPE_ID(PN_TUSER) + 1;
   P->prec = PN_PREC;
-  P->flags = 0;
+  P->flags = (Potion_Flags)EXEC_VM;
   potion_init(P);
   return P;
 }
@@ -215,6 +215,7 @@ char potion_type_char(PNType type) {
   case PN_TCONT:       	return 'c'; //20
   case PN_TDECIMAL:    	return 'd'; //21
   case PN_TUSER:       	return 'u'; //22
+  default:       	return 'u'; //22++
   }
 }
 

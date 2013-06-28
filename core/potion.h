@@ -564,7 +564,7 @@ typedef enum {
   EXEC_DEBUG,   ///< -d: instrumented bytecode (line stepping) or just slow runloop?
   EXEC_CHECK,   ///< -c stop after compilation
   EXEC_COMPILE, ///< to bytecode (dumpbc)
-  MAX_EXEC,     ///< sanity-check (possible stack overwrites by callcc)
+  MAX_EXEC      ///< sanity-check (possible stack overwrites by callcc)
 } exec_mode_t;
 
 // we combine the exclusive enum 0-4 for exec, then the exclusive syntax modes 16-18,
@@ -578,20 +578,21 @@ typedef enum {
   MODE_P6     = MODE_STD+2,     ///< 0x12 18 syntax p6. other via use syntax ""
 #endif
   // room for registered syntax modules 18-63 (45 modules: sql, c, ...)
-  MAX_SYNTAX  = (1<<(EXEC_BITS+2))-1,     ///< sanity-check
+  MAX_SYNTAX  = (1<<(EXEC_BITS+2))-1     ///< sanity-check
 } syntax_mode_t;
 
 typedef enum {
   // exec + syntax + debug flags:
   DEBUG_INSPECT = 1<<(EXEC_BITS+2),	 // 0x0040
-  DEBUG_VERBOSE = 1<<(EXEC_BITS+3),	 // 0x0080
+  DEBUG_VERBOSE = 1<<(EXEC_BITS+3)	 // 0x0080
 #ifdef DEBUG
+  ,
   DEBUG_TRACE   = 1<<(EXEC_BITS+4),  	 // 0x0100
   DEBUG_PARSE   = 1<<(EXEC_BITS+5),	 // 0x0200
   DEBUG_PARSE_VERBOSE = 1<<(EXEC_BITS+6),// 0x0400
   DEBUG_COMPILE = 1<<(EXEC_BITS+7),	 // 0x2000
   DEBUG_GC      = 1<<(EXEC_BITS+8),	 // 0x0800
-  DEBUG_JIT     = 1<<(EXEC_BITS+9),	 // 0x1000
+  DEBUG_JIT     = 1<<(EXEC_BITS+9)	 // 0x1000
 #endif
 } Potion_Flags;
 

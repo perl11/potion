@@ -649,6 +649,7 @@ static PN potion_tuple_cmp(Potion *P, PN cl, PN self, PN value) {
     }
   default:
     potion_fatal("Invalid tuple cmp type");
+    return 0;
   }
 }
 

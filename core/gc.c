@@ -111,6 +111,7 @@ static inline int NEW_BIRTH_REGION(struct PNMemory *M, void **wb, int sz) {
   DEL_BIRTH_REGION();
   SET_GEN(birth, newad, sz);
   SET_STOREPTR(5 + keeps);
+  return sz;
 }
 
 /** \par

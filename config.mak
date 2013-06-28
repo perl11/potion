@@ -2,7 +2,8 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC    ?= gcc
-CFLAGS = -Wall -Werror -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
+# -Wno-return-type
+CFLAGS = -D_GNU_SOURCE -Wall -Werror -fno-strict-aliasing
 INCS   = -Icore
 LIBPTH = -Llib
 RPATH         = -Wl,-rpath=$(shell pwd)/lib
@@ -113,12 +114,26 @@ ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	CFLAGS += -Wno-switch -Wno-unused-label
 	CFLAGS += -Wno-unused-value
+  ifeq (${DEBUG},0)
+	DEBUGFLAGS += -finline
+  endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	ICC = 1
+# 186: pointless comparison of unsigned integer with zero
+# in PN_TYPECHECK
+	CFLAGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177
+  ifeq (${DEBUG},0)
+	DEBUGFLAGS += -O -finline -falign-functions
+  else
+        DEBUGFLAGS += -gdwarf-3
+  endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
 	CFLAGS += -Wno-switch -Wno-unused-label
+  ifeq (${DEBUG},0)
+	DEBUGFLAGS += -finline -falign-functions
+  endif
 endif
 endif
 endif

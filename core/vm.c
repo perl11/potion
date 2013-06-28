@@ -317,7 +317,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
 
   target->finish(P, f, &asmb);
 
-  fn = PN_ALLOC_FUNC(asmb->len);
+  fn = (u8*)PN_ALLOC_FUNC(asmb->len);
 #if defined(JIT_DEBUG)
   if (P->flags & DEBUG_JIT) {
     #include "vm-dis.c"

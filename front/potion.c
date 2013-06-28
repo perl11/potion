@@ -60,6 +60,7 @@ static void potion_cmd_version(Potion *P) {
   printf(potion_banner, POTION_JIT);
 }
 
+#define ADD_FLAGS(flag) P->flags = (Potion_Flags)((int)P->flags | flag)
 #define DBG_Pv(c) \
     if (P->flags & DEBUG_VERBOSE) \
       potion_p(P, c)
@@ -330,15 +331,15 @@ int main(int argc, char *argv[]) {
 	printf("  G  GC (use w/ or wo/ -Dv\n");
 	goto END;
       }
-      if (strchr(&argv[i][2], 'i')) P->flags |= DEBUG_INSPECT;
-      if (strchr(&argv[i][2], 'v')) P->flags |= DEBUG_VERBOSE;
-      if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE;
+      if (strchr(&argv[i][2], 'i')) ADD_FLAGS(DEBUG_INSPECT);
+      if (strchr(&argv[i][2], 'v')) ADD_FLAGS(DEBUG_VERBOSE);
+      if (strchr(&argv[i][2], 't')) { ADD_FLAGS(DEBUG_TRACE);
 	exec = exec==EXEC_JIT ? EXEC_VM : exec; }
-      if (strchr(&argv[i][2], 'p')) P->flags |= DEBUG_PARSE;
-      if (strchr(&argv[i][2], 'P')) P->flags |= (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
-      if (strchr(&argv[i][2], 'c')) P->flags |= DEBUG_COMPILE;
-      if (strchr(&argv[i][2], 'J')) P->flags |= DEBUG_JIT;
-      if (strchr(&argv[i][2], 'G')) P->flags |= DEBUG_GC;
+      if (strchr(&argv[i][2], 'p')) ADD_FLAGS(DEBUG_PARSE);
+      if (strchr(&argv[i][2], 'P')) ADD_FLAGS(DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
+      if (strchr(&argv[i][2], 'c')) ADD_FLAGS(DEBUG_COMPILE);
+      if (strchr(&argv[i][2], 'J')) ADD_FLAGS(DEBUG_JIT);
+      if (strchr(&argv[i][2], 'G')) ADD_FLAGS(DEBUG_GC);
       continue;
     }
 #endif
@@ -362,7 +363,7 @@ int main(int argc, char *argv[]) {
     }
     fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
   }
-  P->flags = (Potion_Flags)(int)(P->flags + exec);
+  P->flags = (Potion_Flags)((int)P->flags + exec);
   
   if (!interactive) {
     if (buf != PN_NIL) {

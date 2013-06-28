@@ -73,7 +73,7 @@ PN potion_load_dylib(Potion *P, const char *filename) {
     return PN_NIL;
   }
   init_func_name = potion_initializer_name(P, filename, strlen(filename));
-  func = dlsym(handle, init_func_name);
+  func = (void (*)(Potion *))dlsym(handle, init_func_name);
   err = (char *)dlerror();
   free(init_func_name);
   if (err != NULL) {
