@@ -68,7 +68,7 @@ static void potion_cmd_version(Potion *P) {
       potion_p(P, c)
 
 static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile) {
-  exec_mode_t exec = P->flags & ((1<<EXEC_BITS)-1);
+  exec_mode_t exec = (exec_mode_t)(P->flags & ((1<<EXEC_BITS)-1));
   PN code = potion_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
     DBG_v("\n-- loaded --\n");
@@ -114,7 +114,7 @@ static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
   PN buf;
   int fd = -1;
   struct stat stats;
-  exec_mode_t exec = P->flags & ((1<<EXEC_BITS)-1);
+  exec_mode_t exec = (exec_mode_t)(P->flags & ((1<<EXEC_BITS)-1));
 
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
   for (i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--")) break;
     if (!strcmp(argv[i], "-I") || !strcmp(argv[i], "--inspect")) {
-      P->flags |= DEBUG_INSPECT; continue; }
+      P->flags = (Potion_Flags)(int)(P->flags | DEBUG_INSPECT); continue; }
     if (!strcmp(argv[i], "-L")) {
       char *extra_path = &argv[i][2]; // todo: flexible
       if (*extra_path)
@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
       continue;
     }
     if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--verbose")) {
-      P->flags |= DEBUG_VERBOSE; continue; }
+      P->flags = (Potion_Flags)(int)(P->flags | DEBUG_VERBOSE); continue; }
     if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
       potion_cmd_version(P); goto END; }
     if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
     }
     fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
   }
-  P->flags += exec;
+  P->flags = (Potion_Flags)(int)(P->flags + exec);
   
   if (!interactive) {
     if (buf != PN_NIL) {

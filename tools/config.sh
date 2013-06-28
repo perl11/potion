@@ -8,7 +8,7 @@ CCEX="$CC $AC -o $AOUT"
 LANG=C
 
 CCv=`$CC -v 2>&1`
-CLANG=`echo "$CCv" | sed "/clang/!d"`
+ICC=`echo "$CCv" | sed "/icc version/!d"`
 TARGET=`echo "$CCv" | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
 MINGW_GCC=`echo "$TARGET" | sed "/mingw/!d"`
 if [ "$MINGW_GCC" = "" ]; then MINGW=0
@@ -23,6 +23,14 @@ JIT_I686=`echo "$TARGET" | sed "/i686/!d"`
 JIT_AMD64=`echo "$TARGET" | sed "/amd64/!d"`
 JIT_ARM=`echo "$TARGET" | sed "/arm/!d"`
 JIT_X86_64=`echo "$TARGET" | sed "/x86_64/!d"`
+if [ "$ICC" != "" ]; then
+    TARGET=`$CC -V 2>&1 | sed -e "/running on/b" -e "s,.*running on,," -e d`
+    JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
+    JIT_X86=`echo "$TARGET" | sed "/IA-32/!d"`
+    JIT_AMD64=`echo "$TARGET" | sed "/Intel(R) 64/!d"`
+    JIT_X86_64=`echo "$TARGET" | sed "/Intel(R) 64/!d"`
+    JIT_ARM=`echo "$TARGET" | sed "/arm/!d"`
+fi
 CROSS=0
 
 if [ $MINGW -eq 0 ]; then
@@ -65,7 +73,15 @@ elif [ "$2" = "cygwin" ]; then
   if [ $CYGWIN -eq 0 ]; then echo "0"
   else echo "1"; fi
 elif [ "$2" = "clang" ]; then
+  CLANG=`echo "$CCv" | sed "/clang/!d"`
   if [ "$CLANG" = "" ]; then echo "0"
+  else echo "1"; fi
+elif [ "$2" = "gcc" ]; then
+  GCC=`echo "$CCv" | sed "/^gcc version/!d"`
+  if [ "$GCC" = "" ]; then echo "0"
+  else echo "1"; fi
+elif [ "$2" = "icc" ]; then
+  if [ "$ICC" = "" ]; then echo "0"
   else echo "1"; fi
 elif [ "$2" = "bsd" ]; then
   if [ "$BSD" = "" ]; then echo "0"
@@ -124,8 +140,8 @@ else
       PAGESIZE=`echo "#include <stdio.h>#include <unistd.h>int main() { printf(\\"%d\\", (int)sysconf(_SC_PAGE_SIZE)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
       STACKDIR=`echo "#include <stdlib.h>#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)((&b - a) / abs(&b - a))); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
       ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-      HAVE_ASAN=`(echo "#include <stdio.h>__attribute__((no_address_safety_analysis)) int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX -Werror $3 2>&1; rm -f $AOUT >/dev/null) | sed "/ignored/!d"`
-    if [ "$HAVE_ASAN" != "" ]; then HAVE_ASAN=0; else HAVE_ASAN=1; fi
+      HAVE_ASAN=`echo "#include <stdio.h>__attribute__((no_address_safety_analysis)) int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX -Werror $3 2>&1 && $AOUT && rm -f $AOUT`
+    if [ "$HAVE_ASAN" = "1" ]; then HAVE_ASAN=1; else HAVE_ASAN=0; fi
   else
       # hard coded win32 values
       if [ "$JIT_X86_64" != "" -o "$JIT_AMD64" != "" ]; then

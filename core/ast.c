@@ -34,7 +34,7 @@ PN potion_source(Potion *P, u8 p, PN a, PN b, PN c) {
   int size = potion_ast_sizes[p];
   // TODO: potion_ast_sizes[p] * sizeof(PN) (then fix gc_copy)
   vPN(Source) t = PN_ALLOC_N(PN_TSOURCE, struct PNSource, 0 * sizeof(PN));
-  t->part = p;
+  t->part = (enum PN_AST)p;
 #if 1
   switch (size) {
   case 3: t->a[2] = PN_SRC(c);

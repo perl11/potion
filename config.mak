@@ -2,7 +2,7 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC    ?= gcc
-CFLAGS = -Wall -Werror -fno-strict-aliasing -Wno-switch -Wno-return-type -Wno-unused-label -D_GNU_SOURCE
+CFLAGS = -Wall -Werror -fno-strict-aliasing -Wno-return-type -D_GNU_SOURCE
 INCS   = -Icore
 LIBPTH = -Llib
 RPATH         = -Wl,-rpath=$(shell pwd)/lib
@@ -111,7 +111,16 @@ ifneq (${JIT},1)
 endif
 ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 	CLANG = 1
+	CFLAGS += -Wno-switch -Wno-unused-label
 	CFLAGS += -Wno-unused-value
+else
+ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
+	ICC = 1
+else
+ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
+	CFLAGS += -Wno-switch -Wno-unused-label
+endif
+endif
 endif
 ifeq (${DEBUG},0)
 	DEBUGFLAGS += -fno-stack-protector
@@ -210,6 +219,8 @@ config.inc.echo:
 	@${ECHO} "WIN32   = ${WIN32}"
 	@${ECHO} "CYGWIN  = ${CYGWIN}"
 	@${ECHO} "CLANG   = ${CLANG}"
+	@${ECHO} "ICC     = ${ICC}"
+	@${ECHO} "GCC     = ${GCC}"
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
