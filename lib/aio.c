@@ -30,7 +30,6 @@ typedef struct aio_##T##_s aio_##T##_t; \
 struct aio_##T##_s {     \
   struct uv_##H##_s r;   \
   Potion *P;             \
-  PN cl;                 \
   struct PNClosure *cb;	 \
 }
 //without
@@ -39,7 +38,6 @@ typedef struct aio_##T##_s aio_##T##_t; \
 struct aio_##T##_s {     \
   uv_##T##_t h;          \
   Potion *P;             \
-  PN cl;                 \
 }
 typedef uv_buf_t aio_buf_t;
 DEF_AIO_CB_WRAP(write);
@@ -94,7 +92,7 @@ aio_fs_event_cb(uv_fs_event_t* handle, const char* filename, int events, int sta
   struct aio_fs_event_s* wrap = (struct aio_fs_event_s*)handle;
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);
   char *data = (char*)(&wrap - sizeof(struct PNData) + sizeof(char*));
-  if (cb) cb->method(wrap->P, wrap->cl, (PN)data, potion_str(wrap->P, filename),
+  if (cb) cb->method(wrap->P, (PN)cb, (PN)data, potion_str(wrap->P, filename),
 		     PN_NUM(events), PN_NUM(status));
 }
 
@@ -109,8 +107,7 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
   struct PNData * volatile data = potion_data_alloc(P, sizeof(aio_##T##_t)); \
   data->vt = aio_##T##_type;			\
   handle = (uv_##T##_t*)PN_DATA(data);          \
-  ((aio_##T##_t*)handle)->P = P;		\
-  ((aio_##T##_t*)handle)->cl = cl
+  ((aio_##T##_t*)handle)->P = P
 #define DEF_AIO_NEW_LOOP(T)			\
   uv_loop_t* l;                                 \
   DEF_AIO_NEW(T);				\
@@ -154,7 +151,7 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
     fprintf(stderr, "** Invalid type %s, expected %s",                  \
             PN_IS_PTR(self)? AS_STR(potion_send(PN_VTABLE(self), PN_name)) \
             : PN_IS_NIL(self) ? NIL_NAME                                \
-            : PN_IS_NUM(self) ? "Number" : "Boolean", ""_XSTR(T));      \
+            : PN_IS_NUM(self) ? "Number" : "Boolean", "Aio_"_XSTR(T));  \
     exit(1);                                                            \
   }
 #define FATAL_AIO_STREAM(stream)                             \
@@ -186,31 +183,30 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
 #define DEF_AIO_CB(T)				       \
   aio_##T##_t* wrap = (aio_##T##_t*)req;	       \
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);              \
-  PN data = (PN)((char*)&wrap - sizeof(struct PNData) + sizeof(char*)); \
+  PN data = (PN)((char*)wrap - sizeof(struct PNData)); \
   Potion *P = wrap->P;    \
   FATAL_AIO_TYPE(data,T); \
-  if (cb) cb->method(P, wrap->cl, data, PN_NUM(status))
+  if (cb) cb->method(P, (PN)cb, data, PN_NUM(status))
 
 /**\class aio_tcp \memberof Lobby
    create and init a \c aio_tcp object
    \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
    \see http://nikhilm.github.io/uvbook/networking.html#tcp */
 static PN aio_tcp_new(Potion *P, PN cl, PN self, PN loop) {
-  //DEF_AIO_NEW_LOOP(tcp);
-  uv_loop_t* l;
+  DEF_AIO_NEW_LOOP_INIT(tcp);
+  /*uv_loop_t* l;
   uv_tcp_t *handle;
   struct PNData * volatile data = potion_data_alloc(P, sizeof(aio_tcp_t));
   data->vt = aio_tcp_type;
   handle = (uv_tcp_t*)PN_DATA(data);
   ((aio_tcp_t*)handle)->P = P;
-  ((aio_tcp_t*)handle)->cl = cl;
   if (!loop) l = uv_default_loop();
   else if (PN_VTYPE(loop) == aio_loop_type)
     l = (uv_loop_t*)PN_DATA(loop);
   else return potion_type_error(P, loop);
   if (uv_tcp_init(l, handle))
     return aio_last_error(P, "Aio_tcp", l);
-  return (PN)data;
+  return (PN)data;*/
 }
 /**\class aio_udp \memberof Lobby
    create and init a \c aio_udp object
@@ -264,7 +260,6 @@ static PN aio_loop_new(Potion *P, PN cl, PN self) {
   uv_loop_t *def;
   struct PNData *data = potion_data_alloc(P,sizeof(aio_loop_t));
   ((struct aio_loop_s*)data)->P = P;
-  ((struct aio_loop_s*)data)->cl = cl;
   l = (uv_loop_t*)PN_DATA(data);
   def = uv_default_loop();
   memcpy(l, def, sizeof(uv_loop_t));
@@ -446,6 +441,19 @@ aio_write_cb(uv_write_t* req, int status) {
 static void
 aio_connect_cb(uv_connect_t* req, int status) {
   DEF_AIO_CB(connect);
+/*aio_connect_t* wrap = (aio_connect_t*)req;
+  vPN(Closure) cb = PN_CLOSURE(wrap->cb);
+  PN data = (PN)((char*)wrap - sizeof(struct PNData));
+  Potion *P = wrap->P;
+  //FATAL_AIO_TYPE(data,connect);
+  if (!potion_bind(P, data, PN_STR("Aio_connect"))) {
+    fprintf(stderr, "** Invalid type %s, expected %s",
+            PN_IS_PTR(data)? AS_STR(potion_send(PN_VTABLE(data), PN_name))
+            : PN_IS_NIL(data) ? NIL_NAME
+            : PN_IS_NUM(data) ? "Number" : "Boolean", "Aio_connect");
+    exit(1);
+  }
+  if (cb) cb->method(P, (PN)cb, data, PN_NUM(status));*/
 }
 static void
 aio_shutdown_cb(uv_shutdown_t* req, int status) {
@@ -484,13 +492,13 @@ static void
 aio_fs_poll_cb(uv_fs_poll_t* handle, int status, const uv_stat_t* prev, const uv_stat_t* curr) {
   aio_fs_poll_t* wrap = (aio_fs_poll_t*)handle;
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);
-  PN data = (PN)((char*)&wrap - sizeof(struct PNData) + sizeof(char*));
+  PN data = (PN)((char*)wrap - sizeof(struct PNData));
   Potion *P = wrap->P;
   CHECK_AIO_TYPE(data,fs_poll);
   CHECK_AIO_TYPE(prev,stat);
   CHECK_AIO_TYPE(curr,stat);
   PN_CHECK_INT(status);
-  if (cb) cb->method(P, wrap->cl, (PN)data, PN_NUM(status),
+  if (cb) cb->method(P, (PN)cb, (PN)data, PN_NUM(status),
 		     potion_ref(wrap->P, (PN)prev), potion_ref(wrap->P, (PN)curr));
 }
 #endif
@@ -498,22 +506,22 @@ static void
 aio_read_cb(uv_stream_t* stream, ssize_t nread, uv_buf_t buf) {
   aio_stream_t* wrap = (aio_stream_t*)stream;
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);
-  PN data = (PN)((char*)&wrap - sizeof(struct PNData) + sizeof(char*));
+  PN data = (PN)((char*)wrap - sizeof(struct PNData));
   Potion *P = wrap->P;
   FATAL_AIO_STREAM(data);
   if (cb)
-    cb->method(P, wrap->cl, (PN)data, PN_NUM(nread),
+    cb->method(P, (PN)cb, (PN)data, PN_NUM(nread),
                potion_byte_str2(wrap->P, buf.base, buf.len));
 }
 static void
 aio_read2_cb(uv_pipe_t* pipe, ssize_t nread, uv_buf_t buf, uv_handle_type pending) {
   aio_pipe_t* wrap = (aio_pipe_t*)pipe;
   vPN(Closure) cb = PN_CLOSURE(wrap->cb);
-  PN data = (PN)((char*)&wrap - sizeof(struct PNData) + sizeof(char*));
+  PN data = (PN)((char*)wrap - sizeof(struct PNData));
   Potion *P = wrap->P;
   FATAL_AIO_TYPE(data, pipe);
   if (cb)
-    cb->method(P, wrap->cl, (PN)data, PN_NUM(nread),
+    cb->method(P, (PN)cb, (PN)data, PN_NUM(nread),
 	       potion_byte_str2(wrap->P, buf.base, buf.len), PN_NUM(pending));
 }
 
@@ -799,7 +807,7 @@ aio_udp_recv_cb(uv_udp_t* handle, ssize_t nread, uv_buf_t buf,
   int port;
   struct sockaddr_in* addr_in = (struct sockaddr_in*)addr;
   vPN(Closure) cb = PN_CLOSURE(wrap->r.recv_cb);
-  char *data = (char*)(&wrap - sizeof(struct PNData) + sizeof(char*));
+  char *data = (char*)(wrap - sizeof(struct PNData));
   if (addr_in->sin_family == AF_INET6) {
     uv_ip6_name((struct sockaddr_in6*)addr, ip, 46);
     port = ((struct sockaddr_in6*)addr)->sin6_port;
@@ -809,7 +817,7 @@ aio_udp_recv_cb(uv_udp_t* handle, ssize_t nread, uv_buf_t buf,
   }
   //TODO: maybe reuse PNBytes with buf structure
   if (cb)
-    cb->method(wrap->P, wrap->cl, (PN)data, PN_NUM(nread),
+    cb->method(wrap->P, (PN)cb, (PN)data, PN_NUM(nread),
 	       potion_byte_str2(wrap->P, buf.base, buf.len),
 	       potion_byte_str(wrap->P, ip),
 	       PN_NUM(port), PN_NUM(flags));

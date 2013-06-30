@@ -3,10 +3,10 @@ load "aio"
 tcp = Aio_tcp
 connected = 0
 connect_cb = (req,status):
-  "connected" print
   connected++
-  .
-tcp connect(Aio_connect, "127.0.0.1", 22, connect_cb)
-if (connected == 0): "connected" print.
+  "connected" print.
+tcp connect(Aio_connect, "127.0.0.1", 80, connect_cb)
+tcp run
+if (connected == 0): "not connected" print.
 ""
 #=> connected
