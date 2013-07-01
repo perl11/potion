@@ -120,11 +120,13 @@ ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
 else
 ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	ICC = 1
-# 186: pointless comparison of unsigned integer with zero
-# in PN_TYPECHECK
+	DEBUGFLAGS += -falign-functions=16
+# 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
+# 177: label "l414" was declared but never referenced in syntax-p5.c sets fail case
 	CFLAGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177
   ifeq (${DEBUG},0)
-	DEBUGFLAGS += -O -finline -falign-functions
+# -Ofast
+	DEBUGFLAGS += -finline
   else
         DEBUGFLAGS += -gdwarf-3
   endif
@@ -137,6 +139,7 @@ ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
 endif
 endif
 endif
+
 ifeq (${DEBUG},0)
 	DEBUGFLAGS += -fno-stack-protector
 else
