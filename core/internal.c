@@ -291,7 +291,7 @@ void potion_esp(void **esp) {
 
 #ifdef DEBUG
 void potion_dump_stack(Potion *P) {
-  PN_SIZE n;
+  long n;
   PN *end, *ebp, *start = P->mem->cstack;
   struct PNMemory *M = P->mem;
   POTION_ESP(&end);
@@ -304,10 +304,10 @@ void potion_dump_stack(Potion *P) {
   end = M->cstack;
 #endif
 
-  printf("-- dumping %u stack from %p to %p --\n", n, start, end);
+  printf("-- dumping %ld stack from %p to %p --\n", n, start, end);
   printf("   ebp = %p, *ebp = %lx\n", ebp, *ebp);
   while (n--) {
-    printf("   stack(%u) = %lx", n, *start);
+    printf("   stack(%ld) = %lx", n, *start);
     if (IS_GC_PROTECTED(*start))
       printf(" gc ");
     else if (IN_BIRTH_REGION(*start))

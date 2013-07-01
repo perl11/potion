@@ -101,7 +101,7 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
 ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
-  PN_SIZE n;
+  long n;
   PN *start, *sp1 = P->mem->cstack, *sp2, *sp3;
 #if defined(DEBUG) && (__WORDSIZE == 64)
   if ((_PN)sp1 & 0xF) {
@@ -119,6 +119,11 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   start = sp2;
 #endif
 
+  if (n < 0) {
+    DBG_vt("\ncallcc: n=%ld, start=%p, end=%p, cc=%p\n", n, start, sp2, sp1);
+    potion_fatal("invalid stack direction");
+    return 0;
+  }
   cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 3 + PN_SAVED_REGS));
   cc->len = n + 3;
   cc->stack[0] = (PN)sp1;

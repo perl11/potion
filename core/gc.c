@@ -52,7 +52,7 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
         case 0: // count only
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
             i++;
-	    DBG_Gv(P,"GC mark count only %p\n", x);
+	    DBG_Gv(P,"GC mark count only %p %6x\n", x, PN_TYPE(*x));
 	  }
         break;
         case 1: // minor
@@ -60,14 +60,14 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
 	    // gc-test crash: P->vts = NULL
             GC_FORWARD(x, v);
             i++;
-	    DBG_Gv(P,"GC mark minor %p -> %lx\n", x, v);
+	    DBG_Gv(P,"GC mark minor %p -> %lx %6x\n", x, v, PN_TYPE(*x));
           }
         break;
         case 2: // major
           if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
-	    DBG_Gv(P,"GC mark major %p -> %lx\n", x, v);
+	    DBG_Gv(P,"GC mark major %p -> %lx %6x\n", x, v, PN_TYPE(*x));
           }
         break;
       }
@@ -79,7 +79,7 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
 
 ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN_SIZE potion_mark_stack(Potion *P, int forward) {
-  PN_SIZE n;
+  long n;
   _PN *end, *start = P->mem->cstack;
   struct PNMemory *M = P->mem;
   POTION_ESP(&end);
@@ -279,7 +279,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
 
   if (ptr->vt > PN_TUSER) {
     if (P->vts && PN_VTABLE(ptr->vt) && PN_TYPECHECK(ptr->vt))
-      sz = potion_send(ptr, PN_size);
+      sz = potion_send((PN)ptr, PN_size);
     else if (P->flags & (DEBUG_VERBOSE
 #ifdef DEBUG
 			 |DEBUG_GC
