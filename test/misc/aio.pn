@@ -1,4 +1,4 @@
-#TODO: in work
+# requires a TCP daemon on localhost port 80
 load "aio"
 tcp = Aio_tcp
 connected = 0

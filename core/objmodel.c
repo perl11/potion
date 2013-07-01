@@ -493,7 +493,7 @@ PN potion_object_new(Potion *P, PN cl, PN self) {
     potion_type_size(P, (struct PNObject *)self) - sizeof(struct PNObject) + vt->ivlen * sizeof(PN));
 }
 /**\memberof PNObject
-   \returns size in bytes for the gc */
+   \returns potion object size in bytes for the gc */
 PN potion_object_size(Potion *P, PN cl, PN self) {
   vPN(Object) obj = (struct PNObject *)self;
   return sizeof(struct PNObject) + (((struct PNVtable *)PN_VTABLE(obj->vt))->ivlen * sizeof(PN));

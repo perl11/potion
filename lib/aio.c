@@ -38,6 +38,7 @@ typedef struct aio_##T##_s aio_##T##_t; \
 struct aio_##T##_s {     \
   uv_##T##_t h;          \
   Potion *P;             \
+  struct PNClosure *cb;	 \
 }
 typedef uv_buf_t aio_buf_t;
 DEF_AIO_CB_WRAP(write);
@@ -524,6 +525,24 @@ aio_read2_cb(uv_pipe_t* pipe, ssize_t nread, uv_buf_t buf, uv_handle_type pendin
     cb->method(P, (PN)cb, (PN)data, PN_NUM(nread),
 	       potion_byte_str2(wrap->P, buf.base, buf.len), PN_NUM(pending));
 }
+static void
+aio_walk_cb(uv_handle_t* handle, void *arg) {
+  aio_handle_t* wrap = (aio_handle_t*)handle;
+  vPN(Closure) cb = PN_CLOSURE(wrap->cb);
+  PN data = (PN)((char*)wrap - sizeof(struct PNData));
+  Potion *P = wrap->P;
+  FATAL_AIO_TYPE(data,handle);
+  if (cb) cb->method(P, (PN)cb, (PN)data, 0);
+}
+static void
+aio_close_cb(uv_handle_t* handle) {
+  aio_handle_t* wrap = (aio_handle_t*)handle;
+  vPN(Closure) cb = PN_CLOSURE(wrap->cb);
+  PN data = (PN)((char*)wrap - sizeof(struct PNData));
+  Potion *P = wrap->P;
+  FATAL_AIO_TYPE(data,handle);
+  if (cb) cb->method(P, (PN)cb, (PN)data);
+}
 
 /** \memberof Aio
  * Returns the libuv version packed into a single integer. 8 bits are used for
@@ -556,6 +575,22 @@ aio_run(Potion *P, PN cl, PN self, PN loop, PN mode) {
   if (mode) PN_CHECK_TYPE(mode,PN_TNUMBER);
   return uv_run(l, mode ? (uv_run_mode)PN_INT(mode) : UV_RUN_DEFAULT)
     ? aio_last_error(P, "run", l) : self;
+}
+///\memberof Aio
+/// Walk the list of open handles.
+static PN
+aio_walk(Potion *P, PN cl, PN self, PN loop, PN cb, PN arg) {
+  uv_loop_t* l;
+  if (!loop) l = uv_default_loop();
+  else if (PN_VTYPE(loop) == aio_loop_type)
+    l = (uv_loop_t*)PN_DATA(loop);
+  else return potion_type_error(P, loop);
+
+  AIO_CB_SET(walk,(aio_loop_t*)l);
+
+  void *c_arg = PN_STR_PTR(arg);
+  uv_walk(l, walk_cb, c_arg);
+  return self;
 }
 
 ///\memberof Aio_tcp
@@ -1097,6 +1132,15 @@ aio_is_closing(Potion *P, PN cl, PN stream) {
   const aio_stream_t *handle = AIO_STREAM(stream);
   return uv_is_closing((const uv_handle_t*)&handle->r) ? PN_TRUE : PN_FALSE;
 }
+/** \memberof Aio_handle
+ * Returns TRUE if the prepare/check/idle/timer handle has been started, FALSE
+ * otherwise. For other handle types this always returns TRUE.
+ * \returns PNBoolean */
+static PN
+aio_is_active(Potion *P, PN cl, PN self) {
+  const aio_handle_t *handle = AIO_DATA(handle,self);
+  return uv_is_active((const uv_handle_t*)&handle->h) ? PN_TRUE : PN_FALSE;
+}
 
 /**\memberof Aio_async
  * This can be called from other threads to wake up a libuv thread.
@@ -1157,6 +1201,45 @@ aio_timer_set_repeat(Potion *P, PN cl, PN self, PN repeat) {
   uv_timer_set_repeat(&handle->r, PN_INT(repeat));
   return self;
 }
+/**\memberof Aio_handle
+ * Returns size of various libuv handle types, useful for FFI
+ * bindings to allocate correct memory without copying struct
+ * definitions.
+ */
+static PN
+aio_handle_uvsize(Potion *P, PN cl, PN self) {
+  aio_handle_t *handle = AIO_DATA(handle,self);
+  return PN_NUM(uv_handle_size(handle->h.type));
+}
+/**\memberof Aio_req
+ * Returns size of various libuv request types, useful for dynamic lookup with FFI.
+ */
+static PN
+aio_req_uvsize(Potion *P, PN cl, PN self) {
+  aio_req_t *req = AIO_DATA(req,self);
+  return PN_NUM(uv_req_size(req->r.type));
+}
+
+/**\memberof Aio_handle
+ * Request handle to be closed. close_cb will be called asynchronously after
+ * this call. This MUST be called on each handle before memory is released.
+ *
+ * Note that handles that wrap file descriptors are closed immediately but
+ * close_cb will still be deferred to the next iteration of the event loop.
+ * It gives you a chance to free up any resources associated with the handle.
+ *
+ * In-progress requests, like uv_connect_t or uv_write_t, are cancelled and
+ * have their callbacks called asynchronously with status=-1 and the error code
+ * set to UV_ECANCELED. */
+static PN
+aio_close(Potion *P, PN cl, PN self, PN cb) {
+  aio_handle_t* handle = AIO_DATA(handle,self);
+  AIO_CB_SET(close, handle);
+  uv_close(&handle->h, close_cb);
+  return self;
+}
+
+
 #undef AIO_CB_SET
 
 void Potion_Init_aio(Potion *P) {
@@ -1233,6 +1316,11 @@ void Potion_Init_aio(Potion *P) {
 #undef DEF_AIO_GLOBAL_VT
 
   potion_method(aio_vt, "size", aio_size, 0);
+  potion_method(aio_req_vt, "uvsize", aio_req_uvsize, 0);
+  potion_method(aio_handle_vt, "uvsize", aio_handle_uvsize, 0);
+  potion_method(aio_handle_vt, "active?", aio_is_active, 0);
+  potion_method(aio_handle_vt, "close", aio_close, "|cb=&");
+  potion_method(aio_vt, "walk", aio_walk, "|loop=o,fun=&,arg=o");
   potion_method(aio_vt, "run", aio_run, "|loop=o,mode=N");
   potion_method(aio_stream_vt, "write", aio_write, "req=o,buf=O,bufcnt=N|write_cb=&");
   potion_method(aio_stream_vt, "shutdown", aio_shutdown, "req=o|shutdown_cb=&");
