@@ -214,18 +214,101 @@ static PN aio_tcp_new(Potion *P, PN cl, PN self, PN loop) {
    \param loop   PNAioLoop to uv_loop_t*, defaults to uv_default_loop()
    \see http://nikhilm.github.io/uvbook/networking.html#udp */
 static PN aio_udp_new(Potion *P, PN cl, PN self, PN loop) {
-  DEF_AIO_NEW_LOOP_INIT(udp);
+  //DEF_AIO_NEW_LOOP_INIT(udp);
+  uv_loop_t* l;
+  uv_udp_t *handle;
+  struct PNData * volatile data = potion_data_alloc(P, sizeof(aio_udp_t));
+  data->vt = aio_udp_type;
+  handle = (uv_udp_t*)PN_DATA(data);
+  ((aio_udp_t*)handle)->P = P;
+  if (!loop) l = uv_default_loop();
+  else if (PN_VTYPE(loop) == aio_loop_type)
+    l = (uv_loop_t*)PN_DATA(loop);
+  else return potion_type_error(P, loop);
+  if (uv_udp_init(l, handle))
+    return aio_last_error(P, "Aio_udp", l);
+  //TODO: init ivars from struct
+  return (PN)data;
 }
-/**\class aio_prepare \memberof Lobby
-   create and init a \c aio_prepare object
-   \param loop aio_loop, defaults to uv_default_loop()
+/**\memberof Aio_udp
+   get \c Aio_udp properties
+   \param key PNString, One of "broadcast", "multicast_loop", "multicast_ttl", "ttl"
+   \see http://nikhilm.github.io/uvbook/networking.html#udp */
+static PN aio_udp_get(Potion *P, PN cl, PN self, PN key, PN value) {
+  uv_udp_t *udp;
+  udp = (uv_udp_t*)PN_DATA(potion_fwd(self));
+  CHECK_AIO_TYPE(potion_fwd(self),udp);
+  if (!potion_bind(P, key, PN_STR("eval")))
+    return potion_type_error_want(P, key, "String");
+  char *k = PN_STR_PTR(key);
+  if (!strcmp(k, "broadcast")
+   || !strcmp(k, "multicast_loop")
+   || !strcmp(k, "multicast_ttl")
+   || !strcmp(k, "ttl")
+      ) {
+    return potion_obj_get(P, 0, self, key);
+  }
+  else {
+    return potion_error(P, potion_str_format(P, "Invalid key %s",
+					     PN_STR_PTR(key)),
+			0, 0, 0);
+  }
+}
+/**\memberof Aio_udp
+   set aio_udp properties
+   \param key PNString, One of "broadcast", "multicast_loop", "multicast_ttl", "ttl"
+   \param value
+   \see http://nikhilm.github.io/uvbook/networking.html#udp */
+static PN aio_udp_set(Potion *P, PN cl, PN self, PN key, PN value) {
+  uv_udp_t *udp;
+  udp = (uv_udp_t*)PN_DATA(potion_fwd(self));
+  CHECK_AIO_TYPE(potion_fwd(self),udp);
+  if (!potion_bind(P, key, PN_STR("eval")))
+    return potion_type_error_want(P, key, "String");
+  char *k = PN_STR_PTR(key);
+  if (!strcmp(k, "broadcast")) {
+    if (!PN_IS_BOOL(value))
+      return potion_type_error_want(P, value, "Boolean");
+    if (!uv_udp_set_broadcast(udp, value == PN_TRUE ? 1 : 0))
+      potion_obj_set(P, 0, self, key, value);
+  }
+  else if (!strcmp(k, "multicast_loop")) {
+    if (!PN_IS_BOOL(value))
+      return potion_type_error_want(P, value, "Boolean");
+    if (!uv_udp_set_multicast_loop(udp, value == PN_TRUE ? 1 : 0))
+      potion_obj_set(P, 0, self, key, value);
+  }
+  else if (!strcmp(k, "multicast_ttl")) {
+    if (!PN_IS_NUM(value))
+      return potion_type_error_want(P, value, "Number");
+    if (!uv_udp_set_multicast_ttl(udp, PN_INT(value)))
+      potion_obj_set(P, 0, self, key, value);
+  }
+  else if (!strcmp(k, "ttl")) {
+    if (!PN_IS_NUM(value))
+      return potion_type_error_want(P, value, "Number");
+    if (!uv_udp_set_ttl(udp, PN_INT(value)))
+      potion_obj_set(P, 0, self, key, value);
+  }
+  else {
+    return potion_error(P, potion_str_format(P, "Invalid key %s",
+					     PN_STR_PTR(key)),
+			0, 0, 0);
+  }
+  return (PN)self;
+}
+/**\class Aio_prepare \memberof Lobby
+   create and init a \c Aio_prepare object
+   Every active prepare handle gets its callback called exactly once per loop
+   iteration, just before the system blocks to wait for completed i/o.
+   \param loop Aio_loop, defaults to uv_default_loop()
    \see http://nikhilm.github.io/uvbook/networking.html#tcp */
 static PN aio_prepare_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(prepare);
 }
-/**\class aio_check \memberof Lobby
-   create and init a \c aio_check object
-   \param loop aio_loop, defaults to uv_default_loop() */
+/**\class Aio_check \memberof Lobby
+   create and init a \c Aio_check object
+   \param loop Aio_loop, defaults to uv_default_loop() */
 static PN aio_check_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(check);
 }
@@ -733,6 +816,7 @@ aio_udp_getsockname(Potion *P, PN cl, PN udp) {
     : potion_str2(P, sock.sa_data, len);
 }
 ///\memberof Aio_udp
+///TODO: setpath handler
 static PN
 aio_udp_set_membership(Potion *P, PN cl, PN udp, PN mcaddr, PN ifaddr, PN membership) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
@@ -1252,7 +1336,6 @@ void Potion_Init_aio(Potion *P) {
   potion_define_global(P, PN_STR("Aio_" _XSTR(T)), aio_##T##_vt); \
   potion_method(aio_##T##_vt, ""_XSTR(T), aio_##T##_new, 0)
 #define DEF_AIO_CTOR(T) \
-  potion_type_call_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, 0)); \
   potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, 0));
 #define DEF_AIO_VT(T,paren) \
   PN aio_##T##_vt = potion_class(P, 0, paren##_vt, 0);	\
@@ -1279,7 +1362,22 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_VT(handle,aio);
   DEF_AIO_VT(stream,aio);
   DEF_AIO_GLOBAL_VT(tcp,aio_stream,"|loop=o");
-  DEF_AIO_GLOBAL_VT(udp,aio_stream,"|loop=o");
+  //DEF_AIO_GLOBAL_VT(udp,aio_stream,"|loop=o");
+  PN udp_ivars = potion_tuple_with_size(P, 6); //sorted list of path names
+  vPN(Tuple) t = PN_GET_TUPLE(udp_ivars);
+  t->set[0] = PN_STR("broadcast");
+  t->set[1] = PN_STR("multicast_loop");
+  t->set[2] = PN_STR("multicast_ttl");
+  t->set[3] = PN_STR("ttl");
+  PN aio_udp_vt = potion_class(P, 0, aio_stream_vt, udp_ivars);
+  aio_udp_type = potion_class_type(P, aio_udp_vt);
+  potion_define_global(P, PN_STR("Aio_udp"), aio_udp_vt);
+  //potion_method(aio_udp_vt, "udp", aio_udp_new, 0);
+  potion_type_call_is(aio_udp_vt, PN_FUNC(aio_udp_get, "key=S"));
+  potion_type_callset_is(aio_udp_vt, PN_FUNC(aio_udp_set, "key=S,value=o"));
+  potion_type_constructor_is(aio_udp_vt, PN_FUNC(aio_udp_new, "|loop=o"));
+  potion_method(P->lobby, "Aio_udp", aio_udp_new, "|loop=o");
+
   DEF_AIO_GLOBAL_VT(tty,aio_stream,"file=o,readable=N|loop=o");
   DEF_AIO_GLOBAL_VT(pipe,aio_stream,"ipc=N|loop=o");
   DEF_AIO_GLOBAL_VT(prepare,aio,"|loop=o");
