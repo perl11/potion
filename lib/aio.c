@@ -260,7 +260,7 @@ static PN aio_udp_get(Potion *P, PN cl, PN self, PN key, PN value) {
 }
 /**\memberof Aio_udp
    set \c Aio_udp properties
-   \param key PNString, One of "broadcast", "multicast_loop", "multicast_ttl", "ttl"
+   \param key PNString, One of "broadcast", "multicast_loop", "multicast_ttl", "ttl", "membership"
    \param value
    \see http://nikhilm.github.io/uvbook/networking.html#udp */
 static PN aio_udp_set(Potion *P, PN cl, PN self, PN key, PN value) {
@@ -298,9 +298,15 @@ static PN aio_udp_set(Potion *P, PN cl, PN self, PN key, PN value) {
     if (!PN_IS_TUPLE(value))
       return potion_type_error_want(P, value, "Tuple");
     vPN(Tuple) t = PN_GET_TUPLE(value);
+    if (!PN_IS_STR(t->set[0]))
+      return potion_type_error_want(P, t->set[0], "String");
+    if (!PN_IS_STR(t->set[1]))
+      return potion_type_error_want(P, t->set[0], "String");
+    if (!PN_IS_NUM(t->set[2]))
+      return potion_type_error_want(P, t->set[2], "Number");
     if (!uv_udp_set_membership(udp, PN_STR_PTR(PN_TUPLE_AT(t, 0)),
 			       PN_STR_PTR(PN_TUPLE_AT(t, 1)),
-			       PN_INT(PN_TUPLE_AT(t, 2))))
+			       (uv_membership)PN_INT(PN_TUPLE_AT(t, 2)))) //0 or 1
       potion_obj_set(P, 0, self, key, value);
   }
   else {
@@ -345,7 +351,43 @@ static PN aio_fs_poll_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(fs_poll);
 }
 /**\class Aio_signal \memberof Lobby
-   create and init a \c Aio_signal object
+
+create and init a \c Aio_signal object
+
+UNIX signal handling on a per-event loop basis. The implementation is not
+ultra efficient so don't go creating a million event loops with a million
+signal watchers.
+
+Note to Linux users: SIGRT0 and SIGRT1 (signals 32 and 33) are used by the
+NPTL pthreads library to manage threads. Installing watchers for those
+signals will lead to unpredictable behavior and is strongly discouraged.
+Future versions of libuv may simply reject them.
+
+Some signal support is available on Windows:
+
+  SIGINT is normally delivered when the user presses CTRL+C. However, like
+  on Unix, it is not generated when terminal raw mode is enabled.
+
+  SIGBREAK is delivered when the user pressed CTRL+BREAK.
+
+  SIGHUP is generated when the user closes the console window. On SIGHUP the
+  program is given approximately 10 seconds to perform cleanup. After that
+  Windows will unconditionally terminate it.
+
+  SIGWINCH is raised whenever libuv detects that the console has been
+  resized. SIGWINCH is emulated by libuv when the program uses an uv_tty_t
+  handle to write to the console. SIGWINCH may not always be delivered in a
+  timely manner; libuv will only detect size changes when the cursor is
+  being moved. When a readable uv_tty_handle is used in raw mode, resizing
+  the console buffer will also trigger a SIGWINCH signal.
+
+Watchers for other signals can be successfully created, but these signals
+are never generated. These signals are: SIGILL, SIGABRT, SIGFPE, SIGSEGV,
+SIGTERM and SIGKILL.
+
+Note that calls to raise() or abort() to programmatically raise a signal are
+not detected by libuv; these will not trigger a signal watcher.
+
    \param loop Aio_loop, defaults to uv_default_loop() */
 static PN aio_signal_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(signal);
@@ -582,11 +624,11 @@ static void
 aio_timer_cb(uv_timer_t* req, int status) {
   DEF_AIO_CB(timer);
 }
-#if 0 //yet unused
 static void
 aio_signal_cb(uv_signal_t* req, int status) { //signum really
   DEF_AIO_CB(signal);
 }
+#if 0 //yet unused
 static void
 aio_fs_poll_cb(uv_fs_poll_t* handle, int status, const uv_stat_t* prev, const uv_stat_t* curr) {
   aio_fs_poll_t* wrap = (aio_fs_poll_t*)handle;
@@ -1344,6 +1386,24 @@ aio_close(Potion *P, PN cl, PN self, PN cb) {
   return self;
 }
 
+///\memberof Aio_signal
+static PN
+aio_signal_start(Potion *P, PN cl, PN self, PN cb, PN signum) {
+  aio_signal_t *handle = AIO_DATA(signal,self);
+  PN_CHECK_INT(signum);
+  AIO_CB_SET(signal,handle);
+  return uv_signal_start(&handle->r, signal_cb, PN_INT(signum))
+    ? aio_last_error(P, "signal start", handle->r.loop)
+    : self;
+}
+///\memberof Aio_signal
+static PN
+aio_signal_stop(Potion *P, PN cl, PN self) {
+  aio_signal_t *handle = AIO_DATA(signal,self);
+  return uv_signal_stop(&handle->r)
+    ? aio_last_error(P, "signal stop", handle->r.loop)
+    : self;
+}
 
 #undef AIO_CB_SET
 
@@ -1375,6 +1435,8 @@ void Potion_Init_aio(Potion *P) {
   potion_define_global(P, PN_STR("AIO_RUN_NOWAIT"), PN_NUM(2));
   potion_define_global(P, PN_STR("AIO_UDP_IPV6ONLY"), PN_NUM(1));
   potion_define_global(P, PN_STR("AIO_UDP_PARTIAL"), PN_NUM(2));
+  potion_define_global(P, PN_STR("AIO_LEAVE_GROUP"), PN_NUM(0));
+  potion_define_global(P, PN_STR("AIO_JOIN_GROUP"), PN_NUM(1));
   potion_method(P->lobby, "Aio_version", aio_version, 0);
   potion_method(P->lobby, "Aio_version_string", aio_version_string, 0);
   potion_method(aio_vt, "version", aio_version, 0);
@@ -1459,7 +1521,7 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_udp_vt, "bind", aio_udp_bind, "addr=S,port=N");
   potion_method(aio_udp_vt, "bind6", aio_udp_bind6, "addr=S,port=N|ipv6only:=0");
   potion_method(aio_udp_vt, "getsockname", aio_udp_getsockname, 0);
-  potion_method(aio_udp_vt, "set_membership", aio_udp_set_membership, "mcaddr=S,ifaddr=S,memb=o");
+  potion_method(aio_udp_vt, "set_membership", aio_udp_set_membership, "mcaddr=S,ifaddr=S,memb=N");
   potion_method(aio_udp_vt, "set_multicast_loop", aio_udp_set_multicast_loop, "on=N");
   potion_method(aio_udp_vt, "set_multicast_ttl", aio_udp_set_multicast_ttl, "ttl=N");
   potion_method(aio_udp_vt, "set_broadcast", aio_udp_set_broadcast, "on=N");
@@ -1499,4 +1561,6 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_stream_vt, "readable", aio_is_readable, 0);
   potion_method(aio_stream_vt, "writable", aio_is_writable, 0);
   potion_method(aio_stream_vt, "closing", aio_is_closing, 0);
+  potion_method(aio_signal_vt, "start", aio_signal_start, "cb=&");
+  potion_method(aio_signal_vt, "stop", aio_signal_stop, 0);
 }
