@@ -32,6 +32,22 @@ void gc_test_alloc1(CuTest *T) {
   CuAssert(T, "only one or two allocations should be found", count >= 1 && count <= 2);
 }
 
+void gc_test_gc_minor(CuTest *T) {
+  potion_str_hash_init(P);
+  PN ptr = (PN)potion_gc_alloc(P, PN_TUSER, 16);
+  PN s1 = PN_STR("teststring");
+  potion_garbagecollect(P, POTION_PAGESIZE, 0);
+  CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr));
+  CuAssert(T, "s1", PN_IS_STR(s1));
+}
+void gc_test_gc_major(CuTest *T) {
+  POTION_INIT_STACK(sp);
+  P = potion_create(sp);
+  PN ptr = (PN)potion_gc_alloc(P, PN_TUSER, 16);
+  potion_garbagecollect(P, POTION_PAGESIZE, 1);
+  CuAssert(T, "couldn't allocate 16 bytes from GC", PN_IS_PTR(ptr));
+}
+
 void gc_test_alloc4(CuTest *T) {
   PN ptr = (PN)potion_gc_alloc(P, PN_TUSER, 16);
   PN ptr2 = (PN)potion_gc_alloc(P, PN_TUSER, 16);
@@ -66,22 +82,29 @@ CuSuite *gc_suite() {
   SUITE_ADD_TEST(S, gc_test_alloc4);
   SUITE_ADD_TEST(S, gc_test_forward);
 #endif
+  SUITE_ADD_TEST(S, gc_test_gc_minor);
+  SUITE_ADD_TEST(S, gc_test_gc_major);
   return S;
 }
 
-int main(void) {
+int main(int argc, char **argv) {
   POTION_INIT_STACK(sp);
   int count;
 
   // manually initialize the older generation
   P = potion_gc_boot(sp);
+  if (argc == 2) {
+#ifdef DEBUG
+    if (!strcmp(argv[1], "-DG")) P->flags += DEBUG_GC;
+    if (!strcmp(argv[1], "-DGv")) P->flags += (DEBUG_GC|DEBUG_VERBOSE);
+#endif
+  }
   if (P->mem->old_lo == NULL) {
     struct PNMemory *M = P->mem;
     int gensz = POTION_BIRTH_SIZE * 2;
     void *page = pngc_page_new(&gensz, 0);
     SET_GEN(old, page, gensz);
   }
-
   CuString *out = CuStringNew();
   CuSuite *suite = gc_suite();
   CuSuiteRun(suite);
