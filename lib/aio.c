@@ -235,8 +235,6 @@ static PN aio_udp_new(Potion *P, PN cl, PN self, PN loop) {
    \param key PNString, One of "broadcast", "multicast_loop", "multicast_ttl", "ttl"
    \see http://nikhilm.github.io/uvbook/networking.html#udp */
 static PN aio_udp_get(Potion *P, PN cl, PN self, PN key, PN value) {
-  uv_udp_t *udp;
-  udp = (uv_udp_t*)PN_DATA(potion_fwd(self));
   CHECK_AIO_TYPE(potion_fwd(self),udp);
   if (!potion_bind(P, key, PN_STR("eval")))
     return potion_type_error_want(P, key, "String");
