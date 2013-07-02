@@ -121,20 +121,28 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
   if (uv_##T##_init(l, handle))			 \
     return aio_last_error(P, "Aio_"_XSTR(T), l); \
   return (PN)data;
-#define AIO_CB_SET(T,ARG)		\
+#define AIO_CB_SET(T,ARG)	\
   uv_##T##_cb T##_cb;		\
   if (PN_IS_CLOSURE(cb)) {	\
-    (ARG)->cb = PN_CLOSURE(cb);	\
+    (ARG)->cb = PN_CLOSURE(cb); \
+    T##_cb = aio_##T##_cb;	\
+  }				\
+  else if (PN_IS_FFIPTR(cb))    \
+    T##_cb = (uv_##T##_cb)cb;   \
+  else T##_cb = aio_##T##_cb
+#define AIO_CB_SET_CAST(T,ARG)                \
+  uv_##T##_cb T##_cb;		\
+  if (PN_IS_CLOSURE(cb)) {	\
+    ((aio_##T##_t*)ARG)->cb = PN_CLOSURE(cb); \
     T##_cb = aio_##T##_cb;	\
   }				\
   else if (PN_IS_FFIPTR(cb))    \
     T##_cb = (uv_##T##_cb)cb;   \
   else T##_cb = aio_##T##_cb
 
-//TODO: check inheritence
+//checks inheritence
 #define CHECK_AIO_TYPE(self, T) \
   if (!potion_bind(P, self, PN_STR("Aio_"_XSTR(T)))) return potion_type_error_want(P, self, ""_XSTR(T))
-//if (PN_VTYPE(self) != aio_##T##_type) return potion_type_error_want(P, self, ""_XSTR(T))
 #define CHECK_AIO_STREAM(stream)                             \
   {                                                          \
     PNType _t = PN_VTYPE(stream);                            \
@@ -188,6 +196,18 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
   Potion *P = wrap->P;    \
   FATAL_AIO_TYPE(data,T); \
   if (cb) cb->method(P, (PN)cb, data, PN_NUM(status))
+
+static void
+aio_getaddrinfo_cb(uv_getaddrinfo_t* req, int status, struct addrinfo* res) {
+  aio_getaddrinfo_t* wrap = (aio_getaddrinfo_t*)req;
+  vPN(Closure) cb = PN_CLOSURE(wrap->cb);
+  PN data = (PN)((char*)wrap - sizeof(struct PNData));
+  Potion *P = wrap->P;
+  FATAL_AIO_TYPE(data,getaddrinfo);
+  if (!PN_IS_NUM(status))
+    potion_fatal("status not a Number");
+  if (cb) cb->method(P, (PN)cb, (PN)data, PN_NUM(status), potion_ref(wrap->P, (PN)res));
+}
 
 /**\class Aio_tcp \memberof Lobby
    create and init a \c Aio_tcp object
@@ -465,9 +485,34 @@ static PN aio_work_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(work);
   return (PN)data;
 }
-static PN aio_getaddrinfo_new(Potion *P, PN cl, PN self) {
-  DEF_AIO_NEW(getaddrinfo);
-  return (PN)data;
+/**\class Aio_getaddrinfo \memberof Aio
+ create a async \c Aio_getaddrinfo request
+
+ Either node or service may be NULL but not both.
+
+ \param hints is a pointer to a struct addrinfo with additional address type
+ constraints, or NULL. Consult `man -s 3 getaddrinfo` for details.
+
+ If successful, your \param cb callback gets called sometime in the future with the
+ lookup result, which is either:
+ 
+  a) status == 0, the res argument points to a valid struct addrinfo, or
+  b) status == -1, the res argument is NULL. */
+static PN aio_getaddrinfo_new(Potion *P, PN cl, PN self,
+                              PN cb, PN node, PN service, PN hints, PN loop)
+{
+  DEF_AIO_NEW_LOOP(getaddrinfo);
+  AIO_CB_SET_CAST(getaddrinfo,handle);
+
+  const char *node_c = PN_IS_STR(node) ? PN_STR_PTR(node) : NULL;
+  const char *service_c = PN_IS_STR(service) ? PN_STR_PTR(service) : NULL;
+  struct addrinfo* hints_c = (struct addrinfo*)PN_DATA(hints);
+  if (!node_c && !service_c) {
+    return potion_type_error_want(P, !node_c ? node : service, "String");
+  }
+  return uv_getaddrinfo(l, handle, getaddrinfo_cb, node_c, service_c, (const struct addrinfo*)hints_c)
+    ? aio_last_error(P, "getaddrinfo", l)
+    : (PN)data;
 }
 static PN aio_cpu_info_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(cpu_info);
@@ -1426,7 +1471,6 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_##T##_vt, ""_XSTR(T), aio_##T##_new, 0)
 #define DEF_AIO_GLOBAL_VT(T,paren,args) \
   DEF_AIO__VT(T,paren); \
-  potion_type_call_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, args)); \
   potion_type_constructor_is(aio_##T##_vt, PN_FUNC(aio_##T##_new, args)); \
   potion_method(P->lobby, "Aio_"_XSTR(T), aio_##T##_new, args)
 
@@ -1488,7 +1532,7 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_VT(udp_send,aio_udp);
   DEF_AIO_VT(fs,aio);
   DEF_AIO_VT(work,aio);
-  DEF_AIO_VT(getaddrinfo,aio);
+  DEF_AIO_GLOBAL_VT(getaddrinfo,aio,"cb=&,node=S,service=S,hints=o|loop=o");
   DEF_AIO_VT(cpu_info,aio);
   DEF_AIO_VT(interface_address,aio);
 
@@ -1558,9 +1602,9 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_stream_vt, "accept", aio_accept, "client=o");
   potion_method(aio_stream_vt, "start", aio_read_start, "cb=&");
   potion_method(aio_stream_vt, "stop", aio_read_stop, 0);
-  potion_method(aio_stream_vt, "readable", aio_is_readable, 0);
-  potion_method(aio_stream_vt, "writable", aio_is_writable, 0);
-  potion_method(aio_stream_vt, "closing", aio_is_closing, 0);
+  potion_method(aio_stream_vt, "readable?", aio_is_readable, 0);
+  potion_method(aio_stream_vt, "writable?", aio_is_writable, 0);
+  potion_method(aio_stream_vt, "closing?", aio_is_closing, 0);
   potion_method(aio_signal_vt, "start", aio_signal_start, "cb=&");
   potion_method(aio_signal_vt, "stop", aio_signal_stop, 0);
 }
