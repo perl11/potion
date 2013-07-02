@@ -3,9 +3,9 @@ h1. Perl5 on p2
 h2. Language backwards-compatible Extensions
 
 With p2 I plan to parse and execute perl5 asis.
-It is still vaporware, only the compiler and vm works so far.
+It is still vaporware, only the compiler and vm and some libraries work so far.
 Not the parser, compile-time type optimizations (_so far everything is dynamic_),
-threaded coroutines, aio, thread-safe GC, no libraries, no ffi.
+threaded coroutines, thread-safe GC, not many libraries, no ffi.
 
 Problem will arise with XS code, since the VM is different, and not
 all XS API functions can be supported.  It should be much easier to
