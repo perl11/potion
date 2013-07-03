@@ -175,10 +175,12 @@ struct PNVtable;
 #define PN_IS_FFIPTR(p)  ((PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->birth_hi)) \
 			  || (!PN_IS_PTR(p) && p > (_PN)P->mem->birth_hi))
 
-#define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, obj, "string")
-#define PN_CHECK_INT(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, obj, "integer")
-#define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, obj, "bool")
-//TODO: check parents and mixins
+#define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, obj, "String")
+#define PN_CHECK_INT(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, obj, "Integer")
+#define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, obj, "Bool")
+#define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, obj, "Tuple")
+#define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, obj, "Closure")
+//TODO: check parents and mixins via bind
 #define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, obj)
 #ifdef DEBUG
 #define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE((PN)obj,type)
