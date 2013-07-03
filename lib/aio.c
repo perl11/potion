@@ -1475,8 +1475,6 @@ static PN aio_process_options_get(Potion *P, PN cl, PN self, PN key) {
    \param value
    \see http://nikhilm.github.io/uvbook/processes.html#spawning-child-processes */
 static PN aio_process_options_set(Potion *P, PN cl, PN self, PN key, PN value) {
-  uv_process_options_t *process_options;
-  process_options = (uv_process_options_t*)PN_DATA(potion_fwd(self));
   CHECK_AIO_TYPE(potion_fwd(self),process_options);
   PN_CHECK_STR(key);
   char *k = PN_STR_PTR(key);
