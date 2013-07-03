@@ -2,7 +2,7 @@
   PNBufFile class for buffered stream FILE* IO
 
   fgets, fopen, fscanf, fprintf, fread
-  \seealso http://stackoverflow.com/questions/1658476/c-fopen-vs-open
+  \see http://stackoverflow.com/questions/1658476/c-fopen-vs-open
 
  (c) 2013 perl11.org */
 #define __USE_XOPEN2K8
