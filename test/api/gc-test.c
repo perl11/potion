@@ -95,8 +95,9 @@ int main(int argc, char **argv) {
   P = potion_gc_boot(sp);
   if (argc == 2) {
 #ifdef DEBUG
-    if (!strcmp(argv[1], "-DG")) P->flags += DEBUG_GC;
-    if (!strcmp(argv[1], "-DGv")) P->flags += (DEBUG_GC|DEBUG_VERBOSE);
+#   define ADD_FLAGS(flag) P->flags = (Potion_Flags)((int)P->flags | (flag))
+    if (!strcmp(argv[1], "-DG"))  ADD_FLAGS(DEBUG_GC);
+    if (!strcmp(argv[1], "-DGv")) ADD_FLAGS(DEBUG_GC|DEBUG_VERBOSE);
 #endif
   }
   if (P->mem->old_lo == NULL) {
