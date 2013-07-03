@@ -80,8 +80,8 @@ CuSuite *gc_suite() {
 #ifndef __SANITIZE_ADDRESS__
   SUITE_ADD_TEST(S, gc_test_alloc1);
   SUITE_ADD_TEST(S, gc_test_alloc4);
-  SUITE_ADD_TEST(S, gc_test_forward);
 #endif
+  SUITE_ADD_TEST(S, gc_test_forward);
   SUITE_ADD_TEST(S, gc_test_gc_minor);
   SUITE_ADD_TEST(S, gc_test_gc_major);
   return S;

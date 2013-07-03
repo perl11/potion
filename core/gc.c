@@ -39,7 +39,7 @@ PN_SIZE potion_stack_len(Potion *P, _PN **p) {
 #define HAS_REAL_TYPE(v) (P->vts == NULL || (((struct PNFwd *)v)->fwd == POTION_COPIED || PN_TYPECHECK(PN_VTYPE(v))))
 
 ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
-static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int forward) {
+static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int type) {
   _PN v;
   PN_SIZE i = 0;
   struct PNMemory *M = P->mem;
@@ -48,26 +48,25 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
     v = *x;
     if (IS_GC_PROTECTED(v) || IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) {
       v = potion_fwd(v);
-      switch (forward) {
+      switch (type) {
         case 0: // count only
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
             i++;
-	    DBG_Gv(P,"GC mark count only %p %6x\n", x, PN_TYPE(*x));
+            DBG_Gv(P,"GC mark count only %p %6x\n", x, PN_TYPE(*x));
 	  }
         break;
         case 1: // minor
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
-	    // gc-test crash: P->vts = NULL
             GC_FORWARD(x, v);
             i++;
-	    DBG_Gv(P,"GC mark minor %p -> %lx %6x\n", x, v, PN_TYPE(*x));
+            DBG_Gv(P,"GC mark minor %p -> %lx %6x\n", x, v, PN_TYPE(*x));
           }
         break;
         case 2: // major
           if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
-	    DBG_Gv(P,"GC mark major %p -> %lx %6x\n", x, v, PN_TYPE(*x));
+            DBG_Gv(P,"GC mark major %p -> %lx %6x\n", x, v, PN_TYPE(*x));
           }
         break;
       }
@@ -78,20 +77,27 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
 }
 
 ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
-PN_SIZE potion_mark_stack(Potion *P, int forward) {
+PN_SIZE potion_mark_stack(Potion *P, int type) {
   long n;
   _PN *end, *start = P->mem->cstack;
-  struct PNMemory *M = P->mem;
   POTION_ESP(&end);
 #if POTION_STACK_DIR > 0
   n = end - start;
 #else
+#  if defined(__SANITIZE_ADDRESS__) && defined(__APPLE__)
+  end += 0x178; //darwin redzone + asan overhead
+#  else
+#    if defined(__SANITIZE_ADDRESS__) && defined(__linux__)
+  end += 0xd0; //linux redzone + asan overhead
+#    endif
+#  endif
   n = start - end + 1;
   start = end;
-  end = M->cstack;
+  end = P->mem->cstack;
 #endif
+  DBG_Gv(P,"mark_stack (%p -> %p = %ld, type=%d)\n", start, end, n, type);
   if (n <= 0) return 0;
-  return pngc_mark_array(P, start, n, forward);
+  return pngc_mark_array(P, start, n, type);
 }
 
 void *pngc_page_new(int *sz, const char exec) {
@@ -132,9 +138,9 @@ static int potion_gc_minor(Potion *P, int sz) {
     return POTION_NO_MEM;
 
   scanptr = (void *) M->old_cur;
-  DBG_G(P,"running gc_minor\n"
-	"(young: %p -> %p = %ld)\n"
-	"(old: %p -> %p = %ld)\n"
+  DBG_G(P,"running gc_minor "
+	"(young: %p -> %p = %ld) "
+	"(old: %p -> %p = %ld) "
 	"(storeptr len = %ld)\n",
 	M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
 	M->old_lo, M->old_hi, (long)(M->old_hi - M->old_lo),
@@ -188,8 +194,8 @@ static int potion_gc_major(Potion *P, int siz) {
   prevoldhi = (void *)M->old_hi;
   prevoldcur = (void *)M->old_cur;
 
-  DBG_G(P,"running gc_major\n"
-	"(young: %p -> %p = %ld)\n"
+  DBG_G(P,"running gc_major "
+	"(young: %p -> %p = %ld) "
 	"(old: %p -> %p = %ld)\n",
 	M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
 	M->old_lo, M->old_hi, (long)(M->old_hi - M->old_lo));
