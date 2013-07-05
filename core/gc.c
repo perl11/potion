@@ -59,14 +59,14 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
-            DBG_Gv(P,"GC mark minor %p -> %lx %6x\n", x, v, PN_TYPE(*x));
+            DBG_Gv(P,"GC mark minor %p -> 0x%lx %6x\n", x, v, PN_TYPE(*x));
           }
         break;
         case 2: // major
           if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
-            DBG_Gv(P,"GC mark major %p -> %lx %6x\n", x, v, PN_TYPE(*x));
+            DBG_Gv(P,"GC mark major %p -> 0x%lx %6x\n", x, v, PN_TYPE(*x));
           }
         break;
       }
@@ -286,13 +286,16 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
   if (ptr->vt > PN_TUSER) {
     if (P->vts && PN_VTABLE(ptr->vt) && PN_TYPECHECK(ptr->vt))
       sz = potion_send((PN)ptr, PN_size);
-    else if (P->flags & (DEBUG_VERBOSE
+    else {
+      if (P->flags & (DEBUG_VERBOSE
 #ifdef DEBUG
 			 |DEBUG_GC
 #endif
 			 ))
       fprintf(stderr, "** Invalid User Object 0x%lx vt: 0x%lx\n",
 	      (unsigned long)ptr, (unsigned long)ptr->vt);
+      return 0;
+    }
     goto done;
   }
 
@@ -357,6 +360,8 @@ done:
 void *potion_gc_copy(Potion *P, struct PNObject *ptr) {
   void *dst = (void *)P->mem->old_cur;
   PN_SIZE sz = potion_type_size(P, (const struct PNObject *)ptr);
+  if (!sz)
+    return ptr;
   memcpy(dst, ptr, sz);
   P->mem->old_cur = (char *)dst + sz;
 

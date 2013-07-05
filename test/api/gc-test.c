@@ -16,6 +16,20 @@
 
 Potion *P;
 
+#if defined(DEBUG)
+#define DBG_Gv(P,...)				\
+  if (P->flags & (DEBUG_GC | DEBUG_VERBOSE)) {	\
+    printf(__VA_ARGS__);			\
+  }
+#define DBG_G(P,...)	       \
+  if (P->flags & DEBUG_GC) {   \
+    printf(__VA_ARGS__);       \
+  }
+#else
+#define DBG_Gv(...)
+#define DBG_G(...)
+#endif
+
 void gc_test_start(CuTest *T) {
   CuAssert(T, "GC struct isn't at start of first page", P->mem == P->mem->birth_lo);
   CuAssert(T, "stack length is not a positive number", potion_stack_len(P, NULL) > 0);
@@ -67,7 +81,9 @@ void gc_test_forward(CuTest *T) {
   register unsigned long old = (PN)ptr & 0xFFFF;
   memcpy(ptr->data, fj, 16);
 
+  //DBG_Gv(P,"forward ptr->data: %p \"%s\"\n", &ptr->data, ptr->data);
   potion_mark_stack(P, 1);
+  //DBG_Gv(P,"marked ptr->data: %p \"%s\"\n", &ptr->data, ptr->data);
   CuAssert(T, "copied location identical to original", (old & 0xFFFF) != (PN)ptr);
   CuAssertIntEquals(T, "copied object not still PN_TUSER", ptr->vt, PN_TUSER);
   CuAssert(T, "copied data not identical to original",

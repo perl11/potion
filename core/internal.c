@@ -307,13 +307,15 @@ void potion_dump_stack(Potion *P) {
   printf("-- dumping %ld stack from %p to %p --\n", n, start, end);
   printf("   ebp = %p, *ebp = %lx\n", ebp, *ebp);
   while (n--) {
-    printf("   stack(%ld) = %lx", n, *start);
+    vPN(Object) o = (struct PNObject*)*start;
+    printf("   stack(%ld) = %p: %lx", n, start, *start);
     if (IS_GC_PROTECTED(*start))
-      printf(" gc ");
+      printf(" vt=%x gc", PN_TYPE(o));
     else if (IN_BIRTH_REGION(*start))
-      printf(" gc(0) ");
+      printf(" vt=%x gc(0)", PN_TYPE(o));
     else if (IN_OLDER_REGION(*start))
-      printf(" gc(1) ");
+      printf(" vt=%x gc(1)", PN_TYPE(o));
+
     if (*start == 0)
       printf(" nil\n");
     else if (*start & 1)
@@ -321,7 +323,7 @@ void potion_dump_stack(Potion *P) {
     else if (*start & 2)
       printf(" %s BOOL\n", *start == 2 ? "false" : "true");
     else
-      printf("\n");
+      printf(" \n");
     start++;
   }
 }
