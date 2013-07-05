@@ -37,9 +37,9 @@ fi
 
 if test -f /opt/intel/bin/icc; then
     case `uname -m` in
-        x86_64) . /opt/intel/bin/compilervars.sh intel64
+        x86_64) /opt/intel/bin/compilervars.sh intel64
             ;;
-        i386)   . /opt/intel/bin/compilervars.sh ia32
+        i386)   /opt/intel/bin/compilervars.sh ia32
             ;;
     esac
     dotest icc
