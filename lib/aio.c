@@ -1888,7 +1888,6 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_vt, "size", aio_size, 0);
   potion_method(aio_req_vt, "uvsize", aio_req_uvsize, 0);
   potion_method(aio_handle_vt, "uvsize", aio_handle_uvsize, 0);
-  potion_method(aio_handle_vt, "active?", aio_is_active, 0);
   potion_method(aio_handle_vt, "close", aio_close, "|cb=&");
   potion_method(aio_vt, "walk", aio_walk, "|loop=o,fun=&,arg=o");
   potion_method(aio_vt, "run", aio_run, "|loop=o,mode=N");
@@ -1946,9 +1945,17 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_stream_vt, "accept", aio_accept, "client=o");
   potion_method(aio_stream_vt, "start", aio_read_start, "cb=&");
   potion_method(aio_stream_vt, "stop", aio_read_stop, 0);
+#ifdef P2
+  potion_method(aio_handle_vt, "is_active", aio_is_active, 0);
+  potion_method(aio_stream_vt, "is_readable", aio_is_readable, 0);
+  potion_method(aio_stream_vt, "is_writable", aio_is_writable, 0);
+  potion_method(aio_stream_vt, "is_closing", aio_is_closing, 0);
+#else
+  potion_method(aio_handle_vt, "active?", aio_is_active, 0);
   potion_method(aio_stream_vt, "readable?", aio_is_readable, 0);
   potion_method(aio_stream_vt, "writable?", aio_is_writable, 0);
   potion_method(aio_stream_vt, "closing?", aio_is_closing, 0);
+#endif
   potion_method(aio_signal_vt, "start", aio_signal_start, "cb=&");
   potion_method(aio_signal_vt, "stop", aio_signal_stop, 0);
   potion_method(aio_process_vt, "kill", aio_process_kill, "signum=N");
