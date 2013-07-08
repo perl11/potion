@@ -153,7 +153,7 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
         _t != aio_udp_type &&                                \
         _t != aio_pipe_type &&                               \
         _t != aio_tty_type &&                                \
-        !potion_bind(P, stream, PN_STR("readable")))         \
+        !potion_bind(P, stream, PN_STR("listen")))           \
       return potion_type_error_want(P, stream, "Aio_stream");\
   }
 //if (PN_VTYPE(self) != aio_##T##_type) {
@@ -173,7 +173,7 @@ static PN aio_last_error(Potion *P, char *name, uv_loop_t* loop) {
         _t != aio_udp_type &&                                \
         _t != aio_pipe_type &&                               \
         _t != aio_tty_type &&                                \
-        !potion_bind(P, stream, PN_STR("readable")))         \
+        !potion_bind(P, stream, PN_STR("listen")))           \
       {                                                      \
         fprintf(stderr, "** Invalid type %s, expected %s",   \
                 PN_IS_PTR(stream)? AS_STR(potion_send(PN_VTABLE(stream), PN_name)) \
