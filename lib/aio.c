@@ -378,10 +378,10 @@ Some signal support is available on Windows:
   Windows will unconditionally terminate it.
 
   SIGWINCH is raised whenever libuv detects that the console has been
-  resized. SIGWINCH is emulated by libuv when the program uses an uv_tty_t
+  resized. SIGWINCH is emulated by libuv when the program uses an Aio_tty
   handle to write to the console. SIGWINCH may not always be delivered in a
   timely manner; libuv will only detect size changes when the cursor is
-  being moved. When a readable uv_tty_handle is used in raw mode, resizing
+  being moved. When a readable Aio_tty handle is used in raw mode, resizing
   the console buffer will also trigger a SIGWINCH signal.
 
 Watchers for other signals can be successfully created, but these signals
