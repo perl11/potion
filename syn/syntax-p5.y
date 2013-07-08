@@ -183,14 +183,13 @@ expr = ( not e:expr           { e = PN_AST(NOT, e) }
        | l:atom times !times r:atom { e = PN_OP(AST_TIMES, l, r) }
        | l:atom div   !div r:atom   { e = PN_OP(AST_DIV,  l, r) }
        | l:atom minus !minus r:atom { e = PN_OP(AST_MINUS, l, r) }
-       | l:atom plus !plus r:atom  { e = PN_OP(AST_PLUS,  l, r) }
+       | l:atom plus !plus r:atom   { e = PN_OP(AST_PLUS,  l, r) }
        | mminus e:value        { e = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1) }
        | pplus e:value         { e = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
-       | e:value (pplus        { e = PN_OP(AST_INC, e, PN_NUM(1)) }
-                | mminus       { e = PN_OP(AST_INC, e, PN_NUM(-1)) })?)
-       | e:atom ( c:call { e = PN_PUSH(PN_TUPIF(e), c) } )*
        | e:method
-       { $$ = PN_AST(EXPR, e) }
+       | e:value (pplus        { e = PN_OP(AST_INC, e, PN_NUM(1)) }
+                | mminus       { e = PN_OP(AST_INC, e, PN_NUM(-1)) })?) { $$ = PN_AST(EXPR, PN_TUP(e)) }
+       | e:atom ( c:call { e = PN_PUSH(PN_TUPIF(c), e) } )*             { $$ = PN_AST(EXPR, e) }
 
 # removed lambda (anonsub)
 atom = e:value | e:list | e:call | e:anonsub
