@@ -84,13 +84,6 @@ PN_SIZE potion_mark_stack(Potion *P, int type) {
 #if POTION_STACK_DIR > 0
   n = end - start;
 #else
-#  if defined(__SANITIZE_ADDRESS__) && defined(__APPLE__)
-  end += 0x178; //darwin redzone + asan overhead
-#  else
-#    if defined(__SANITIZE_ADDRESS__) && defined(__linux__)
-  end += 0xd0; //linux redzone + asan overhead
-#    endif
-#  endif
   n = start - end + 1;
   start = end;
   end = P->mem->cstack;
