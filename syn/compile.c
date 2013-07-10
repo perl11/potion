@@ -409,9 +409,11 @@ static void Rule_compile_c2(Node *node)
       fprintf(output, "  yyprintfv((stderr, \"%%s\\n\", \"%s\"));\n", node->rule.name);
       Node_compile_c_ko(node->rule.expression, ko);
       if (!memcmp("utf",node->rule.name,3)
-       || !strcmp("space",node->rule.name)
-       || !strcmp("comment",node->rule.name)
        || !memcmp("_",node->rule.name,1)
+       || !memcmp("end_of",node->rule.name,6)
+       || !strcmp("space",node->rule.name)
+       || !strcmp("sep",node->rule.name)
+       || !strcmp("comment",node->rule.name)
        || !strcmp("IDFIRST",node->rule.name)
        || !strcmp("id",node->rule.name)
           )

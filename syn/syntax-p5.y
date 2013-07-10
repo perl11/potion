@@ -178,36 +178,39 @@ power = e:expr
         ( pow x:expr { e = PN_OP(AST_POW, e, x) })*
         { $$ = e }
 
-expr = ( not e:expr           { e = PN_AST(NOT, e) }
-       | bitnot e:expr        { e = PN_AST(WAVY, e) }
-       | l:atom times !times r:atom { e = PN_OP(AST_TIMES, l, r) }
-       | l:atom div   !div r:atom   { e = PN_OP(AST_DIV,  l, r) }
-       | l:atom minus !minus r:atom { e = PN_OP(AST_MINUS, l, r) }
-       | l:atom plus !plus r:atom   { e = PN_OP(AST_PLUS,  l, r) }
-       | mminus e:value        { e = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1) }
-       | pplus e:value         { e = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
-       | e:method
-       | e:value (pplus        { e = PN_OP(AST_INC, e, PN_NUM(1)) }
-                | mminus       { e = PN_OP(AST_INC, e, PN_NUM(-1)) })?) { $$ = PN_AST(EXPR, PN_TUP(e)) }
-       | e:atom ( c:call { e = PN_PUSH(PN_TUPIF(c), e) } )*             { $$ = PN_AST(EXPR, e) }
+expr = c:method e:expr* 	{ $$ = PN_AST(EXPR, PN_PUSH(c, e)) }
+    | c:call e:expr*		{ $$ = PN_AST(EXPR, PN_PUSH(c, e)) }
+    | e:opexpr			{ $$ = PN_AST(EXPR, e) }
+    | e:atom			{ $$ = e }
 
-# removed lambda (anonsub)
+opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
+    | bitnot e:expr		{ $$ = PN_AST(WAVY, e) }
+    | l:atom times !times r:atom { $$ = PN_OP(AST_TIMES, l, r) }
+    | l:atom div   !div r:atom   { $$ = PN_OP(AST_DIV,  l, r) }
+    | l:atom minus !minus r:atom { $$ = PN_OP(AST_MINUS, l, r) }
+    | l:atom plus !plus r:atom   { $$ = PN_OP(AST_PLUS,  l, r) }
+    | mminus e:value		{ $$ = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1) }
+    | pplus e:value		{ $$ = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
+    | e:value (pplus		{ $$ = PN_OP(AST_INC, e, PN_NUM(1)) }
+             | mminus		{ $$ = PN_OP(AST_INC, e, PN_NUM(-1)) }) {}
+
 atom = e:value | e:list | e:call | e:anonsub
 
 #FIXME methods and indirect methods:
 #   chr 101 => (expr (value (101), msg ("chr")))
 #   print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
-call = m:name l:list l1:list?
-        { l1 = PN_IS_TUPLE(PN_S(l,0))?potion_tuple_shift(P,0,PN_S(l,0)):PN_AST(VALUE,0);
+call = m:name l:list
+        { l = potion_tuple_shift(P,0,PN_S(l,0));
           if (!PN_S(l,0)) { PN_SRC(m)->a[1] = PN_SRC(l); }
-          $$ = PN_AST(EXPR, PN_PUSH(PN_TUP(l1), m)); }
-     | m:name        { $$ = PN_AST(EXPR, PN_TUP(m)) }
+          $$ = PN_PUSH(PN_TUP(l), m); }
+     | m:name { $$ = PN_TUP(m) }
 
 method = v:value - arrow m:name l:list  { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
        | v:value - arrow m:name         { $$ = PN_PUSH(PN_TUPIF(v), m) }
 
-name = !keyword m:msg     { $$ = PN_AST(MSG, m) }
+name = !keyword m:id      { $$ = PN_AST(MSG, m) }
+     | !keyword m:funcvar { $$ = PN_AST(MSG, m) }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1) }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2) })*
@@ -232,7 +235,7 @@ group = group-start s:statements group-end - { $$ = PN_AST(EXPR, s) }
 
 #path = '/' < utfw+ > - { $$ = PN_STRN(yytext, yyleng) }
 #path    = < utfw+ > -  { $$ = PN_STRN(yytext, yyleng) }
-msg = < utfw+ > -   { $$ = PN_STRN(yytext, yyleng) }
+msg = < utfw+ > -   	{ $$ = PN_STRN(yytext, yyleng) }
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
       | global
@@ -248,8 +251,6 @@ immed = undef { $$ = PN_NIL }
       | str1 | str2
 
 global  = scalar | listvar | hashvar | listel | hashel | funcvar | globvar
-# FIXME: starting wordchar (no numbers) + wordchars
-id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
 # send the value a msg, every global is a closure (see name)
 scalar  = < '$' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("$", PN_STR_PTR(i))) }
 listvar = < '@' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("@", PN_STR_PTR(i))) }
@@ -260,33 +261,6 @@ listel  = < '$' l:id - '[' - i:value - ']' > -
         { $$ = PN_AST2(LICK, PN_STRCAT("@", PN_STR_PTR(l)), i) }
 hashel  = < '$' h:id - '{' - i:value - '}' > -
         { $$ = PN_AST2(LICK, PN_STRCAT("%", PN_STR_PTR(h)), i) }
-
-# isWORDCHAR && IDFIRST, no numbers
-IDFIRST = [A-Za-z_]
-     | '\304' [\250-\277]
-     | [\305-\337] [\200-\277]
-     | [\340-\357] [\200-\277] [\200-\277]
-     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
-# isWORDCHAR? \w and [:word:]
-utfw = [A-Za-z0-9_]
-     | '\304' [\252-\277]
-     | [\305-\337] [\200-\277]
-     | [\340-\357] [\200-\277] [\200-\277]
-     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
-# isWORDCHAR && XID_Continue
-#IDCONT = [A-Za-z0-9_ ():\240-]
-#     | '\304' [\250-\277]
-#     | [\305-\337] [\200-\277]
-#     | [\340-\357] [\200-\277] [\200-\277]
-#     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
-#IDPRINT = [\40-\176]
-#     | [\302-\337] [\200-\277]
-#     | [\340-\357] [\200-\277] [\200-\277]
-#     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
-utf8 = [\t\n\r\40-\176]
-     | [\302-\337] [\200-\277]
-     | [\340-\357] [\200-\277] [\200-\277]
-     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 
 semi = ';'
 comma = ','
@@ -382,6 +356,7 @@ unq-char = '{' unq-char+ '}'
 unq-sep = sep !'{' !'[' !'('
 unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = PN_STRN(yytext, yyleng) }
 
+# lexer rules which are only printed with -DP, not with -Dp:
 - = (space | comment)*
 -- = (space | comment | semi)*
 sep = semi (space | comment | semi)*
@@ -392,6 +367,34 @@ comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
 end-of-line = '\r\n' | '\n' | '\r' { $$ = PN_AST2(DEBUG, PN_NUM(G->lineno), PN_NIL) }
 end-of-file = !'\0'
+# FIXME: starting wordchar (no numbers) + wordchars
+id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
+# isWORDCHAR && IDFIRST, no numbers
+IDFIRST = [A-Za-z_]
+     | '\304' [\250-\277]
+     | [\305-\337] [\200-\277]
+     | [\340-\357] [\200-\277] [\200-\277]
+     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
+# isWORDCHAR? \w and [:word:]
+utfw = [A-Za-z0-9_]
+     | '\304' [\252-\277]
+     | [\305-\337] [\200-\277]
+     | [\340-\357] [\200-\277] [\200-\277]
+     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
+# isWORDCHAR && XID_Continue
+#IDCONT = [A-Za-z0-9_ ():\240-]
+#     | '\304' [\250-\277]
+#     | [\305-\337] [\200-\277]
+#     | [\340-\357] [\200-\277] [\200-\277]
+#     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
+#IDPRINT = [\40-\176]
+#     | [\302-\337] [\200-\277]
+#     | [\340-\357] [\200-\277] [\200-\277]
+#     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
+utf8 = [\t\n\r\40-\176]
+     | [\302-\337] [\200-\277]
+     | [\340-\357] [\200-\277] [\200-\277]
+     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 
 # for potion_sig, used in the runtime initialization
 sig = args+ end-of-file
