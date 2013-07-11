@@ -178,8 +178,8 @@ power = e:expr
         ( pow x:expr { e = PN_OP(AST_POW, e, x) })*
         { $$ = e }
 
-expr = c:method e:expr* 	{ $$ = PN_AST(EXPR, PN_PUSH(c, e)) }
-    | c:call e:expr*		{ $$ = PN_AST(EXPR, PN_PUSH(c, e)) }
+expr = c:method e:expr* 	{ $$ = PN_AST(EXPR, e?PN_PUSH(c, e):c) }
+    | c:call e:expr*		{ $$ = PN_AST(EXPR, e?PN_PUSH(c, e):c) }
     | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
     | e:atom			{ $$ = e }
 
@@ -200,14 +200,16 @@ atom = e:value | e:list | e:call | e:anonsub
 #   chr 101 => (expr (value (101), msg ("chr")))
 #   print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
-call = m:name l:list
+call = m:name - l:list
         { l = potion_tuple_shift(P,0,PN_S(l,0));
           if (!PN_S(l,0)) { PN_SRC(m)->a[1] = PN_SRC(l); }
           $$ = PN_PUSH(PN_TUP(l), m); }
      | m:name { $$ = PN_TUP(m) }
 
-method = v:value - arrow m:name l:list  { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
-       | v:value - arrow m:name         { $$ = PN_PUSH(PN_TUPIF(v), m) }
+method = v:value - arrow m:name - l:list {
+            PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
+       | v:value - arrow m:name {
+            $$ = PN_PUSH(PN_TUPIF(v), m) }
 
 name = !keyword m:id      { $$ = PN_AST(MSG, m) }
      | !keyword m:funcvar { $$ = PN_AST(MSG, m) }
