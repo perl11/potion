@@ -180,7 +180,7 @@ power = e:expr
 
 expr = c:method e:expr* 	{ $$ = PN_AST(EXPR, PN_PUSH(c, e)) }
     | c:call e:expr*		{ $$ = PN_AST(EXPR, PN_PUSH(c, e)) }
-    | e:opexpr			{ $$ = PN_AST(EXPR, e) }
+    | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
     | e:atom			{ $$ = e }
 
 opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
@@ -189,9 +189,9 @@ opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
     | l:atom div   !div r:atom   { $$ = PN_OP(AST_DIV,  l, r) }
     | l:atom minus !minus r:atom { $$ = PN_OP(AST_MINUS, l, r) }
     | l:atom plus !plus r:atom   { $$ = PN_OP(AST_PLUS,  l, r) }
-    | mminus e:value		{ $$ = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1) }
-    | pplus e:value		{ $$ = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
-    | e:value (pplus		{ $$ = PN_OP(AST_INC, e, PN_NUM(1)) }
+    | mminus e:mvalue		{ $$ = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1) }
+    | pplus e:mvalue		{ $$ = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
+    | e:mvalue (pplus		{ $$ = PN_OP(AST_INC, e, PN_NUM(1)) }
              | mminus		{ $$ = PN_OP(AST_INC, e, PN_NUM(-1)) }) {}
 
 atom = e:value | e:list | e:call | e:anonsub
@@ -236,6 +236,9 @@ group = group-start s:statements group-end - { $$ = PN_AST(EXPR, s) }
 #path = '/' < utfw+ > - { $$ = PN_STRN(yytext, yyleng) }
 #path    = < utfw+ > -  { $$ = PN_STRN(yytext, yyleng) }
 msg = < utfw+ > -   	{ $$ = PN_STRN(yytext, yyleng) }
+
+mvalue = i:immed - { $$ = PN_AST(VALUE, i) }
+      | global
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
       | global

@@ -194,7 +194,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   if (PN_PART(t->a[n]) == AST_EXPR && PN_PART(PN_TUPLE_AT(PN_S(t->a[n],0), 0)) == AST_LIST) { \
     PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n],0), 0), 0);			\
     if (!PN_IS_NIL(test)) {						\
-      DBG_c("expr (list x..) => (x..)\n");				\
+      DBG_c("expr (list %s) => %s\n", AS_STR(test), AS_STR(test));	\
       PN_TUPLE_EACH(test, i, v, {					\
 	  potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg); });	\
     }									\
@@ -319,7 +319,8 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
     case AST_CODE:
     case AST_BLOCK:
       if (PN_S(t,0) != PN_NIL) {
-        DBG_c("%s [%u] %u\n", t->part == AST_CODE?"code":"block", PN_TUPLE_LEN(PN_S(t,0)), reg);
+        DBG_c("%s %u %s\n", t->part == AST_CODE?"code":"block", reg,
+	      t->part == AST_CODE?"":AS_STR(PN_S(t,0)));
         PN_TUPLE_EACH(PN_S(t,0), i, v, {
           potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg);
         });
@@ -328,9 +329,10 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 
     case AST_EXPR:
       if (PN_S(t,0) != PN_NIL) {
-        DBG_c("expr %d\n", PN_TUPLE_LEN(PN_S(t,0)));
-        PN_TUPLE_EACH(PN_S(t,0), i, v, {
-          potion_source_asmb(P, f, loop, i, PN_SRC(v), reg);
+	PN e = PN_S(t,0);
+        DBG_c("expr %u %s\n", reg, AS_STR(e));
+        PN_TUPLE_EACH(e, i, v, {
+	  potion_source_asmb(P, f, loop, i, PN_SRC(v), reg);
         });
       }
     break;
@@ -379,7 +381,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
         char first_letter = PN_STR_PTR(PN_S(lhs,0))[0];
 	    DBG_c("assign %s '%s'\n", lhs->part == AST_MSG?"msg":"query",
-                  PN_STR_PTR(PN_S(lhs,0)));
+                  AS_STR(PN_S(lhs,0)));
         if ((first_letter & 0x80) == 0 && isupper((unsigned char)first_letter)) {
           num = PN_PUT(f->values, PN_S(lhs,0));
           PN_ASM2(OP_LOADK, breg, num);
