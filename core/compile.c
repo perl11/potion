@@ -182,7 +182,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   if (PN_PART(t->a[n]) == AST_LIST && PN_PART(PN_TUPLE_AT(PN_S(t->a[n],0), 0)) == AST_EXPR) { \
     PN test = PN_S(PN_TUPLE_AT(PN_S(t->a[n],0), 0), 0);			\
     if (!PN_IS_NIL(test)) {						\
-      DBG_c("list (expr x..) => (x..)\n");				\
+      DBG_c("list (expr %s) => %s\n", AS_STR(test), AS_STR(test));	\
       PN_TUPLE_EACH(test, i, v, {					\
 	  potion_source_asmb(P, f, loop, 0, PN_SRC(v), reg); });	\
     }									\
