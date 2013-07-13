@@ -78,6 +78,10 @@ stmt = pkgdecl
                               { $$ = s }
     | expr
 
+listexprs = e1:expr         { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
+        ( - comma - e2:expr { $$ = e1 = PN_PUSH(e1, e2) })* sep?
+        | ''                { $$ = PN_NIL }
+
 BEGIN   = "BEGIN" space+
 PACKAGE = "package" space+
 USE     = "use" space+
@@ -113,9 +117,15 @@ ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_OP(AST_AND, e, s) }
 ifexpr = '(' - expr - ')' -
 
 assigndecl =
-        l:global - assign e:expr       { $$ = PN_AST2(ASSIGN, l, e) }
-      | MY - l:lexical - assign e:expr { $$ = PN_AST2(ASSIGN, l, e) }
-      # no list assignment yet my () = expr
+        l:listvar - assign r:list - { $$ = PN_AST2(ASSIGN, l, r) }
+      | MY l:listvar - assign r:list - { $$ = PN_AST2(ASSIGN, l, r) }
+      | l:list - assign r:list - {
+        PN s1 = PN_TUP0(); PN_TUPLE_EACH(l, i, v, {
+          s1 = PN_PUSH(s1, PN_AST2(ASSIGN, v, PN_TUPLE_AT(r,i)));
+        }); $$ = s1 }
+      | l:global - assign e:expr - { $$ = PN_AST2(ASSIGN, l, e) }
+      | MY - l:lexical - assign e:expr - { $$ = PN_AST2(ASSIGN, l, e) }
+      | l:global - assign r:list { YY_ERROR(G, "** Assignment error") }
 
 lexical = global
 
@@ -178,8 +188,10 @@ power = e:expr
         ( pow x:expr { e = PN_OP(AST_POW, e, x) })*
         { $$ = e }
 
-expr = c:method e:expr* 	{ $$ = PN_AST(EXPR, e?PN_PUSH(c, e):c) }
-    | c:call e:expr*		{ $$ = PN_AST(EXPR, e?PN_PUSH(c, e):c) }
+expr = c:method  	        { $$ = PN_AST(EXPR, c) }
+    | c:calllist		{ $$ = PN_AST(EXPR, c) }
+    | c:call (e:expr { c = PN_PUSH(c, e) })+
+        { $$ = PN_AST(EXPR, e ? PN_PUSH(c, e) : c) }
     | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
     | e:atom			{ $$ = e }
 
@@ -194,18 +206,18 @@ opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
     | e:mvalue (pplus		{ $$ = PN_OP(AST_INC, e, PN_NUM(1)) }
              | mminus		{ $$ = PN_OP(AST_INC, e, PN_NUM(-1)) }) {}
 
-atom = e:value | e:list | e:call | e:anonsub
+atom = e:value | e:list | e:anonsub
 
 #FIXME methods and indirect methods:
 #   chr 101 => (expr (value (101), msg ("chr")))
 #   print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
-call = m:name - l:list
-        { l = potion_tuple_shift(P,0,PN_S(l,0));
-          if (!PN_S(l,0)) { PN_SRC(m)->a[1] = PN_SRC(l); }
-          $$ = PN_PUSH(PN_TUP(l), m); }
-     | m:name { $$ = PN_TUP(m) }
-
+#TODO: if (cond) {block} => expr (if, cond, block)
+calllist = m:name - l:list {
+          $$ = potion_tuple_shift(P, 0, PN_S(l,0));
+          if (!PN_S(l, 0)) { PN_SRC(m)->a[1] = PN_SRC($$); }
+          $$ = PN_PUSH(PN_TUP($$), m); }
+call = m:name { $$ = PN_TUP(m) }
 method = v:value - arrow m:name - l:list {
             PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
        | v:value - arrow m:name {
@@ -230,7 +242,7 @@ loose = value
 
 # anonymous sub, w or w/o proto (aka list)
 #sub = 'sub' - n:arg-name - t:list? b:block  { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)) }
-list = list-start s:statements list-end -    { $$ = PN_AST(LIST, s) }
+list = list-start s:listexprs list-end -     { $$ = PN_AST(LIST, s) }
 block = block-start s:statements block-end - { $$ = PN_AST(BLOCK, s) }
 lick = lick-start i:lick-items lick-end -    { $$ = PN_AST(LIST, i) }
 group = group-start s:statements group-end - { $$ = PN_AST(EXPR, s) }

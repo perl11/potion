@@ -515,7 +515,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
     }
     break;
 
-    // TODO: this stuff is ugly and repetitive
+    // TODO: this stuff is ugly and repetitive. replace by compiler macros for control structures
     case AST_MSG:
     case AST_QUERY: {
       u8 breg = reg;
@@ -524,6 +524,18 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       PN ifconst = -1;
       if (t->part == AST_MSG && PN_S(t,0) == PN_if) {
         int jmp; breg++;
+#ifdef P2
+	if (!t->a[1]) { // rhs ifexpr: missing block
+          DBG_c("expr (msg if, (cond)), block => expr (msg if, (cond), block)\n");
+          if (P->flags & MODE_P2) {
+            //TODO
+            breg++;
+            break;
+          } else {
+            potion_syntax_error(P, "%s statement used as expr only valid with use p2;", "if");
+          }
+	}
+#endif
         if (t->a[1]->part == AST_VALUE && !t->a[1]->a[1]) {
           ifconst = PN_S(t->a[1], 0);
           if (PN_TEST(ifconst)) {
@@ -539,10 +551,22 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           PN_ASM2(OP_NOTJMP, breg, 0);
           potion_source_asmb(P, f, loop, 0, t->a[2], reg);
           PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
-        }
+	}
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_elsif) {
         int jmp1 = PN_OP_LEN(f->asmb), jmp2; breg++;
         // true ifconst: ignore. use only 1st if
+#ifdef P2
+	if (!t->a[1]) { // rhs ifexpr: missing block
+          DBG_c("expr (msg elsif, (cond)), block => expr (msg elsif, (cond), block)\n");
+          if (P->flags & MODE_P2) {
+            //TODO
+            breg++;
+            break;
+          } else {
+            potion_syntax_error(P, "%s statement used as expr only valid with use p2;", "elsif");
+          }
+	}
+#endif
         if (ifconst != -1 && PN_TEST(ifconst)) {
           DBG_c("elsif (...) {block} => [false]\n");
         } else if (t->a[1]->part == AST_VALUE && !t->a[1]->a[1]) {
@@ -565,6 +589,17 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         }
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_else) {
         int jmp = PN_OP_LEN(f->asmb); breg++;
+#ifdef P2
+	if (!t->a[1]) { // rhs ifexpr: missing block
+          DBG_c("expr (msg else), block => expr (msg else, block)\n");
+          if (P->flags & MODE_P2) {
+            //TODO
+            break;
+          } else {
+            potion_syntax_error(P, "%s statement used as expr only valid with use p2;", "else");
+          }
+	}
+#endif
         if (ifconst != -1) {
           if (!PN_TEST(ifconst)) {
             DBG_c("else {block} => block [false]\n");
@@ -621,14 +656,14 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           loop->bjmps[loop->bjmpc++] = PN_OP_LEN(f->asmb);
           PN_ASM1(OP_JMP, 0);
         } else {
-          // TODO: Report error: 'break' outside of loop.
+          potion_syntax_error(P, "'break' outside of loop");
         }
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_continue) {
         if (loop != NULL) {
           loop->cjmps[loop->cjmpc++] = PN_OP_LEN(f->asmb);
           PN_ASM1(OP_JMP, 0);
         } else {
-          // TODO: Report error: 'continue' outside of loop.
+          potion_syntax_error(P, "'continue' outside of loop");
         }
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_self) {
         PN_ASM1(OP_SELF, reg);
@@ -681,7 +716,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           if (t->part == AST_MSG) {
 	    DBG_c("; call %d %d MSG\n", reg, breg);
             PN_ASM2(OP_CALL, reg, breg);
-          } else
+          } else {
             if (PN_S(t,1) != PN_NIL) {
 	      DBG_c("; call %d %d !MSG\n", reg, breg);
               PN_ASM2(OP_CALL, reg, breg);
@@ -689,6 +724,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
             } else {
               PN_ASM2(OP_TEST, reg, breg);
             }
+          }
         } else {
           if (num != PN_NONE)
             PN_ASM2(opcode, reg, num);
