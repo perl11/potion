@@ -1,5 +1,5 @@
 fib = (n):
-  if (n <= 1): 1. else: fib (n - 1) + fib (n - 2)..
+  if (n < 2): n. else: fib (n - 1) + fib (n - 2)..
 
 n = 40
 ("fib(", n, ")= ", fib (n), "\n") join print
