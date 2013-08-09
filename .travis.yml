@@ -6,11 +6,11 @@ env:
   - DEBUG=0
   - DEBUG=1
 
-# not yet used:
-#before_install:
-#  - git submodule update --init --recursive
-#install:
-#  - sudo apt-get update -qq
+# needed for libuv
+before_install:
+  - git submodule update --init --recursive
+install:
+  - sudo apt-get update -qq
 #  - sudo apt-get install -qq libdisasm-dev
 
 script: make config CC=$CC DEBUG=$DEBUG; make && make test
