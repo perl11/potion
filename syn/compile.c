@@ -512,10 +512,10 @@ static char *preamble= "\
 #  define YYDEBUG_VERBOSE 2\n\
 # endif\n\
 # define yyprintf(args)	   if (yydebug & YYDEBUG_PARSE)         fprintf args\n\
-# define yyprintfv(args)   if (yydebug == (YYDEBUG_PARSE|YYDEBUG_VERBOSE)) fprintf args\n\
+# define yyprintfv(args)   if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) fprintf args\n\
 # define yyprintfGcontext  if (yydebug & YYDEBUG_PARSE)         yyprintcontext(stderr,G->buf+G->pos)\n\
-# define yyprintfvGcontext if (yydebug == (YYDEBUG_PARSE|YYDEBUG_VERBOSE)) yyprintcontext(stderr,G->buf+G->pos)\n\
-# define yyprintfvTcontext(text) if (yydebug == (YYDEBUG_PARSE|YYDEBUG_VERBOSE)) yyprintcontext(stderr,text)\n\
+# define yyprintfvGcontext if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) yyprintcontext(stderr,G->buf+G->pos)\n\
+# define yyprintfvTcontext(text) if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) yyprintcontext(stderr,text)\n\
 # define yyprintfokrule(rule) if (yydebug & YYDEBUG_PARSE) {\\\n\
   if (G->buf[G->pos]) {\\\n\
     fprintf(stderr, \"  ok   %s\", rule);\\\n\
@@ -524,7 +524,7 @@ static char *preamble= "\
   } else {\\\n\
     yyprintfv((stderr, \"  ok   %s @ \\\"\\\"\\n\", rule));\\\n\
   }}\n\
-# define yyprintfvokrule(rule) if (yydebug == (YYDEBUG_PARSE|YYDEBUG_VERBOSE)) {\\\n\
+# define yyprintfvokrule(rule) if (yydebug  & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) {\\\n\
   if (G->buf[G->pos]) {\\\n\
     fprintf(stderr, \"  ok   %s\", rule);\\\n\
     yyprintcontext(stderr,G->buf+G->pos);\\\n\
@@ -532,7 +532,7 @@ static char *preamble= "\
   } else {\\\n\
     yyprintfv((stderr, \"  ok   %s @ \\\"\\\"\\n\", rule));\\\n\
   }}\n\
-# define yyprintfvfailrule(rule) if (yydebug == (YYDEBUG_PARSE|YYDEBUG_VERBOSE)) {\\\n\
+# define yyprintfvfailrule(rule) if (yydebug  & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) {\\\n\
     fprintf(stderr, \"  fail %s\", rule);\\\n\
     yyprintcontext(stderr,G->buf+G->pos);\\\n\
     fprintf(stderr, \"\\n\");\\\n\
