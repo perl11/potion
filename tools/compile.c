@@ -399,9 +399,9 @@ static char *preamble= "\
 #endif\n\
 #ifdef YY_DEBUG\n\
 # define yyprintf(args)	if (G->debug & DEBUG_PARSE) fprintf args\n\
-# define yyprintfv(args) if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) fprintf args\n\
-# define yyprintfcontext if (G->debug == (DEBUG_PARSE))                yyprinterrcontext(G,stderr)\n\
-# define yyprintfvcontext if (G->debug == (DEBUG_PARSE|DEBUG_VERBOSE)) yyprinterrcontext(G,stderr)\n\
+# define yyprintfv(args) if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) fprintf args\n\
+# define yyprintfcontext if (G->debug & DEBUG_PARSE)                yyprinterrcontext(G,stderr)\n\
+# define yyprintfvcontext if (G->debug & DEBUG_PARSE && G->debug & DEBUG_VERBOSE) yyprinterrcontext(G,stderr)\n\
 #else\n\
 # define yyprintf(args)\n\
 # define yyprintfv(args)\n\

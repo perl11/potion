@@ -299,7 +299,7 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
 #ifdef YY_DEBUG
-  G->debug = P->flags & (DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
+  G->debug = P->flags;
 #endif
 
   //G->filename = filename;
@@ -322,6 +322,9 @@ PN potion_sig(Potion *P, char *fmt) {
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
+#ifdef YY_DEBUG
+  G->debug = P->flags;
+#endif
 
   G->pos = G->limit = 0;
   if (!YY_NAME(parse_from)(G, yy_sig))
