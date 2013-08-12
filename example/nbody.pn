@@ -1,0 +1,98 @@
+#!/usr/local/bin/potion
+# The Computer Language Shootout
+# http://shootout.alioth.debian.org/
+#
+# contributed by Reini Urban
+
+pi            = 3.141592653589793
+solar_mass    = 4 * pi * pi
+days_per_year = 365.24
+
+body = class(x=N, y=N, z=N, vx=N, vy=N, vz=N, mass=N):
+  /x = x
+  /y = y
+  /z = z
+  /vx = vx * days_per_year
+  /vy = vy * days_per_year
+  /vz = vz * days_per_year
+  /mass = mass * solar_mass.
+
+sun = body(0,0,0, 0,0,0, 1)
+jupiter = body(4.84143144246472090, -1.16032004402742839, -1.03622044471123109e-01,
+	1.66007664274403694e-03, 7.69901118419740425e-03, -6.90460016972063023e-05,
+	9.54791938424326609e-04)
+saturn = body(8.34336671824457987, 4.12479856412430479, -4.03523417114321381e-01,
+       -2.76742510726862411e-03, 4.99852801234917238e-03, 2.30417297573763929e-05,
+       2.85885980666130812e-04)
+uranus = body(1.28943695621391310e+01, -1.51111514016986312e+01, -2.23307578892655734e-01,
+       2.96460137564761618e-03, 2.37847173959480950e-03, -2.96589568540237556e-05,
+       4.36624404335156298e-05)
+neptune = body(1.53796971148509165e+01, -2.59193146099879641e+01, 1.79258772950371181e-01, 
+        2.68067772490389322e-03, 1.62824170038242295e-03, -9.51592254519715870e-05,
+	5.15138902046611451e-05)
+bodies = list(5)
+bodies(0) = sun
+bodies(1) = jupiter
+bodies(2) = saturn
+bodies(3) = uranus
+bodies(4) = neptune
+nbodies = bodies length
+
+advance = (dt):
+  i = 0
+  while (i < nbodies):
+    bi = bodies(i)
+    j = i+1
+    while (j < nbodies):
+      #("i", i, "j", j) say
+      bj = bodies(j)
+      dx = bi /x - bj /x
+      dy = bi /y - bj /y
+      dz = bi /z - bj /z
+      dist = dx*dx + dy*dy + dz*dz
+      dist = dist sqrt
+      mag = dt / (dist * dist * dist)
+      bi /vx -= dx * bj /mass * mag
+      bi /vy -= dy * bj /mass * mag
+      bi /vz -= dz * bj /mass * mag
+      bj /vx += dx * bi /mass * mag
+      bj /vy += dy * bi /mass * mag
+      bj /vz += dz * bi /mass * mag
+      j++.
+    i++..
+
+offsetmomentum = (b, px, py, pz):
+  b /vx = -px / solar_mass
+  b /vy = -py / solar_mass
+  b /vz = -pz / solar_mass
+  b.
+
+energy = ():
+  e = 0.0
+  i = 0
+  while (i < nbodies):
+    bi = bodies(i)
+    f = bi /vx * bi /vx + bi /vy * bi /vy + bi /vz * bi /vz
+    e += 0.5 * bi /mass * f
+    j = i+1
+    while (j < nbodies):
+      bj = bodies(j)
+      dx = bi /x - bj /x
+      dy = bi /y - bj /y
+      dz = bi /z - bj /z
+                                
+      dist = dx*dx + dy*dy + dz*dz
+      dist = dist sqrt
+      f = bi /mass * bj /mass
+      e -= f / dist
+      j++.
+    i++.
+  e.
+
+energy() print
+"\n" print
+n = 50000
+i = 0
+while (i < n): advance(0.01)
+  i++.
+energy() print
