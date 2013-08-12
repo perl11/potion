@@ -1,9 +1,10 @@
 # -*- makefile -*-
 # create config.inc and core/config.h
 PREFIX = /usr/local
-CC    ?= gcc
+CC     = $(shell tools/config.sh compiler)
 # -Wno-return-type
-CFLAGS = -D_GNU_SOURCE -Wall -Werror -fno-strict-aliasing
+WARNINGS = -Wall -Werror -fno-strict-aliasing -Wno-switch -Wno-return-type -Wno-unused-label
+CFLAGS = -D_GNU_SOURCE
 INCS   = -Icore
 LIBPTH = -Llib
 RPATH         = -Wl,-rpath=$(shell pwd)/lib
@@ -27,8 +28,8 @@ RANLIB = ranlib
 SED  = sed
 EXPR = expr
 
-STRIP ?= `tools/config.sh "${CC}" strip`
-JIT_TARGET ?= `tools/config.sh "${CC}" jit`
+STRIP ?= $(shell tools/config.sh "${CC}" strip)
+JIT_TARGET ?= $(shell tools/config.sh "${CC}" jit)
 ifneq (${JIT_TARGET},)
   JIT = 1
 endif
@@ -110,10 +111,10 @@ endif
 ifneq (${JIT},1)
        DEBUGFLAGS += -O3
 endif
-ifneq ($(shell ./tools/config.sh "${CC}" clang),0)
+ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
-	CFLAGS += -Wno-switch -Wno-unused-label
-	CFLAGS += -Wno-unused-value
+	WARNINGS += -Wno-switch -Wno-unused-label
+	WARNINGS += -Wno-unused-value
   ifeq (${DEBUG},0)
 	DEBUGFLAGS += -finline
   endif
@@ -123,7 +124,7 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	DEBUGFLAGS += -falign-functions=16
 # 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
 # 177: label "l414" was declared but never referenced in syntax-p5.c sets fail case
-	CFLAGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177
+	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177
   ifeq (${DEBUG},0)
 # -Ofast
 	DEBUGFLAGS += -finline
@@ -132,7 +133,7 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
   endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
-	CFLAGS += -Wno-switch -Wno-unused-label
+	WARNINGS += -Wno-switch -Wno-unused-label
   ifeq (${DEBUG},0)
 	DEBUGFLAGS += -finline -falign-functions
   endif
@@ -209,7 +210,7 @@ endif
 # let an existing config.inc overwrite everything
 include config.inc
 
-config: config.inc
+config: config.inc core/config.h
 
 config.inc.echo:
 	@${ECHO} "PREFIX  = ${PREFIX}"
@@ -220,7 +221,8 @@ config.inc.echo:
 	@${ECHO} "CC      = ${CC}"
 	@${ECHO} "DEFINES = ${DEFINES}"
 	@${ECHO} "DEBUGFLAGS = ${DEBUGFLAGS}"
-	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS}
+	@${ECHO} "WARNINGS   = ${WARNINGS}"
+	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS} "\$$"{WARNINGS}
 	@${ECHO} "INCS    = ${INCS}"
 	@${ECHO} "LIBPTH  = ${LIBPTH}"
 	@${ECHO} "RPATH   = ${RPATH}"

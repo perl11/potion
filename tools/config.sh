@@ -1,9 +1,19 @@
 #!/bin/sh
 # helper to generate config.inc and core/config.h
 
-CC=${1:-cc}
 AC="tools/config.c"
 AOUT="tools/config.out"
+if [ -z "$CC" ]; then
+    if [ -z "$1" -o "$1" = "compiler" ]; then
+        case `uname -s` in
+            *Linux) CC=clang ;;
+            *) CC=cc ;;
+        esac
+    else
+        CC="$1"
+    fi
+fi
+
 CCEX="$CC $AC -o $AOUT"
 LANG=C
 
@@ -57,13 +67,15 @@ else
   LOADEXT=".dll"
   DLL=".dll"
   LIBEXT=".a"
-  case `uname -o` in
-      *Linux|Cygwin|Darwin) CROSS=1 ;;
+  case `uname -s` in
+      *Linux|CYGWIN*|Darwin) CROSS=1 ;;
       *) CROSS=0 ;;
   esac
 fi
 
-if [ "$2" = "mingw" ]; then
+if [ "$1" = "compiler" ]; then
+  echo $CC
+elif [ "$2" = "mingw" ]; then
   if [ $MINGW -eq 0 ]; then echo "0"
   else echo "1"; fi
 elif [ "$2" = "apple" ]; then

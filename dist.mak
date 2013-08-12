@@ -84,6 +84,8 @@ GTAGS: ${SRC} core/*.h
 	  mv syn/greg.c syn/greg-c.tmp && \
 	  gtags && htags && \
 	  mv syn/greg-c.tmp syn/greg.c && \
+	  sed -e's,background-color: #f5f5dc,background-color: #ffffff,' < HTML/style.css > HTML/style.new && \
+	  mv HTML/style.new HTML/style.css && \
 	  cd ..  && \
 	  mv ${PKG}/HTML .
 	rm -rf ${PKG}
