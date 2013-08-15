@@ -661,7 +661,9 @@ void potion_lobby_init(Potion *P) {
   potion_method(mixin_vt, "meta", potion_get_metaclass, 0);
   
   potion_method(P->lobby, "about", potion_about, 0);
+#ifndef DISABLE_CALLCC
   potion_method(P->lobby, "here", potion_callcc, 0);
+#endif
   potion_method(P->lobby, "exit", potion_exit, 0);
   potion_method(P->lobby, "kind", potion_lobby_kind, 0);
   potion_method(P->lobby, "srand", potion_srand, "seed=N");

@@ -94,7 +94,9 @@ static void potion_init(Potion *P) {
   potion_lobby_init(P);
   potion_object_init(P);
   potion_error_init(P);
+#ifndef DISABLE_CALLCC
   potion_cont_init(P);
+#endif
   potion_primitive_init(P);
   potion_num_init(P);
   potion_str_init(P);

@@ -4,10 +4,14 @@
 	bench tarball dist release install grammar doxygen website \
 	testable spectest_checkout spectest_init spectest_update
 
-SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
+SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
 
 # bootstrap config.inc with make -f config.mak
 include config.inc
+
+ifneq (${DISABLE_CALLCC},1)
+SRC =+ core/callcc.c
+endif
 
 ifeq (${JIT_X86},1)
 SRC += core/vm-x86.c
