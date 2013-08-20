@@ -134,8 +134,8 @@ else
       PAGESIZE=`echo "#include <stdio.h>#include <unistd.h>int main() { printf(\\"%d\\", (int)sysconf(_SC_PAGE_SIZE)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
       STACKDIR=`echo "#include <stdlib.h>#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)((&b - a) / abs(&b - a))); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
       ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-      HAVE_ASAN=`(echo "#include <stdio.h>__attribute__((no_address_safety_analysis)) int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX $3 2>&1; rm -f $AOUT >/dev/null) | sed "/attribute directive ignored/!d"`
-    if [ "$HAVE_ASAN" != "" ]; then HAVE_ASAN=0; else HAVE_ASAN=1; fi
+      HAVE_ASAN=`echo "#include <stdio.h>__attribute__((no_address_safety_analysis)) int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX -Werror $3 2>&1 && $AOUT && rm -f $AOUT`
+    if [ "$HAVE_ASAN" = "1" ]; then HAVE_ASAN=1; else HAVE_ASAN=0; fi
   else
       # hard coded win32 values
       if [ "$JIT_X86_64" != "" -o "$JIT_AMD64" != "" ]; then
