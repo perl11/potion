@@ -79,7 +79,7 @@ stmt = pkgdecl
     | expr
 
 listexprs = e1:expr         { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
-        ( - comma - e2:expr { $$ = e1 = PN_PUSH(e1, e2) })* sep?
+        ( - comma - e2:expr { $$ = e1 = PN_PUSH(e1, e2) })*
         | ''                { $$ = PN_NIL }
 
 BEGIN   = "BEGIN" space+
@@ -129,7 +129,7 @@ assigndecl =
 
 lexical = global
 
-sets = e:eqs?
+sets = e:eqs
        ( assign s:sets       { e = PN_AST2(ASSIGN, e, s) }
        | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)) }
        | and assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)) }
@@ -190,8 +190,8 @@ power = e:expr
 
 expr = c:method  	        { $$ = PN_AST(EXPR, c) }
     | c:calllist		{ $$ = PN_AST(EXPR, c) }
-    | c:call (e:expr { c = PN_PUSH(c, e) })+
-        { $$ = PN_AST(EXPR, e ? PN_PUSH(c, e) : c) }
+    | c:call (e:expr 	{ c = PN_PUSH(c, e) })+
+				{ $$ = PN_AST(EXPR, c) }
     | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
     | e:atom			{ $$ = e }
 
@@ -213,14 +213,14 @@ atom = e:value | e:list | e:anonsub
 #   print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
 #TODO: if (cond) {block} => expr (if, cond, block)
-calllist = m:name - l:list {
+calllist = m:name - l:list - {
           $$ = potion_tuple_shift(P, 0, PN_S(l,0));
           if (!PN_S(l, 0)) { PN_SRC(m)->a[1] = PN_SRC($$); }
           $$ = PN_PUSH(PN_TUP($$), m); }
-call = m:name { $$ = PN_TUP(m) }
-method = v:value - arrow m:name - l:list {
+call = m:name - { $$ = PN_TUP(m) }
+method = v:value - arrow m:name - l:list - {
             PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
-       | v:value - arrow m:name {
+       | v:value - arrow m:name - {
             $$ = PN_PUSH(PN_TUPIF(v), m) }
 
 name = !keyword m:id      { $$ = PN_AST(MSG, m) }
