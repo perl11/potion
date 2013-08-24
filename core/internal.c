@@ -99,8 +99,10 @@ static void potion_init(Potion *P) {
   potion_source_init(P);
   potion_lick_init(P);
   potion_compiler_init(P);
+#ifndef ENABLE_SANDBOX
   potion_file_init(P);
   potion_loader_init(P);
+#endif
 
   pn_filenames = PN_TUP0();
 
