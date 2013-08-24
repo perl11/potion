@@ -10,7 +10,7 @@ SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/file.c core/gc.c 
 include config.inc
 
 ifneq (${DISABLE_CALLCC},1)
-SRC =+ core/callcc.c
+SRC += core/callcc.c
 endif
 
 ifeq (${JIT_X86},1)
