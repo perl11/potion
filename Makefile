@@ -5,7 +5,7 @@
 	testable spectest_checkout spectest_init spectest_update
 .NOTPARALLEL: test test.pn test.p2
 
-SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
+SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
 PLIBS = readline buffile aio
 GREGCFLAGS = -O3 -DNDEBUG
 
@@ -15,6 +15,10 @@ include config.inc
 ifneq (${DISABLE_CALLCC},1)
 SRC += core/callcc.c
 endif
+ifneq (${ENABLE_SANDBOX},1)
+SRC += core/file.c core/load.c
+endif
+
 ifeq (${JIT_X86},1)
 SRC += core/vm-x86.c
 else
