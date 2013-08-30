@@ -76,11 +76,10 @@ stmt = pkgdecl
         ( or x:sets semi      { s = PN_OP(AST_OR, s, x) }
         | and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
                               { $$ = s }
-    | expr
+    | s:sets                  { $$ = s }
 
-listexprs = e1:expr         { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
-        ( - comma - e2:expr { $$ = e1 = PN_PUSH(e1, e2) })*
-        | ''                { $$ = PN_NIL }
+listexprs = e1:eqs           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
+        ( - comma - e2:eqs   { $$ = e1 = PN_PUSH(e1, e2) } )*
 
 BEGIN   = "BEGIN" space+
 PACKAGE = "package" space+
@@ -114,7 +113,7 @@ ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_OP(AST_AND, e, s) }
        | IF e:ifexpr s1:block -        { $$ = e = PN_AST3(MSG, PN_if, PN_AST(LIST, PN_TUP(e)), s1) }
          (ELSIF e1:ifexpr f:block -    { $$ = e = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_elsif, PN_AST(LIST, PN_TUP(e1)), f)) } )*
          (ELSE s2:block                { $$ = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_else, PN_NIL, s2)) } )?
-ifexpr = '(' - expr - ')' -
+ifexpr = '(' - eqs - ')' -
 
 assigndecl =
         l:listvar - assign r:list - { $$ = PN_AST2(ASSIGN, l, r) }
@@ -123,8 +122,8 @@ assigndecl =
         PN s1 = PN_TUP0(); PN_TUPLE_EACH(l, i, v, {
           s1 = PN_PUSH(s1, PN_AST2(ASSIGN, v, PN_TUPLE_AT(r,i)));
         }); $$ = s1 }
-      | l:global - assign e:expr - { $$ = PN_AST2(ASSIGN, l, e) }
-      | MY - l:lexical - assign e:expr - { $$ = PN_AST2(ASSIGN, l, e) }
+      | l:global - assign e:eqs - { $$ = PN_AST2(ASSIGN, l, e) }
+      | MY - l:lexical - assign e:eqs - { $$ = PN_AST2(ASSIGN, l, e) }
       | l:global - assign r:list { YY_ERROR(G, "** Assignment error") }
 
 lexical = global
@@ -190,9 +189,12 @@ power = e:expr
 
 expr = c:method  	        { $$ = PN_AST(EXPR, c) }
     | c:calllist		{ $$ = PN_AST(EXPR, c) }
-    | c:call (e:expr 	{ c = PN_PUSH(c, e) })+
-				{ $$ = PN_AST(EXPR, c) }
+    | c:call e:expr 		{ $$ = PN_AST(EXPR, PN_PUSH(PN_TUPIF(e), c)) }
+    | c:call l:listexprs        { $$ = potion_tuple_shift(P, 0, PN_S(l,0));
+          //if (!PN_S(l, 0)) { PN_SRC(c)->a[1] = PN_SRC($$); }
+          $$ = PN_PUSH(PN_TUP($$), c); }
     | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
+    | c:call			{ $$ = PN_AST(EXPR, c) }
     | e:atom			{ $$ = e }
 
 opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
@@ -217,7 +219,7 @@ calllist = m:name - l:list - {
           $$ = potion_tuple_shift(P, 0, PN_S(l,0));
           if (!PN_S(l, 0)) { PN_SRC(m)->a[1] = PN_SRC($$); }
           $$ = PN_PUSH(PN_TUP($$), m); }
-call = m:name - { $$ = PN_TUP(m) }
+call = m:name - { $$ = m }
 method = v:value - arrow m:name - l:list - {
             PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
        | v:value - arrow m:name - {
