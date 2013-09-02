@@ -211,13 +211,14 @@ opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
 atom = e:value | e:list | e:anonsub
 
 #FIXME methods and indirect methods:
-#   chr 101 => (expr (value (101), msg ("chr")))
+#   chr 101  => (expr (value (101), msg ("chr")))
+#   chr(101,1) => (expr (value (101), msg ("chr") list (value 1)))
 #   print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
 #TODO: if (cond) {block} => expr (if, cond, block)
 calllist = m:name - l:list - {
           $$ = potion_tuple_shift(P, 0, PN_S(l,0));
-          if (!PN_S(l, 0)) { PN_SRC(m)->a[1] = PN_SRC($$); }
+          if (PN_TUPLE_LEN(PN_S(l, 0))) { PN_SRC(m)->a[1] = PN_SRC(l); }
           $$ = PN_PUSH(PN_TUP($$), m); }
 call = m:name - { $$ = m }
 method = v:value - arrow m:name - l:list - {
