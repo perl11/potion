@@ -80,6 +80,9 @@ stmt = pkgdecl
 
 listexprs = e1:eqs           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
         ( - comma - e2:eqs   { $$ = e1 = PN_PUSH(e1, e2) } )*
+# need to handle named args: $x=1
+callexprs = e1:sets           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
+        ( - comma - e2:sets   { $$ = e1 = PN_PUSH(e1, e2) } )*
 
 BEGIN   = "BEGIN" space+
 PACKAGE = "package" space+
@@ -104,7 +107,7 @@ anonsub = SUB l:p5-siglist? b:block -
 #        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)) }
 #subattrlist = ':' -? arg-name
 
-# TODO: compile-time sideeffs (BEGIN block) in the compiler
+# TODO: compile-time sideeffs: require + import
 use = USE n:id                     { $$ = PN_AST2(MSG, PN_use, n) }
     | USE n:id - fatcomma - l:atom { $$ = PN_AST3(MSG, PN_use, n, l) }
 
@@ -193,8 +196,8 @@ expr = c:method  	        { $$ = PN_AST(EXPR, c) }
     | c:calllist		{ $$ = PN_AST(EXPR, c) }
     | c:call e:expr 		{ $$ = PN_AST(EXPR, PN_PUSH(PN_TUPIF(e), c)) }
     | c:call l:listexprs        { $$ = potion_tuple_shift(P, 0, PN_S(l,0));
-          //if (!PN_S(l, 0)) { PN_SRC(c)->a[1] = PN_SRC($$); }
-          $$ = PN_PUSH(PN_TUP($$), c); }
+            if (!PN_S(l, 0)) { PN_SRC(c)->a[1] = PN_SRC($$); }
+            $$ = PN_PUSH(PN_TUP($$), c); }
     | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
     | c:call			{ $$ = PN_AST(EXPR, c) }
     | e:atom			{ $$ = e }
@@ -218,10 +221,14 @@ atom = e:value | e:list | e:anonsub
 #   print chr 101 => (expr (value (101), msg ("chr"), msg ("print")))
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
 #TODO: if (cond) {block} => expr (if, cond, block)
+# callexprs allows assignment for named args
 calllist = m:name - l:list - {
-          $$ = potion_tuple_shift(P, 0, PN_S(l,0));
-          if (PN_TUPLE_LEN(PN_S(l, 0))) { PN_SRC(m)->a[1] = PN_SRC(l); }
-          $$ = PN_PUSH(PN_TUP($$), m); }
+                 $$ = potion_tuple_shift(P, 0, PN_S(l,0));
+                 if (PN_TUPLE_LEN(PN_S(l, 0))) { PN_SRC(m)->a[1] = PN_SRC(l); }
+                 $$ = PN_PUSH(PN_TUP($$), m); }
+         | m:name - list-start l:callexprs list-end - {
+                 PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, l));
+                 $$ = PN_TUP(m) }
 call = m:name - { $$ = m }
 method = v:value - arrow m:name - l:list - {
             PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
