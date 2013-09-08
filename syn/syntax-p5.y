@@ -92,6 +92,7 @@ MY      = "my" space+
 
 p5-siglist = list-start p:sig_p5 list-end - 
         { P->source = PN_NIL; $$ = PN_AST(LIST, P->source) }
+#TODO: store name globally
 subrout = SUB n:id - l:p5-siglist? b:block -
         { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_TUP(PN_AST(MSG, n))),
                                PN_AST(EXPR, PN_TUP(PN_AST2(PROTO, l, b)))) }
