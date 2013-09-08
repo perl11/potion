@@ -273,16 +273,16 @@ immed = undef { $$ = PN_NIL }
 
 global  = scalar | listvar | hashvar | listel | hashel | funcvar | globvar
 # send the value a msg, every global is a closure (see name)
-scalar  = < '$' i:id > - ! [\[{]
+scalar  = < '$' i:id > - !'[' !'{'
         { $$ = PN_AST(MSG, PN_STRCAT("$", PN_STR_PTR(i))) }
 listvar = < '@' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("@", PN_STR_PTR(i))) }
 hashvar = < '%' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("%", PN_STR_PTR(i))) }
 funcvar = < '&' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("&", PN_STR_PTR(i))) }
 globvar = < '*' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("*", PN_STR_PTR(i))) }
 listel  = < '$' l:id - '[' - i:value - ']' > -
-        { $$ = PN_AST2(LICK, PN_STRCAT("@", PN_STR_PTR(l)), i) }
-hashel  = < '$' h:id - '{' - i:value - '}' > -
-        { $$ = PN_AST2(LICK, PN_STRCAT("%", PN_STR_PTR(h)), i) }
+        { $$ = PN_AST2(MSG, PN_STRCAT("@", PN_STR_PTR(l)), PN_AST(EXPR, PN_TUP(i))) }
+hashel  = < '$' h:id - '{' - k:value - '}' > -
+        { $$ = PN_AST2(MSG, PN_STRCAT("%", PN_STR_PTR(h)), PN_AST(EXPR, PN_TUP(k))) }
 
 semi = ';'
 comma = ','
