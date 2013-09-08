@@ -273,7 +273,8 @@ immed = undef { $$ = PN_NIL }
 
 global  = scalar | listvar | hashvar | listel | hashel | funcvar | globvar
 # send the value a msg, every global is a closure (see name)
-scalar  = < '$' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("$", PN_STR_PTR(i))) }
+scalar  = < '$' i:id > - ! [\[{]
+        { $$ = PN_AST(MSG, PN_STRCAT("$", PN_STR_PTR(i))) }
 listvar = < '@' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("@", PN_STR_PTR(i))) }
 hashvar = < '%' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("%", PN_STR_PTR(i))) }
 funcvar = < '&' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("&", PN_STR_PTR(i))) }
