@@ -60,8 +60,8 @@ PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 #EXTLIBS = $(foreach m,uv pcre,lib/lib$m.a)
 #EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv -L3rd/libtommath -llibtommath
-EXTLIBS = -Llib -luv -lpcre
-EXTLIBDEPS = lib/libpcre${DLL} lib/libuv${DLL}
+EXTLIBS = -Llib -luv
+EXTLIBDEPS = lib/libuv${DLL}
 DYNLIBS = $(foreach m,readline buffile aio,lib/potion/$m${LOADEXT})
 OBJS = .o .o2
 ifneq (${FPIC},)
