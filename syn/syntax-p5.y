@@ -105,7 +105,8 @@ anonsub = SUB l:p5-siglist? b:block -
 #subattrlist = ':' -? arg-name
 
 # TODO: compile-time sideeffs (BEGIN block) in the compiler
-use = USE n:id - semi    { $$ = PN_AST2(MSG, PN_STRN("use", 3), n) }
+use = USE n:id                     { $$ = PN_AST2(MSG, PN_use, n) }
+    | USE n:id - fatcomma - l:atom { $$ = PN_AST3(MSG, PN_use, n, l) }
 
 pkgdecl = PACKAGE n:arg-name semi          {} # TODO: set namespace
     | PACKAGE n:arg-name v:version? b:block
@@ -286,6 +287,7 @@ hashel  = < '$' h:id - '{' - k:value - '}' > -
 
 semi = ';'
 comma = ','
+fatcomma = '=>'
 arrow = "->" -
 block-start = '{' space*
 block-end = semi? space* '}'

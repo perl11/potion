@@ -17,6 +17,9 @@ PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
    PN_return, PN_self, PN_string, PN_while;
 PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
+#ifdef P2
+PN PN_use;
+#endif
 
 PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
   struct PNData *obj = PN_ALLOC_N(PN_TUSER, struct PNData, PN_INT(len));
@@ -50,39 +53,41 @@ static void potion_init(Potion *P) {
 #endif
 
   potion_str_hash_init(P);
-  PN_allocate = potion_str(P, "allocate");
-  PN_break = potion_str(P, "break");
-  PN_call = potion_str(P, "call");
-  PN_continue = potion_str(P, "continue");
-  PN_def = potion_str(P, "def");
-  PN_delegated = potion_str(P, "delegated");
-  PN_class = potion_str(P, "class");
-  PN_compile = potion_str(P, "compile");
-  PN_else = potion_str(P, "else");
-  PN_elsif = potion_str(P, "elsif");
-  PN_if = potion_str(P, "if");
-  PN_lookup = potion_str(P, "lookup");
-  PN_loop = potion_str(P, "loop");
-  PN_print = potion_str(P, "print");
-  PN_return = potion_str(P, "return");
-  PN_self = potion_str(P, "self");
-  PN_string = potion_str(P, "string");
-  PN_while = potion_str(P, "while");
-
-  PN_add = potion_str(P, "+");
-  PN_sub = potion_str(P, "-");
-  PN_mult = potion_str(P, "*");
-  PN_div = potion_str(P, "/");
-  PN_rem = potion_str(P, "%");
-  PN_bitn = potion_str(P, "~");
-  PN_bitl = potion_str(P, "<<");
-  PN_bitr = potion_str(P, ">>");
-  PN_number = potion_str(P, "number");
-  PN_cmp = potion_str(P, "cmp");
-  PN_name = potion_str(P, "name");
-  PN_length = potion_str(P, "length");
-  PN_size = potion_str(P, "size");
-  PN_STR0 = potion_str(P, "");
+  PN_STR0 = PN_STRN("", 0);
+  PN_add  = PN_STRN("+", 1);
+  PN_sub  = PN_STRN("-", 1);
+  PN_mult = PN_STRN("*", 1);
+  PN_div  = PN_STRN("/", 1);
+  PN_rem  = PN_STRN("%", 1);
+  PN_bitn = PN_STRN("~", 1);
+  PN_bitl = PN_STRN("<<", 2);
+  PN_bitr = PN_STRN(">>", 2);
+  PN_if   = PN_STRN("if", 2);
+  PN_def = PN_STRN("def", 3);
+  PN_cmp = PN_STRN("cmp", 3);
+#ifdef P2
+  PN_use = PN_STRN("use", 3);
+#endif
+  PN_call = PN_STRN("call", 4);
+  PN_else = PN_STRN("else", 4);
+  PN_loop = PN_STRN("loop", 4);
+  PN_self = PN_STRN("self", 4);
+  PN_name = PN_STRN("name", 4);
+  PN_size = PN_STRN("size", 4);
+  PN_break = PN_STRN("break", 5);
+  PN_class = PN_STRN("class", 5);
+  PN_elsif = PN_STRN("elsif", 5);
+  PN_print = PN_STRN("print", 5);
+  PN_while = PN_STRN("while", 5);
+  PN_length = PN_STRN("length", 6);
+  PN_return = PN_STRN("return", 6);
+  PN_string = PN_STRN("string", 6);
+  PN_lookup = PN_STRN("lookup", 6);
+  PN_number = PN_STRN("number", 6);
+  PN_compile = PN_STRN("compile", 7);
+  PN_allocate = PN_STRN("allocate", 8);
+  PN_continue = PN_STRN("continue", 8);
+  PN_delegated = PN_STRN("delegated", 9);
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup, 0));
   potion_def_method(P, 0, vtable, PN_def, PN_FUNC(potion_def_method, "name=S,block=&"));

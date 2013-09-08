@@ -528,6 +528,16 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       int arg = (PN_S(t,1) != PN_NIL);
       int call = (PN_S(t,2) != PN_NIL || arg);
       PN ifconst = -1;
+#ifdef P2
+      if (t->part == AST_MSG && PN_S(t,0) == PN_use) {
+        //u8 breg = reg;
+        if (PN_S(t,1) == PN_STRN("p2", 2)) {
+	  P->flags |= MODE_P2; //hack, need to scope the syntax mode
+	}
+	/* TODO: add to begin_av: require t[1], t[1]->import(args) */
+      }
+      else
+#endif
       if (t->part == AST_MSG && PN_S(t,0) == PN_if) {
         int jmp; breg++;
 #ifdef P2
