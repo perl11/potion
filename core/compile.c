@@ -525,7 +525,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       if (t->part == AST_MSG && PN_S(t,0) == PN_if) {
         int jmp; breg++;
 #ifdef P2
-	if (!t->a[1]) { // rhs ifexpr: missing block
+	if (!t->a[2]) { // rhs ifexpr: missing block
           DBG_c("expr (msg if, (cond)), block => expr (msg if, (cond), block)\n");
           if (P->flags & MODE_P2) {
             //TODO
@@ -556,7 +556,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         int jmp1 = PN_OP_LEN(f->asmb), jmp2; breg++;
         // true ifconst: ignore. use only 1st if
 #ifdef P2
-	if (!t->a[1]) { // rhs ifexpr: missing block
+	if (!t->a[2]) { // rhs ifexpr: missing block
           DBG_c("expr (msg elsif, (cond)), block => expr (msg elsif, (cond), block)\n");
           if (P->flags & MODE_P2) {
             //TODO
@@ -590,7 +590,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_else) {
         int jmp = PN_OP_LEN(f->asmb); breg++;
 #ifdef P2
-	if (!t->a[1]) { // rhs ifexpr: missing block
+	if (!t->a[2]) { // rhs ifexpr: missing block
           DBG_c("expr (msg else), block => expr (msg else, block)\n");
           if (P->flags & MODE_P2) {
             //TODO
