@@ -222,11 +222,13 @@ atom = e:value | e:list | e:anonsub
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
 #TODO: if (cond) {block} => expr (if, cond, block)
 # callexprs allows assignment for named args
-calllist = m:name - list-start - list-end { $$ = PN_TUP(m); }
+calllist = m:name - list-start - list-end { 
+                 PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, PN_NIL));
+                 $$ = PN_TUP(m) }
          | m:name - l:list - {
                  $$ = potion_tuple_shift(P, 0, PN_S(l,0));
                  if (PN_TUPLE_LEN(PN_S(l, 0))) { PN_SRC(m)->a[1] = PN_SRC(l); }
-                 $$ = PN_PUSH(PN_TUP($$), m); }
+                 $$ = PN_PUSH(PN_TUP($$), m) }
          | m:name - list-start l:callexprs list-end - {
                  PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, l));
                  $$ = PN_TUP(m) }
