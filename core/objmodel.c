@@ -79,7 +79,7 @@ PN potion_closure_minargs(Potion *P, PN cl, PN self) {
 /** number of args of sig tuple, implements the potion_closure_arity method.
     sigs are encoded as tuples of len 2-3, (name type|modifier [default-value])
     names String, modifiers Num.
-    types also Num, but we will switch to VTable.
+    types also Num, but want to switch to special SIG VTable.
     default-value can be a value of any type and is prefixed with ':'
   \return number of args as integer */
 int potion_sig_arity(Potion *P, PN sig) {
@@ -101,7 +101,7 @@ int potion_sig_arity(Potion *P, PN sig) {
   else if (sig == PN_NIL)
     return 0;
   else {
-    potion_fatal("wrong sig type for sig_arity");
+    potion_fatal("Invalid signature type for sig_arity");
     return 0;
   }
 }

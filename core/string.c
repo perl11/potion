@@ -241,7 +241,7 @@ static PN potion_str_bytes(Potion *P, PN cl, PN self) {
 /// "+" method.
 ///\param x PNString
 ///\return concat PNString
-static PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
+PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
   char *s = malloc(PN_STR_LEN(self) + PN_STR_LEN(x));
   PN str;
   if (s == NULL) potion_allocation_error();

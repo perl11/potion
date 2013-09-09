@@ -240,8 +240,9 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       PN v = (PN)t->set[i];
       // arg names, except string default
       if (PN_IS_STR(v) && !(i>0 && PN_IS_NUM(t->set[i-1]) && t->set[i-1] == PN_NUM(':'))) {
-        PN_SIZE num = PN_GET(f->locals, v);
-        target->local(P, f, &asmb, regs + num, argx);
+        long num = (long)PN_GET(f->locals, v);
+        if (num != -1)
+          target->local(P, f, &asmb, regs + num, argx);
         argx++;
       }
     }
@@ -392,8 +393,9 @@ reentry:
       long argx;
       for (argx = 0; argx < potion_sig_arity(P, f->sig); argx++) {
         PN s = potion_sig_at(P, f->sig, argx);
-        PN_SIZE num = PN_GET(f->locals, PN_TUPLE_AT(s, 0));
-        locals[num] = args[argx];
+        long num = (long)PN_GET(f->locals, PN_TUPLE_AT(s, 0));
+        if (num != -1)
+          locals[num] = args[argx];
       }
     }
   }

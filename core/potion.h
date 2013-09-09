@@ -761,6 +761,7 @@ void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
 PN potion_str2(Potion *, char *, size_t);
 PN potion_strcat(Potion *P, char *str, char *str2);
+PN potion_str_add(Potion *P, PN, PN, PN);
 PN potion_str_format(Potion *, const char *, ...)
   __attribute__ ((format (printf, 2, 3)));
 PN potion_byte_str(Potion *, const char *);

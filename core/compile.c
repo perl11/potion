@@ -102,7 +102,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   pn_printf(P, out, ": %u bytes\n", PN_FLEX_SIZE(t->asmb));
   #endif
   pn_printf(P, out, "; (");
-  potion_bytes_obj_string(P, out, potion_sig_string(P,cl,t->sig));
+  potion_bytes_obj_string(P, out, potion_sig_string(P, cl, t->sig));
   pn_printf(P, out, ") %ld registers\n", PN_INT(t->stack));
   PN_TUPLE_EACH(t->paths, i, v, {
     pn_printf(P, out, ".path /");
@@ -837,22 +837,26 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
     }						\
   } else { name = PN_NIL; }
 
-/** Extract locals, apply type defaults and do type and param checks.
-   sigs are also ambigious, the parser usually compiles it down to
-   expression trees, not to a sig tuple. Convert assign,pipe,value.
+/** Converts a pre-compiled potion expr to a signature tuple.
+   Extract locals, apply type defaults and do type and param checks.
+   Sigs are also ambigious, the parser usually compiles it down to
+   expression trees, not to a sig tuple. Converts assign,pipe,value.
 
-   Not used by P2, as args2 generates the 3-tuple in the parser already.
+   Not used by P2, as args2 generates the correct sig tuple in the parser already.
+
+   \todo this is overly complicated. create tuples as in P2 in the parser,
+    do not reuse expr and assign.
 
    Name=Type, '|' optional '.' end ':='default
    type: 'o' (= PN object)
-   Encode to 3-tuple AST_CODE: (name type|modifier default)
+   Encode to 3-tuple AST_CODE: name type|modifier default
 \param f    the PNProto closure to store locals
 \param src  PNSource signature tree, parsed via yy_sig()
-\return PNProto a closure
+\return PNTuple of sigs
 
  (x=n,y:=1) =>
 \code  (list (assign (expr (msg (x)) expr (msg (n ))),
-  assign (expr (msg (y)) value (1 ))) \endcode */
+        assign (expr (msg (y)) value (1 ))) \endcode */
 PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   PN sig = PN_TUP0();
   vPN(Source) t = PN_SRC(src);
