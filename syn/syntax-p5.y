@@ -80,7 +80,7 @@ stmt = pkgdecl
 
 listexprs = e1:eqs           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
         ( - comma - e2:eqs   { $$ = e1 = PN_PUSH(e1, e2) } )*
-# need to handle named args: $x=1
+# listexprs + named args: $x=1 (i.e. assignment)
 callexprs = e1:sets           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
         ( - comma - e2:sets   { $$ = e1 = PN_PUSH(e1, e2) } )*
 
@@ -222,7 +222,8 @@ atom = e:value | e:list | e:anonsub
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
 #TODO: if (cond) {block} => expr (if, cond, block)
 # callexprs allows assignment for named args
-calllist = m:name - l:list - {
+calllist = m:name - list-start - list-end { $$ = PN_TUP(m); }
+         | m:name - l:list - {
                  $$ = potion_tuple_shift(P, 0, PN_S(l,0));
                  if (PN_TUPLE_LEN(PN_S(l, 0))) { PN_SRC(m)->a[1] = PN_SRC(l); }
                  $$ = PN_PUSH(PN_TUP($$), m); }
