@@ -98,15 +98,18 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   PN_SIZE pos;
   PNJumps jmps[JUMPS_MAX]; size_t offs[JUMPS_MAX]; int jmpc = 0, jmpi = 0;
   vPN(Proto) f = (struct PNProto *)proto;
-  int upc = PN_TUPLE_LEN(f->upvals);
+  long upc = PN_TUPLE_LEN(f->upvals);
   PNAsm * volatile asmb = potion_asm_new(P);
   u8 *fn;
   PNTarget *target = &P->target;
   target->setup(P, f, &asmb);
+  DBG_t("-- run-time --\n");
 
+  // calculate needed stackspace. nested protos may need more.
   if (PN_TUPLE_LEN(f->protos) > 0) {
+    DBG_vt(";  %lu subprotos\n", PN_TUPLE_LEN(f->protos));
     PN_TUPLE_EACH(f->protos, i, proto2, {
-      int p2args = 3;
+      long p2args = 3;
       vPN(Proto) f2 = (struct PNProto *)proto2;
       // TODO: i'm repeating this a lot. sad.
       if (PN_IS_TUPLE(f2->sig)) {
@@ -116,8 +119,10 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       }
       if (f2->jit == NULL)
         potion_jit_proto(P, proto2);
-      if (p2args > protoargs)
+      if (p2args > protoargs) {
+        DBG_vt(";  extend stack from %ld to %ld\n", protoargs, p2args);
         protoargs = p2args;
+      }
     });
   }
 
@@ -140,6 +145,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       }
     });
   }
+  DBG_t("; %ld locals, %ld regs, %ld upc, sig=%s\n", argx, regs, upc, AS_STR(f->sig));
 
   // if CL passed in with upvals, load them
   if (upc > 0)
@@ -237,12 +243,13 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   // these variables change from proto to proto
   // current = upvals | locals | self | reg
   PN_SIZE pos = 0;
-  long argx = 0;
+  long argx;
   PN *args = NULL, *upvals, *locals, *reg;
   PN *current = stack;
 
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
   memset((void*)stack, 0, STACK_MAX*sizeof(PN));
+  DBG_t("-- run-time --\n");
 
 reentry:
   if (current - stack >= STACK_MAX) {
@@ -276,16 +283,11 @@ reentry:
     }
   }
 
-#ifdef DEBUG
-    if (P->flags & DEBUG_TRACE)
-      fprintf(stderr, "-- run-time --\n");
-#endif
-
   while (pos < PN_OP_LEN(f->asmb)) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
+    DBG_t("[%2d] %-8s %d ", pos+1, potion_ops[op.code].name, op.a);
 #ifdef DEBUG
     if (P->flags & DEBUG_TRACE) {
-      fprintf(stderr, "[%2d] %-8s %d", pos+1, potion_ops[op.code].name, op.a);
       if (potion_ops[op.code].args > 1)
 	fprintf(stderr, " %d", op.b);
     }
@@ -453,6 +455,7 @@ reentry:
 
               f = PN_PROTO(PN_CLOSURE(reg[op.a])->data[0]);
               pos = 0;
+              DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
               goto reentry;
             }
           break;
@@ -462,6 +465,7 @@ reentry:
             reg[op.a] = potion_obj_get_call(P, reg[op.a]);
             if (PN_IS_CLOSURE(reg[op.a]))
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, &reg[op.a + 1]);
+              DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
           }
           break;
         }
@@ -481,9 +485,11 @@ reentry:
           current = reg - (f->localsize + f->upvalsize + 1);
           reg[op.a] = val;
           pos++;
+          DBG_t("\t; %s\n", STRINGIFY(val));
           goto reentry;
         } else {
           reg[0] = reg[op.a];
+          DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
           goto done;
         }
       break;

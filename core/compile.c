@@ -213,6 +213,7 @@ void potion_arg_asmb(Potion *P, vPN(Proto) f, struct PNLoop *loop, PN args, u8 *
                   } else {
                     PN_SIZE num = PN_PUT(f->values, lhs->a[0]);
                     PN_ASM2(OP_LOADK, sreg, num);
+                    DBG_c("NAMED %s\n", AS_STR(lhs->a[0]));
                   }
                   lhs = NULL;
                 }
@@ -653,6 +654,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   PN sig = PN_TUP0();
   vPN(Source) t = (struct PNSource *)src;
   if (t->part == AST_TABLE && t->a[0] != PN_NIL) {
+    DBG_c("--- sig compile ---\n");
     PN_TUPLE_EACH(t->a[0], i, v, {
       vPN(Source) expr = (struct PNSource *)v;
       if (expr->part == AST_EXPR) {
@@ -697,6 +699,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   f->upvals = PN_TUP0();
   f->values = PN_TUP0();
   f->tree = self;
+  DBG_c("-- compile --\n");
   f->sig = (sig == PN_NIL ? PN_TUP0() : potion_sig_compile(P, f, sig));
   f->asmb = (PN)potion_asm_new(P);
 

@@ -155,6 +155,26 @@ struct PNVtable;
 #endif
 #define PN_UNIQ(x)      (PN_IS_PTR(x) ? ((struct PNObject *)(x))->uniq : PN_NUMHASH(x))
 
+#define AS_STR(x)       PN_STR_PTR(potion_send(x, PN_string))
+#ifdef DEBUG
+#define DBG_t(...) \
+  if (P->flags & DEBUG_TRACE) fprintf(stderr, __VA_ARGS__)
+#define DBG_v(...) \
+  if (P->flags & DEBUG_VERBOSE) fprintf(stderr, __VA_ARGS__)
+#define DBG_vt(...) \
+  if (P->flags & (DEBUG_VERBOSE|DEBUG_TRACE)) fprintf(stderr, __VA_ARGS__)
+#define DBG_vi(...) \
+  if (P->flags & (DEBUG_VERBOSE|DEBUG_INSPECT)) fprintf(stderr, __VA_ARGS__)
+#define DBG_c(...) \
+  if (P->flags & DEBUG_COMPILE) fprintf(stderr, __VA_ARGS__)
+#else
+#define DBG_t(...)
+#define DBG_v(...)
+#define DBG_vt(...)
+#define DBG_vi(...)
+#define DBG_c(...)
+#endif
+
 #define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
 #define PN_TUP0()       potion_tuple_empty(P)
 #define PN_TUP(X)       potion_tuple_new(P, X)
@@ -442,8 +462,9 @@ typedef enum {
   DEBUG_TRACE  = 1<<10,
   DEBUG_PARSE  = 1<<11,
   DEBUG_PARSE_VERBOSE = 1<<12,
-  DEBUG_GC     = 1<<13,
-  DEBUG_JIT    = 1<<14,
+  DEBUG_COMPILE = 1<<13,
+  DEBUG_GC     = 1<<14,
+  DEBUG_JIT    = 1<<15,
 #endif
 } Potion_Flags;
 
