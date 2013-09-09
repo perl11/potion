@@ -93,8 +93,8 @@ ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
 
-p5-siglist = list-start p:sig_p5 list-end - 
-        { P->source = PN_NIL; $$ = PN_AST(LIST, P->source) }
+p5-siglist = list-start p:args2* list-end -
+        { $$ = PN_AST(LIST, P->source); P->source = PN_NIL }
 #TODO: store name globally
 subrout = SUB n:id - l:p5-siglist? b:block -
         { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_TUP(PN_AST(MSG, n))),
@@ -450,8 +450,8 @@ arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')) }
 # p5 sigs. used by the seperate p2_sig
 sig_p5 = args2* end-of-file
 args2 = arg2-list (arg2-yada)*
-yada = "..."
-arg2-yada = yada -    { P->source = PN_PUSH(P->source, PN_NUM('.')) }
+YADA = "..."
+arg2-yada = YADA -    { P->source = PN_PUSH(P->source, PN_NUM('.')) }
 arg2-list = arg2-set (optional arg2-set)?
          | optional arg2-set
 arg2-set = arg2 (comma - arg2)*
@@ -459,15 +459,15 @@ arg2-set = arg2 (comma - arg2)*
 arg2-name = < [$@%] id > - { $$ = PN_STRN(yytext, yyleng) }
 # types are classes
 arg2-type = i:id space+  { $$ = potion_class_find(P, i); if (!$$) yyerror(G,"Invalid type") }
-arg2 = n:arg2-name
-      { P->source = PN_PUSH(DEF_PSRC, n) }
-    | t:arg2-type n:arg2-name
-      { P->source = PN_PUSH(PN_PUSH(DEF_PSRC, n), t) }
-    | n:arg2-name - '=' - d:value
-      { P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), PN_NUM(':')), d) }
-    | t:arg2-type n:arg2-name - '=' - d:value
-      { if (t != PN_TYPE(d)) yyerror(G,"wrong type of default argument");
-        P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), PN_NUM(':')), d) }
+arg2 = t:arg2-type n:arg2-name
+       { P->source = PN_PUSH(PN_PUSH(DEF_PSRC, n), t) }
+     | n:arg2-name - '=' - d:value
+       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), PN_NUM(':')), d) }
+     | t:arg2-type n:arg2-name - '=' - d:value
+       { if (t != PN_TYPE(d)) yyerror(G,"wrong type of default argument");
+         P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), PN_NUM(':')), d) }
+     | n:arg2-name
+       { P->source = PN_PUSH(DEF_PSRC, n) }
 
 %%
 

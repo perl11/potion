@@ -3,4 +3,5 @@ sub fib($n) {
 }
 
 my $N = 28;
-print("fib($N) = ", fib($N), "\n");
+#print("fib($N) = ", fib($N), "\n");
+fib($N)
