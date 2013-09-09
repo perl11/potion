@@ -765,8 +765,6 @@ void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
       X86_PRE(); ASM(0xB8); ASMN(kh_val(PN, vt->methods, k - 1)); // mov CL %rax
 #if __WORDSIZE != 64
       ASM(0x5D);
-#else
-      ASM(0xF3); // repz (branch prediction: http://repzret.org/p/repzret/)
 #endif
       ASM(0xC3); // retq
     }
@@ -774,8 +772,6 @@ void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
   ASM(0xB8); ASMI(0); // mov NIL %eax
 #if __WORDSIZE != 64
   ASM(0x5D);
-#else
-  ASM(0xF3); // repz
 #endif
   ASM(0xC3); // retq
 }
@@ -794,16 +790,12 @@ void potion_x86_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
     ASM(0xB8); ASMI(i); // mov i %rax
 #if __WORDSIZE != 64
     ASM(0x5D);
-#else
-  ASM(0xF3); 				// repz
 #endif
     ASM(0xC3); // retq
   });
   X86_PRE(); ASM(0xB8); ASMN(-1); // mov -1 %rax
 #if __WORDSIZE != 64
   ASM(0x5D);
-#else
-  ASM(0xF3); 				// repz
 #endif
   ASM(0xC3); // retq
 }
