@@ -369,6 +369,7 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
 
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
   memset((void*)stack, 0, STACK_MAX*sizeof(PN));
+  DBG_t("-- run-time --\n");
 
 reentry:
   if (current - stack >= STACK_MAX) {
@@ -399,7 +400,6 @@ reentry:
       }
     }
   }
-  DBG_t("-- run-time --\n");
 
   while (pos < PN_OP_LEN(f->asmb)) {
     PN_OP op = PN_OP_AT(f->asmb, pos);

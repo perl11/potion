@@ -276,6 +276,7 @@ void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop
                   } else {
                     PN_SIZE num = PN_PUT(f->values, PN_S(lhs,0));
                     PN_ASM2(OP_LOADK, sreg, num);
+                    DBG_c("NAMED %s\n", AS_STR(lhs->a[0]));
                   }
                   lhs = NULL;
                 }
