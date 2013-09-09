@@ -841,9 +841,11 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
    sigs are also ambigious, the parser usually compiles it down to
    expression trees, not to a sig tuple. Convert assign,pipe,value.
 
+   Not used by P2, as args2 generates the 3-tuple in the parser already.
+
    Name=Type, '|' optional '.' end ':='default
    type: 'o' (= PN object)
-   Encode to AST_CODE: (name type|modifier default)
+   Encode to 3-tuple AST_CODE: (name type|modifier default)
 \param f    the PNProto closure to store locals
 \param src  PNSource signature tree, parsed via yy_sig()
 \return PNProto a closure
@@ -966,7 +968,12 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   f->values = PN_TUP0();
   f->tree = self;
   DBG_c("-- compile --\n");
-  f->sig = (sig == PN_NIL ? PN_TUP0() : potion_sig_compile(P, f, sig));
+  f->sig = (sig == PN_NIL ? PN_TUP0() :
+#ifdef P2
+            PN_S(sig,0));
+#else
+            potion_sig_compile(P, f, sig));
+#endif
   f->asmb = (PN)potion_asm_new(P);
 
   potion_source_asmb(P, f, NULL, 0, t, 0);

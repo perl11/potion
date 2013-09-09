@@ -462,10 +462,10 @@ arg2-type = i:id space+  { $$ = potion_class_find(P, i); if (!$$) yyerror(G,"Inv
 arg2 = t:arg2-type n:arg2-name
        { P->source = PN_PUSH(PN_PUSH(DEF_PSRC, n), t) }
      | n:arg2-name - '=' - d:value
-       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), PN_NUM(':')), d) }
+       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), PN_NUM(':')), PN_S(d,0)) }
      | t:arg2-type n:arg2-name - '=' - d:value
        { if (t != PN_TYPE(d)) yyerror(G,"wrong type of default argument");
-         P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), PN_NUM(':')), d) }
+         P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), PN_NUM(':')), PN_S(d,0)) }
      | n:arg2-name
        { P->source = PN_PUSH(DEF_PSRC, n) }
 
