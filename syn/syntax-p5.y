@@ -68,22 +68,22 @@ perl5 = -- s:statements end-of-file
 
 statements =
     s1:stmt           { $$ = s1 = PN_IS_TUPLE(s1) ? s1 : PN_TUP(s1) }
-        (sep? s2:stmt { $$ = s1 = PN_PUSH(s1, s2) })* sep?
+        (s2:stmt      { $$ = s1 = PN_PUSH(s1, s2) })* sep?
     | ''              { $$ = PN_NIL }
 
 stmt = pkgdecl
     | BEGIN b:block           { p2_eval(P, b) }
     | subrout
-    | u:use                   { $$ = PN_AST(EXPR, u) }
+    | u:use sep?              { $$ = PN_AST(EXPR, u) }
     | i:ifstmt                { $$ = PN_AST(EXPR, i) }
-    | assigndecl
+    | assigndecl sep?
     | block
-    | s:sets semi
-        ( or x:sets semi      { s = PN_OP(AST_OR, s, x) }
-        | and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
+    | s:sets
+        ( or x:sets           { s = PN_OP(AST_OR, s, x) }
+        | and x:sets          { s = PN_OP(AST_AND, s, x) })* sep?
                               { $$ = s }
-    | s:sets                  { $$ = s }
-    | l:list                  { $$ = PN_AST(EXPR, l) }
+    | s:sets sep?             { $$ = s }
+    | l:list sep?             { $$ = PN_AST(EXPR, l) }
 
 listexprs = e1:eqs           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
         ( - comma - e2:eqs   { $$ = e1 = PN_PUSH(e1, e2) } )*
@@ -121,7 +121,7 @@ use = USE n:id                     { $$ = PN_AST2(MSG, PN_use, n) }
     | USE n:id - fatcomma - l:atom { $$ = PN_AST3(MSG, PN_use, n, l) }
 
 pkgdecl = PACKAGE n:arg-name semi          {} # TODO: set namespace
-    | PACKAGE n:arg-name v:version? b:block
+        | PACKAGE n:arg-name v:version? b:block
 
 ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_TUP(PN_OP(AST_AND, e, s)) }
        | IF e:ifexpr s1:block -        { $$ = e = PN_AST3(MSG, PN_if, PN_AST(LIST, PN_TUP(e)), s1) }
