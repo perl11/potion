@@ -7,8 +7,8 @@ $n = 6;
 
 $o = 19;
 sub cl3 {
-  sub cl4 { $o = 23 }
-  cl4;
+  sub cl4i { $o = 23 }
+  cl4i;
   $p = 45;
 }
 
