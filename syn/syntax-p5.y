@@ -58,7 +58,9 @@
 
 perl5 = -- s:statements end-of-file
         { $$ = P->source = PN_AST(CODE, s);
-          if (yyleng) YY_ERROR(G,"** Syntax error"); }
+          s = (PN)(G->buf+G->pos);
+          if (yyleng) YY_ERROR(G,"** Syntax error");
+          else if (*(char*)s) YY_ERROR(G,"** Internal parser error: Couldn't parse all statements") }
 
 # AST BLOCK captures lexicals
 # Note that if/else blocks (mblock) do not capture lexicals
