@@ -72,8 +72,8 @@ statements =
 stmt = pkgdecl
     | BEGIN b:block           { p2_eval(P, b) }
     | subrout
-    | use
-    | ifstmt
+    | u:use                   { $$ = PN_AST(EXPR, u) }
+    | i:ifstmt                { $$ = PN_AST(EXPR, i) }
     | assigndecl
     | block
     | s:sets semi
@@ -120,7 +120,7 @@ use = USE n:id                     { $$ = PN_AST2(MSG, PN_use, n) }
 pkgdecl = PACKAGE n:arg-name semi          {} # TODO: set namespace
     | PACKAGE n:arg-name v:version? b:block
 
-ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_OP(AST_AND, e, s) }
+ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_TUP(PN_OP(AST_AND, e, s)) }
        | IF e:ifexpr s1:block -        { $$ = e = PN_AST3(MSG, PN_if, PN_AST(LIST, PN_TUP(e)), s1) }
          (ELSIF e1:ifexpr f:block -    { $$ = e = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_elsif, PN_AST(LIST, PN_TUP(e1)), f)) } )*
          (ELSE s2:block                { $$ = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_else, PN_NIL, s2)) } )?
@@ -231,10 +231,10 @@ atom = e:value | e:list | e:anonsub
 calllist = m:name - list-start - list-end { 
                  PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, PN_NIL));
                  $$ = PN_TUP(m) }
-         | m:name - l:list - {
-                 $$ = potion_tuple_shift(P, 0, PN_S(l,0));
-                 if (PN_TUPLE_LEN(PN_S(l, 0))) { PN_SRC(m)->a[1] = PN_SRC(l); }
-                 $$ = PN_PUSH(PN_TUP($$), m) }
+         | m:name - l:list - { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_TUP(m) }
+                 # $$ = potion_tuple_shift(P, 0, PN_S(l,0));
+                 # if (PN_TUPLE_LEN(PN_S(l, 0))) { PN_SRC(m)->a[1] = PN_SRC(l); }
+                 # $$ = PN_PUSH(PN_TUP($$), m) }
          | m:name - list-start l:callexprs list-end - {
                  PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, l));
                  $$ = PN_TUP(m) }

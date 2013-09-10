@@ -450,9 +450,10 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           if (lhs->part == AST_QUERY) {
             PN_ASM2(OP_GETLOCAL, breg, num);
             PN_ASM2(OP_TESTJMP, breg, 1);
-      } else {
-          PN_ASM2(OP_SETLOCAL, reg, num);
-      }
+          } else {
+            DBG_c("setlocal %d %u\n", reg, num);
+            PN_ASM2(OP_SETLOCAL, reg, num);
+          }
         } else if (opcode == OP_GETPATH) {
           if (lhs->part == AST_PATHQ) {
             PN_ASM2(OP_GETPATH, reg, num);
@@ -698,10 +699,11 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       } else {
         u8 opcode = OP_GETUPVAL;
         PN_SIZE num = PN_NONE;
+        PN v = PN_S(t,0);
         if (count == 0 && t->part == AST_MSG) {
-          num = PN_UPVAL(PN_S(t,0));
+          num = PN_UPVAL(v);
           if (num == PN_NONE) {
-            num = PN_GET(f->locals, PN_S(t,0));
+            num = PN_GET(f->locals, v);
             opcode = OP_GETLOCAL;
           }
         }
@@ -870,8 +872,19 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 \code  (list (assign (expr (msg (x)) expr (msg (n ))),
         assign (expr (msg (y)) value (1 ))) \endcode */
 PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
-  PN sig = PN_TUP0();
   vPN(Source) t = PN_SRC(src);
+#ifdef P2
+  // already parsed to tuple
+  PN sig = PN_S(t,0);
+  if (!sig)
+    sig = PN_TUP0();
+  else
+    PN_TUPLE_EACH(sig, i, v, {
+      if (PN_IS_STR(v)) // assign string default to a local
+        PN_PUT(f->locals, v);
+    });
+#else
+  PN sig = PN_TUP0();
   if (t->part == AST_LIST && PN_S(t,0) != PN_NIL) {
     //PN_TUPLE_EACH(PN_S(t,0), i, v, {
     ({ struct PNTuple * volatile __tv = ((struct PNTuple *)potion_fwd(PN_S(t,0)));
@@ -954,6 +967,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
     }}}
     });
   }
+#endif
   return sig;
 }
 #undef SRC_TUPLE_AT
@@ -984,13 +998,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   f->values = PN_TUP0();
   f->tree = self;
   DBG_c("-- compile --\n");
-  f->sig = (sig == PN_NIL ? PN_TUP0() :
-#ifdef P2
-            PN_S(sig,0));
-  if (!f->sig) f->sig = PN_TUP0();
-#else
-            potion_sig_compile(P, f, sig));
-#endif
+  f->sig = (sig == PN_NIL ? PN_TUP0() : potion_sig_compile(P, f, sig));
   f->asmb = (PN)potion_asm_new(P);
   f->name = PN_NIL;
 
