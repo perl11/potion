@@ -137,7 +137,7 @@ assigndecl =
         }); $$ = s1 }
       | l:global - assign e:eqs - { $$ = PN_AST2(ASSIGN, l, e) }
       | MY - l:lexical - assign e:eqs - { $$ = PN_AST2(ASSIGN, l, e) }
-      | l:global - assign r:list { YY_ERROR(G, "** Assignment error") }
+      | l:global - assign r:list { YY_ERROR(G, "** Assignment error") } # @x = () nyi
 
 lexical = global
 
@@ -230,21 +230,17 @@ atom = e:value | e:list | e:anonsub
 #   obj->meth(args) => (expr (msg obj), msg (meth) list (expr args))
 #TODO: if (cond) {block} => expr (if, cond, block)
 # callexprs allows assignment for named args
-calllist = m:name - list-start - list-end { 
-                 PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, PN_NIL));
-                 $$ = PN_TUP(m) }
-         | m:name - l:list - { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_TUP(m) }
-                 # $$ = potion_tuple_shift(P, 0, PN_S(l,0));
-                 # if (PN_TUPLE_LEN(PN_S(l, 0))) { PN_SRC(m)->a[1] = PN_SRC(l); }
-                 # $$ = PN_PUSH(PN_TUP($$), m) }
-         | m:name - list-start l:callexprs list-end - {
-                 PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, l));
-                 $$ = PN_TUP(m) }
-call = m:name - { $$ = m }
-method = v:value - arrow m:name - l:list - {
-            PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
-       | v:value - arrow m:name - {
-            $$ = PN_PUSH(PN_TUPIF(v), m) }
+calllist = m:name - list-start - list-end
+           { PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, PN_NIL)); $$ = PN_TUP(m) }
+         | m:name - l:list -
+           { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_TUP(m) }
+         | m:name - list-start l:callexprs list-end -
+           { PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, l)); $$ = PN_TUP(m) }
+call = m:name - { $$ = PN_TUP(m) }
+method = v:value - arrow m:name - l:list -
+         { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
+       | v:value - arrow m:name -
+         { $$ = PN_PUSH(PN_TUPIF(v), m) }
 
 name = !keyword m:id      { $$ = PN_AST(MSG, m) }
      | !keyword m:funcvar { $$ = PN_AST(MSG, m) }
