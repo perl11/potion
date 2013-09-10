@@ -174,7 +174,7 @@ PN potion_tuple_append(Potion *P, PN cl, PN self, PN value) {
   return potion_tuple_push(P, self, value);
 }
 
-/// Return index of found value or -1
+/// Return index of found value or PN_NONE
 ///\param tuple PNTuple
 ///\param value PN
 ///\return int
@@ -183,7 +183,7 @@ PN_SIZE potion_tuple_find(Potion *P, PN tuple, PN value) {
   PN_TUPLE_EACH(tuple, i, v, {
     if (v == value) return i;
   });
-  return -1;
+  return PN_NONE;
 }
 
 ///\param tuple PNTuple
@@ -191,7 +191,7 @@ PN_SIZE potion_tuple_find(Potion *P, PN tuple, PN value) {
 PN_SIZE potion_tuple_push_unless(Potion *P, PN tuple, PN value) {
   DBG_CHECK_TYPE(tuple,PN_TTUPLE);
   PN_SIZE idx = potion_tuple_find(P, tuple, value);
-  if (idx != -1) return idx;
+  if (idx != PN_NONE) return idx;
 
   potion_tuple_push(P, tuple, value);
   return PN_TUPLE_LEN(tuple) - 1;

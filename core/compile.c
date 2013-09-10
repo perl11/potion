@@ -539,7 +539,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       u8 breg = reg;
       int arg = (PN_S(t,1) != PN_NIL);
       int call = (PN_S(t,2) != PN_NIL || arg);
-      PN ifconst = -1;
+      PN ifconst = PN_NONE;
 #ifdef P2
       if (t->part == AST_MSG && PN_S(t,0) == PN_use) {
         //u8 breg = reg;
@@ -573,7 +573,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
             DBG_c("if (false) {block} => \n");
           }
         } else {
-          ifconst = -1;
+          ifconst = PN_NONE;
           PN_ARG_TABLE(PN_S(t,1), breg, 0);
           jmp = PN_OP_LEN(f->asmb);
           PN_ASM2(OP_NOTJMP, breg, 0);
@@ -595,7 +595,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           }
 	}
 #endif
-        if (ifconst != -1 && PN_TEST(ifconst)) {
+        if (ifconst != PN_NONE && PN_TEST(ifconst)) {
           DBG_c("elsif (...) {block} => [false]\n");
         } else if (t->a[1]->part == AST_VALUE && !t->a[1]->a[1]) {
           ifconst = PN_S(t->a[1], 0);
@@ -628,7 +628,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           }
 	}
 #endif
-        if (ifconst != -1) {
+        if (ifconst != PN_NONE) {
           if (!PN_TEST(ifconst)) {
             DBG_c("else {block} => block [false]\n");
             potion_source_asmb(P, f, loop, 0, t->a[2], reg);
