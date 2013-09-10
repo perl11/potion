@@ -200,15 +200,16 @@ power = e:expr
         ( pow x:expr { e = PN_OP(AST_POW, e, x) })*
         { $$ = e }
 
+# always a list
 expr = c:method  	        { $$ = PN_AST(EXPR, c) }
     | c:calllist		{ $$ = PN_AST(EXPR, c) }
-    | c:call e:expr 		{ $$ = PN_AST(EXPR, PN_PUSH(PN_TUPIF(e), c)) }
-    | c:call l:listexprs        { $$ = potion_tuple_shift(P, 0, PN_S(l,0));
+    | c:call e:expr 		{ $$ = PN_AST(EXPR, PN_PUSH(PN_S(e,0), PN_S(c,0))); }
+    | c:call l:listexprs 	{ $$ = potion_tuple_shift(P, 0, PN_S(l,0));
             if (!PN_S(l, 0)) { PN_SRC(c)->a[1] = PN_SRC($$); }
             $$ = PN_PUSH(PN_TUP($$), c); }
-    | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
+    | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUPIF(e)) }
     | c:call			{ $$ = PN_AST(EXPR, c) }
-    | e:atom			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
+    | e:atom			{ $$ = PN_AST(EXPR, PN_TUPIF(e)) }
 
 opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
     | bitnot e:expr		{ $$ = PN_AST(WAVY, e) }
