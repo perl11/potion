@@ -83,6 +83,7 @@ stmt = pkgdecl
         | and x:sets semi     { s = PN_OP(AST_AND, s, x) })*
                               { $$ = s }
     | s:sets                  { $$ = s }
+    | l:list                  { $$ = PN_AST(EXPR, l) }
 
 listexprs = e1:eqs           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
         ( - comma - e2:eqs   { $$ = e1 = PN_PUSH(e1, e2) } )*
@@ -238,9 +239,9 @@ calllist = m:name - list-start - list-end
          | m:name - list-start l:callexprs list-end -
            { PN_SRC(m)->a[1] = PN_SRC(PN_AST(LIST, l)); $$ = PN_TUP(m) }
 call = m:name - { $$ = PN_TUP(m) }
-method = v:value - arrow m:name - l:list -
+method = v:methlhs - arrow m:name - l:list -
          { PN_SRC(m)->a[1] = PN_SRC(l); $$ = PN_PUSH(PN_TUPIF(v), m) }
-       | v:value - arrow m:name -
+       | v:methlhs - arrow m:name -
          { $$ = PN_PUSH(PN_TUPIF(v), m) }
 
 name = !keyword m:id      { $$ = PN_AST(MSG, m) }
@@ -273,6 +274,9 @@ msg = < utfw+ > -   	{ $$ = PN_STRN(yytext, yyleng) }
 
 mvalue = i:immed - { $$ = PN_AST(VALUE, i) }
       | global
+
+methlhs = global
+        | name
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
       | global
