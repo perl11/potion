@@ -102,7 +102,7 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
 
 void potion_source_init(Potion *P) {
   PN src_vt = PN_VTABLE(PN_TSOURCE);
-  potion_method(src_vt, "compile", potion_source_compile, 0); // in compile.c
+  potion_method(src_vt, "compile", potion_source_compile, "source=s,sig=t"); // in compile.c
   potion_method(src_vt, "name", potion_source_name, 0);
   potion_method(src_vt, "string", potion_source_string, 0);
 }

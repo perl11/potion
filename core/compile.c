@@ -101,7 +101,10 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   #else
   pn_printf(P, out, ": %u bytes\n", PN_FLEX_SIZE(t->asmb));
   #endif
-  pn_printf(P, out, "; (");
+  if (t->name)
+    pn_printf(P, out, "; %s(", PN_STR_PTR(t->name));
+  else
+    pn_printf(P, out, "; (");
   potion_bytes_obj_string(P, out, potion_sig_string(P, cl, t->sig));
   pn_printf(P, out, ") %ld registers\n", PN_INT(t->stack));
   PN_TUPLE_EACH(t->paths, i, v, {
@@ -305,6 +308,7 @@ void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop
 
 void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop, PN_SIZE count,
                         struct PNSource * volatile t, u8 reg) {
+  PN fname = 0;
   PN_REG(f, reg);
   if (P->flags & EXEC_DEBUG) {
     // debug eol ast's are not pushed nicely at statement/expression borders
@@ -385,7 +389,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 #endif
 	DBG_c("assign %s '%s'\n", lhs->part == AST_MSG?"msg":"query",
 	      AS_STR(PN_S(lhs,0)));
-/* globals are different in potion and p2 */
+	/* globals are different in potion and p2 */
 #ifndef P2
         if ((first_letter & 0x80) == 0 && isupper((unsigned char)first_letter)) {
           num = PN_PUT(f->values, PN_S(lhs,0));
@@ -399,6 +403,12 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           if (num == PN_NONE) {
             num = PN_PUT(f->locals, PN_S(lhs,0));
             opcode = OP_GETLOCAL;
+	    if (lhs->part == AST_MSG) {
+	      PN rhs = PN_TUPLE_AT(f->locals, num);
+	      fname = PN_S(lhs,0);
+	      DBG_c("getlocal %s %ld = %s\n",
+	            PN_STR_PTR(fname), PN_INT(num), AS_STR(rhs));
+            }
           }
         } else {
           num = PN_PUT(f->values, PN_S(lhs,0));
@@ -440,8 +450,9 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           if (lhs->part == AST_QUERY) {
             PN_ASM2(OP_GETLOCAL, breg, num);
             PN_ASM2(OP_TESTJMP, breg, 1);
-          }
+      } else {
           PN_ASM2(OP_SETLOCAL, reg, num);
+      }
         } else if (opcode == OP_GETPATH) {
           if (lhs->part == AST_PATHQ) {
             PN_ASM2(OP_GETPATH, reg, num);
@@ -954,7 +965,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 ///\param source  PNSource AST source tree
 ///\param sig     PNSource signature tree or PN_NIL, parsed via yy_sig(), compiled with potion_sig_compile()
 ///\return PNProto a closure
-PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
+ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   vPN(Proto) f;
   vPN(Source) t = (struct PNSource *)self;
 
@@ -980,6 +991,7 @@ PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
             potion_sig_compile(P, f, sig));
 #endif
   f->asmb = (PN)potion_asm_new(P);
+  f->name = PN_NIL;
 
   potion_source_asmb(P, f, NULL, 0, t, 0);
   PN_ASM1(OP_RETURN, 0);
@@ -1183,7 +1195,7 @@ PN potion_eval(Potion *P, PN bytes) {
 void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
   PN src_vt = PN_VTABLE(PN_TSOURCE);
-  potion_method(pro_vt, "call", potion_proto_call, 0); // TODO: args sig missing here
+  potion_method(pro_vt, "call", potion_proto_call, "args=t");
   potion_method(pro_vt, "tree", potion_proto_tree, 0);
   potion_method(pro_vt, "string", potion_proto_string, 0);
   potion_method(src_vt, "dump", potion_source_dump, "backend=S|options=S");

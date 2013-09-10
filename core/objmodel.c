@@ -56,6 +56,8 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN maxlen) {
 # define FUNCNAME "function"
 #endif
   PN out = potion_byte_str(P, FUNCNAME);
+  if (PN_CLOSURE(self)->name)
+    pn_printf(P, out, " %s", PN_STR_PTR(PN_CLOSURE(self)->name));
   pn_printf(P, out, "(");
   potion_bytes_obj_string(P, out, potion_sig_string(P,cl,PN_CLOSURE(self)->sig));
   pn_printf(P, out, ")");
@@ -328,13 +330,18 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   PN_TOUCH(vt->methods);
 
   if (!PN_IS_CLOSURE(method)) {
-    if (PN_IS_PROTO(method))
+    if (PN_IS_PROTO(method)) {
       cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_PROTO(method)->sig, 1);
+      PN_PROTO(method)->name = key;
+    }
     else
       cl = potion_closure_new(P, (PN_F)potion_getter_method, PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = method;
+    PN_CLOSURE(cl)->name = key;
     method = cl;
   }
+  else
+    PN_CLOSURE(method)->name = key;
 
   kh_val(PN, vt->methods, k) = method;
   PN_TOUCH(self);

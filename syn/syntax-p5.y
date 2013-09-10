@@ -202,7 +202,7 @@ expr = c:method  	        { $$ = PN_AST(EXPR, c) }
             $$ = PN_PUSH(PN_TUP($$), c); }
     | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
     | c:call			{ $$ = PN_AST(EXPR, c) }
-    | e:atom			{ $$ = e }
+    | e:atom			{ $$ = PN_AST(EXPR, PN_TUP(e)) }
 
 opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
     | bitnot e:expr		{ $$ = PN_AST(WAVY, e) }

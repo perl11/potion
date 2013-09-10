@@ -368,6 +368,7 @@ struct PNClosure {
   int arity;         ///< cached number of declared args, including optional
   int minargs;       ///< cached number of mandatory args, without optional
   PN_SIZE extra;     ///< 0 or 1 if has code attached at data
+  PN name;           /// PNString
   PN data[0];        ///< code
 };
 
@@ -436,7 +437,8 @@ struct PNProto {
   PN_SIZE pathsize, localsize, upvalsize;
   PN asmb;   ///< assembled instructions
   PN_F jit;  ///< jit function pointer
-  int arity;  ///< cached sig arity (number of args)
+  int arity; ///< cached sig arity (number of args)
+  PN name;   ///< PNString
 };
 
 ///
