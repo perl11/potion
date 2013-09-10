@@ -308,7 +308,7 @@ void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop
 
 void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop, PN_SIZE count,
                         struct PNSource * volatile t, u8 reg) {
-  PN fname = 0;
+  //PN fname = 0;
   PN_REG(f, reg);
   if (P->flags & EXEC_DEBUG) {
     // debug eol ast's are not pushed nicely at statement/expression borders
@@ -403,12 +403,14 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           if (num == PN_NONE) {
             num = PN_PUT(f->locals, PN_S(lhs,0));
             opcode = OP_GETLOCAL;
+#if 0 // store func names
 	    if (lhs->part == AST_MSG) {
 	      PN rhs = PN_TUPLE_AT(f->locals, num);
 	      fname = PN_S(lhs,0);
 	      DBG_c("getlocal %s %ld = %s\n",
 	            PN_STR_PTR(fname), PN_INT(num), AS_STR(rhs));
             }
+#endif
           }
         } else {
           num = PN_PUT(f->values, PN_S(lhs,0));
