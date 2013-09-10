@@ -200,29 +200,28 @@ char potion_type_char(PNType type) {
   switch (type) {
   case PN_TNIL:  	return 'n'; //0 nil
   case PN_TNUMBER:	return 'N'; //1 Number
-  case PN_TBOOLEAN:	return 'B'; //2 Boolean
+  case PN_TBOOLEAN:	return 'B'; //2 Boolean (unused)
   case PN_TSTRING:	return 'S'; //3 String
-  case PN_TWEAK:       	return 0;   //4
+  case PN_TWEAK:       	return 0;   //4 (illegal)
   case PN_TCLOSURE:    	return '&'; //5
-  // TODO: random guessing
-  case PN_TTUPLE:      	return 'u'; //6
+  case PN_TTUPLE:      	return 'u'; //6 (used)
   case PN_TSTATE:      	return 's'; //7
-  case PN_TFILE:       	return 'f'; //8
-  case PN_TOBJECT:     	return 'o'; //9 used. TODO
-  case PN_TVTABLE:     	return 't'; //10 type or tuple or table
-  case PN_TSOURCE:     	return 'a'; //11 or ast
-  case PN_TBYTES:      	return 'b'; //12
+  case PN_TFILE:       	return 'F'; //8
+  case PN_TOBJECT:     	return 'o'; //9  any (used)
+  case PN_TVTABLE:     	return 't'; //10 type (unused)
+  case PN_TSOURCE:     	return 'a'; //11 ast or code (used in source_compile)
+  case PN_TBYTES:      	return 'b'; //12 aio (used)
   case PN_TPROTO:      	return 'P'; //13
   case PN_TLOBBY:      	return 'l'; //14
-  case PN_TTABLE:      	return 'T'; //15
+  case PN_TTABLE:      	return 'T'; //15 (used)
   case PN_TLICK:       	return 'k'; //16
   case PN_TFLEX:       	return 'f'; //17
   case PN_TSTRINGS:    	return 'x'; //18
   case PN_TERROR:      	return 'r'; //19
   case PN_TCONT:       	return 'c'; //20
   case PN_TDECIMAL:    	return 'd'; //21
-  case PN_TUSER:       	return 'u'; //22
-  default:       	return 'u'; //22++
+  case PN_TUSER:       	return 'm'; //22 generated mixins (unused)
+  default:       	return 'm'; //22++
   }
 }
 

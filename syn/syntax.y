@@ -330,12 +330,11 @@ arg-list = arg-set (optional arg-set)?
          | optional arg-set
 arg-set = arg (comma - arg)*
 
-arg-name = < utfw+ > -    { $$ = PN_STRN(yytext, yyleng); }
+arg-name = < utfw+ > -    { $$ = PN_STRN(yytext, yyleng) }
 # not with :=, const '-' would make sense, \ and * not
 arg-modifier = < ('-' | '\\' | '*' ) >  { $$ = PN_NUM(yytext[0]); }
-# for FFIs, map to potion and C types
-arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
-       { $$ = PN_NUM(yytext[0]) }
+# for FFIs, map to potion and C types. See potion_type_char()
+arg-type = < [NS&oTaubnBsFPlkftxrcdm] > - { $$ = PN_NUM(yytext[0]) }
 arg = m:arg-modifier n:arg-name assign t:arg-type
                         { SRC_TPL3(n,t,m) }
     | m:arg-modifier n:arg-name
@@ -378,7 +377,7 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   Currently:
     (name type|modifier default)
     name = PNString - variable name
-    type = NUM of potion_type_char, currently used: oNS&
+    type = NUM of potion_type_char, currently used: oNS&Tau
     modifier = NUM of '|' optional, '.' end, ':' default
     \see potion_sig_arity
 

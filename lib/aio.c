@@ -1891,7 +1891,7 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_handle_vt, "close", aio_close, "|cb=&");
   potion_method(aio_vt, "walk", aio_walk, "|loop=o,fun=&,arg=o");
   potion_method(aio_vt, "run", aio_run, "|loop=o,mode=N");
-  potion_method(aio_stream_vt, "write", aio_write, "req=o,buf=O,bufcnt=N|write_cb=&");
+  potion_method(aio_stream_vt, "write", aio_write, "req=o,buf=b,bufcnt=N|write_cb=&");
   potion_method(aio_stream_vt, "shutdown", aio_shutdown, "req=o|shutdown_cb=&");
   //potion_method(aio_shutdown_vt, "shutdown", aio_shutdown, "stream=o|cb=&");
   potion_method(aio_tcp_vt, "open", aio_tcp_open, "sock=N");
@@ -1913,8 +1913,8 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_udp_vt, "set_multicast_ttl", aio_udp_set_multicast_ttl, "ttl=N");
   potion_method(aio_udp_vt, "set_broadcast", aio_udp_set_broadcast, "on=N");
   potion_method(aio_udp_vt, "set_ttl", aio_udp_set_ttl, "ttl=N");
-  potion_method(aio_udp_vt, "send", aio_udp_send, "req=o,buf=O,bufcnt=N,addr=S,port=N|send_cb=&");
-  potion_method(aio_udp_vt, "send6", aio_udp_send6, "req=o,buf=O,bufcnt=N,addr=S,port=N|send_cb=&");
+  potion_method(aio_udp_vt, "send", aio_udp_send, "req=o,buf=b,bufcnt=N,addr=S,port=N|send_cb=&");
+  potion_method(aio_udp_vt, "send6", aio_udp_send6, "req=o,buf=b,bufcnt=N,addr=S,port=N|send_cb=&");
   potion_method(aio_udp_vt, "recv_start", aio_udp_recv_start, "recv_cb=&");
   potion_method(aio_udp_vt, "recv_stop", aio_udp_recv_stop, 0);
   potion_method(aio_tty_vt, "set_mode", aio_tty_set_mode, "mode=N");
@@ -1926,7 +1926,7 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_pipe_vt, "connect", aio_pipe_connect, "req=o,name=S|connect_cb=&");
   potion_method(aio_pipe_vt, "start", aio_read2_start, "cb=&");
   potion_method(aio_pipe_vt, "stop", aio_read_stop, 0);
-  potion_method(aio_pipe_vt, "write", aio_write2, "req=o,buf=O,bufcnt=N|write_cb=&");
+  potion_method(aio_pipe_vt, "write", aio_write2, "req=o,buf=b,bufcnt=N|write_cb=&");
   potion_method(aio_pipe_vt, "pending_instances", aio_pipe_pending_instances, "count=N");
 
   potion_method(aio_prepare_vt, "start", aio_prepare_start, "cb=&");

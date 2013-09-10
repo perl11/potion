@@ -962,8 +962,8 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 ///\memberof PNSource
 /// "compile" method for PNSource, an AST fragment. Typically to add a function definition,
 /// but also objects, blocks, ... (Almost everything is a PNClosure)
-///\param source  PNSource AST source tree
-///\param sig     PNSource signature tree or PN_NIL, parsed via yy_sig(), compiled with potion_sig_compile()
+///\param source  PNProto or PN_NIL of the current closure definition stored in f->source of each block
+///\param sig     PNSource signature tree or PN_NIL or PNTuple in P2, parsed via yy_sig()
 ///\return PNProto a closure
  PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   vPN(Proto) f;
@@ -1195,7 +1195,7 @@ PN potion_eval(Potion *P, PN bytes) {
 void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
   PN src_vt = PN_VTABLE(PN_TSOURCE);
-  potion_method(pro_vt, "call", potion_proto_call, "args=t");
+  potion_method(pro_vt, "call", potion_proto_call, "args=u");
   potion_method(pro_vt, "tree", potion_proto_tree, 0);
   potion_method(pro_vt, "string", potion_proto_string, 0);
   potion_method(src_vt, "dump", potion_source_dump, "backend=S|options=S");

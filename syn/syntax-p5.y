@@ -48,8 +48,12 @@
   G->val[count]= yy;
 #endif
 
-#define DEF_PSRC P->source?P->source:PN_TUP0()
+#define DEF_PSRC	(P->source?P->source:PN_TUP0())
 //const char *Nullch = '\0';
+#define SRC_TPL1(x)     P->source = PN_PUSH(DEF_PSRC, (x))
+#define SRC_TPL2(x,y)   P->source = PN_PUSH(PN_PUSH(DEF_PSRC, (x)), (y))
+#define SRC_TPL3(x,y,z) P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, (x)), (y)), (z))
+
 %}
 
 perl5 = -- s:statements end-of-file
@@ -311,6 +315,7 @@ group-start = '{'
 group-end = '}'
 bitnot = '~' -
 assign = '=' -
+defassign = ":=" --
 pplus = "++" -
 mminus = "--" -
 minus = '-' -
@@ -440,20 +445,28 @@ arg-list = arg-set (optional arg-set)?
 arg-set = arg (comma - arg)*
 
 arg-name = < utfw+ > - { $$ = PN_STRN(yytext, yyleng) }
-# types are numbers
-arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
-       { $$ = PN_NUM(yytext[0]) }
-arg = n:arg-name assign t:arg-type
-                       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, n), t), PN_NIL) }
-    | t:arg-type       { P->source = PN_PUSH(P->source, t) }
-optional = '|' -       { P->source = PN_PUSH(P->source, PN_NUM('|')) }
-arg-sep = '.' -        { P->source = PN_PUSH(P->source, PN_NUM('.')) }
+arg-modifier = < ('-' | '\\' | '*' ) >  { $$ = PN_NUM(yytext[0]); }
+# for FFIs, map to potion and C types. See potion_type_char()
+arg-type = < [NS&oTaubnBsFPlkftxrcdm] > - { $$ = PN_NUM(yytext[0]) }
+arg = m:arg-modifier n:arg-name assign t:arg-type
+                        { SRC_TPL3(n,t,m) }
+    | m:arg-modifier n:arg-name
+                        { SRC_TPL3(n,0,m) }
+    | n:arg-name assign t:arg-type
+                        { SRC_TPL2(n,t) }
+    | n:arg-name defassign d:value     # x:=0, optional
+                        { SRC_TPL3(n, PN_NUM(':'), PN_S(d,0)) }
+    # single types without name (N,o) as for FFIs forbidden, use (dummy=N) instead
+    # | assign t:arg-type { SRC_TPL2(PN_STR(""),t) }
+    | n:arg-name        { SRC_TPL1(n) }
+optional = '|' -        { SRC_TPL1(PN_NUM('|')) }
+arg-sep = '.' -         { SRC_TPL1(PN_NUM('.')) } #x,y... ignore rest
 
 # p5 sigs. used by the seperate p2_sig, already in compiled 3-tuple format
 sig_p5 = args2* end-of-file
 args2 = arg2-list (arg2-yada)*
 YADA = "..."
-arg2-yada = YADA -  { P->source = PN_PUSH(P->source, PN_NUM('.')) }
+arg2-yada = YADA -  { SRC_TPL1(PN_NUM('.')) }
 arg2-list = arg2-set (optional arg2-set)?
           | optional arg2-set
 arg2-set = arg2 (comma - arg2)*
@@ -462,15 +475,11 @@ arg2-sigil = < [$@%] >          { $$ = PN_STRN(yytext, yyleng) }
 arg2-name = s:arg2-sigil i:id - { $$ = potion_str_add(P, 0, s, i) }
 # types are classes
 arg2-type = !'$' i:id space+  { $$ = potion_class_find(P, i); if (!$$) yyerror(G,"Invalid signature type") }
-arg2 = !arg2-sigil t:arg2-type n:arg2-name
-       { P->source = PN_PUSH(PN_PUSH(DEF_PSRC, n), t) }
-     #| !arg2-sigil t:arg2-type n:arg2-name - '=' - d:value
-     #  { if (t != PN_TYPE(d)) yyerror(G,"Invalid signature type of default argument");
-     #    P->source = PN_PUSH(PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), t), PN_NUM(':')), PN_S(d,0)) }
-     | n:arg2-name - '=' - d:value
-       { P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, n), PN_NUM(':')), PN_S(d,0)) }
-     | n:arg2-name
-       { P->source = PN_PUSH(DEF_PSRC, n) }
+arg2 = !arg2-sigil t:arg2-type m:arg-modifier n:arg2-name { SRC_TPL3(n,t,m) }
+     | !arg2-sigil t:arg2-type n:arg2-name 		{ SRC_TPL2(n,t) }
+     | m:arg-modifier n:arg2-name 		 	{ SRC_TPL3(n,0,m) }
+     | n:arg2-name - '=' - d:value			{ SRC_TPL3(n,PN_NUM(':'), PN_S(d,0)) }
+     | n:arg2-name					{ SRC_TPL1(n) }
 
 %%
 
