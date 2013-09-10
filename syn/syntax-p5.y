@@ -478,7 +478,7 @@ arg2-type = !'$' i:id space+  { $$ = potion_class_find(P, i); if (!$$) yyerror(G
 arg2 = !arg2-sigil t:arg2-type m:arg-modifier n:arg2-name { SRC_TPL3(n,t,m) }
      | !arg2-sigil t:arg2-type n:arg2-name 		{ SRC_TPL2(n,t) }
      | m:arg-modifier n:arg2-name 		 	{ SRC_TPL3(n,0,m) }
-     | n:arg2-name - '=' - d:value			{ SRC_TPL3(n,PN_NUM(':'), PN_S(d,0)) }
+     | n:arg2-name - assign d:value			{ SRC_TPL3(n,PN_NUM(':'), PN_S(d,0)) }
      | n:arg2-name					{ SRC_TPL1(n) }
 
 %%

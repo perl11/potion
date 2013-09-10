@@ -987,6 +987,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   f->sig = (sig == PN_NIL ? PN_TUP0() :
 #ifdef P2
             PN_S(sig,0));
+  if (!f->sig) f->sig = PN_TUP0();
 #else
             potion_sig_compile(P, f, sig));
 #endif
