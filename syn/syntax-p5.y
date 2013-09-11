@@ -142,6 +142,7 @@ assigndecl =
 
 lexical = global
 
+#TODO most of these stack-like assign-expr cases can probably go away
 sets = e:eqs
        ( assign s:sets       { e = PN_AST2(ASSIGN, e, s) }
        | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)) }
@@ -454,7 +455,7 @@ arg-type = < [NS&oTaubnBsFPlkftxrcdm] > - { $$ = PN_NUM(yytext[0]) }
 arg = m:arg-modifier n:arg-name assign t:arg-type
                         { SRC_TPL3(n,t,m) }
     | m:arg-modifier n:arg-name
-                        { SRC_TPL3(n,0,m) }
+                        { SRC_TPL3(n,PN_NUM(0),m) }
     | n:arg-name assign t:arg-type
                         { SRC_TPL2(n,t) }
     | n:arg-name defassign d:value     # x:=0, optional
@@ -480,7 +481,7 @@ arg2-name = s:arg2-sigil i:id - { $$ = potion_str_add(P, 0, s, i) }
 arg2-type = !'$' i:id space+  { $$ = potion_class_find(P, i); if (!$$) yyerror(G,"Invalid signature type") }
 arg2 = !arg2-sigil t:arg2-type m:arg-modifier n:arg2-name { SRC_TPL3(n,t,m) }
      | !arg2-sigil t:arg2-type n:arg2-name 		{ SRC_TPL2(n,t) }
-     | m:arg-modifier n:arg2-name 		 	{ SRC_TPL3(n,0,m) }
+     | m:arg-modifier n:arg2-name 		 	{ SRC_TPL3(n,PN_NUM(0),m) }
      | n:arg2-name - assign d:value			{ SRC_TPL3(n,PN_NUM(':'), PN_S(d,0)) }
      | n:arg2-name					{ SRC_TPL1(n) }
 
@@ -560,14 +561,14 @@ int potion_sig_find(Potion *P, PN cl, PN name)
     return -1;
 
   sig = PN_CLOSURE(cl)->sig;
-
   if (!PN_IS_TUPLE(sig))
     return -1;
 
   PN_TUPLE_EACH(sig, i, v, {
     if (v == PN_NUM(idx) || v == name)
       return idx;
-    if (PN_IS_NUM(v))
+    if (PN_IS_NUM(v)) idx++;
+    else if (i < PN_TUPLE_LEN(sig) && PN_IS_STR(PN_TUPLE_AT(sig, i+1)))
       idx++;
   });
 

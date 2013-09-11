@@ -548,6 +548,8 @@ reentry:
       case OP_NAMED: {
         int x = potion_sig_find(P, reg[op.a], reg[op.b - 1]);
         if (x >= 0) reg[op.a + x + 2] = reg[op.b];
+        else potion_fatal("named paramater not found in signature");
+        DBG_t("\t; %s=%s at %d", STRINGIFY(reg[op.b-1]), STRINGIFY(reg[op.b]), x);
       }
       break;
       case OP_CALL: /* R[a]( R[a+1],...,R[a+b-1] ) */
@@ -683,7 +685,8 @@ reentry:
     }
 #ifdef DEBUG
     if (P->flags & DEBUG_TRACE) {
-      if (op.code == OP_JMP || op.code == OP_NOTJMP || op.code == OP_TESTJMP)
+      if (op.code == OP_JMP || op.code == OP_NOTJMP || op.code == OP_TESTJMP ||
+	  op.code == OP_NAMED)
 	fprintf(stderr, "\n");
       else
 	fprintf(stderr, "\t; %s\n", STRINGIFY(reg[op.a]));
