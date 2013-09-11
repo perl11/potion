@@ -425,13 +425,16 @@ reentry:
         reg[op.a] = reg[-1];
       break;
       case OP_GETLOCAL:
-        if (PN_IS_REF(locals[op.b]))
+        if (PN_IS_REF(locals[op.b])) {
+	  DBG_vt(";  deref locals %d\n", op.b);
           reg[op.a] = PN_DEREF(locals[op.b]);
-        else
+        } else {
           reg[op.a] = locals[op.b];
+	}
       break;
       case OP_SETLOCAL:
         if (PN_IS_REF(locals[op.b])) {
+	  DBG_vt(";  deref locals %d\n", op.b);
           PN_DEREF(locals[op.b]) = reg[op.a];
           PN_TOUCH(locals[op.b]);
         } else
@@ -550,6 +553,7 @@ reentry:
       case OP_CALL: /* R[a]( R[a+1],...,R[a+b-1] ) */
         switch (PN_TYPE(reg[op.a])) {
           case PN_TVTABLE:
+	    DBG_vt(" VTABLE\n");
             reg[op.a + 1] = potion_object_new(P, PN_NIL, reg[op.a]);
             reg[op.a] = ((struct PNVtable *)reg[op.a])->ctor;
           case PN_TCLOSURE:
@@ -559,6 +563,7 @@ reentry:
 	    PN sig = cl->sig;
 	    int numargs = op.b - op.a - 1;
             if (cl->method != (PN_F)potion_vm_proto) { //call into a lib or jit or ffi
+	      DBG_vt(" ext");
               if (PN_IS_TUPLE(sig)) {
 		int arity = cl->arity;
 		PN err = potion_sig_check(P, cl, arity, numargs);
@@ -572,12 +577,14 @@ reentry:
               }
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);
             } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
+	      DBG_vt(" >stack");
               PN argt = potion_tuple_with_size(P, (op.b - op.a) - 1);
               for (i = 2; i < op.b - op.a; i++)
                 PN_TUPLE_AT(argt, i - 2) = reg[op.a + i];
               reg[op.a] = potion_vm(P, cl->data[0], reg[op.a + 1], argt,
                 cl->extra - 1, &cl->data[1]);
             } else {
+	      DBG_vt(" stack");
               self = reg[op.a + 1];
               args = &reg[op.a + 2];
               if (PN_IS_TUPLE(sig)) {
@@ -587,7 +594,9 @@ reentry:
                 for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
                   if (s) // default or zero: && !filled by NAMED (?)
-                    reg[op.a + i + 2] = PN_TUPLE_LEN(s) == 3 ? PN_TUPLE_AT(s, 2) : potion_type_default(PN_INT(PN_TUPLE_AT(s,1)));
+                    reg[op.a + i + 2] = PN_TUPLE_LEN(s) == 3
+		      ? PN_TUPLE_AT(s, 2)
+		      : potion_type_default(PN_INT(PN_TUPLE_AT(s,1)));
                   f->stack = PN_NUM(PN_INT(f->stack)+1);
                   op.b++;
                 }
@@ -609,9 +618,11 @@ reentry:
           default: {
             reg[op.a + 1] = reg[op.a];
             reg[op.a] = potion_obj_get_call(P, reg[op.a]);
-            if (PN_IS_CLOSURE(reg[op.a]))
+            if (PN_IS_CLOSURE(reg[op.a])) {
+	      DBG_vt(" def");
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, &reg[op.a + 1]);
-	      DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
+	    }
+	    DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
           }
           break;
         }
