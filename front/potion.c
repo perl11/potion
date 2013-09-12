@@ -274,14 +274,14 @@ done:
 int main(int argc, char *argv[]) {
   POTION_INIT_STACK(sp);
   int i;
-  int interactive = 1;
   exec_mode_t exec = POTION_JIT ? EXEC_JIT : EXEC_VM;
   Potion *P = potion_create(sp);
   PN buf = PN_NIL;
   char *compile = NULL;
+  char *fn = NULL;
 
   for (i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "--")) break;
+    if (!strcmp(argv[i], "--")) { i++; break; }
     if (!strcmp(argv[i], "-I") || !strcmp(argv[i], "--inspect")) {
       P->flags = (Potion_Flags)(int)(P->flags | DEBUG_INSPECT); continue; }
     if (!strcmp(argv[i], "-L")) {
@@ -343,36 +343,44 @@ int main(int argc, char *argv[]) {
       continue;
     }
 #endif
-    if (argv[i][0] == '-' && argv[i][1] == 'e') {
-      char *arg;
-      interactive = 0;
-      if (strlen(argv[i]) == 2) {
-	arg = argv[i+1];
-      } else if (i <= argc) {
-	arg = argv[i]+2;
-      } else { // or go into interactive mode?
-	potion_fatal("Missing argument for -e");
-	goto END;
+    if (argv[i][0] == '-') {
+      if (argv[i][1] == 'e') {
+        char *arg;
+        if (strlen(argv[i]) == 2) {
+          arg = argv[i+1];
+        } else if (i <= argc) {
+          arg = argv[i]+2;
+        } else { // or go into interactive mode?
+          potion_fatal("Missing argument for -e");
+          goto END;
+        }
+        buf = potion_str(P, arg);
+        continue;
+      } else {
+        fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
       }
-      buf = potion_str(P, arg);
-      continue;
     }
-    if (i == argc - 1) {
-      interactive = 0;
-      continue;
+    else {
+      break;
     }
-    fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
   }
   P->flags = (Potion_Flags)((int)P->flags + exec);
   
-  if (!interactive) {
+  if (buf || i < argc) {
+    PN args = PN_TUP0();
+    if (buf == PN_NIL) fn = argv[i++];
+    for (; i < argc; i++) PN_PUSH(args, PN_STR(argv[i]));
+    potion_define_global(P, PN_STR("argv"), args);
     if (buf != PN_NIL) {
+      potion_define_global(P, PN_STR("$0"), PN_STR("-e"));
       potion_cmd_exec(P, buf, "-e", compile);
     } else {
-      potion_cmd_compile(P, argv[argc-1], compile);
+      potion_define_global(P, PN_STR("$0"), PN_STR(fn));
+      potion_cmd_compile(P, fn, compile);
     }
   } else {
     if (!exec || P->flags & DEBUG_INSPECT) potion_fatal("no filename given");
+    potion_define_global(P, PN_STR("$0"), PN_STR("-i"));
     potion_eval(P, potion_byte_str(P,
       "load 'readline'\n" \
       "loop:\n" \
