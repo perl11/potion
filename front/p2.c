@@ -247,14 +247,14 @@ done:
 
 int main(int argc, char *argv[]) {
   POTION_INIT_STACK(sp);
-  int i, exec = POTION_JIT ? EXEC_JIT : EXEC_VM, interactive = 1;
   Potion *P = potion_create(sp);
+  int i, exec = POTION_JIT ? EXEC_JIT : EXEC_VM;
   PN buf = PN_NIL;
   char *compile = NULL;
+  char *fn = NULL;
 
   for (i = 1; i < argc; i++) {
-    if (!strcmp(argv[i], "--"))
-      break;
+    if (!strcmp(argv[i], "--")) { i++; break; }
     if (!strcmp(argv[i], "-I")) {
       char *extra_path = &argv[i][2]; // todo: flexible
       if (*extra_path)
@@ -304,82 +304,69 @@ int main(int argc, char *argv[]) {
       goto END;
     }
     if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
-      p2_cmd_usage(P);
-      goto END;
-    }
-    if (!strcmp(argv[i], "--stats")) {
-      p2_cmd_stats(P); // TODO: afterwards
-      goto END;
-    }
+      p2_cmd_usage(P); goto END; }
+    if (!strcmp(argv[i], "--stats")) { // TODO: afterwards
+      p2_cmd_stats(P); goto END; }
     if (!strcmp(argv[i], "--compile")) {
-      exec = EXEC_COMPILE;
-      continue;
-    }
+      exec = EXEC_COMPILE; continue; }
     if (!strcmp(argv[i], "-c")) {
-      exec = EXEC_CHECK;
-      continue;
-    }
+      exec = EXEC_CHECK; continue; }
     if (!strcmp(argv[i], "-B") || !strcmp(argv[i], "--bytecode")) {
-      exec = EXEC_VM;
-      continue;
-    }
+      exec = EXEC_VM; continue; }
     if (!strcmp(argv[i], "-J") || !strcmp(argv[i], "--jit")) {
-      exec = EXEC_JIT;
-      continue;
-    }
-    if (argv[i][0] == '-' && (argv[i][1] == 'e' || argv[i][1] == 'E')) {
-      char *arg;
-      interactive = 0;
-      if (strlen(argv[i]) == 2) {
-	arg = argv[i+1];
-      } else if (i <= argc) {
-	arg = argv[i]+2;
-      } else { // or go into interactive mode as -de0?
-	interactive = 1;
-	//potion_fatal("** Missing argument for -e");
-	//goto END;
-      }
-      if (argv[i][1] == 'E') {
-	potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-E"));
-	if (arg) buf = potion_str(P, arg);
-	else interactive = 1;
-	P->flags = (Potion_Flags)(((int)P->flags & 0xff00) + MODE_P2);
-	//buf = potion_str(P, "use p2;\n");
-	//buf = potion_bytes_append(P, 0, buf, potion_str(P, arg));
+      exec = EXEC_JIT; continue; }
+    if (argv[i][0] == '-') {
+      if ((argv[i][1] == 'e' || argv[i][1] == 'E')) {
+        char *arg = NULL;
+        if (strlen(argv[i]) == 2) {
+          arg = argv[i+1];
+        } else if (i <= argc) {
+          arg = argv[i]+2;
+        } // else -e go into interactive mode as -de0
+        if (argv[i][1] == 'E') {
+          potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-E"));
+          if (arg) buf = potion_str(P, arg);
+          P->flags = (Potion_Flags)(((int)P->flags & 0xff00) + MODE_P2);
+          //buf = potion_str(P, "use p2;\n");
+          //buf = potion_bytes_append(P, 0, buf, potion_str(P, arg));
+        } else {
+          potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-e"));
+          if (arg) buf = potion_str(P, arg);
+        }
+        continue;
       } else {
-	potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-e"));
-	if (arg) buf = potion_str(P, arg);
-	else interactive = 1;
+        fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
       }
-      continue;
     }
-    if (i == argc - 1) {
-      interactive = 0;
-      continue;
+    else {
+      break;
     }
-    fprintf(stderr, "** Unrecognized option: %s\n", argv[i]);
   }
   P->flags = (Potion_Flags)((int)P->flags + exec);
 
   potion_define_global(P, potion_str(P, "$P2::mode"), PN_NUM((P->flags & 0xff))); // first flags word: p5,p2,p6
   potion_define_global(P, potion_str(P, "$P2::execmode"), PN_NUM(exec)); // exec_jit, exec_vm
   potion_define_global(P, potion_str(P, "$P2::verbose"),  PN_NUM((P->flags & ~0xff) >> 8)); // second flags word
-  potion_define_global(P, potion_str(P, "$P2::interactive"),
-		       interactive ? PN_NUM(interactive) : PN_NIL);
   potion_define_global(P, potion_str(P, "$^X"), potion_str(P, argv[0]));
 
-  if (!interactive) {
+  if (buf || i < argc) {
+    potion_define_global(P, potion_str(P, "$P2::interactive"), PN_NIL);
+    PN args = PN_TUP0();
+    if (buf == PN_NIL) fn = argv[i++];
+    for (; i < argc; i++) PN_PUSH(args, PN_STR(argv[i]));
+    potion_define_global(P, PN_STR("@ARGV"), args);
     if (buf != PN_NIL) {
-      potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-e"));
+      potion_define_global(P, PN_STR("$0"), PN_STR("-e"));
       p2_cmd_exec(P, buf, "-e", compile);
     }
     else {
-      potion_define_global(P, potion_str(P, "$0"), potion_str(P, argv[argc-1]));
-      p2_cmd_compile(P, argv[argc-1], compile);
+      potion_define_global(P, PN_STR("$0"), PN_STR(fn));
+      p2_cmd_compile(P, fn, compile);
     }
   } else {
     if (P->flags & DEBUG_INSPECT) potion_fatal("no filename given");
-    potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-i"));
+    potion_define_global(P, PN_STR("$0"), PN_STR("-i"));
+    potion_define_global(P, potion_str(P, "$P2::interactive"), PN_NUM(1));
     // TODO: p5 not yet parsed
     p2_eval(P, potion_byte_str(P,
       "load 'readline';\n" \
