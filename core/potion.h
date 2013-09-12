@@ -1,17 +1,17 @@
-//
-// potion.h
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/** \file potion.h
+  The potion API
+
+  (c) 2008 why the lucky stiff, the freelance professor */
 /**
 \mainpage potion + p2
 
 \see INTERNALS.md
 
-Every object is a closure (lambda), even values, classes, types, metaclasses,
-just local (lexical) variables not.
+Everything is an object.
+Every object is a closure (lambda), even values, variables, classes, types, metaclasses, ...
+It's essentially a LISP-1.
 
-PN is either an immediate tagged value for int, bool and nil
+PN is either an immediate tagged value for int, bool and nil,
 or a ptr to an object.
 
 ops use a three-addresss layout: "dest = op src what" in a single word
@@ -27,7 +27,7 @@ The root class is P->lobby, which holds global values and methods.
 
 and optionally args, statically typed via signature strings.
 
-# Method signatures:
+# Potion method signatures:
 
   name=one-char type.
   - o PN (any)

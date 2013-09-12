@@ -1,20 +1,18 @@
-//
-// contrib.c
-// stuff written by other folks, seen on blogs, etc. 
-//
+/** \file contrib.c
+  stuff written by other folks, seen on blogs, etc.
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include "config.h"
 
-//
-// wonderful utf-8 counting trickery
-// by colin percival
-//
-// http://www.daemonology.net/blog/2008-06-05-faster-utf8-strlen.html
-//
 #define ONEMASK ((size_t)(-1) / 0xFF)
 
+/// wonderful utf-8 counting trickery
+/// by colin percival
+///
+/// http://www.daemonology.net/blog/2008-06-05-faster-utf8-strlen.html
+///
 size_t
 potion_cp_strlen_utf8(const char * _s)
 {
@@ -84,9 +82,9 @@ int potion_munmap(void *mem, size_t len)
 #endif
 
 #if POTION_WIN32
-// vasprintf from nokogiri
-// http://github.com/tenderlove/nokogiri
-// (written by Geoffroy Couprie), mingw32 fixes by rurban
+/// vasprintf from nokogiri
+/// http://github.com/tenderlove/nokogiri
+/// (written by Geoffroy Couprie), mingw32 fixes by rurban
 int vasprintf (char **strp, const char *fmt, ...)
 {
   va_list ap;
@@ -104,7 +102,7 @@ int vasprintf (char **strp, const char *fmt, ...)
   return len;
 }
 
-// asprintf from glibc
+/// asprintf from glibc
 int
 asprintf (char **string_ptr, const char *format, ...)
 {

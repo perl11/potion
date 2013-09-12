@@ -185,14 +185,16 @@ If you need to use closures with optional parameters
 and need to leave them out in the call, you need
 to use the bytecode method.
 
-  Wrong:
+Wrong:
+
     PN add = potion_eval(P, "(x=N|y=N): x + y.");
     PN_F addfn = PN_CLOSURE_F(add);
     PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
     printf("3 + 5 = %d\n", PN_INT(num));     //ok
     //PN num1 = addfn(P, add, 0, PN_NUM(3)); //wrong num1
 
-  Better:
+Better:
+
     long flags = (long)P->flags;
     if (P->flags & EXEC_JIT) P->flags -= EXEC_JIT;
     PN add = potion_eval(P, "(x=N|y=N): x + y.");
@@ -242,8 +244,8 @@ two inches from the tape measure.
 (See the parts that say "Local data storage"
 and "Argument passing".)
 
-Our machine code says _"give me two word-sized
-slots in the stack"_ as the first order of business.
+Our machine code says _"give me two word-sized slots in the stack"_
+as the first order of business.
 
 We store `x` and `y` in those two slots. (See
 the comment about C argument passing in the

@@ -1,9 +1,7 @@
-///
-/// ast.h
-/// the ast for Potion code in-memory
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/** \file ast.h
+ the ast for Potion code in-memory
+
+ (c) 2008 why the lucky stiff, the freelance professor */
 #ifndef POTION_AST_H
 #define POTION_AST_H
 

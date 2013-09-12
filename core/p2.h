@@ -1,9 +1,7 @@
-//
-// p2.h
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2013 by perl11 org
-//
+/** \file p2.h
+  The p2 API
+
+ (c) 2013 by perl11 org */
 #ifndef P2_H
 #define P2_H
 

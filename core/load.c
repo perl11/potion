@@ -1,10 +1,8 @@
-//
-// load.c
-// loading of external code
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2013 by perl11 org
-//
+/** \file load.c
+ loading of external code, bytecode and shared libs
+
+ (c) 2008 why the lucky stiff, the freelance professor
+ (c) 2013 by perl11 org */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

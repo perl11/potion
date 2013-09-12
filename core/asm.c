@@ -1,9 +1,7 @@
-//
-// asm.c
-// some assembler functions
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/** \file asm.c
+ some assembler functions
+
+ (c) 2008 why the lucky stiff, the freelance professor */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

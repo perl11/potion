@@ -1,3 +1,6 @@
+/** \file readline.c
+  linenoise wrapper library
+ */
 #include <stdlib.h>
 #include <stdio.h>
 #include "p2.h"

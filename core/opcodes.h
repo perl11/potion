@@ -1,9 +1,7 @@
-///
-/// opcodes.h
-/// the Potion VM instruction set (heavily based on Lua's)
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/** \file/ opcodes.h
+ the Potion VM instruction set (heavily based on Lua's)
+
+ (c) 2008 why the lucky stiff, the freelance professor */
 #ifndef POTION_OPCODES_H
 #define POTION_OPCODES_H
 

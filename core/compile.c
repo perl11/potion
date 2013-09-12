@@ -7,7 +7,7 @@
  * lexed keywords.
  */
 // (c) 2008 why the lucky stiff, the freelance professor
-//
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
