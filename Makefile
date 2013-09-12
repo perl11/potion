@@ -145,7 +145,7 @@ grammar: syn/greg.y
 
 syn/greg.c: syn/greg.y
 	@${ECHO} GREG $<
-	if [ -f ${GREG} ]; then ${GREG} syn/greg.y > syn/greg-new.c && \
+	@if [ -f ${GREG} ]; then ${GREG} syn/greg.y > syn/greg-new.c && \
 	  ${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn && \
 	  ${MV} syn/greg-new.c syn/greg.c && \
 	  ${MV} syn/greg-new syn/greg; \
