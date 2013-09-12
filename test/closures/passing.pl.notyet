@@ -1,7 +1,7 @@
-sub math ($x) {
-  sub add ($x, $y)  { $x + $y }
-  sub minus ($x, $y){ $x - $y }
-  minus
+sub math($x) {
+  my sub add($x, $y)   {$x + $y}
+  my sub minus($x, $y) {$x - $y}
+  \&minus
 }
-$m = \&math;
+$m = math();
 $m->(60, 2) #TODO=> 58
