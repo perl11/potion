@@ -252,6 +252,7 @@ struct PNVtable;
 #define PN_TUP0()       potion_tuple_empty(P)            ///<\memberof PNTuple
 #define PN_TUP(X)       potion_tuple_new(P, X)           ///<\memberof PNTuple
 #define PN_PUSH(T, X)   potion_tuple_push(P, T, (PN)X)   ///<\memberof PNTuple
+#define PN_SHIFT(T)     potion_tuple_shift(P, 0, T)      ///<\memberof PNTuple
 #define PN_GET(T, X)    potion_tuple_find(P, T, X)       ///<\memberof PNTuple
 #define PN_PUT(T, X)    potion_tuple_push_unless(P, T, X) ///<\memberof PNTuple
 #define PN_GET_TUPLE(t) ((struct PNTuple *)potion_fwd((PN)t)) ///<\memberof PNTuple
