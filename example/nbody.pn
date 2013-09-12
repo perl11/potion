@@ -46,25 +46,28 @@ advance = (dt):
     while (j < nbodies):
       #("i", i, "j", j) say
       bj = bodies(j)
-      dx = bi /x - bj /x
-      dy = bi /y - bj /y
-      dz = bi /z - bj /z
+      dx = bi/x - bj/x
+      dy = bi/y - bj/y
+      dz = bi/z - bj/z
       dist = dx*dx + dy*dy + dz*dz
       dist = dist sqrt
       mag = dt / (dist * dist * dist)
-      bi /vx -= dx * bj /mass * mag
-      bi /vy -= dy * bj /mass * mag
-      bi /vz -= dz * bj /mass * mag
-      bj /vx += dx * bi /mass * mag
-      bj /vy += dy * bi /mass * mag
-      bj /vz += dz * bi /mass * mag
+      mi = bi/mass * mag
+      mj = bj/mass * mag
+      bi/vx -= dx * mj
+      bi/vy -= dy * mj
+      bi/vz -= dz * mj
+      bj/vx += dx * mi
+      bj/vy += dy * mi
+      bj/vz += dz * mi
       j++.
+    energy() print
     i++..
 
 offsetmomentum = (b, px, py, pz):
-  b /vx = -px / solar_mass
-  b /vy = -py / solar_mass
-  b /vz = -pz / solar_mass
+  b/vx = -px / solar_mass
+  b/vy = -py / solar_mass
+  b/vz = -pz / solar_mass
   b.
 
 energy = ():
@@ -72,18 +75,18 @@ energy = ():
   i = 0
   while (i < nbodies):
     bi = bodies(i)
-    f = bi /vx * bi /vx + bi /vy * bi /vy + bi /vz * bi /vz
-    e += 0.5 * bi /mass * f
+    f = bi/vx * bi/vx + bi/vy * bi/vy + bi/vz * bi/vz
+    e += 0.5 * bi/mass * f
     j = i+1
     while (j < nbodies):
       bj = bodies(j)
-      dx = bi /x - bj /x
-      dy = bi /y - bj /y
-      dz = bi /z - bj /z
+      dx = bi/x - bj/x
+      dy = bi/y - bj/y
+      dz = bi/z - bj/z
                                 
       dist = dx*dx + dy*dy + dz*dz
       dist = dist sqrt
-      f = bi /mass * bj /mass
+      f = bi/mass * bj/mass
       e -= f / dist
       j++.
     i++.
@@ -93,6 +96,7 @@ energy() print
 "\n" print
 n = 50000
 i = 0
-while (i < n): advance(0.01)
+while (i < n):
+  advance(0.01)
   i++.
 energy() print
