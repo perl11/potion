@@ -68,7 +68,7 @@ perl5 = -- s:statements end-of-file
 
 statements =
     s1:stmt           { $$ = s1 = PN_IS_TUPLE(s1) ? s1 : PN_TUP(s1) }
-        (s2:stmt      { $$ = s1 = PN_PUSH(s1, s2) })* sep?
+        (sep? s2:stmt { $$ = s1 = PN_PUSH(s1, s2) } )* sep?
     | ''              { $$ = PN_NIL }
 
 stmt = pkgdecl
@@ -87,6 +87,7 @@ stmt = pkgdecl
 
 listexprs = e1:eqs           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
         ( - comma - e2:eqs   { $$ = e1 = PN_PUSH(e1, e2) } )*
+          | ''               { $$ = PN_NIL }
 # listexprs + named args: $x=1 (i.e. assignment)
 callexprs = e1:sets           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
         ( - comma - e2:sets   { $$ = e1 = PN_PUSH(e1, e2) } )*
@@ -357,7 +358,7 @@ undef = "undef" !utfw
 #false = "false" !utfw
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
-dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM }
+dec = < '-'? ('0' | [1-9][0-9]*) { $$ = YY_TNUM }
         ('.' [0-9]+ { $$ = YY_TDEC })?
         ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
 version = 'v'? < ('0' | [1-9][0-9]*) { $$ = YY_TNUM }
