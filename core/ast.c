@@ -9,7 +9,7 @@
 #include "internal.h"
 #include "ast.h"
 
-///\see ast.h enum PN_AST
+///\see potion.h: enum PN_AST
 const char *potion_ast_names[] = {
   "code", "value", "assign", "not", "or", "and", "cmp", "eq", "neq",
   "gt", "gte", "lt", "lte", "pipe", "caret", "amp", "wavy", "bitl",
@@ -54,9 +54,17 @@ PN potion_source(Potion *P, u8 p, PN a, PN b, PN c) {
 }
 
 ///\memberof PNSource
+/// "size" method
+///\returns number of ast trees: 1,2 or 3
+PN potion_source_size(Potion *P, PN cl, PN self) {
+  vPN(Source) t = (struct PNSource *)potion_fwd(self);
+  return PN_NUM(potion_ast_sizes[t->part]);
+}
+
+///\memberof PNSource
 /// "name" method
 PN potion_source_name(Potion *P, PN cl, PN self) {
-  vPN(Source) t = (struct PNSource *)self;
+  vPN(Source) t = (struct PNSource *)potion_fwd(self);
   return potion_str(P, potion_ast_names[t->part]);
 }
 
@@ -64,7 +72,7 @@ PN potion_source_name(Potion *P, PN cl, PN self) {
 /// "string" method
 PN potion_source_string(Potion *P, PN cl, PN self) {
   int i, n, cut = 0;
-  vPN(Source) t = (struct PNSource *)self;
+  vPN(Source) t = (struct PNSource *)potion_fwd(self);
   PN out = potion_byte_str(P, potion_ast_names[t->part]);
   n = potion_ast_sizes[t->part];
   for (i = 0; i < n; i++) {
@@ -102,7 +110,7 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
 
 void potion_source_init(Potion *P) {
   PN src_vt = PN_VTABLE(PN_TSOURCE);
-  potion_method(src_vt, "compile", potion_source_compile, "source=a,sig=u"); // in compile.c
   potion_method(src_vt, "name", potion_source_name, 0);
   potion_method(src_vt, "string", potion_source_string, 0);
+  potion_method(src_vt, "size", potion_source_size, 0);
 }

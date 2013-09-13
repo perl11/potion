@@ -42,7 +42,9 @@
 # define YYDEBUG_PARSE   DEBUG_PARSE
 # define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
 
-# define YY_SET(G, text, count, thunk, P) \
+// -Dp: GC in the parser in potion_send fails in moved PNSource objects.
+// we may still hold refs in the parser to old objects, G->ss not on the stack
+# define YY_SET1(G, text, count, thunk, P) \
   yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
            PN_STR_PTR(potion_send(yy, PN_string, 0)))); \
   G->val[count]= yy;
@@ -57,10 +59,10 @@
 %}
 
 perl5 = -- s:statements end-of-file
-        { $$ = P->source = PN_AST(CODE, s);
-          s = (PN)(G->buf+G->pos);
-          if (yyleng) YY_ERROR(G,"** Syntax error");
-          else if (*(char*)s) YY_ERROR(G,"** Internal parser error: Couldn't parse all statements") }
+   { $$ = P->source = PN_AST(CODE, s);
+     s = (PN)(G->buf+G->pos);
+     if (yyleng) YY_ERROR(G,"** Syntax error");
+     else if (*(char*)s) YY_ERROR(G,"** Internal parser error: Couldn't parse all statements") }
 
 # AST BLOCK captures lexicals
 # Note that if/else blocks (mblock) do not capture lexicals
@@ -74,7 +76,7 @@ statements =
 stmt = pkgdecl
     | BEGIN b:block           { p2_eval(P, b) }
     | subrout
-    | u:use sep?              { $$ = PN_AST(EXPR, u) }
+    | u:use sep?              { $$ = PN_TUP0() }
     | i:ifstmt                { $$ = PN_AST(EXPR, i) }
     | assigndecl sep?
     | block
@@ -94,6 +96,7 @@ callexprs = e1:sets           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
 BEGIN   = "BEGIN" space+
 PACKAGE = "package" space+
 USE     = "use" space+
+NO      = "no" space+
 SUB     = "sub" space+
 IF      = "if" space+
 ELSIF   = "elsif" space+
@@ -116,10 +119,15 @@ anonsub = SUB l:p5-siglist? b:block
 #        { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, p, b)) }
 #subattrlist = ':' -? arg-name
 
-# TODO: compile-time sideeffs: require + import
-use = USE v:version              { $$ = PN_AST2(MSG, PN_use, v) }
-    | USE n:id                   { $$ = PN_AST2(MSG, PN_use, n) }
-    | USE n:id - fatcomma l:atom { $$ = PN_AST3(MSG, PN_use, n, l) }
+# TODO: parse-time sideeffs: require + import, in the compiler its too late
+use = (u:USE|u:NO) v:version
+        { p2_eval(P, PN_AST(BLOCK, PN_TUP(PN_AST2(MSG, PN_use, PN_AST(LIST, PN_PUSH(PN_TUP(u), v)))))) }
+    | u:USE n:id - "p2"          { P->flags |= MODE_P2; }
+    | u:NO n:id - "p2"           { P->flags &= ~MODE_P2; }
+    | (u:USE|u:NO) n:id
+        { p2_eval(P, PN_AST(BLOCK, PN_TUP(PN_AST2(MSG, PN_use, PN_AST(LIST, PN_PUSH(PN_TUP(u), n)))))) }
+    | (u:USE|u:NO) n:id fatcomma l:atom
+        { p2_eval(P, PN_AST(BLOCK, PN_TUP(PN_AST2(MSG, PN_use, PN_AST(LIST, PN_PUSH(u,PN_PUSH(PN_PUSH(PN_TUP(u),n),l))))))) }
 
 pkgdecl = PACKAGE n:arg-name semi          {} # TODO: set namespace
         | PACKAGE n:arg-name v:version? b:block
@@ -203,6 +211,8 @@ power = e:expr
 
 # always a list
 expr = c:method  	        { $$ = PN_AST(EXPR, c) }
+    | m:special l:list b:block  { PN_SRC(m)->a[1] = PN_SRC(l); PN_SRC(m)->a[2] = PN_SRC(b);
+            $$ = PN_AST(EXPR, PN_TUP(m)) }
     | c:calllist		{ $$ = PN_AST(EXPR, c) }
     | c:call e:expr 		{ $$ = PN_AST(EXPR, PN_PUSH(PN_S(e,0), PN_S(c,0))); }
     | c:call l:listexprs 	{ $$ = PN_SHIFT(PN_S(l,0));
@@ -214,6 +224,7 @@ expr = c:method  	        { $$ = PN_AST(EXPR, c) }
 
 opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
     | bitnot e:expr		{ $$ = PN_AST(WAVY, e) }
+    | minus  e:expr		{ $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_NUM(0)), e) }
     | l:atom times !times r:atom { $$ = PN_OP(AST_TIMES, l, r) }
     | l:atom div   !div r:atom   { $$ = PN_OP(AST_DIV,  l, r) }
     | l:atom minus !minus r:atom { $$ = PN_OP(AST_MINUS, l, r) }
@@ -224,6 +235,8 @@ opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
              | mminus		{ $$ = PN_OP(AST_INC, e, PN_NUM(-1)) }) {}
 
 atom = e:value | e:list | e:anonsub
+
+special = < ( "for"|"foreach"|"while"|"class"|"if"|"elseif" ) > - { $$ = PN_AST(MSG, PN_STRN(yytext, yyleng)) }
 
 #FIXME methods and indirect methods:
 #   chr 101  => (expr (value (101), msg ("chr")))
@@ -366,6 +379,8 @@ dec = < '-'? ('0' | [1-9][0-9]*) { $$ = YY_TNUM }
         ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
 version = 'v'? < ('0' | [1-9][0-9]*) { $$ = YY_TNUM }
           ('.' [0-9]+ { $$ = YY_TDEC })? >
+        { $$ = ($$ == YY_TNUM) ? PN_NUM(PN_ATOI(yytext, yyleng, 10))
+                               : PN_STRN(yytext, yyleng) }
 
 q1 = [']   # ' emacs highlight problems
 c1 = < (!q1 utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng) }
@@ -420,7 +435,8 @@ comment	= '#' (!end-of-line utf8)*
 # \240 U+A0 NO-BREAK SPACE
 # \205 U+85 NEL
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
-end-of-line = '\r\n' | '\n' | '\r' { $$ = PN_AST2(DEBUG, PN_NUM(G->lineno), PN_NIL) }
+end-of-line = '\r\n' | '\n' | '\r'
+    { ++G->lineno; $$ = PN_AST2(DEBUG, PN_NUM(G->lineno), PN_NIL) }
 end-of-file = !'\0'
 # FIXME: starting wordchar (no numbers) + wordchars
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
@@ -446,7 +462,9 @@ utfw = [A-Za-z0-9_]
 #     | [\302-\337] [\200-\277]
 #     | [\340-\357] [\200-\277] [\200-\277]
 #     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
-utf8 = [\t\n\r\40-\176]
+
+# TODO had \n\r in it, skipping lineno counter
+utf8 = [\t\40-\176]
      | [\302-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]

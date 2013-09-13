@@ -20,7 +20,7 @@
                     // though it should be compatible for now
 #  define POTION_SIG P2_SIG
 
-extern PN PN_use;
+extern PN PN_use, PN_no;
 
 #endif
 

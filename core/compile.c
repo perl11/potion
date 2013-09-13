@@ -559,11 +559,15 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       PN ifconst = PN_NONE;
 #ifdef P2
       if (t->part == AST_MSG && PN_S(t,0) == PN_use) {
-        //u8 breg = reg;
-        if (PN_S(t,1) == PN_STRN("p2", 2)) {
-	  P->flags |= MODE_P2; //hack, need to scope the syntax mode
-	}
-	/* TODO: add to begin_av: require t[1], t[1]->import(args) */
+#  if 0
+        PN use = PN_TUPLE_AT(PN_S(t,1), 0);
+        PN name = PN_TUPLE_AT(PN_S(t,1), 1);
+        PN list = potion_tuple_at(P,0,PN_S(t,1),2);
+        PN class = potion_require(P, name); //TODO name to file
+        if (use == PN_use) potion_send(class, PN_STR("import"), list);
+        else if (use == PN_no) potion_send(class, PN_STR("unimport"), list);
+        else potion_fatal("Internal error: use or no");
+#  endif
       }
       else
 #endif
@@ -1221,7 +1225,9 @@ PN potion_run(Potion *P, PN code, int jit) {
 }
 
 PN potion_eval(Potion *P, PN bytes) {
-  PN code = potion_parse(P, bytes, "<eval>");
+  PN code = (PN_TYPE(bytes) == PN_TSOURCE)
+    ? bytes
+    : potion_parse(P, bytes, "<eval>");
   if (PN_TYPE(code) != PN_TSOURCE) return code;
   code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
   return potion_run(P, code, P->flags & EXEC_JIT);
@@ -1233,6 +1239,7 @@ void potion_compiler_init(Potion *P) {
   potion_method(pro_vt, "call", potion_proto_call, "args=u");
   potion_method(pro_vt, "tree", potion_proto_tree, 0);
   potion_method(pro_vt, "string", potion_proto_string, 0);
+  potion_method(src_vt, "compile", potion_source_compile, "source=a,sig=u");
   potion_method(src_vt, "dump", potion_source_dump, "backend=S|options=S");
   potion_method(src_vt, "dumpbc", potion_source_dumpbc, "|options=S");
 }

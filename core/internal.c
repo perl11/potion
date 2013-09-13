@@ -16,7 +16,7 @@ PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
 PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
 #ifdef P2
-PN PN_use;
+PN PN_use, PN_no;
 #endif
 
 PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
@@ -64,6 +64,7 @@ static void potion_init(Potion *P) {
   PN_def = PN_STRN("def", 3);
   PN_cmp = PN_STRN("cmp", 3);
 #ifdef P2
+  PN_no  = PN_STRN("no", 2);
   PN_use = PN_STRN("use", 3);
 #endif
   PN_call = PN_STRN("call", 4);
