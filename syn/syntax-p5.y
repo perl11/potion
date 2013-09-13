@@ -131,12 +131,12 @@ ifexpr = '(' - eqs - ')' -
 
 assigndecl =
         MY? l:listvar assign r:list -    { $$ = PN_AST2(ASSIGN, l, r) }
-      | MY? l:list assign r:list -       {
-        PN s1 = PN_TUP0(); PN_TUPLE_EACH(l, i, v, {
-          s1 = PN_PUSH(s1, PN_AST2(ASSIGN, v, PN_TUPLE_AT(r,i)));
-        }); $$ = s1 }
+      | MY? l:list assign r:list -       # aasign
+          { PN s1 = PN_TUP0(); PN_TUPLE_EACH(PN_S(l,0), i, v, {
+            s1 = PN_PUSH(s1, PN_AST2(ASSIGN, v, potion_tuple_at(P,0,PN_S(r,0),PN_NUM(i))));
+          }); $$ = PN_AST(EXPR, s1) }
       | MY? l:global assign e:eqs -       { $$ = PN_AST2(ASSIGN, l, e) }
-#     | MY - l:lexical assign e:eqs - { $$ = PN_AST2(ASSIGN, l, e) }
+#     | MY - l:lexical assign e:eqs -     { $$ = PN_AST2(ASSIGN, l, e) }
       | l:global assign r:list { YY_ERROR(G, "** Assignment error") } # @x = () nyi
 #lexical = global
 
