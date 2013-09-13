@@ -548,7 +548,7 @@ reentry:
       case OP_NAMED: {
         int x = potion_sig_find(P, reg[op.a], reg[op.b - 1]);
         if (x >= 0) reg[op.a + x + 2] = reg[op.b];
-        else potion_fatal("named paramater not found in signature");
+        else potion_fatal("named parameter not found in signature");
         DBG_t("\t; %s=%s at %d", STRINGIFY(reg[op.b-1]), STRINGIFY(reg[op.b]), x);
       }
       break;
@@ -565,7 +565,7 @@ reentry:
 	    PN sig = cl->sig;
 	    int numargs = op.b - op.a - 1;
             if (cl->method != (PN_F)potion_vm_proto) { //call into a lib or jit or ffi
-	      DBG_vt(" ext");
+	      //DBG_vt(" ext");
               if (PN_IS_TUPLE(sig)) {
 		int arity = cl->arity;
 		PN err = potion_sig_check(P, cl, arity, numargs);
@@ -621,7 +621,7 @@ reentry:
             reg[op.a + 1] = reg[op.a];
             reg[op.a] = potion_obj_get_call(P, reg[op.a]);
             if (PN_IS_CLOSURE(reg[op.a])) {
-	      DBG_vt(" def");
+	      //DBG_vt(" def");
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, &reg[op.a + 1]);
 	    }
 	    DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
