@@ -87,7 +87,6 @@ stmt = pkgdecl
 
 listexprs = e1:eqs           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
         ( - comma - e2:eqs   { $$ = e1 = PN_PUSH(e1, e2) } )*
-          | ''               { $$ = PN_NIL }
 # listexprs + named args: $x=1 (i.e. assignment)
 callexprs = e1:sets           { $$ = e1 = PN_IS_TUPLE(e1) ? e1 : PN_TUP(e1) }
         ( - comma - e2:sets   { $$ = e1 = PN_PUSH(e1, e2) } )*
@@ -273,8 +272,11 @@ hash-items = i1:hash-item      { $$ = i1 = PN_TUP(i1) }
 #sub = SUB n:arg-name - t:list? b:block       { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)) }
 block = block-start s:statements - block-end  { $$ = PN_AST(BLOCK, s) }
 list = list-start s:listexprs - list-end      { $$ = PN_AST(LIST, s) }
+     | list-start list-end                    { $$ = PN_AST(LIST, PN_NIL) }
 listref = listref-start s:listexprs - listref-end { $$ = PN_AST(LIST, s) }
+     | listref-start listref-end              { $$ = PN_AST(LIST, PN_NIL) }
 hash = hash-start h:hash-items - hash-end     { $$ = PN_AST(LIST, h) }
+     | hash-start hash-end                    { $$ = PN_AST(LIST, PN_NIL) }
 
 #path = '/' < utfw+ > - { $$ = PN_STRN(yytext, yyleng) }
 #path    = < utfw+ > -  { $$ = PN_STRN(yytext, yyleng) }
