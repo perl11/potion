@@ -103,10 +103,8 @@ sub offset_momentum {
 
 offset_momentum();
 say energy();
-#printf ("%.9f\n", energy());
 
-#my $n = $ARGV[0] || 50000;
-my $n = $ARGV[0];
+my $n = number $ARGV[0];
 if (!$n) { $n = 50000 }
 my $i = 0;
 while ($i < $n) {
@@ -114,4 +112,3 @@ while ($i < $n) {
   $i++
 }
 say energy();
-#printf ("%.9f\n", energy());

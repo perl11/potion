@@ -573,7 +573,9 @@ reentry:
                 for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
                   if (s) // default or zero: && !filled by NAMED (?)
-                    reg[op.a + i + 2] = PN_TUPLE_LEN(s) == 3 ? PN_TUPLE_AT(s, 2) : potion_type_default(PN_INT(PN_TUPLE_AT(s,1)));
+                    reg[op.a + i + 2] = PN_TUPLE_LEN(s) == 3
+                      ? PN_TUPLE_AT(s, 2)
+                      : potion_type_default(PN_INT(PN_TUPLE_AT(s,1)));
                   op.b++;
                 }
               }

@@ -1,9 +1,9 @@
 sub fib($n) {
-  if ( $n < 2 ) { $n } else { fib($n-1) + fib($n-2) }
+  if ( $n < 2 ) { $n } else { $x=$n-1; fib($x) + fib($x-1) }
 }
-my $N = 40;
+$n = number $ARGV[0];
+if (!$n) { $n = 40 }
 print "fib("
-print $N
-print ") = "
-print fib($N)
-""
+print $n
+print ")= "
+say fib($n)
