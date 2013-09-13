@@ -829,7 +829,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       PN_ASM1(OP_NEWTUPLE, reg);
       if (PN_S(t,0) != PN_NIL) {
         PN_TUPLE_EACH(PN_S(t,0), i, v, {
-          if (PN_PART(v) == AST_ASSIGN) {
+            if (PN_PART(v) == AST_ASSIGN) { //potion only: (k=v, ...)
             vPN(Source) lhs = PN_SRC(PN_S(v,0));
             if (lhs->part == AST_EXPR && PN_TUPLE_LEN(PN_S(lhs,0)) == 1)
             {
@@ -856,6 +856,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         });
       }
     break;
+
     case AST_DEBUG:
       if (P->flags & EXEC_DEBUG) {
         PN_ASM2(OP_DEBUG, PN_S(t,1), PN_S(t,2));

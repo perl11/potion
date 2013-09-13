@@ -118,7 +118,7 @@ anonsub = SUB l:p5-siglist? b:block -
 
 # TODO: compile-time sideeffs: require + import
 use = USE n:id                     { $$ = PN_AST2(MSG, PN_use, n) }
-    | USE n:id - fatcomma - l:atom { $$ = PN_AST3(MSG, PN_use, n, l) }
+    | USE n:id - fatcomma l:atom { $$ = PN_AST3(MSG, PN_use, n, l) }
 
 pkgdecl = PACKAGE n:arg-name semi          {} # TODO: set namespace
         | PACKAGE n:arg-name v:version? b:block
@@ -130,17 +130,15 @@ ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_TUP(PN_OP(AST_AND, e, s)) }
 ifexpr = '(' - eqs - ')' -
 
 assigndecl =
-        l:listvar - assign r:list - { $$ = PN_AST2(ASSIGN, l, r) }
-      | MY l:listvar - assign r:list - { $$ = PN_AST2(ASSIGN, l, r) }
-      | l:list - assign r:list - {
+        MY? l:listvar assign r:list -    { $$ = PN_AST2(ASSIGN, l, r) }
+      | MY? l:list assign r:list -       {
         PN s1 = PN_TUP0(); PN_TUPLE_EACH(l, i, v, {
           s1 = PN_PUSH(s1, PN_AST2(ASSIGN, v, PN_TUPLE_AT(r,i)));
         }); $$ = s1 }
-      | l:global - assign e:eqs - { $$ = PN_AST2(ASSIGN, l, e) }
-      | MY - l:lexical - assign e:eqs - { $$ = PN_AST2(ASSIGN, l, e) }
-      | l:global - assign r:list { YY_ERROR(G, "** Assignment error") } # @x = () nyi
-
-lexical = global
+      | MY? l:global assign e:eqs -       { $$ = PN_AST2(ASSIGN, l, e) }
+#     | MY - l:lexical assign e:eqs - { $$ = PN_AST2(ASSIGN, l, e) }
+      | l:global assign r:list { YY_ERROR(G, "** Assignment error") } # @x = () nyi
+#lexical = global
 
 #TODO most of these stack-like assign-expr cases can probably go away
 sets = e:eqs
@@ -248,30 +246,38 @@ method = v:methlhs - arrow m:name - l:list -
 name = !keyword m:id      { $$ = PN_AST(MSG, m) }
      | !keyword m:funcvar { $$ = PN_AST(MSG, m) }
 
-lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1) }
-            (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2) })*
+#listref-items = i1:listref-item     { $$ = i1 = PN_TUP(i1) }
+#            (sep i2:listref-item { $$ = i1 = PN_PUSH(i1, i2) })*
+#             sep?
+#           | ''               { $$ = PN_NIL }
+#
+# TODO: unquoted lists
+#listref-item = m:msg t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
+#          | m:msg t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
+#          | m:msg v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
+#          | m:msg v:loose { $$ = PN_AST2(LICK, m, v) }
+#          | m:msg         { $$ = PN_AST(LICK, m) }
+
+hash-item = k:value - (fatcomma|comma) v:atom { $$ = PN_AST2(ASSIGN, k, v) }
+          | k:unquoted - fatcomma v:atom      { $$ = PN_AST2(ASSIGN, PN_AST(VALUE, k), v) }
+hash-items = i1:hash-item      { $$ = i1 = PN_TUP(i1) }
+            (sep i2:hash-item  { $$ = i1 = PN_PUSH(i1, i2) })*
              sep?
-           | ''               { $$ = PN_NIL }
+           | ''                { $$ = PN_NIL }
 
-lick-item = m:msg t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
-          | m:msg t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
-          | m:msg v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
-          | m:msg v:loose { $$ = PN_AST2(LICK, m, v) }
-          | m:msg         { $$ = PN_AST(LICK, m) }
-
-loose = value
-      | v:unquoted { $$ = PN_AST(VALUE, v) }
-
+#loose = value
+#      | v:unquoted { $$ = PN_AST(VALUE, v) }
+#
 # anonymous sub, w or w/o proto (aka list)
-#sub = 'sub' - n:arg-name - t:list? b:block  { PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)) }
-list = list-start s:listexprs list-end -     { $$ = PN_AST(LIST, s) }
-block = block-start s:statements block-end - { $$ = PN_AST(BLOCK, s) }
-lick = lick-start i:lick-items lick-end -    { $$ = PN_AST(LIST, i) }
-group = group-start s:statements group-end - { $$ = PN_AST(EXPR, s) }
+#sub = SUB n:arg-name - t:list? b:block       { $$ = PN_AST2(ASSIGN, n, PN_AST2(PROTO, t, b)) }
+block = block-start s:statements - block-end  { $$ = PN_AST(BLOCK, s) }
+list = list-start s:listexprs - list-end      { $$ = PN_AST(LIST, s) }
+listref = listref-start s:listexprs - listref-end { $$ = PN_AST(LIST, s) }
+hash = hash-start h:hash-items - hash-end     { $$ = PN_AST(LIST, h) }
 
 #path = '/' < utfw+ > - { $$ = PN_STRN(yytext, yyleng) }
 #path    = < utfw+ > -  { $$ = PN_STRN(yytext, yyleng) }
-msg = < utfw+ > -   	{ $$ = PN_STRN(yytext, yyleng) }
+#msg = < utfw+ > -   	{ $$ = PN_STRN(yytext, yyleng) }
 
 mvalue = i:immed - { $$ = PN_AST(VALUE, i) }
       | global
@@ -281,8 +287,8 @@ methlhs = global
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
       | global
-      | lick
-      | group
+      | listref
+      | hash
 
 immed = undef { $$ = PN_NIL }
 #      | true  { $$ = PN_TRUE }
@@ -307,16 +313,16 @@ hashel  = < '$' h:id - '{' - k:value - '}' > -
 
 semi = ';'
 comma = ','
-fatcomma = '=>'
+fatcomma = '=>' -
 arrow = "->" -
 block-start = '{' space*
-block-end = semi? space* '}'
+block-end = semi? space* '}' -
 list-start = '(' -
 list-end = ')' -
-lick-start = '[' -
-lick-end = ']' -
-group-start = '{'
-group-end = '}'
+listref-start = '[' -
+listref-end = ']' -
+hash-start = '{' -
+hash-end = '}' -
 bitnot = '~' -
 assign = '=' -
 defassign = ":=" --
@@ -397,9 +403,9 @@ str2 = q2 { P->pbuf = potion_asm_clear(P, P->pbuf) }
 unq-char = '{' unq-char+ '}'
          | '[' unq-char+ ']'
          | '(' unq-char+ ')'
-         | !'{' !'[' !'(' !'}' !']' !')' utf8
-unq-sep = sep !'{' !'[' !'('
-unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = PN_STRN(yytext, yyleng) }
+         | !'#' !',' !'=>' !'{' !'[' !'(' !'}' !']' !')' utf8
+unq-sep = sep !'#' !',' !'=>' !'{' !'[' !'('
+unquoted = < (!unq-sep !listref-end unq-char)+ > { $$ = PN_STRN(yytext, yyleng) }
 
 # lexer rules which are only printed with -DP, not with -Dp:
 - = (space | comment)*

@@ -408,7 +408,7 @@ enum PN_AST {
   AST_QUERY,
   AST_PATHQ,
   AST_EXPR,
-  AST_LIST, /* was TABLE, it is a TUPLE */
+  AST_LIST, /* for TABLE (=,..) and TUPLE (,...) */
   AST_BLOCK,
   AST_LICK,
   AST_PROTO,
