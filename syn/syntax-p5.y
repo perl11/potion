@@ -100,15 +100,15 @@ ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
 
-p5-siglist = list-start args2* list-end - { $$ = PN_AST(LIST, P->source); P->source = PN_NIL }
+p5-siglist = list-start args2* list-end { $$ = PN_AST(LIST, P->source); P->source = PN_NIL }
 #TODO: store name globally
-subrout = SUB n:id - l:p5-siglist b:block -
+subrout = SUB n:id - l:p5-siglist b:block
           { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_TUP(PN_AST(MSG, n))),
                                  PN_AST(EXPR, PN_TUP(PN_AST2(PROTO, l, b)))) }
-        | SUB n:id - b:block -
+        | SUB n:id - b:block
           { $$ = PN_AST2(ASSIGN, PN_AST(EXPR, PN_TUP(PN_AST(MSG, n))),
                                  PN_AST(EXPR, PN_TUP(PN_AST2(PROTO, PN_AST(LIST, PN_NIL), b)))) }
-anonsub = SUB l:p5-siglist? b:block -
+anonsub = SUB l:p5-siglist? b:block
         { $$ = PN_AST2(PROTO, l, b) }
 # so far no difference in global or lex assignment
 #subrout = SUB n:id - l:p5-siglist? a:subattrlist? b:block
@@ -117,21 +117,22 @@ anonsub = SUB l:p5-siglist? b:block -
 #subattrlist = ':' -? arg-name
 
 # TODO: compile-time sideeffs: require + import
-use = USE n:id                     { $$ = PN_AST2(MSG, PN_use, n) }
+use = USE v:version              { $$ = PN_AST2(MSG, PN_use, v) }
+    | USE n:id                   { $$ = PN_AST2(MSG, PN_use, n) }
     | USE n:id - fatcomma l:atom { $$ = PN_AST3(MSG, PN_use, n, l) }
 
 pkgdecl = PACKAGE n:arg-name semi          {} # TODO: set namespace
         | PACKAGE n:arg-name v:version? b:block
 
-ifstmt = IF e:ifexpr s:block - !"els"  { $$ = PN_TUP(PN_OP(AST_AND, e, s)) }
-       | IF e:ifexpr s1:block -        { $$ = e = PN_AST3(MSG, PN_if, PN_AST(LIST, PN_TUP(e)), s1) }
-         (ELSIF e1:ifexpr f:block -    { $$ = e = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_elsif, PN_AST(LIST, PN_TUP(e1)), f)) } )*
-         (ELSE s2:block                { $$ = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_else, PN_NIL, s2)) } )?
-ifexpr = '(' - eqs - ')' -
+ifstmt = IF e:ifexpr s:block !"els"   { $$ = PN_TUP(PN_OP(AST_AND, e, s)) }
+       | IF e:ifexpr s1:block         { $$ = e = PN_AST3(MSG, PN_if, PN_AST(LIST, PN_TUP(e)), s1) }
+         (ELSIF e1:ifexpr f:block     { $$ = e = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_elsif, PN_AST(LIST, PN_TUP(e1)), f)) } )*
+         (ELSE s2:block               { $$ = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_else, PN_NIL, s2)) } )?
+ifexpr = list-start - eqs - list-end
 
 assigndecl =
-        MY? l:listvar assign r:list -    { $$ = PN_AST2(ASSIGN, l, r) }
-      | MY? l:list assign r:list -       # aasign
+        MY? l:listvar assign r:list     { $$ = PN_AST2(ASSIGN, l, r) }
+      | MY? l:list assign r:list        # aasign
           { PN s1 = PN_TUP0(); PN_TUPLE_EACH(PN_S(l,0), i, v, {
             s1 = PN_PUSH(s1, PN_AST2(ASSIGN, v, potion_tuple_at(P,0,PN_S(r,0),PN_NUM(i))));
           }); $$ = PN_AST(EXPR, s1) }
