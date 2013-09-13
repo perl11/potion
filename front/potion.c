@@ -368,19 +368,20 @@ int main(int argc, char *argv[]) {
   
   if (buf || i < argc) {
     PN args = PN_TUP0();
-    if (buf == PN_NIL) fn = argv[i++];
+    if (buf == PN_NIL) { fn = argv[i++]; PN_PUSH(args, PN_STR(fn)); }
+    else { PN_PUSH(args, PN_STR("-e")); }
     for (; i < argc; i++) PN_PUSH(args, PN_STR(argv[i]));
     potion_define_global(P, PN_STR("argv"), args);
     if (buf != PN_NIL) {
-      potion_define_global(P, PN_STR("$0"), PN_STR("-e"));
       potion_cmd_exec(P, buf, "-e", compile);
     } else {
-      potion_define_global(P, PN_STR("$0"), PN_STR(fn));
       potion_cmd_compile(P, fn, compile);
     }
   } else {
     if (!exec || P->flags & DEBUG_INSPECT) potion_fatal("no filename given");
-    potion_define_global(P, PN_STR("$0"), PN_STR("-i"));
+    PN args = PN_TUP0();
+    PN_PUSH(args, PN_STR(""));
+    potion_define_global(P, PN_STR("argv"), args);
     potion_eval(P, potion_byte_str(P,
       "load 'readline'\n" \
       "loop:\n" \
