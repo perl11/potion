@@ -368,6 +368,7 @@ int main(int argc, char *argv[]) {
     potion_define_global(P, PN_STR("$0"), PN_STR("-i"));
     potion_define_global(P, potion_str(P, "$P2::interactive"), PN_NUM(1));
     // TODO: p5 not yet parsed
+#if 0
     p2_eval(P, potion_byte_str(P,
       "load 'readline';\n" \
       "while ($code = readline('>> ')) {\n" \
@@ -378,6 +379,30 @@ int main(int argc, char *argv[]) {
       "    say '=> ', $obj;\n" \
       "  }\n"
       "}"));
+#else
+    // dynamically parse potion code from p2
+    #include <dlfcn.h>
+    {
+      PN (*potion_parser)(Potion *, PN, char*);
+      void *handle = dlopen(potion_find_file("libsyntax",9), RTLD_LAZY);
+      potion_parser = (PN (*)(Potion *, PN, char*))dlsym(handle, "potion_parse");
+      PN code = potion_parser(P, potion_byte_str(P,
+      "load 'readline'\n" \
+      "loop:\n" \
+      "  code = readline('>> ')\n" \
+      "  if (not code): \"\\n\" print, break.\n" \
+      "  if (code != ''):\n" \
+      "    obj = code eval\n" \
+      "    if (obj kind == Error):\n" \
+      "      obj string print." \
+      "    else: ('=> ', obj, \"\\n\") join print.\n" \
+      "  .\n"
+      "."), "<eval>");
+      if (PN_TYPE(code) != PN_TSOURCE) return code;
+      code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
+      return potion_run(P, code, P->flags & EXEC_JIT);
+    }
+#endif
   }
 END:
 #if !defined(POTION_JIT_TARGET) || defined(DEBUG)

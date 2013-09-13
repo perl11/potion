@@ -13,7 +13,7 @@
 #include "internal.h"
 #include "table.h"
 
-PN potion_load_code(Potion *P, const char *filename) {
+static PN potion_load_code(Potion *P, const char *filename) {
   PN buf, code;
   struct stat stats;
   int fd = -1;
@@ -61,7 +61,7 @@ static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE le
   return func_name;
 }
 
-PN potion_load_dylib(Potion *P, const char *filename) {
+static PN potion_load_dylib(Potion *P, const char *filename) {
   void *handle = dlopen(filename, RTLD_LAZY);
   void (*func)(Potion *);
   char *err, *init_func_name;
