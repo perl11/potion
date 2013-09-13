@@ -61,7 +61,6 @@ advance = (dt):
       bj/vy += dy * mi
       bj/vz += dz * mi
       j++.
-    energy() print
     i++..
 
 offsetmomentum = (b, px, py, pz):
@@ -94,9 +93,10 @@ energy = ():
 
 energy() print
 "\n" print
-n = 50000
-i = 0
-while (i < n):
+n = argv at(0)
+if (!n): n = 50000.
+j = 0
+while (j < n):
   advance(0.01)
-  i++.
+  j++.
 energy() print
