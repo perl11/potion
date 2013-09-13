@@ -3,6 +3,8 @@
 # http://shootout.alioth.debian.org/
 #
 # contributed by Reini Urban
+#debug = true
+debug = false
 
 pi            = 3.141592653589793
 solar_mass    = 4 * pi * pi
@@ -36,31 +38,44 @@ bodies(1) = jupiter
 bodies(2) = saturn
 bodies(3) = uranus
 bodies(4) = neptune
-nbodies = bodies length
+nbodies = 5 #bodies length
 
 advance = (dt):
   i = 0
   while (i < nbodies):
     bi = bodies(i)
+    bix = bi/x
+    biy = bi/y
+    biz = bi/z
+    bivx = bi/vx
+    bivy = bi/vy
+    bivz = bi/vz
+    bimass = bi/mass
     j = i+1
     while (j < nbodies):
-      #("i", i, "j", j) say
+      #if (debug): ("i", i, "j", j) say.
       bj = bodies(j)
-      dx = bi/x - bj/x
-      dy = bi/y - bj/y
-      dz = bi/z - bj/z
+      dx = bix - bj/x
+      dy = biy - bj/y
+      dz = biz - bj/z
       dist = dx*dx + dy*dy + dz*dz
       dist = dist sqrt
       mag = dt / (dist * dist * dist)
-      mi = bi/mass * mag
-      mj = bj/mass * mag
-      bi/vx -= dx * mj
-      bi/vy -= dy * mj
-      bi/vz -= dz * mj
-      bj/vx += dx * mi
-      bj/vy += dy * mi
-      bj/vz += dz * mi
-      j++.
+      #("mag", mag) say
+      bim = bimass * mag
+      bjm = bj/mass * mag
+      #("bim", bim, "bjm", bjm) say
+      bivx -= dx * bjm
+      bivy -= dy * bjm
+      bivz -= dz * bjm
+      bj/vx += dx * bim
+      bj/vy += dy * bim
+      bj/vz += dz * bim
+      j++
+      .
+    bi/vx = bivx
+    bi/vy = bivy
+    bi/vz = bivz
     i++..
 
 offsetmomentum = (b, px, py, pz):
@@ -74,29 +89,42 @@ energy = ():
   i = 0
   while (i < nbodies):
     bi = bodies(i)
-    f = bi/vx * bi/vx + bi/vy * bi/vy + bi/vz * bi/vz
-    e += 0.5 * bi/mass * f
+    bix = bi/x
+    biy = bi/y
+    biz = bi/z
+    bivx = bi/vx
+    bivy = bi/vy
+    bivz = bi/vz
+    bimass = bi/mass
+    f = bivx * bivx + bivy * bivy + bivz * bivz
+    e += 0.5 * bimass * f
     j = i+1
     while (j < nbodies):
       bj = bodies(j)
-      dx = bi/x - bj/x
-      dy = bi/y - bj/y
-      dz = bi/z - bj/z
-                                
+      dx = bix - bj/x
+      dy = biy - bj/y
+      dz = biz - bj/z
       dist = dx*dx + dy*dy + dz*dz
       dist = dist sqrt
-      f = bi/mass * bj/mass
+      f = bimass * bj/mass
       e -= f / dist
       j++.
     i++.
   e.
 
-energy() print
-"\n" print
-n = argv at(0)
-if (!n): n = 50000.
-j = 0
-while (j < n):
+n = argv at(1)
+n = if (n): n integer. else: 50000.
+debug1 = false
+if (debug):
+  ("n", n) say
+  debug1 = true
+  .
+
+energy() say
+k = 0
+while (k < n):
   advance(0.01)
-  j++.
-energy() print
+  if (debug1): ("advance", k, energy()) say.
+  debug = false
+  k++.
+energy() say
