@@ -21,16 +21,16 @@
   on why the luck stiff's potion. See README why potion is exciting.
   Homepage: http://perl11.org/p2/
 
-  parrot example/fib.pir 28  1.746s
-  perl   example/fib.pl  28  0.439s
-  potion example/fib.pn  28  0.013s
-  p2 -B  example/fib.p2  28  0m49.994s
+  parrot example/fib.pir 28  0m1.746s
+  perl   example/fib.pl  28  0m0.439s
+  potion example/fib.pn  28  0m0.013s
+  p2 -B  example/fib.p2  28  0m0.177s
   p2     example/fib.p2  28  <todo: 0.013s>
 
   parrot example/fib.pir 40  3m36.447s
   perl   example/fib.pl  40  2m19.752s
   potion example/fib.pn  40  0m3.512s
-  p2 -B  example/fib.p2  40  >15m
+  p2 -B  example/fib.p2  40  0m54.560s
   p2     example/fib.p2  40  <todo: 0m3.512s>
 
   Its exciting points for perl folks are:
