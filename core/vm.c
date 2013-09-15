@@ -393,8 +393,8 @@ reentry:
     if (args != NULL) {
       long argx;
       for (argx = 0; argx < potion_sig_arity(P, f->sig); argx++) {
-        PN s = potion_sig_at(P, f->sig, argx);
-        PN_SIZE num = PN_GET(f->locals, PN_TUPLE_AT(s, 0));
+        PN s = potion_sig_name_at(P, f->sig, argx);
+        PN_SIZE num = PN_GET(f->locals, s);
         if (num != PN_NONE)
           locals[num] = args[argx];
       }

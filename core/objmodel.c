@@ -166,6 +166,31 @@ PN potion_sig_at(Potion *P, PN sig, int index) {
   }
 }
 
+///\return sig name at index, zero-based
+PN potion_sig_name_at(Potion *P, PN sig, int index) {
+  if (PN_IS_TUPLE(sig)) {
+    int count = -1;
+    struct PNTuple * volatile t = (struct PNTuple *)potion_fwd(sig);
+    if (t->len > 0) {
+      PN_SIZE i;
+      for (i = 0; i < t->len; i++) {
+	PN v = (PN)t->set[i];
+	if (PN_IS_STR(v)) count++;
+	if (PN_IS_NUM(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
+	if (count == index)
+	  return v;
+      }
+    }
+    return 0;
+  }
+  else if (sig == PN_NIL)
+    return 0;
+  else {
+    potion_fatal("wrong sig type for sig_at");
+    return 0;
+  }
+}
+
 PN potion_no_call(Potion *P, PN cl, PN self) {
   return self;
 }
