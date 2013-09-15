@@ -1,0 +1,9 @@
+sub fib($n) {
+  if ( $n < 2 ) { $n } else { fib($n-1) + fib($n-1) }
+}
+my $n = number $ARGV[0];
+if (!$n) { $n = 40 }
+print "fib(";
+print $n;
+print ")= ";
+print fib($n);

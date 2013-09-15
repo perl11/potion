@@ -1,9 +1,6 @@
-sub fib($n) {
-  if ( $n < 2 ) { $n } else { $x=$n-1; fib($x) + fib($x-1) }
+sub fib {
+  my $n = shift;
+  ( $n < 2 ) ? $n : fib( $n - 1 ) + fib( $n - 2 );
 }
-$n = number $ARGV[0];
-if (!$n) { $n = 40 }
-print "fib("
-print $n
-print ")= "
-say fib($n)
+$n = $ARGV[0] || 40;
+print("fib($N) = ", fib($N), "\n");
