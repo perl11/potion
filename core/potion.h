@@ -454,6 +454,7 @@ struct PNProto {
 struct PNTuple {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE len;
+  PN_SIZE alloc;     ///< overallocate a bit
   PN set[0];
 };
 

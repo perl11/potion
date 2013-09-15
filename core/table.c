@@ -137,10 +137,12 @@ PN potion_table_length(Potion *P, PN cl, PN self) {
 
 #define NEW_TUPLE(t, size) \
   vPN(Tuple) t = PN_ALLOC_N(PN_TTUPLE, struct PNTuple, size * sizeof(PN)); \
-  t->len = size
+  t->alloc = t->len = size
 
 PN potion_tuple_empty(Potion *P) {
-  NEW_TUPLE(t, 0);
+  //NEW_TUPLE(t, 0);
+  NEW_TUPLE(t, 3); // prealloc 3 elems
+  t->len = 0;
   return (PN)t;
 }
 
@@ -150,7 +152,8 @@ PN potion_tuple_with_size(Potion *P, unsigned long size) {
 }
 
 PN potion_tuple_new(Potion *P, PN value) {
-  NEW_TUPLE(t, 1);
+  NEW_TUPLE(t, 3); // overallocate by 2 elems
+  t->len = 1;
   t->set[0] = value;
   return (PN)t;
 }
@@ -158,7 +161,10 @@ PN potion_tuple_new(Potion *P, PN value) {
 PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   vPN(Tuple) t = PN_GET_TUPLE(tuple);
   DBG_CHECK_TYPE(t,PN_TTUPLE);
-  PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len + 1));
+  if (t->len >= t->alloc) {
+    PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->alloc + 3)); // overalloc by 2
+    t->alloc += 3;
+  }
   t->set[t->len] = value;
   t->len++;
   PN_TOUCH(tuple);
@@ -223,6 +229,7 @@ PN potion_tuple_clone(Potion *P, PN cl, PN self) {
   DBG_CHECK_TYPE(t1,PN_TTUPLE);
   NEW_TUPLE(t2, t1->len);
   PN_MEMCPY_N(t2->set, t1->set, PN, t1->len);
+  t2->alloc = t1->len;
   return (PN)t2;
 }
 
@@ -338,7 +345,10 @@ PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
 PN potion_tuple_unshift(Potion *P, PN cl, PN self, PN value) {
   vPN(Tuple) t = PN_GET_TUPLE(self);
   DBG_CHECK_TYPE(t,PN_TTUPLE);
-  PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len + 1));
+  if (t->len >= t->alloc) {
+    PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->alloc + 3)); // overalloc by 2
+    t->alloc += 3;
+  }
   PN_MEMMOVE_N(&t->set[1], &t->set[0], PN, t->len);
   t->set[0] = value;
   t->len++;

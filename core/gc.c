@@ -305,7 +305,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNClosure) + (PN_CLOSURE(ptr)->extra * sizeof(PN));
     break;
     case PN_TTUPLE:
-      sz = sizeof(struct PNTuple) + (sizeof(PN) * ((struct PNTuple *)ptr)->len);
+      sz = sizeof(struct PNTuple) + (sizeof(PN) * ((struct PNTuple *)ptr)->alloc);
     break;
     case PN_TSTATE:
       sz = sizeof(Potion);
