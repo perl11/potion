@@ -1,7 +1,6 @@
 fib = (n):
   if (n < 2): n. else: fib (n - 1) + fib (n - 2).
 .
-
-n = argv at(1)
-n = if (n): n integer. else: 40.
+n = argv(1) number
+if (n<1): n=40
 ("fib(",n,")= ", fib(n)) join say

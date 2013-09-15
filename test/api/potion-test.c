@@ -30,7 +30,7 @@ void potion_test_bool(CuTest *T) {
 }
 
 void potion_test_int1(CuTest *T) {
-  PN zero = PN_NUM(0);
+  PN zero = PN_ZERO;
   CuAssert(T, "zero isn't zero", PN_INT(zero) == 0);
   CuAssert(T, "zero isn't a number", PN_IS_NUM(zero));
   CuAssert(T, "zero is a ref", !PN_IS_PTR(zero));

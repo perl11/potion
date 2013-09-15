@@ -492,27 +492,37 @@ reentry:
           (double)PN_INT(reg[op.b])));
       break;
       case OP_NOT:
+#ifdef P2
+        reg[op.a] = PN_ZERO == reg[op.a] ? PN_TRUE : PN_BOOL(!PN_TEST(reg[op.a]));
+#else
         reg[op.a] = PN_BOOL(!PN_TEST(reg[op.a]));
+#endif
       break;
       case OP_CMP:
         reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a]));
       break;
       case OP_NEQ:
+        DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
         reg[op.a] = PN_BOOL(reg[op.a] != reg[op.b]);
       break;
       case OP_EQ:
+        DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
         reg[op.a] = PN_BOOL(reg[op.a] == reg[op.b]);
       break;
       case OP_LT:
+        DBG_t("\t; %s<%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
         reg[op.a] = PN_BOOL((long)(reg[op.a]) < (long)(reg[op.b]));
       break;
       case OP_LTE:
+        DBG_t("\t; %s<=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
         reg[op.a] = PN_BOOL((long)(reg[op.a]) <= (long)(reg[op.b]));
       break;
       case OP_GT:
+        DBG_t("\t; %s>%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
         reg[op.a] = PN_BOOL((long)(reg[op.a]) > (long)(reg[op.b]));
       break;
       case OP_GTE:
+        DBG_t("\t; %s>=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
         reg[op.a] = PN_BOOL((long)(reg[op.a]) >= (long)(reg[op.b]));
       break;
       case OP_BITN:
@@ -537,13 +547,13 @@ reentry:
         pos += op.a;
       break;
       case OP_TEST:
-        reg[op.a] = PN_BOOL(PN_TEST(reg[op.a]));
+        reg[op.a] = PN_BOOL(PN_TEST1(reg[op.a]));
       break;
       case OP_TESTJMP:
-        if (PN_TEST(reg[op.a])) pos += op.b;
+        if (PN_TEST1(reg[op.a])) pos += op.b;
       break;
       case OP_NOTJMP:
-        if (!PN_TEST(reg[op.a])) pos += op.b;
+        if (!PN_TEST1(reg[op.a])) pos += op.b;
       break;
       case OP_NAMED: {
         int x = potion_sig_find(P, reg[op.a], reg[op.b - 1]);

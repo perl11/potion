@@ -630,7 +630,7 @@ static PN potion_tuple_cmp(Potion *P, PN cl, PN self, PN value) {
       PN cmp;
       if ((cmp = potion_send(potion_tuple_first(P,cl,self), PN_cmp,
 			     potion_tuple_first(P,cl,value)))
-	  == PN_NUM(0))
+	  == PN_ZERO)
 	{
 	  PN t1 = potion_tuple_clone(P,cl,self);
 	  PN t2 = potion_tuple_clone(P,cl,value);

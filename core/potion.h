@@ -137,6 +137,7 @@ struct PNVtable;
 #define PN_TYPECHECK(t) (PN_TYPE_ID(t) >= 0 && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
 
 #define PN_NIL          ((PN)0)
+//i.e. PN_NUM(0)
 #define PN_ZERO         ((PN)1)
 #define PN_FALSE        ((PN)2)
 #define PN_TRUE         ((PN)6)
@@ -152,10 +153,14 @@ struct PNVtable;
 #define PN_FBOOLEAN     2
 #ifdef P2
 // in perl there is lot more false
+//TODO: TEST(PN_NUM(0)) vs TEST(0<1) i.e. test(1) vs test(1)
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL \
-                         && (PN)(v) != PN_NUM(0) && (PN)(v) != PN_STR0)
+                         && (PN)(v) != PN_STR0)
+#define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL \
+                         && (PN)(v) != PN_ZERO && (PN)(v) != PN_STR0)
 #else
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
+#define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 #endif
 ///\class PNBoolean
 /// Immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
@@ -235,9 +240,9 @@ struct PNVtable;
 #define DBG_v(...) \
   if (P->flags & DEBUG_VERBOSE) fprintf(stderr, __VA_ARGS__)
 #define DBG_vt(...) \
-  if (P->flags & (DEBUG_VERBOSE|DEBUG_TRACE)) fprintf(stderr, __VA_ARGS__)
+  if (P->flags & DEBUG_VERBOSE && P->flags & DEBUG_TRACE) fprintf(stderr, __VA_ARGS__)
 #define DBG_vi(...) \
-  if (P->flags & (DEBUG_VERBOSE|DEBUG_INSPECT)) fprintf(stderr, __VA_ARGS__)
+  if (P->flags & DEBUG_VERBOSE && P->flags & DEBUG_INSPECT) fprintf(stderr, __VA_ARGS__)
 #define DBG_c(...) \
   if (P->flags & DEBUG_COMPILE) fprintf(stderr, __VA_ARGS__)
 #else
@@ -741,7 +746,7 @@ extern PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
 
 /// zero values per type
 static inline PN potion_type_default(char type) {
-  return type == 'N' ? PN_NUM(0)
+  return type == 'N' ? PN_ZERO
        : type == 'S' ? PN_STR0
                      : PN_NIL;
 }

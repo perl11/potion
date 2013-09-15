@@ -941,7 +941,7 @@ aio_udp_set_multicast_loop(Potion *P, PN cl, PN udp, PN on) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
   PN_CHECK_INT(on);  //TODO boolean
   potion_obj_set(P, cl, udp, PN_STR("multicast_loop"),
-		 on == PN_NUM(0) ? PN_FALSE : PN_TRUE);
+		 on == PN_ZERO ? PN_FALSE : PN_TRUE);
   return uv_udp_set_multicast_loop(&handle->r, PN_NUM(on))
     ? aio_last_error(P, "udp set_multicast_loop", handle->r.loop)
     : udp;
@@ -962,7 +962,7 @@ aio_udp_set_broadcast(Potion *P, PN cl, PN udp, PN on) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
   PN_CHECK_INT(on);  //TODO boolean
   potion_obj_set(P, cl, udp, PN_STR("broadcast"),
-		 on == PN_NUM(0) ? PN_FALSE : PN_TRUE);
+		 on == PN_ZERO ? PN_FALSE : PN_TRUE);
   return uv_udp_set_broadcast(&handle->r, PN_NUM(on))
     ? aio_last_error(P, "udp set_broadcast", handle->r.loop)
     : udp;

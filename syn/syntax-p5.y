@@ -224,7 +224,7 @@ expr = c:method  	        { $$ = PN_AST(EXPR, c) }
 
 opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
     | bitnot e:expr		{ $$ = PN_AST(WAVY, e) }
-    | minus  e:expr		{ $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_NUM(0)), e) }
+    | minus  e:expr		{ $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), e) }
     | l:atom times !times r:atom { $$ = PN_OP(AST_TIMES, l, r) }
     | l:atom div   !div r:atom   { $$ = PN_OP(AST_DIV,  l, r) }
     | l:atom minus !minus r:atom { $$ = PN_OP(AST_MINUS, l, r) }
@@ -324,9 +324,11 @@ hashvar = < '%' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("%", PN_STR_PTR(i))) }
 funcvar = < '&' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("&", PN_STR_PTR(i))) }
 globvar = < '*' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("*", PN_STR_PTR(i))) }
 listel  = < '$' l:id - '[' - i:value - ']' > -
-        { $$ = PN_AST2(MSG, PN_STRCAT("@", PN_STR_PTR(l)), PN_AST(EXPR, PN_TUP(i))) }
+        { $$ = PN_AST2(MSG, PN_STRCAT("@", PN_STR_PTR(l)),
+                            PN_AST(LIST, PN_TUP(i))) }
 hashel  = < '$' h:id - '{' - k:value - '}' > -
-        { $$ = PN_AST2(MSG, PN_STRCAT("%", PN_STR_PTR(h)), PN_AST(EXPR, PN_TUP(k))) }
+        { $$ = PN_AST2(MSG, PN_STRCAT("%", PN_STR_PTR(h)),
+                            PN_AST(LIST, PN_TUP(k))) }
 
 semi = ';'
 comma = ','
@@ -483,7 +485,7 @@ arg-type = < [NS&oTaubnBsFPlkftxrcdm] > - { $$ = PN_NUM(yytext[0]) }
 arg = m:arg-modifier n:arg-name assign t:arg-type
                         { SRC_TPL3(n,t,m) }
     | m:arg-modifier n:arg-name
-                        { SRC_TPL3(n,PN_NUM(0),m) }
+                        { SRC_TPL3(n,PN_ZERO,m) }
     | n:arg-name assign t:arg-type
                         { SRC_TPL2(n,t) }
     | n:arg-name defassign d:value     # x:=0, optional
@@ -509,7 +511,7 @@ arg2-name = s:arg2-sigil i:id - { $$ = potion_str_add(P, 0, s, i) }
 arg2-type = !'$' i:id space+  { $$ = potion_class_find(P, i); if (!$$) yyerror(G,"Invalid signature type") }
 arg2 = !arg2-sigil t:arg2-type m:arg-modifier n:arg2-name { SRC_TPL3(n,t,m) }
      | !arg2-sigil t:arg2-type n:arg2-name 		{ SRC_TPL2(n,t) }
-     | m:arg-modifier n:arg2-name 		 	{ SRC_TPL3(n,PN_NUM(0),m) }
+     | m:arg-modifier n:arg2-name 		 	{ SRC_TPL3(n,PN_ZERO,m) }
      | n:arg2-name - assign d:value			{ SRC_TPL3(n,PN_NUM(':'), PN_S(d,0)) }
      | n:arg2-name					{ SRC_TPL1(n) }
 

@@ -166,6 +166,8 @@ static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
     PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = code;
     val = PN_PROTO(code)->jit(P, cl, P->lobby);
+    if (exec >= MAX_EXEC)
+      potion_fatal("fatal: stack corruption (exec > MAX_EXEC)\n");
     DBG_v("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
 	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
 	  PN_INT(potion_gc_reserved(P, 0, 0)));
@@ -182,7 +184,7 @@ static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
       goto done;
 
     if (exec >= MAX_EXEC)
-      potion_fatal("fatal: stack overwrite (exec > MAX_EXEC)\n");
+      potion_fatal("fatal: stack corruption (exec > MAX_EXEC)\n");
 
     if (exec == EXEC_COMPILE) { // needs an inputfile. TODO: -e"" -ofile
       char outpath[255];

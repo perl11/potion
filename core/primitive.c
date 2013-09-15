@@ -48,7 +48,7 @@ static PN potion_nil_cmp(Potion *P, PN cl, PN self, PN value) {
   case PN_TNIL:
     return 0;
   case PN_TNUMBER:
-    return potion_send(PN_NUM(0), PN_cmp, value);
+    return potion_send(PN_ZERO, PN_cmp, value);
   case PN_TBOOLEAN:
     return potion_send(PN_FALSE, PN_cmp, value);
   case PN_TSTRING:
