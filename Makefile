@@ -152,12 +152,27 @@ syn/greg.c: syn/greg.y
         fi
 
 core/callcc.o core/callcc.o2: core/callcc.c core/config.h core/p2.h core/internal.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${ECHO} CC $@ -O0 +frame-pointer
+	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
 ifneq (${FPIC},)
 core/callcc.${OPIC} core/callcc.${OPIC}2: core/callcc.c core/config.h core/p2.h core/internal.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${ECHO} CC $@ -O0 +frame-pointer
+	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+endif
+
+front/potion.o: front/potion.c core/config.h core/potion.h core/internal.h
+	@${ECHO} CC $@ -O0
+	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
+front/p2.o2: front/p2.c core/config.h core/p2.h core/potion.h core/internal.h
+	@${ECHO} CC $@ -O0
+	@${CC} -c -DP2 ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
+ifneq (${FPIC},)
+front/potion.${OPIC}: front/potion.c core/config.h core/potion.h core/internal.h
+	@${ECHO} CC $@ -O0
+	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+front/p2.${OPIC}2: front/p2.c core/config.h core/p2.h core/potion.h core/internal.h
+	@${ECHO} CC $@ -O0
+	@${CC} -c -DP2 ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 endif
 
 core/potion.h: core/config.h

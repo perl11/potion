@@ -3,8 +3,8 @@
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
 # -Wno-return-type
-WARNINGS = -Wall -Werror -fno-strict-aliasing -Wno-switch -Wno-return-type -Wno-unused-label
-CFLAGS = -D_GNU_SOURCE
+WARNINGS = -Wall -Werror -Wno-switch -Wno-return-type -Wno-unused-label
+CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing
 INCS   = -Icore
 LIBPTH = -Llib
 RPATH         = -Wl,-rpath=$(shell pwd)/lib
@@ -108,9 +108,11 @@ endif
 endif
 
 # JIT with -O still fails some tests
-ifneq (${JIT},1)
+#ifneq (${JIT},1)
+  ifeq (${DEBUG},0)
        DEBUGFLAGS += -O3
-endif
+  endif
+#endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	WARNINGS += -Wno-unused-value

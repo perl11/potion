@@ -21,22 +21,26 @@
   on why the luck stiff's potion. See README why potion is exciting.
   Homepage: http://perl11.org/p2/
 
-  parrot examples/benchmarks/fib.pir 28  1.746s
-  perl   examples/benchmarks/fib.pl  28  0.439s
-  potion examples/benchmarks/fib.pn  28  0.013s
+  parrot example/fib.pir 28  1.746s
+  perl   example/fib.pl  28  0.439s
+  potion example/fib.pn  28  0.013s
+  p2 -B  example/fib.p2  28  0m49.994s
+  p2     example/fib.p2  28  <todo: 0.013s>
 
-  parrot examples/benchmarks/fib.pir 40  3m36.447s
-  perl   examples/benchmarks/fib.pl  40  2m19.752s
-  potion examples/benchmarks/fib.pn  40  0m3.512s
+  parrot example/fib.pir 40  3m36.447s
+  perl   example/fib.pl  40  2m19.752s
+  potion example/fib.pn  40  0m3.512s
+  p2 -B  example/fib.p2  40  >15m
+  p2     example/fib.p2  40  <todo: 0m3.512s>
 
   Its exciting points for perl folks are:
 
-   * Should parse most of perl5, just some XS and B tricks not.
-     Since the original perl5 testsuite is not usable for other
-     implementations and compilers it needs to be adjusted. The
-     perl6 testsuite is in a better shape.
+   * Radically simplified and functional core.
 
-   * signatures, types, native threads, call-replacing macros for perl5.
+   * Should parse most of perl5, just some XS and B tricks not.
+
+   * signatures, fast mop, types, native threads, call-replacing
+     macros for perl5.
 
    * Using most of Damian Conway's p5i recommendations:
      i.e. classes are immutable and final by default.
@@ -127,6 +131,8 @@
      method lookup table can be used like a hash for storing arbitrary
      data.)
 
+   * Fast asynchronous IO
+
    * The JIT is also used to speed up some other bottlenecks. For
      example, instance variable and method lookup tables are compiled
      into machine code.
@@ -136,13 +142,12 @@
    * Strings are immutable (like Lua) and byte arrays are used for I/O
      buffers. All strings and symbols are utf8 internally.
 
-   * Limited floating point support, no bigums yet. ints cannot hold
-     pointers and need to be boxed. This should be transparent though.
+   * Ints cannot hold pointers and need to be boxed. This should be
+     transparent though.
 
    * Limited error handling.
 
-   * No signal handling, ffi, thread-safe GC, asynchronuous IO yet,
-     but in planning.
+   * No signal handling, ffi, thread-safe GC yet, but in planning.
 
 
   ~ thankyous ~
