@@ -113,9 +113,10 @@ ifneq (${JIT},1)
 endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
+	WARNINGS += -Wno-switch -Wno-unused-label
 	WARNINGS += -Wno-unused-value
   ifeq (${DEBUG},0)
-	DEBUGFLAGS += -O2
+	DEBUGFLAGS += -finline
   endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
@@ -126,14 +127,15 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177
   ifeq (${DEBUG},0)
 # -Ofast
-	DEBUGFLAGS += -O2
+	DEBUGFLAGS += -finline
   else
         DEBUGFLAGS += -gdwarf-3
   endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
+	WARNINGS += -Wno-switch -Wno-unused-label
   ifeq (${DEBUG},0)
-	DEBUGFLAGS += -O2 -falign-functions
+	DEBUGFLAGS += -finline -falign-functions
   endif
 endif
 endif
