@@ -38,7 +38,7 @@ bodies(1) = jupiter
 bodies(2) = saturn
 bodies(3) = uranus
 bodies(4) = neptune
-nbodies = 5 #bodies length
+nbodies = bodies length
 
 advance = (dt):
   i = 0
@@ -61,7 +61,7 @@ advance = (dt):
       dist = dx*dx + dy*dy + dz*dz
       dist = dist sqrt
       mag = dt / (dist * dist * dist)
-      #("mag", mag) say
+      #if (debug): ("mag", mag) say.
       bim = bimass * mag
       bjm = bj/mass * mag
       #("bim", bim, "bjm", bjm) say
@@ -73,6 +73,9 @@ advance = (dt):
       bj/vz += dz * bim
       j++
       .
+    bi/x = bix + dt * bivx
+    bi/y = biy + dt * bivy
+    bi/z = biz + dt * bivz
     bi/vx = bivx
     bi/vy = bivy
     bi/vz = bivz
@@ -112,8 +115,8 @@ energy = ():
     i++.
   e.
 
-n = argv at(1)
-n = if (n): n integer. else: 50000.
+n = argv at(1) number
+if (!n): n=50000.
 debug1 = false
 if (debug):
   ("n", n) say
@@ -121,10 +124,11 @@ if (debug):
   .
 
 energy() say
-k = 0
-while (k < n):
+k=0
+while (k<n):
   advance(0.01)
-  if (debug1): ("advance", k, energy()) say.
-  debug = false
-  k++.
+  #if (debug1): ("advance", k, energy()) say.
+  #debug = false
+  k++
+.
 energy() say

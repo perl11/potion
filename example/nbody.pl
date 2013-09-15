@@ -56,13 +56,13 @@ sub advance {
       $vxs[$j] += $dy * $bim;
       $vys[$j] += $dy * $bim;
       $vzs[$j] += $dz * $bim;
-      $j++;
+      $j++
     }  
     ($vxs[$i],$vys[$i],$vzs[$i]) = ($vx, $vy, $vz);
-    $xs[$i] += $dt * $bivx;
-    $ys[$i] += $dt * $bivy;
-    $zs[$i] += $dt * $bivz;
-    $i++;
+    $xs[$i] = $bix + $dt * $bivx;
+    $ys[$i] = $biy + $dt * $bivy;
+    $zs[$i] = $biz + $dt * $bivz;
+    $i++
   }
 }
 
@@ -79,9 +79,9 @@ sub energy {
       my ($dx, $dy, $dz) = ($bix - $xs[$j], $biy - $ys[$j], $biz - $zs[$j]);
       my $distance = sqrt($dx * $dx + $dy * $dy + $dz * $dz);
       $e -= ($bimass * $mass[$j]) / $distance;
-      $j++;
+      $j++
     }
-    $i++;
+    $i++
   }
   $e
 }
@@ -94,7 +94,7 @@ sub offset_momentum {
     $px += $vxs[$i] * $bimass;
     $py += $vys[$i] * $bimass;
     $pz += $vzs[$i] * $bimass;
-    $i++;
+    $i++
   }
   $vxs[0] = -$px / $SOLAR_MASS;
   $vys[0] = -$py / $SOLAR_MASS;
