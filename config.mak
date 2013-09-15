@@ -113,7 +113,6 @@ ifneq (${JIT},1)
 endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
-	WARNINGS += -Wno-switch -Wno-unused-label
 	WARNINGS += -Wno-unused-value
   ifeq (${DEBUG},0)
 	DEBUGFLAGS += -finline
@@ -133,7 +132,6 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
   endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
-	WARNINGS += -Wno-switch -Wno-unused-label
   ifeq (${DEBUG},0)
 	DEBUGFLAGS += -finline -falign-functions
   endif
