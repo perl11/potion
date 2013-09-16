@@ -136,5 +136,5 @@ if [ -z `grep DDEBUG config.inc` ]; then
         time bin/p2 $f 2>&1 | tee -a $log
     done
 fi
-	    
+
 export LD_LIBRARY_PATH="$old_LIBRARY_PATH"
