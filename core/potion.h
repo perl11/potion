@@ -641,6 +641,9 @@ struct PNMemory {
   volatile int collecting, dirty, pass, majors, minors;
   void *cstack;  ///< machine stack start
   void *protect; ///< end of protected memory
+#ifdef DEBUG
+  double time;
+#endif
 };
 
 #define POTION_INIT_STACK(x) \

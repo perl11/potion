@@ -16,8 +16,30 @@ http://starynkevitch.net/Basile/qishintro.html
 #include "table.h"
 
 #if defined(DEBUG)
+#ifdef WIN32
+# include <time.h>
+#else
+# include <sys/time.h>
+#endif
+#ifdef WIN32
+# include <time.h>
+#else
+# include <sys/time.h>
+#endif
+static double mytime() {
+    struct timeval Tp;
+    struct timezone Tz;
+    int status;
+    status = gettimeofday (&Tp, &Tz);
+    if (status == 0) {
+        Tp.tv_sec += Tz.tz_minuteswest * 60;	/* adjust for TZ */
+        return Tp.tv_sec + (Tp.tv_usec / 1000000.0);
+    } else {
+        return -1.0;
+    }
+}
 #define DBG_Gv(P,...)				\
-  if (P->flags & (DEBUG_GC | DEBUG_VERBOSE)) {	\
+  if (P->flags & DEBUG_GC && P->flags & DEBUG_VERBOSE) { \
     printf(__VA_ARGS__);			\
   }
 #define DBG_G(P,...)	       \
@@ -239,6 +261,9 @@ static int potion_gc_major(Potion *P, int siz) {
 void potion_garbagecollect(Potion *P, int sz, int full) {
   struct PNMemory *M = P->mem;
   if (M->collecting) return;
+#ifdef DEBUG
+  double time = mytime();
+#endif
   M->pass++;
   M->collecting = 1;
 
@@ -262,6 +287,9 @@ void potion_garbagecollect(Potion *P, int sz, int full) {
   else
     potion_gc_minor(P, sz);
 
+#ifdef DEBUG
+  M->time += mytime() - time;
+#endif
   M->dirty = 0;
   M->collecting = 0;
 }
@@ -597,6 +625,9 @@ Potion *potion_gc_boot(void *sp) {
   void *page1 = pngc_page_new(&bootsz, 0);
   struct PNMemory *M = (struct PNMemory *)page1;
   PN_MEMZERO(M, struct PNMemory);
+#ifdef DEBUG
+  M->time = 0.0;
+#endif
 
   SET_GEN(birth, page1, bootsz);
   SET_STOREPTR(4);
