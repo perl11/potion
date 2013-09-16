@@ -122,5 +122,19 @@ if [ $failed -gt 0 ]; then
 else
     ${ECHO} "OK ($count tests)"
 fi
+
+if [ -z `grep DDEBUG config.inc` ]; then
+    ${ECHO} run examples
+    log=log.example
+    git log -1 >> $log
+    for f in example/*.pn; do
+        ${ECHO} time bin/potion $f | tee -a $log
+        time bin/potion $f 2>&1 | tee -a $log
+    done
+    for f in example/*.p[2l]; do
+        ${ECHO} time bin/p2 $f | tee -a $log
+        time bin/p2 $f 2>&1 | tee -a $log
+    done
+fi
 	    
 export LD_LIBRARY_PATH="$old_LIBRARY_PATH"
