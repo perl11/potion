@@ -4,7 +4,7 @@
 if [ -z $CCS ]; then
 case `uname -o` in
 *Linux) CCS="clang clang-3.3 gcc gcc-4.4 gcc-4.5 gcc-4.6 gcc-4.7 gcc-4.8" ;;
-Darwin) CCS="clang clang-mp-3.3 gcc gcc-mp-4.3 gcc-mp-4.8 gcc-mp-4.9" ;;
+Darwin) CCS="clang clang-3.2 clang-mp-3.3 gcc gcc-mp-4.3 gcc-mp-4.8 gcc-mp-4.9" ;;
 Cygwin) CCS="clang gcc gcc-3" ;;
 esac
 fi
