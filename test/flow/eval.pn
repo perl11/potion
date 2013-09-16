@@ -1,0 +1,3 @@
+# issue 9 - GC-safe re-entrant parser
+1 to 1000000(): 'x = Object()' eval.
+#=> 1000000

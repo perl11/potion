@@ -353,6 +353,9 @@ arg-sep = '.' -         { SRC_TPL1(PN_NUM('.')) } #x,y... ignore rest
 
 PN potion_parse(Potion *P, PN code, char *filename) {
   GREG *G = YY_NAME(parse_new)(P);
+  int oldyypos = P->yypos;
+  PN oldinput = P->input;
+  PN oldsource = P->source;
   P->yypos = 0;
   P->input = code;
   P->source = PN_NIL;
@@ -367,7 +370,9 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   YY_NAME(parse_free)(G);
 
   code = P->source;
-  P->source = PN_NIL;
+  P->source = oldsource;
+  P->yypos = oldyypos;
+  P->input = oldinput;
   return code;
 }
 
@@ -403,6 +408,9 @@ PN potion_sig(Potion *P, char *fmt) {
   if (fmt[0] == '\0') return PN_FALSE; // empty signature, no args
 
   GREG *G = YY_NAME(parse_new)(P);
+  int oldyypos = P->yypos;
+  PN oldinput = P->input;
+  PN oldsource = P->source;
   P->yypos = 0;
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
@@ -414,7 +422,9 @@ PN potion_sig(Potion *P, char *fmt) {
   YY_NAME(parse_free)(G);
 
   out = P->source;
-  P->source = PN_NIL;
+  P->source = oldsource;
+  P->yypos = oldyypos;
+  P->input = oldinput;
   return out;
 }
 /** look for name in sig tuple in the given function and return the position.
