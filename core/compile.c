@@ -971,9 +971,9 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 	  }
         } else if (rhs->part == AST_ASSIGN && rhs->a[0]->part == AST_PIPE) {
           //x=N|y=o => (assign (pipe (expm x) (expm y)) (expm o))
-          lhs = SRC_TUPLE_AT(rhs, 0);
+          lhs = PN_S_(PN_S_(rhs, 0), 0);
 	  if (lhs->part == AST_EXPR && SRC_TUPLE_AT(lhs,0)->part == AST_MSG) {
-	    PN v = PN_NUM(PN_STR_PTR(PN_S(PN_S(lhs,0),0)->a[0])[0]); // = type. TODO: one-char => VTABLE
+	    PN v = PN_NUM(PN_STR_PTR((PN)SRC_TUPLE_AT(lhs,0)->a[0])[0]); // = type. TODO: one-char => VTABLE
 	    DBG_c("%s)\n", AS_STR(v));
 	    sig = PN_PUSH(sig, v);
 	  }

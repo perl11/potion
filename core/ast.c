@@ -75,7 +75,7 @@ PN potion_source_name(Potion *P, PN cl, PN self) {
 ///\returns filename of associated AST
 PN potion_source_file(Potion *P, PN cl, PN self) {
   vPN(Source) t = (struct PNSource *)potion_fwd(self);
-  return PN_GET(pn_filenames, t->loc.fileno);
+  return PN_TUPLE_AT(pn_filenames, t->loc.fileno);
 }
 
 ///\memberof PNSource
@@ -93,12 +93,13 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
   int i, n, cut = 0;
   vPN(Source) t = (struct PNSource *)potion_fwd(self);
   PN out = potion_byte_str(P, potion_ast_names[t->part]);
+  int lineno = t->loc.lineno;
   n = potion_ast_sizes[t->part];
   for (i = 0; i < n; i++) {
     pn_printf(P, out, " ");
     if (i == 0 && n > 1) pn_printf(P, out, "(");
     else if (i > 0) {
-      if (t->a[i] == PN_NIL) { // omit subsequent nils
+      if (!t->a[i]) { // omit subsequent nils
 	if (!cut) cut = PN_STR_LEN(out);
       }
       else cut = 0;
@@ -107,8 +108,13 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
       pn_printf(P, out, "\"");
       potion_bytes_obj_string(P, out, (PN)t->a[i]);
       pn_printf(P, out, "\"");
-    } else
+    } else {
       potion_bytes_obj_string(P, out, (PN)t->a[i]);
+    }
+    if ((PN_TYPE(t->a[i]) == PN_TSOURCE) && (t->a[i]->loc.lineno > lineno)) {
+      pn_printf(P, out, "\n");
+      lineno = t->a[i]->loc.lineno;
+    }
     if (i == n - 1 && n > 1) {
       if (cut > 0) {
 	vPN(Bytes) b = (struct PNBytes *)potion_fwd(out);
@@ -124,6 +130,14 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
       pn_printf(P, out, ")");
     }
   }
+  return PN_STR_B(out);
+}
+
+PN potion_source_loc(Potion *P, PN cl, PN self) {
+  PN out = potion_byte_str(P, "");
+  pn_printf(P, out, "%s:%ld",
+            PN_STR_PTR(potion_source_file(P, cl, self)),
+            PN_INT(potion_source_line(P, cl, self)));
   return PN_STR_B(out);
 }
 
