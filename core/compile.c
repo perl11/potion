@@ -671,7 +671,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           if (PN_S(PN_S(t,2), 0) == PN_NIL)
             (t->a[2])->a[0] = PN_SRC(PN_AST(CODE, PN_NIL, t->loc.fileno));
           PN ctor = PN_S(PN_S(t,2), 0);
-          PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MSG, potion_str(P, "self"), t->loc.fileno)), t->loc.fileno));
+          PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MSG, PN_STRN("self", 4), t->loc.fileno)), t->loc.fileno));
           breg++;
           PN_BLOCK(breg, PN_S(t,2), PN_S(t,1));
         }
@@ -1196,7 +1196,7 @@ PN potion_source_dumpbc(Potion *P, PN cl, PN proto, PN options) {
 /// TODO: serializable ascii, c, exe, jvm, .net
 PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
   char *cb = PN_STR_PTR(backend);
-  if (backend == potion_str(P, "bc"))
+  if (backend == PN_STRN("bc", 2))
     return potion_source_dumpbc(P, cl, self, options);
   if (potion_load(P, P->lobby, self, potion_strcat(P, "compile-", cb))) {
     DBG_c("loaded compile-%s\n", cb);
