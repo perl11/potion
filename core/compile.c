@@ -579,6 +579,33 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           PN_BLOCK(breg, (PN)blk, PN_S(t,1));
         }
         PN_ASM2(OP_CLASS, reg, breg);
+#if 1
+      } else if (t->part == AST_MSG && PN_S(t,0) == PN_extern) { // ffi
+        #include <dlfcn.h>
+        u8 breg = reg;
+        PN msg = PN_S(t,1);
+	char *name = PN_STR_PTR(PN_S(PN_TUPLE_AT(msg,0),0));
+	breg++;
+	//defer dlsym to run-time to see load, or require load at BEGIN time?
+	//PN_ASM2(OP_LOADPN, breg, name);
+	PN_F sym = (PN_F)dlsym(NULL, name);
+	if (!sym) {
+	  fprintf(stderr, "** extern %s not found. You may need load a library first\n",
+	          name);
+	  exit(1);
+        }
+	struct PNProto* cl =
+	  (struct PNProto*)potion_source_compile(P,(PN)f,PN_AST(CODE,0),0,0);
+	cl->jit = (PN_F)sym;
+	if (PN_TUPLE_LEN(msg > 1)) {
+	  PN sig = PN_TUPLE_AT(msg, 1);
+	  cl->sig = sig;
+	  //breg++;
+	  //PN_ASM2(OP_LOADPN, breg, sig);
+	}
+	PN_ASM2(OP_PROTO, reg, PN_PUT(f->protos, (PN)cl));
+        //PN_ASM2(OP_EXTERN, reg, breg);
+#endif
       } else if (t->part == AST_MSG && (PN_S(t,0) == PN_while || PN_S(t,0) == PN_loop)) {
         int jmp1 = 0, jmp2 = PN_OP_LEN(f->asmb); breg++;
         struct PNLoop l; l.bjmpc = 0; l.cjmpc = 0;

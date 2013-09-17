@@ -141,11 +141,16 @@ expr = ( not a:expr           { a = PN_AST(NOT, a) }
          (c:call { a = PN_PUSH(a, c) })*
        { $$ = PN_AST(EXPR, a) }
 
-atom = e:value | e:closure | e:list | e:call
+atom = e:value | e:closure | e:list | e:extern | e:call
 
 call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:closure)? |
        (v:value | v:list) { n = PN_AST(MSG, PN_NIL); b = PN_NIL; } b:block?)
          { $$ = n; PN_SRC(n)->a[1] = PN_SRC(v); PN_SRC(n)->a[2] = PN_SRC(b) }
+
+extern = "extern" - n:name list-start { P->source = PN_TUP0() } l:arg-list list-end
+         { $$ = PN_AST2(MSG, PN_extern, PN_PUSH(PN_TUP(n), P->source)) }
+       | "extern" - n:name
+         { $$ = PN_AST2(MSG, PN_extern, PN_TUP(n)) }
 
 name = p:path           { $$ = PN_AST(PATH, p) }
      | quiz ( m:msg     { $$ = PN_AST(QUERY, m) }
@@ -357,7 +362,9 @@ arg = m:arg-modifier n:arg-name assign t:arg-type
     # single types without name (N,o) as for FFIs forbidden, use (dummy=N) instead
     # | assign t:arg-type { SRC_TPL2(PN_STR(""),t) }
     | n:arg-name        { SRC_TPL1(n) }
+    | arg-rest
 optional = '|' -        { SRC_TPL1(PN_NUM('|')) }
+arg-rest = "..." -      { SRC_TPL1(PN_NUM('.')) }
 arg-sep = '.' -         { SRC_TPL1(PN_NUM('.')) } #x,y... ignore rest
 
 %%

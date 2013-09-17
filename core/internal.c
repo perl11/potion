@@ -17,6 +17,10 @@ PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
 PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
 PN pn_filenames;
+PN PN_extern;
+#ifdef P2
+PN PN_use, PN_no;
+#endif
 
 PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
   struct PNData *obj = PN_ALLOC_N(PN_TUSER, struct PNData, PN_INT(len));
@@ -76,6 +80,7 @@ static void potion_init(Potion *P) {
   PN_string = PN_STRN("string", 6);
   PN_lookup = PN_STRN("lookup", 6);
   PN_number = PN_STRN("number", 6);
+  PN_extern = PN_STRN("extern", 6);
   PN_compile = PN_STRN("compile", 7);
   PN_allocate = PN_STRN("allocate", 8);
   PN_continue = PN_STRN("continue", 8);
