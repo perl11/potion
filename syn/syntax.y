@@ -12,6 +12,15 @@
 #include "asm.h"
 #include "ast.h"
 
+#undef PN_AST
+#undef PN_AST2
+#undef PN_AST3
+#undef PN_OP
+#define PN_AST(T, A)        potion_source(P, AST_##T, A, PN_NIL, PN_NIL, G->lineno)
+#define PN_AST2(T, A, B)    potion_source(P, AST_##T, A, B, PN_NIL, G->lineno)
+#define PN_AST3(T, A, B, C) potion_source(P, AST_##T, A, B, C, G->lineno)
+#define PN_OP(T, A, B)      potion_source(P, T, A, B, PN_NIL, G->lineno)
+
 #define YYSTYPE PN
 #define YY_XTYPE Potion *
 #define YY_XVAR P
@@ -187,10 +196,11 @@ utfw = [A-Za-z0-9_$@;`{}]
      | [\305-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
-utf8 = [\t\r\n\40-\176]
+utf8 = [\t\40-\176]
      | [\302-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
+     | end-of-line
 
 comma = ','
 block-start = ':' --
@@ -320,7 +330,7 @@ sep = (end-of-line | comma) (space | comment | end-of-line | comma)*
 comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t'
 end-of-line = ( '\r\n' | '\n' | '\r' )
-    { if (yydebug & EXEC_DEBUG)
+    { ++G->lineno; if (yydebug & EXEC_DEBUG)
         $$ = PN_AST3(DEBUG, $$, PN_NUM(G->lineno), potion_str(P, G->filename)); }
 end-of-file = !.
 
@@ -363,6 +373,7 @@ PN potion_parse(Potion *P, PN code, char *filename) {
 
   yydebug = P->flags;
   G->filename = filename;
+  P->fileno = PN_PUT(pn_filenames, PN_STR(filename));
   if (!YY_NAME(parse)(G)) {
     YY_ERROR(G, "** Syntax error");
     fprintf(stderr, "%s", PN_STR_PTR(code));

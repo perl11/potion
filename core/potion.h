@@ -421,7 +421,16 @@ enum PN_AST {
 };
 struct PNSource {
   PN_OBJECT_HEADER;  	///< PNType vt; PNUniq uniq
-  enum PN_AST part;     ///< AST type, avoid -Wswitch
+  struct {
+#if __WORDSIZE != 64
+    PNType fileno:16;
+    PNType lineno:16;
+#else
+    PNType fileno:32;
+    PNType lineno:32;
+#endif
+  } loc;                ///< bitfield of fileno and lineno
+  enum PN_AST part;     ///< AST type, avoid -Wswitch (aligned access: 4+4+8+4+24)
   struct PNSource * volatile a[3];///< PNTuple of 1-3 kids, \see ast.c
 };
 
@@ -620,6 +629,7 @@ struct Potion_State {
   PN input, source, decl;  ///< parser input, output (AST) and 1st pass declarations
   int yypos;               ///< parser buffer position
   PNAsm * volatile pbuf;   ///< parser buffer
+  PN_SIZE fileno;          ///< currently parsed file
   PN unclosed;             ///< used by parser for named block endings
   PN call, callset;        ///< generic call and callset
   int prec;                ///< decimal precision
@@ -747,6 +757,7 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
   PN_while;
 extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 extern PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
+extern PN pn_filenames;
 
 /// zero values per type
 static inline PN potion_type_default(char type) {
@@ -854,6 +865,8 @@ PN potion_source_dump(Potion *, PN, PN, PN, PN);
 PN potion_source_dumpbc(Potion *, PN, PN, PN);
 PN potion_greg_parse(Potion *, PN);
 PN potion_sig_string(Potion *, PN, PN);
+PN potion_filename_find(Potion *, PN);
+PN potion_filename_push(Potion *, PN);
 
 Potion *potion_gc_boot(void *);
 void potion_lobby_init(Potion *);

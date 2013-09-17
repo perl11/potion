@@ -16,6 +16,15 @@
 #include "asm.h"
 #include "ast.h"
 
+#undef PN_AST
+#undef PN_AST2
+#undef PN_AST3
+#undef PN_OP
+#define PN_AST(T, A)        potion_source(P, AST_##T, A, PN_NIL, PN_NIL, G->lineno)
+#define PN_AST2(T, A, B)    potion_source(P, AST_##T, A, B, PN_NIL, G->lineno)
+#define PN_AST3(T, A, B, C) potion_source(P, AST_##T, A, B, C, G->lineno)
+#define PN_OP(T, A, B)      potion_source(P, T, A, B, PN_NIL, G->lineno)
+
 #define YYSTYPE PN
 #define YY_XTYPE Potion *
 #define YY_XVAR P
@@ -214,7 +223,7 @@ expr = c:method  	        { $$ = PN_AST(EXPR, c) }
     | m:special l:list b:block  { PN_SRC(m)->a[1] = PN_SRC(l); PN_SRC(m)->a[2] = PN_SRC(b);
             $$ = PN_AST(EXPR, PN_TUP(m)) }
     | c:calllist		{ $$ = PN_AST(EXPR, c) }
-    | c:call e:expr 		{ $$ = PN_AST(EXPR, PN_PUSH(PN_S(e,0), PN_S(c,0))); }
+    | c:call e:expr 		{ $$ = PN_AST(EXPR, PN_PUSH(PN_S(e,0), PN_TUPLE_AT(c,0))); }
     | c:call l:listexprs 	{ $$ = PN_SHIFT(PN_S(l,0));
             if (!PN_S(l, 0)) { PN_SRC(c)->a[1] = PN_SRC($$); }
             $$ = PN_PUSH(PN_TUP($$), c); }
@@ -437,8 +446,7 @@ comment	= '#' (!end-of-line utf8)*
 # \240 U+A0 NO-BREAK SPACE
 # \205 U+85 NEL
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
-end-of-line = '\r\n' | '\n' | '\r'
-    { ++G->lineno; $$ = PN_AST2(DEBUG, PN_NUM(G->lineno), PN_NIL) }
+end-of-line = '\r\n' | '\n' | '\r'   { ++G->lineno }
 end-of-file = !'\0'
 # FIXME: starting wordchar (no numbers) + wordchars
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
@@ -465,11 +473,11 @@ utfw = [A-Za-z0-9_]
 #     | [\340-\357] [\200-\277] [\200-\277]
 #     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 
-# TODO had \n\r in it, skipping lineno counter
 utf8 = [\t\40-\176]
      | [\302-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
+     | end-of-line
 
 # for potion_sig, used in the runtime initialization
 sig = args+ end-of-file
@@ -529,6 +537,7 @@ PN p2_parse(Potion *P, PN code, char *filename) {
   yydebug = P->flags;
 
   G->filename = filename;
+  P->fileno = PN_PUT(pn_filenames, PN_STR(filename));
   if (!YY_NAME(parse)(G)) {
     YY_ERROR(G, "** Syntax error");
     fprintf(stderr, "%s", PN_STR_PTR(code));

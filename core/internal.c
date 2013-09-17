@@ -18,6 +18,7 @@ PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
 #ifdef P2
 PN PN_use, PN_no;
 #endif
+PN pn_filenames;
 
 PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
   struct PNData *obj = PN_ALLOC_N(PN_TUSER, struct PNData, PN_INT(len));
@@ -90,7 +91,6 @@ static void potion_init(Potion *P) {
 
   potion_def_method(P, 0, vtable, PN_lookup, PN_FUNC(potion_lookup, 0));
   potion_def_method(P, 0, vtable, PN_def, PN_FUNC(potion_def_method, "name=S,block=&"));
-
   potion_send(vtable, PN_def, PN_allocate, PN_FUNC(potion_allocate, 0));
   potion_send(vtable, PN_def, PN_delegated, PN_FUNC(potion_delegated, 0));
 
@@ -111,6 +111,8 @@ static void potion_init(Potion *P) {
   potion_file_init(P);
   potion_loader_init(P);
 
+  pn_filenames = PN_TUP0();
+
   GC_PROTECT(P);
 }
 
@@ -121,6 +123,7 @@ Potion *potion_create(void *sp) {
   PN_FLEX_NEW(P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
   PN_FLEX_SIZE(P->vts) = PN_TYPE_ID(PN_TUSER) + 1;
   P->prec = PN_PREC;
+  P->fileno = -1;
   P->flags = (Potion_Flags)EXEC_VM;
   potion_init(P);
   return P;
