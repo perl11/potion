@@ -37,7 +37,8 @@
      architecture. Heavily based on Lua's VM.
 
    * A lightweight generational GC, based on
-     Basile Starynkevitch's work on Qish.
+     Basile Starynkevitch's work on Qish, with
+     ~4ms per GC on average with < 100MB heaps.
      <http://starynkevitch.net/Basile/qishintro.html>
 
    * Bootstrapped "id" object model, based on
