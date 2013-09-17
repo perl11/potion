@@ -71,7 +71,24 @@ PN potion_source_name(Potion *P, PN cl, PN self) {
 }
 
 ///\memberof PNSource
-/// "string" method
+/// "file" method
+///\returns filename of associated AST
+PN potion_source_file(Potion *P, PN cl, PN self) {
+  vPN(Source) t = (struct PNSource *)potion_fwd(self);
+  return PN_GET(pn_filenames, t->loc.fileno);
+}
+
+///\memberof PNSource
+/// "line" method
+///\returns line number of associated AST
+PN potion_source_line(Potion *P, PN cl, PN self) {
+  vPN(Source) t = (struct PNSource *)potion_fwd(self);
+  return PN_NUM(t->loc.lineno);
+}
+
+///\memberof PNSource
+/// "string" method of the AST
+/// Note: Does not output the AST type, filename nor lineno
 PN potion_source_string(Potion *P, PN cl, PN self) {
   int i, n, cut = 0;
   vPN(Source) t = (struct PNSource *)potion_fwd(self);
@@ -115,4 +132,6 @@ void potion_source_init(Potion *P) {
   potion_method(src_vt, "name", potion_source_name, 0);
   potion_method(src_vt, "string", potion_source_string, 0);
   potion_method(src_vt, "size", potion_source_size, 0);
+  potion_method(src_vt, "file", potion_source_file, 0);
+  potion_method(src_vt, "line", potion_source_line, 0);
 }
