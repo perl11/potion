@@ -78,11 +78,15 @@
    * Strings are immutable (like Lua) and byte
      arrays are used for I/O buffers.
 
-   * Limited floating point support yet.
+   * Limited platform support for coroutines.
+     This affects exceptions. I'm and feeling
+     rather uninspired on the matter. Let's hear
+     from you.
 
-   * Limited error handling. I'm wary of just tossing
-     in exceptions and feeling rather uninspired
-     on the matter. Let's hear from you.
+   * The parser is not GC safe. This affects eval.
+     Do not waste too much memory inside eval.
+
+   * No OS threads yet.
 
 
   ~ a whiff of potion ~
