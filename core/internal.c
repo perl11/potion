@@ -199,7 +199,7 @@ PNType potion_kind_of(PN obj) {
 /// valid signature modifiers: '|' optional, '.' end, ':' default
 char potion_type_char(PNType type) {
   switch (type) {
-  case PN_TNIL:  	return 'n'; //0 nil
+  case PN_TNIL:  	return 'n'; //0 nil?  (unused)
   case PN_TNUMBER:	return 'N'; //1 Number
   case PN_TBOOLEAN:	return 'B'; //2 Boolean (unused)
   case PN_TSTRING:	return 'S'; //3 String

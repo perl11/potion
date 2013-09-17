@@ -582,29 +582,45 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 #if 1
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_extern) { // ffi
         #include <dlfcn.h>
-        u8 breg = reg;
+        //u8 breg = reg;
         PN msg = PN_S(t,1);
 	char *name = PN_STR_PTR(PN_S(PN_TUPLE_AT(msg,0),0));
-	breg++;
 	//defer dlsym to run-time to see load, or require load at BEGIN time?
-	//PN_ASM2(OP_LOADPN, breg, name);
-	PN_F sym = (PN_F)dlsym(NULL, name);
+	//PN_ASM2(OP_LOADPN, breg++, name);
+	PN_F sym = (PN_F)dlsym(RTLD_DEFAULT, name);
 	if (!sym) {
-	  fprintf(stderr, "** extern %s not found. You may need load a library first\n",
+	  fprintf(stderr, "* extern %s not found. You may need load a library first\n",
 	          name);
-	  exit(1);
+          PN_ASM2(OP_LOADPN, reg, PN_NIL);
+        } else {
+          // TODO: create a ffi wrapper to translate the args and return value
+          struct PNProto* cl = PN_ALLOC(PN_TPROTO, struct PNProto);
+          cl->source = PN_NIL;
+          cl->stack = PN_NUM(1);
+          cl->protos = PN_TUP0();
+          cl->paths = PN_TUP0();
+          cl->locals = PN_TUP0();
+          cl->upvals = PN_TUP0();
+          cl->values = PN_TUP0();
+          cl->tree = (PN)t;
+          cl->asmb = (PN)potion_asm_new(P);
+          cl->name = PN_S(PN_TUPLE_AT(msg,0),0);
+          cl->localsize = PN_TUPLE_LEN(cl->locals);
+          cl->upvalsize = PN_TUPLE_LEN(cl->upvals);
+          cl->pathsize = PN_TUPLE_LEN(cl->paths);
+          cl->jit = (PN_F)sym;
+          if (PN_TUPLE_LEN(msg) > 1) {
+            PN sig = PN_TUPLE_AT(msg, 1);
+            cl->sig = sig;
+            cl->arity = potion_sig_arity(P, sig);
+            //PN_ASM2(OP_LOADPN, breg++, sig);
+          } else {
+            cl->sig = PN_TUP0();
+            cl->arity = 0;
+          }
+          PN_ASM2(OP_PROTO, reg, PN_PUT(f->protos, (PN)cl));
+          //PN_ASM2(OP_EXTERN, reg, breg);
         }
-	struct PNProto* cl =
-	  (struct PNProto*)potion_source_compile(P,(PN)f,PN_AST(CODE,0),0,0);
-	cl->jit = (PN_F)sym;
-	if (PN_TUPLE_LEN(msg > 1)) {
-	  PN sig = PN_TUPLE_AT(msg, 1);
-	  cl->sig = sig;
-	  //breg++;
-	  //PN_ASM2(OP_LOADPN, breg, sig);
-	}
-	PN_ASM2(OP_PROTO, reg, PN_PUT(f->protos, (PN)cl));
-        //PN_ASM2(OP_EXTERN, reg, breg);
 #endif
       } else if (t->part == AST_MSG && (PN_S(t,0) == PN_while || PN_S(t,0) == PN_loop)) {
         int jmp1 = 0, jmp2 = PN_OP_LEN(f->asmb); breg++;
