@@ -111,9 +111,10 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, char *compile) {
   DBG_Pv(code);
   if (exec == EXEC_VM) {
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-    DBG_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
+    DBG_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld, time=%0.6gms %dx/%dm/%di) --\n", (void *)code,
 	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-	  PN_INT(potion_gc_reserved(P, 0, 0)));
+	  PN_INT(potion_gc_reserved(P, 0, 0)), P->mem->time *1000, P->mem->pass,
+	  P->mem->majors, P->mem->minors);
     DBG_Pvi(code);
   } else if (exec == EXEC_JIT) {
 #ifdef POTION_JIT_TARGET
@@ -121,9 +122,10 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, char *compile) {
     PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = code;
     val = PN_PROTO(code)->jit(P, cl, P->lobby);
-    DBG_v("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
+    DBG_v("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld, time=%0.6gms %dx/%dm/%di) --\n", PN_PROTO(code)->jit,
 	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-	  PN_INT(potion_gc_reserved(P, 0, 0)));
+	  PN_INT(potion_gc_reserved(P, 0, 0)), P->mem->time * 1000, P->mem->pass,
+	  P->mem->majors, P->mem->minors);
     DBG_Pvi(val);
 #else
     fprintf(stderr, "** p2 built without JIT support\n");
