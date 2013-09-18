@@ -706,14 +706,15 @@ reentry:
 	    if (potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
 		&& PN_STR_PTR(str)[0] == ':') {
 	      if (str == PN_STR(":c")) { P->flags -= EXEC_DEBUG; loop=0; }
-	      if (str == PN_STR(":q")) { loop=0; }
+	      if (str == PN_STR(":q")) { return; }
 	      printf("sorry, no debugger commands yet\n");
 	      loop=0;
 	    }
 	    else if (str && str != PN_STR("")) {
-	      P->flags &= ~EXEC_DEBUG;
+	      long oldflags = P->flags;
+	      P->flags = EXEC_VM;
 	      printf("%s\n", AS_STR(potion_eval(P, str)));
-	      P->flags |= EXEC_DEBUG;
+	      P->flags = oldflags;
 	    }
 	    else loop=0;
 	  }
