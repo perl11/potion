@@ -71,6 +71,7 @@ or http://www.lua.org/doc/jucs05.pdf
 #include "asm.h"
 #include "khash.h"
 #include "table.h"
+#include <dlfcn.h>
 
 #if defined(POTION_JIT_TARGET) && defined(JIT_DEBUG)
 #  if defined(HAVE_LIBDISASM)
@@ -366,6 +367,10 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   PN_SIZE pos = 0;
   PN *args = NULL, *upvals, *locals, *reg;
   PN *current = stack;
+
+  PN (*pn_readline)(Potion *, PN, PN, PN);
+  void *handle = dlopen(potion_find_file("readline",8), RTLD_LAZY);
+  pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(handle, "pn_readline");
 
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
   memset((void*)stack, 0, STACK_MAX*sizeof(PN));
@@ -690,9 +695,29 @@ reentry:
         reg[op.a] = potion_vm_class(P, reg[op.b], reg[op.a]);
       break;
       case OP_DEBUG:
-	//check breakpoints vs lineno (a), switch to debugger
-        //lineno: reg[op.a], filename: reg[op.b]
-        reg[op.a] = reg[-1];
+	if (P->flags & EXEC_DEBUG) {
+	  int loop = 1;
+	  // TODO: check for breakpoints
+	  //printf("debug %s:%d (:h for help, :c for continue)\n",
+	  //	 AS_STR(PN_TUPLE_AT(pn_filenames,(int)reg[op.b])), (int)reg[op.a]);
+	  printf("\ndebug line %d (:h for help, :c for continue)\n", (int)reg[op.a]);
+	  while (loop) {
+	    PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
+	    if (potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
+		&& PN_STR_PTR(str)[0] == ':') {
+	      if (str == PN_STR(":c")) { P->flags -= EXEC_DEBUG; loop=0; }
+	      if (str == PN_STR(":q")) { loop=0; }
+	      printf("sorry, no debugger commands yet\n");
+	      loop=0;
+	    }
+	    else if (str && str != PN_STR("")) {
+	      P->flags &= ~EXEC_DEBUG;
+	      printf("%s\n", AS_STR(potion_eval(P, str)));
+	      P->flags |= EXEC_DEBUG;
+	    }
+	    else loop=0;
+	  }
+	}
       break;
     }
 #ifdef DEBUG

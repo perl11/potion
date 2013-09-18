@@ -302,17 +302,17 @@ int main(int argc, char *argv[]) {
     }
 #endif
     if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
-      p2_cmd_version(P);
-      goto END;
-    }
+      p2_cmd_version(P); goto END; }
     if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
       p2_cmd_usage(P); goto END; }
     if (!strcmp(argv[i], "--stats")) { // TODO: afterwards
       p2_cmd_stats(P); goto END; }
     if (!strcmp(argv[i], "--compile")) {
       exec = EXEC_COMPILE; continue; }
-    if (!strcmp(argv[i], "-c")) {
+    if (!strcmp(argv[i], "-c") || !strcmp(argv[i], "--check")) {
       exec = EXEC_CHECK; continue; }
+    if (!strcmp(argv[i], "-d") || !strcmp(argv[i], "--debug")) {
+      exec = EXEC_DEBUG | EXEC_VM; continue; }
     if (!strcmp(argv[i], "-B") || !strcmp(argv[i], "--bytecode")) {
       exec = EXEC_VM; continue; }
     if (!strcmp(argv[i], "-J") || !strcmp(argv[i], "--jit")) {

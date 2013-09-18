@@ -313,7 +313,8 @@ int main(int argc, char *argv[]) {
       potion_cmd_usage(P); goto END; }
     if (!strcmp(argv[i], "-s") || !strcmp(argv[i], "--stats")) {
       potion_cmd_stats(P); goto END; }
-    if (!strcmp(argv[i], "--check")) { exec = EXEC_CHECK; continue; }
+    if (!strcmp(argv[i], "--check")) {
+      exec = EXEC_CHECK; continue; }
     if (!strncmp(argv[i], "--compile=", 10)) {
       exec = EXEC_COMPILE; compile = &argv[i][10]; continue; }
     if (!strcmp(argv[i], "--compile") || !strcmp(argv[i], "-c")) {

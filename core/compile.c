@@ -249,6 +249,16 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
 })
 #define PN_ARG_TABLE(args, reg, inc) potion_arg_asmb(P, f, loop, args, &reg, inc)
 #define SRC_TUPLE_AT(src,i)  PN_SRC((PN_TUPLE_AT(PN_S(src,0), i)))
+#define PN_ASM_DEBUG(T) potion_source_debug(P, f, T)
+
+/// insert DEBUG ops for every new line
+void potion_source_debug(Potion *P, struct PNProto * volatile f, struct PNSource * volatile t) {
+  static int lineno = 0;
+  if (P->flags & EXEC_DEBUG && t && t->loc.lineno != lineno) {
+    PN_ASM2(OP_DEBUG, t->loc.lineno, t->loc.fileno);
+    lineno = t->loc.lineno;
+  }
+}
 
 #define MAX_JUMPS 1024
 /// jump table for loops, for the 2 args b and c
@@ -279,6 +289,7 @@ void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop
               if (lhs->part == AST_EXPR && PN_TUPLE_LEN(PN_S(lhs,0)) == 1)
               {
                 lhs = SRC_TUPLE_AT(lhs, 0);
+		PN_ASM_DEBUG(lhs);
                 if (lhs->part == AST_MSG || lhs->part == AST_VALUE) {
                   PN_OP op; op.a = PN_S(lhs,0); //12 bit!
                   if (!PN_IS_PTR(PN_S(lhs,0)) && PN_S(lhs,0) == op.a) {
@@ -309,6 +320,7 @@ void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop
     }
   } else {
     if (inc) (*reg)++;
+    PN_ASM_DEBUG(PN_SRC(args));
     PN_ASM2(OP_LOADPN, *reg, args);
   }
 }
@@ -317,16 +329,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
                         struct PNSource * volatile t, u8 reg) {
   //PN fname = 0;
   PN_REG(f, reg);
-  if (P->flags & EXEC_DEBUG) {
-    // debug eol ast's are not pushed nicely at statement/expression borders
-    // but can be embedded anywhere. so unpack ori from (debug ori line file) at first.
-    if (t->a[0]->part == AST_DEBUG) {
-      struct PNSource * volatile v = t->a[0];
-      DBG_c("debug %ld %s\n", PN_INT(PN_S(v,1)), PN_STR_PTR(PN_S(v,2)));
-      PN_ASM2(OP_DEBUG, PN_S(v,1), PN_S(v,2));
-      return potion_source_asmb(P, f, loop, 0, v->a[0], reg);
-    }
-  }
+  PN_ASM_DEBUG(t);
   switch (t->part) {
     case AST_CODE:
     case AST_BLOCK:
@@ -389,6 +392,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           potion_source_asmb(P, f, loop, i, SRC_TUPLE_AT(lhs, i), reg);
         };
         lhs = SRC_TUPLE_AT(lhs, c);
+	PN_ASM_DEBUG(lhs);
       }
 
       if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
@@ -833,12 +837,14 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       PN_ASM1(OP_NEWTUPLE, reg);
       if (PN_S(t,0) != PN_NIL) {
         PN_TUPLE_EACH(PN_S(t,0), i, v, {
-            if (PN_PART(v) == AST_ASSIGN) { //potion only: (k=v, ...)
-            vPN(Source) lhs = PN_SRC(PN_S(v,0));
+	  PN_ASM_DEBUG(PN_SRC(v));
+          if (PN_PART(v) == AST_ASSIGN) { //potion only: (k=v, ...)
+	    vPN(Source) lhs = PN_SRC(PN_S(v,0));
             if (lhs->part == AST_EXPR && PN_TUPLE_LEN(PN_S(lhs,0)) == 1)
             {
               lhs = SRC_TUPLE_AT(lhs, 0);
               if (lhs->part == AST_MSG) {
+		PN_ASM_DEBUG(lhs);
                 PN_SIZE num = PN_PUT(f->values, PN_S(lhs,0));
 		DBG_c("values %d %s => %u\n", reg+1, AS_STR(lhs->a[0]), num);
                 PN_ASM2(OP_LOADK, reg + 1, num);
@@ -860,11 +866,6 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         });
       }
     break;
-
-    case AST_DEBUG:
-      if (P->flags & EXEC_DEBUG) {
-        PN_ASM2(OP_DEBUG, PN_S(t,1), PN_S(t,2));
-      }
   }
 }
 

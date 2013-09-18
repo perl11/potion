@@ -329,9 +329,7 @@ unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = PN_STRN(yytext, yyleng); }
 sep = (end-of-line | comma) (space | comment | end-of-line | comma)*
 comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t'
-end-of-line = ( '\r\n' | '\n' | '\r' )
-    { ++G->lineno; if (yydebug & EXEC_DEBUG)
-        $$ = PN_AST3(DEBUG, $$, PN_NUM(G->lineno), potion_str(P, G->filename)); }
+end-of-line = ( '\r\n' | '\n' | '\r' )  { ++G->lineno }
 end-of-file = !.
 
 sig = args+ end-of-file
