@@ -1,5 +1,4 @@
 /bin
-/lib/potion
 /tools/config.c
 /config.inc
 /core/config.h

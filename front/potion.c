@@ -106,6 +106,7 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
       goto done;
     }
   }
+  else if (!filename) filename = "-e";
 
   PN code = potion_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
@@ -124,6 +125,9 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
   }
   DBG_Pv(code);
   if (exec == EXEC_VM || exec == EXEC_DEBUG) {
+    // initialize default debug interface
+    //load debug/default
+
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
     DBG_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld, time=%0.6gms %dx/%dm/%di) --\n",
 	  (void *)code,
@@ -241,78 +245,6 @@ done:
   return code;
 }
 
-#if 0
-static void potion_cmd_compile(Potion *P, char *filename, char *compile) {
-  // replacement:
-  //potion_cmd_exec(P, PN_NIL, filename, compile, NULL);
-  PN buf;
-  int fd = -1;
-  struct stat stats;
-  exec_mode_t exec = (exec_mode_t)(P->flags & ((1<<EXEC_BITS)-1));
-
-  if (stat(filename, &stats) == -1) {
-    fprintf(stderr, "** %s does not exist.", filename);
-    goto done;
-  }
-  fd = open(filename, O_RDONLY | O_BINARY);
-  if (fd == -1) {
-    fprintf(stderr, "** could not open %s. check permissions.", filename);
-    goto done;
-  }
-
-  buf = potion_bytes(P, stats.st_size);
-  // TODO: mmap instead of read all
-  if (read(fd, PN_STR_PTR(buf), stats.st_size) == stats.st_size) {
-    PN code;
-    PN_STR_PTR(buf)[stats.st_size] = '\0';
-  }
-
-  code = potion_source_load(P, PN_NIL, buf);
-  if (PN_IS_PROTO(code)) {
-    DBG_v("\n-- loaded --\n");
-  } else {
-    code = potion_parse(P, buf, filename);
-    if (!code || PN_TYPE(code) == PN_TERROR) {
-      potion_p(P, code);
-      goto done;
-    }
-    DBG_v("\n-- parsed --\n");
-    DBG_Pv(code);
-    code = potion_send(code, PN_compile, potion_str(P, filename),
-		       compile ? potion_str(P, compile): PN_NIL);
-    DBG_v("\n-- compiled --\n");
-  }
-  DBG_Pv(code);
-  if (exec == EXEC_VM || exec == EXEC_DEBUG) {
-    code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-    DBG_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld, time=%0.6gms %dx/%dm/%di) --\n", (void *)code,
-	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-	  PN_INT(potion_gc_reserved(P, 0, 0)), P->mem->time *1000, P->mem->pass,
-	  P->mem->majors, P->mem->minors);
-    DBG_Pvi(code);
-  } else if (exec == EXEC_JIT) {
-#ifdef POTION_JIT_TARGET
-    PN val;
-    PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
-    PN_CLOSURE(cl)->data[0] = code;
-    val = PN_PROTO(code)->jit(P, cl, P->lobby);
-    if (exec >= MAX_EXEC)
-      potion_fatal("fatal: stack corruption (exec > MAX_EXEC)\n");
-    DBG_v("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld, time=%0.6gms %dx/%dm/%di) --\n", PN_PROTO(code)->jit,
-	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
-	  PN_INT(potion_gc_reserved(P, 0, 0)), P->mem->time * 1000, P->mem->pass,
-	  P->mem->majors, P->mem->minors);
-    DBG_Pvi(val);
-#else
-    fprintf(stderr, "** potion built without JIT support\n");
-#endif
-  }
-  else if (exec == EXEC_CHECK) {
-    DBG_v("\n-- check --\n");
-  }
-}
-#endif
-
 char * addmodule(Potion *P, char *result, char *prefix, char *name) {
   char *args = strchr(name, '=');
   PN out = potion_bytes(P, 0);
@@ -322,8 +254,10 @@ char * addmodule(Potion *P, char *result, char *prefix, char *name) {
   } else {
     pn_printf(P, out, "load \"%s\"\n", name);
   }
-  if (args)
+  if (args) // TODO split comma-delim args into list
     pn_printf(P, out, "%s(%s)\n", name, args);
+  else
+    pn_printf(P, out, "%s()\n", name);
   return PN_STR_PTR(out);
 }
 
@@ -374,12 +308,17 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-X") || !strcmp(argv[i], "--x86")) {
       exec = EXEC_JIT; continue; }
     if (!strcmp(argv[i], "--debug") || !strcmp(argv[i], "-d")) {
+      addmodules = addmodule(P, addmodules, NULL, "debug");
       exec = EXEC_DEBUG; continue; }
     if (!strcmp(argv[i], "--debug=")) {
       addmodules = addmodule(P, addmodules, "debug", &argv[i][9]);
       exec = EXEC_DEBUG; continue; }
     if (argv[i][0] == '-' && argv[i][1] == 'd') {
-      addmodules = addmodule(P, addmodules, "debug", &argv[i][2]);
+      if (argv[i][2] == '=')
+	addmodules = addmodule(P, addmodules, NULL,
+			       PN_STR_PTR(PN_STRCAT("debug=", &argv[i][3])));
+      else
+	addmodules = addmodule(P, addmodules, "debug", &argv[i][2]);
       exec = EXEC_DEBUG; continue; }
     if (argv[i][0] == '-' && argv[i][1] == 'M') {
       addmodules = addmodule(P, addmodules, NULL, &argv[i][2]);

@@ -86,12 +86,12 @@ static PN potion_load_dylib(Potion *P, const char *filename) {
 static PN pn_loader_path;
 static const char *pn_loader_extensions[] = {
 #ifndef P2
-  ".pnb"
+    ".pnb"
   , ".pn"
 #else
-  ".plc"
+    ".plc"
   , ".pl"
-  ".pmc"
+  , ".pmc"
   , ".pm"
 #endif
   , POTION_LOADEXT
@@ -115,7 +115,7 @@ static const char *find_extension(char *str) {
   return NULL;
 }
 
-char *potion_find_file(char *str, PN_SIZE str_len) {
+char *potion_find_file(Potion *P, char *str, PN_SIZE str_len) {
   char *r = NULL;
   struct stat st;
   if (!str_len) str_len = strlen(str);
@@ -163,7 +163,8 @@ char *potion_find_file(char *str, PN_SIZE str_len) {
 PN potion_load(Potion *P, PN cl, PN self, PN file) {
   if (!file && PN_IS_STR(self))
     file = self;
-  char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
+  char *filename = potion_find_file(P, PN_STR_PTR(file), PN_STR_LEN(file));
+  char *file_ext;
   PN result = PN_NIL;
   if (filename == NULL) {
     fprintf(stderr, "** can't find %s\n", PN_STR_PTR(file));
@@ -192,7 +193,7 @@ PN potion_load(Potion *P, PN cl, PN self, PN file) {
 PN p2_load(Potion *P, PN cl, PN self, PN file) {
   if (!file && PN_IS_STR(self))
     file = self;
-  char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
+  char *filename = potion_find_file(P, PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
   PN result = PN_NIL;
   if (filename == NULL) {
     fprintf(stderr, "** can't find %s\n", PN_STR_PTR(file));

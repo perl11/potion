@@ -315,8 +315,10 @@ static inline long potion_obj_find_ivar(Potion *P, PN self, PN ivar) {
 
   if (t > PN_TUSER) {
     PN ivars = ((struct PNVtable *)PN_VTABLE(t))->ivars;
-    if (ivars != PN_NIL)
-      return potion_tuple_bsearch(P, 0, ivars, ivar);
+    if (ivars != PN_NIL) {
+      PN found = potion_tuple_bsearch(P, 0, ivars, ivar);
+      return found == PN_FALSE ? -1 : found;
+    }
   }
   return -1;
 }

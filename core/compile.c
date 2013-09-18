@@ -34,7 +34,7 @@ const struct {
   {"gt", 2}, {"gte", 2}, {"bitn", 2}, {"bitl", 2}, {"bitr", 2}, {"def", 2},
   {"bind", 2}, {"msg", 2}, {"jump", 1}, {"test", 2}, {"testjmp", 2},
   {"notjmp", 2}, {"named", 2}, {"call", 2}, {"callset", 2}, {"tailcall", 2},
-  {"return", 1}, {"proto", 2}, {"class", 2}, {"debug", 3}
+  {"return", 1}, {"proto", 2}, {"class", 2}, {"debug", 1}
 };
 
 ///\memberof PNProto
@@ -249,15 +249,18 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
 })
 #define PN_ARG_TABLE(args, reg, inc) potion_arg_asmb(P, f, loop, args, &reg, inc)
 #define SRC_TUPLE_AT(src,i)  PN_SRC((PN_TUPLE_AT(PN_S(src,0), i)))
-#define PN_ASM_DEBUG(T) potion_source_debug(P, f, T)
+#define PN_ASM_DEBUG(REG, T) REG = potion_source_debug(P, f, T, REG)
 
 /// insert DEBUG ops for every new line
-void potion_source_debug(Potion *P, struct PNProto * volatile f, struct PNSource * volatile t) {
+u8 potion_source_debug(Potion *P, struct PNProto * volatile f, struct PNSource * volatile t, u8 reg) {
   static int lineno = 0;
-  if (P->flags & EXEC_DEBUG && t && t->loc.lineno != lineno) {
-    PN_ASM2(OP_DEBUG, t->loc.lineno, t->loc.fileno);
+  if ((P->flags & EXEC_DEBUG) && t && t->loc.lineno != lineno && (int)t->loc.lineno >= 0) {
+    PN_SIZE num = PN_PUT(f->debugs, (PN)t);
+    PN_ASM1(OP_DEBUG, num);
     lineno = t->loc.lineno;
+    DBG_c("debug %s :%d\n", PN_STR_PTR(potion_send(t, PN_name)), lineno);
   }
+  return reg;
 }
 
 #define MAX_JUMPS 1024
@@ -289,7 +292,7 @@ void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop
               if (lhs->part == AST_EXPR && PN_TUPLE_LEN(PN_S(lhs,0)) == 1)
               {
                 lhs = SRC_TUPLE_AT(lhs, 0);
-		PN_ASM_DEBUG(lhs);
+		PN_ASM_DEBUG(sreg, lhs);
                 if (lhs->part == AST_MSG || lhs->part == AST_VALUE) {
                   PN_OP op; op.a = PN_S(lhs,0); //12 bit!
                   if (!PN_IS_PTR(PN_S(lhs,0)) && PN_S(lhs,0) == op.a) {
@@ -320,7 +323,7 @@ void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop
     }
   } else {
     if (inc) (*reg)++;
-    PN_ASM_DEBUG(PN_SRC(args));
+    PN_ASM_DEBUG(*reg, PN_SRC(args));
     PN_ASM2(OP_LOADPN, *reg, args);
   }
 }
@@ -329,7 +332,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
                         struct PNSource * volatile t, u8 reg) {
   //PN fname = 0;
   PN_REG(f, reg);
-  PN_ASM_DEBUG(t);
+  PN_ASM_DEBUG(reg, t);
   switch (t->part) {
     case AST_CODE:
     case AST_BLOCK:
@@ -392,7 +395,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           potion_source_asmb(P, f, loop, i, SRC_TUPLE_AT(lhs, i), reg);
         };
         lhs = SRC_TUPLE_AT(lhs, c);
-	PN_ASM_DEBUG(lhs);
+	PN_ASM_DEBUG(reg, lhs);
       }
 
       if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
@@ -671,13 +674,15 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         if (count == 0)
           PN_ASM1(OP_SELF, reg);
         if (PN_S(t,2) != PN_NIL) {
+	  vPN(Source) blk = PN_S_(t,2);
           // TODO: a hack to make sure constructors always return self
-          if (PN_S(PN_S(t,2), 0) == PN_NIL)
-            (t->a[2])->a[0] = PN_SRC(PN_AST(CODE, PN_NIL, t->loc.fileno));
-          PN ctor = PN_S(PN_S(t,2), 0);
-          PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MSG, PN_STRN("self", 4), t->loc.fileno)), t->loc.fileno));
+          if (PN_S(blk, 0) == PN_NIL)
+            blk->a[0] = PN_SRC(PN_AST(CODE, PN_NIL, blk->loc.lineno));
+          PN ctor = PN_S(blk, 0);
+          PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MSG,
+	    PN_STRN("self", 4), blk->loc.lineno)), blk->loc.lineno));
           breg++;
-          PN_BLOCK(breg, PN_S(t,2), PN_S(t,1));
+          PN_BLOCK(breg, (PN)blk, PN_S(t,1));
         }
         PN_ASM2(OP_CLASS, reg, breg);
       } else if (t->part == AST_MSG && (PN_S(t,0) == PN_while || PN_S(t,0) == PN_loop)) {
@@ -685,11 +690,12 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         struct PNLoop l; l.bjmpc = 0; l.cjmpc = 0;
         int i;
         if (PN_S(t,0) == PN_while) {
-          // TODO: error if args to `loop`?
           PN_ARG_TABLE(PN_S(t,1), breg, 0);
           jmp1 = PN_OP_LEN(f->asmb);
           PN_ASM2(OP_NOTJMP, breg, 0);
-        }
+        } else if (PN_S(t,1)) {
+	  fprintf(stderr, "* loop takes no args, just a block");
+	}
         potion_source_asmb(P, f, &l, 0, t->a[2], reg);
         PN_ASM1(OP_JMP, (jmp2 - PN_OP_LEN(f->asmb)) - 1);
         if (PN_S(t,0) == PN_while) {
@@ -837,14 +843,14 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       PN_ASM1(OP_NEWTUPLE, reg);
       if (PN_S(t,0) != PN_NIL) {
         PN_TUPLE_EACH(PN_S(t,0), i, v, {
-	  PN_ASM_DEBUG(PN_SRC(v));
+	  PN_ASM_DEBUG(reg, PN_SRC(v));
           if (PN_PART(v) == AST_ASSIGN) { //potion only: (k=v, ...)
 	    vPN(Source) lhs = PN_SRC(PN_S(v,0));
             if (lhs->part == AST_EXPR && PN_TUPLE_LEN(PN_S(lhs,0)) == 1)
             {
               lhs = SRC_TUPLE_AT(lhs, 0);
               if (lhs->part == AST_MSG) {
-		PN_ASM_DEBUG(lhs);
+		PN_ASM_DEBUG(reg, lhs);
                 PN_SIZE num = PN_PUT(f->values, PN_S(lhs,0));
 		DBG_c("values %d %s => %u\n", reg+1, AS_STR(lhs->a[0]), num);
                 PN_ASM2(OP_LOADK, reg + 1, num);
@@ -1027,6 +1033,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   f->locals = PN_TUP0();
   f->upvals = PN_TUP0();
   f->values = PN_TUP0();
+  f->debugs = PN_TUP0();
   f->tree = self;
   DBG_c("-- compile --\n");
   f->sig = (sig == PN_NIL ? PN_TUP0() : potion_sig_compile(P, f, sig));
@@ -1087,6 +1094,7 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   f->locals = READ_VALUES(pn, *ptr);
   f->upvals = READ_VALUES(pn, *ptr);
   f->protos = READ_PROTOS(pn, *ptr);
+  f->debugs = PN_TUP0();
 
   len = READ_PN(pn, *ptr);
   PN_FLEX_NEW(asmb, PN_TBYTES, PNAsm, len);
@@ -1199,12 +1207,12 @@ PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
   char *cb = PN_STR_PTR(backend);
   if (backend == PN_STRN("bc", 2))
     return potion_source_dumpbc(P, cl, self, options);
-  if (potion_load(P, P->lobby, self, potion_strcat(P, "compile-", cb))) {
-    DBG_c("loaded compile-%s\n", cb);
+  if (potion_load(P, P->lobby, self, potion_strcat(P, "compile/", cb))) {
+    DBG_c("loaded compile/%s\n", cb);
     DBG_c("Source dump%s(%s)\n", cb, PN_IS_STR(options) ? PN_STR_PTR(options) : "");
     return potion_send(self, potion_strcat(P, "dump", cb), options);
   } else {
-    fprintf(stderr, "** failed loading the compile-%s module\n", cb);
+    fprintf(stderr, "** failed loading the compile/%s module\n", cb);
     return PN_NIL;
   }
 }

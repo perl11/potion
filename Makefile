@@ -646,7 +646,7 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f $(foreach ext,o o2 opic opic2 i gcda gcno,$(foreach dir,core syn front lib test/api lib/*,${dir}/*.${ext}))
-	@rm -f bin/* lib/potion/* lib/*.a lib/*${DLL} lib/*${LOADEXT}
+	@rm -f bin/* lib/*.a lib/*${DLL} lib/*${LOADEXT} lib/potion/*${DLL}lib/potion/*${LOADEXT}
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f tools/*.o core/config.h core/version.h
 	@rm -f tools/*~ doc/*~ example/*~ core/*~ config.inc~ tools/config.c

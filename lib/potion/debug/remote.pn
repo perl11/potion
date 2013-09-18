@@ -1,0 +1,23 @@
+# via remote tcp socket to ZeroBrain Studio
+# TODO: comma delim args or nil
+debug = class (args):
+  /mode = 0
+  /break = ()
+
+  load "aio"
+  /sock = Aio_tcp
+  /sock bind("127.0.0.1", 8172)
+.
+
+debug connect_cb = (req, st): .
+debug read_cb = (req, st): .
+
+# mode 0 for next/step
+# 1 for continue/break
+# 2 for exit: exit debugger
+debug loop = (src, proto):
+  # listen and answer to remote commands
+  /sock listen(1, self connect_cb)
+  /sock run
+  yield
+.

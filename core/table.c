@@ -470,7 +470,7 @@ PN potion_tuple_nreverse(Potion *P, PN cl, PN self) {
 ///\memberof PNTuple
 /// search for value x in an ordered PNTuple, ordered by PN_UNIQ.
 ///\param x PN (PNUniq in fact)
-///\return found index or -1
+///\return found index or false
 PN potion_tuple_bsearch(Potion *P, PN cl, PN self, PN x) {
   struct PNTuple *t = PN_GET_TUPLE(self);
   DBG_CHECK_TYPE(t,PN_TTUPLE);

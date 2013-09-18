@@ -386,7 +386,7 @@ int main(int argc, char *argv[]) {
     #include <dlfcn.h>
     {
       PN (*potion_parser)(Potion *, PN, char*);
-      void *handle = dlopen(potion_find_file("libsyntax",9), RTLD_LAZY);
+      void *handle = dlopen(potion_find_file(P, "libsyntax",9), RTLD_LAZY);
       potion_parser = (PN (*)(Potion *, PN, char*))dlsym(handle, "potion_parse");
       PN code = potion_parser(P, potion_byte_str(P,
       "load 'readline'\n" \

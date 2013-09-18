@@ -72,6 +72,7 @@ or http://www.lua.org/doc/jucs05.pdf
 #include "khash.h"
 #include "table.h"
 #include <dlfcn.h>
+#include "ast.h"
 
 #if defined(POTION_JIT_TARGET) && defined(JIT_DEBUG)
 #  if defined(HAVE_LIBDISASM)
@@ -368,9 +369,12 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   PN *args = NULL, *upvals, *locals, *reg;
   PN *current = stack;
 
+#undef DEBUG_IN_C
+#ifdef DEBUG_IN_C
   PN (*pn_readline)(Potion *, PN, PN, PN);
-  void *handle = dlopen(potion_find_file("readline",8), RTLD_LAZY);
+  void *handle = dlopen(potion_find_file(P,"readline",0), RTLD_LAZY);
   pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(handle, "pn_readline");
+#endif
 
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
   memset((void*)stack, 0, STACK_MAX*sizeof(PN));
@@ -696,11 +700,28 @@ reentry:
       break;
       case OP_DEBUG:
 	if (P->flags & EXEC_DEBUG) {
+	  PN save = reg[op.a];
+#ifndef DEBUG_IN_C
+	  // get AST from debug op
+	  // run the "debug (src) loop" method
+	  // - expr (msg ("debug"), msg ("loop" list (expr (src), ...))
+	  DBG_vt("\nEntering debug loop\n");
+	  PN code = PN_AST_(CODE,
+	    PN_TUP(PN_AST_(EXPR, PN_PUSH(PN_TUP(PN_AST_(MSG, PN_STR("debug"))),
+	    PN_AST2_(MSG, PN_STR("loop"),
+	      PN_AST_(LIST, PN_PUSH(PN_TUP(PN_AST_(MSG, (PN)reg[op.a])),
+	      PN_AST_(MSG, (PN)f))))))));
+	  code = potion_send(code, PN_compile, (PN)f, PN_NIL);
+	  code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
+	  if (code == PN_NUM(2))
+	    P->flags &= ~EXEC_DEBUG;
+#else
 	  int loop = 1;
 	  // TODO: check for breakpoints
 	  //printf("debug %s:%d (:h for help, :c for continue)\n",
 	  //	 AS_STR(PN_TUPLE_AT(pn_filenames,(int)reg[op.b])), (int)reg[op.a]);
-	  printf("\ndebug line %d (:h for help, :c for continue)\n", (int)reg[op.a]);
+	  vPN(Source) t = (vPN(Source)) reg[op.b];
+	  printf("\ndebug line %d (:h for help, :c for continue)\n", t->loc.lineno);
 	  while (loop) {
 	    PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
 	    if (potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
@@ -718,6 +739,8 @@ reentry:
 	    }
 	    else loop=0;
 	  }
+#endif
+	  reg[op.a] = save;
 	}
       break;
     }
