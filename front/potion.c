@@ -66,8 +66,9 @@ static void potion_cmd_version(Potion *P) {
 #define DBG_Pv(c) \
     if (P->flags & DEBUG_VERBOSE) \
       potion_p(P, c)
+//v OR i!
 #define DBG_Pvi(c) \
-    if (P->flags & DEBUG_INSPECT && P->flags & DEBUG_VERBOSE) \
+    if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE)) \
       potion_p(P, c)
 
 static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char *addcode) {
