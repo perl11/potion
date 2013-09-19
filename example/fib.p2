@@ -7,5 +7,5 @@ if ($n < 1) { $n = 28 }
 print "fib(";
 print $n;
 print ")= ";
-print fib($n);
+say fib($n);
 ""
