@@ -762,7 +762,7 @@ reentry:
 			 "expr    eval expr");
 		}
 	        else {
-                  printf("sorry, no debugger commands yet\n"); break;
+                  printf("sorry, no debugger commands yet\n");
                 }
 	      }
 	      else if (str && str != PN_STR("")) {
