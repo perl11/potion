@@ -4,7 +4,7 @@
 load "debug"
 
 # TODO: parse comma delim args
-rdebug = debug class (args):
+remote.debug = debug class (args):
   /init = (): load "aio".
 
   /init()
@@ -18,7 +18,7 @@ rdebug = debug class (args):
   /sock run
 .
 
-rdebug connect_cb = (req, st): .
-rdebug read_cb = (req, st): .
+remote.debug connect_cb = (req, st): .
+remote.debug read_cb = (req, st): .
 
-debug = rdebug
+debug = remote.debug

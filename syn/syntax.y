@@ -174,7 +174,9 @@ lick  = lick-start i:lick-items lick-end   { $$ = PN_AST(LIST, i) }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s) }
 
 path = '/' < utfw+ > -    { $$ = PN_STRN(yytext, yyleng); }
-msg  = < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
+msg  =
+       < utfw ( utfw | [.:] )+ utfw+ '?'? > - { $$ = PN_STRN(yytext, yyleng); }
+     | < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
       | lick
