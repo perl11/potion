@@ -4,8 +4,7 @@ sub fib($n) {
 }
 my $n = number $ARGV[0];
 if ($n < 1) { $n = 28 }
-print "fib(";
-print $n;
-print ")= ";
-say fib($n);
+
+@x = ("fib(",$n,")= ",fib($n));
+say join @x
 ""
