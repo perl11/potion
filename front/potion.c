@@ -73,6 +73,7 @@ static void potion_cmd_version(Potion *P) {
 static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char *addcode) {
   exec_mode_t exec = (exec_mode_t)(P->flags & ((1<<EXEC_BITS)-1));
   int fd = -1;
+  PN code = PN_NIL;
 
   if (!buf && filename) {
     struct stat stats;
@@ -108,7 +109,7 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
   }
   else if (!filename) filename = "-e";
 
-  PN code = potion_source_load(P, PN_NIL, buf);
+  code = potion_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
     DBG_v("\n-- loaded --\n");
   } else {
