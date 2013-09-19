@@ -693,8 +693,10 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           PN_ARG_TABLE(PN_S(t,1), breg, 0);
           jmp1 = PN_OP_LEN(f->asmb);
           PN_ASM2(OP_NOTJMP, breg, 0);
-        } else if (PN_S(t,1)) {
-	  fprintf(stderr, "* loop takes no args, just a block");
+        } else if (PN_S(t,1) || !t->a[2]) {
+	  //warn or skip to allow a method named loop?
+	  //fprintf(stderr, "* loop takes no args, just a block");
+	  goto loopfunc;
 	}
         potion_source_asmb(P, f, &l, 0, t->a[2], reg);
         PN_ASM1(OP_JMP, (jmp2 - PN_OP_LEN(f->asmb)) - 1);
@@ -727,7 +729,8 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_self) {
         PN_ASM1(OP_SELF, reg);
       } else {
-        u8 opcode = OP_GETUPVAL;
+      loopfunc: ;
+	u8 opcode = OP_GETUPVAL;
         PN_SIZE num = PN_NONE;
         PN v = PN_S(t,0);
         if (count == 0 && t->part == AST_MSG) {

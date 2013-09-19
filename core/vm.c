@@ -703,9 +703,12 @@ reentry:
 	  PN save = reg[op.a];
 #ifndef DEBUG_IN_C
 	  // get AST from debug op
-	  // run the "debug (src) loop" method
-	  // - expr (msg ("debug"), msg ("loop" list (expr (src), ...))
+	  // run the "debug (src, proto) loop" method
 	  DBG_vt("\nEntering debug loop\n");
+	  PN flags = P->flags;
+	  P->flags = EXEC_VM;
+	  //avoid the GC-unsafe parser for now
+	  // - expr (msg ("debug"), msg ("loop" list (expr (src), ...))
 	  PN code = PN_AST_(CODE,
 	    PN_TUP(PN_AST_(EXPR, PN_PUSH(PN_TUP(PN_AST_(MSG, PN_STR("debug"))),
 	    PN_AST2_(MSG, PN_STR("loop"),
@@ -713,6 +716,7 @@ reentry:
 	      PN_AST_(MSG, (PN)f))))))));
 	  code = potion_send(code, PN_compile, (PN)f, PN_NIL);
 	  code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
+	  P->flags = (long)flags;
 	  if (code == PN_NUM(2))
 	    P->flags &= ~EXEC_DEBUG;
 #else
