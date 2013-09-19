@@ -34,7 +34,7 @@ const struct {
   {"gt", 2}, {"gte", 2}, {"bitn", 2}, {"bitl", 2}, {"bitr", 2}, {"def", 2},
   {"bind", 2}, {"msg", 2}, {"jump", 1}, {"test", 2}, {"testjmp", 2},
   {"notjmp", 2}, {"named", 2}, {"call", 2}, {"callset", 2}, {"tailcall", 2},
-  {"return", 1}, {"proto", 2}, {"class", 2}, {"debug", 1}
+  {"return", 1}, {"proto", 2}, {"class", 2}, {"debug", 2}
 };
 
 ///\memberof PNProto
@@ -256,7 +256,7 @@ u8 potion_source_debug(Potion *P, struct PNProto * volatile f, struct PNSource *
   static int lineno = 0;
   if ((P->flags & EXEC_DEBUG) && t && t->loc.lineno != lineno && (int)t->loc.lineno >= 0) {
     PN_SIZE num = PN_PUT(f->debugs, (PN)t);
-    PN_ASM1(OP_DEBUG, num);
+    PN_ASM2(OP_DEBUG, reg, num);
     lineno = t->loc.lineno;
     DBG_c("debug %s :%d\n", PN_STR_PTR(potion_send(t, PN_name)), lineno);
   }

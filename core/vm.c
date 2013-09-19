@@ -314,7 +314,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(RETURN, (P, f, &asmb, pos))	// return R[a], ... ,R[a+b-2]
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))// define function prototype
       CASE_OP(CLASS, (P, f, &asmb, pos, need)) // find class for register value
-      CASE_OP(DEBUG, (P, f, &asmb, pos, need)) // set lineno and filename
+      case OP_DEBUG: break; // set ast
     }
   }
 
@@ -369,11 +369,14 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   PN *args = NULL, *upvals, *locals, *reg;
   PN *current = stack;
 
-#undef DEBUG_IN_C
+#define DEBUG_IN_C
 #ifdef DEBUG_IN_C
   PN (*pn_readline)(Potion *, PN, PN, PN);
-  void *handle = dlopen(potion_find_file(P,"readline",0), RTLD_LAZY);
-  pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(handle, "pn_readline");
+  pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(RTLD_DEFAULT, "pn_readline");
+  if (!pn_readline) {
+    void *handle = dlopen(potion_find_file(P,"readline",0), RTLD_LAZY);
+    pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(handle, "pn_readline");
+  }
 #endif
 
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
@@ -700,51 +703,63 @@ reentry:
       break;
       case OP_DEBUG:
 	if (P->flags & EXEC_DEBUG) {
-	  PN save = reg[op.a];
+	  PN ast;
+	  if (PN_IS_TUPLE(f->debugs) && op.b >= 0 && op.b < PN_TUPLE_LEN(f->debugs))
+	    ast = PN_TUPLE_AT(f->debugs, op.b);
+          else
+	    ast = PN_NIL;
 #ifndef DEBUG_IN_C
 	  // get AST from debug op
 	  // run the "debug (src, proto) loop" method
 	  DBG_vt("\nEntering debug loop\n");
-	  PN flags = P->flags;
-	  P->flags = EXEC_VM;
-	  //avoid the GC-unsafe parser for now
+	  PN flags = (PN)P->flags; P->flags = (Potion_Flags)EXEC_VM; //turn off tracing,debugging,...
+#if 0
+	  PN debug = potion_message(P, (PN)f, PN_STR("debug"));
+	  PN loopmeth = potion_message(P, debug, PN_STR("loop"));
+	  PN code = potion_vm_proto(P, (PN)PN_CLOSURE_F(loopmeth), debug, ast, (PN)f);
+#else
+	  // avoid the GC-unsafe parser, and there's no other way yet to inject
+	  // the current AST into the parser. (ast object?)
 	  // - expr (msg ("debug"), msg ("loop" list (expr (src), ...))
 	  PN code = PN_AST_(CODE,
 	    PN_TUP(PN_AST_(EXPR, PN_PUSH(PN_TUP(PN_AST_(MSG, PN_STR("debug"))),
 	    PN_AST2_(MSG, PN_STR("loop"),
-	      PN_AST_(LIST, PN_PUSH(PN_TUP(PN_AST_(MSG, (PN)reg[op.a])),
+	      PN_AST_(LIST, PN_PUSH(PN_TUP(PN_AST_(MSG, ast)),
 	      PN_AST_(MSG, (PN)f))))))));
 	  code = potion_send(code, PN_compile, (PN)f, PN_NIL);
-	  code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-	  P->flags = (long)flags;
-	  if (code == PN_NUM(2))
+	  code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL); // upc?
+#endif
+	  P->flags = (Potion_Flags)flags;
+	  if (code == PN_NUM(2)) // :q
 	    P->flags &= ~EXEC_DEBUG;
 #else
 	  int loop = 1;
 	  // TODO: check for breakpoints
 	  //printf("debug %s:%d (:h for help, :c for continue)\n",
 	  //	 AS_STR(PN_TUPLE_AT(pn_filenames,(int)reg[op.b])), (int)reg[op.a]);
-	  vPN(Source) t = (vPN(Source)) reg[op.b];
-	  printf("\ndebug line %d (:h for help, :c for continue)\n", t->loc.lineno);
-	  while (loop) {
-	    PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
-	    if (potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
-		&& PN_STR_PTR(str)[0] == ':') {
-	      if (str == PN_STR(":c")) { P->flags -= EXEC_DEBUG; loop=0; }
-	      if (str == PN_STR(":q")) { return; }
-	      printf("sorry, no debugger commands yet\n");
-	      loop=0;
+	  vPN(Source) t = (struct PNSource*)ast;
+	  if (t) {
+	    printf("\ndebug line %d (:h for help, :c for continue)\n", t->loc.lineno);
+	    while (loop) {
+	      PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
+	      if (potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
+	          && PN_STR_PTR(str)[0] == ':') {
+	        if (str == PN_STR(":c"))      { break; }
+	        else if (str == PN_STR(":q")) { P->flags -= EXEC_DEBUG; break; }
+	        else {
+                  printf("sorry, no debugger commands yet\n");
+                  break;
+                }
+	      }
+	      else if (str && str != PN_STR("")) {
+	        PN flags = (PN)P->flags; P->flags = (Potion_Flags)EXEC_VM;
+	        printf("%s\n", AS_STR(potion_eval(P, str)));
+	        P->flags = (Potion_Flags)flags;
+	      }
+	      else loop=0;
 	    }
-	    else if (str && str != PN_STR("")) {
-	      long oldflags = P->flags;
-	      P->flags = EXEC_VM;
-	      printf("%s\n", AS_STR(potion_eval(P, str)));
-	      P->flags = oldflags;
-	    }
-	    else loop=0;
 	  }
 #endif
-	  reg[op.a] = save;
 	}
       break;
     }
