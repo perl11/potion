@@ -446,7 +446,7 @@ comment	= '#' (!end-of-line utf8)*
 # \240 U+A0 NO-BREAK SPACE
 # \205 U+85 NEL
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
-end-of-line = '\r\n' | '\n' | '\r'   { ++G->lineno }
+end-of-line = ( '\r\n' | '\n' | '\r' )   { ++G->lineno }
 end-of-file = !'\0'
 # FIXME: starting wordchar (no numbers) + wordchars
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }

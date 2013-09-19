@@ -109,7 +109,7 @@ static PN p2_cmd_exec(Potion *P, PN buf, char *filename, char *compile) {
     DBG_v("\n-- compiled --\n");
   }
   DBG_Pv(code);
-  if (exec == EXEC_VM) {
+  if (exec == EXEC_VM || exec == EXEC_DEBUG) {
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
     DBG_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld, time=%0.6gms %dx/%dm/%di) --\n", (void *)code,
 	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),

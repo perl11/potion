@@ -583,12 +583,12 @@ typedef struct {
 ///
 
 typedef enum {
-  EXEC_VM = 0,  ///< bytecode (switch or cgoto)
-  EXEC_JIT,     ///< JIT if detected at config-time (x86, ppc)
-  EXEC_DEBUG,   ///< -d: instrumented bytecode (line stepping) or just slow runloop?
-  EXEC_CHECK,   ///< -c stop after compilation
-  EXEC_COMPILE, ///< to bytecode (dumpbc)
-  MAX_EXEC      ///< sanity-check (possible stack overwrites by callcc)
+  EXEC_VM = 0,      ///< bytecode (switch or cgoto)
+  EXEC_JIT = 1,     ///< JIT if detected at config-time (x86, ppc)
+  EXEC_DEBUG = 2,   ///< -d: instrumented bytecode (line stepping) or just slow runloop?
+  EXEC_CHECK = 3,   ///< -c stop after compilation
+  EXEC_COMPILE = 4, ///< to bytecode (dumpbc)
+  MAX_EXEC = 5      ///< sanity-check (possible stack overwrites by callcc)
 } exec_mode_t;
 
 // we combine the exclusive enum 0-4 for exec, then the exclusive syntax modes 16-18,

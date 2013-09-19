@@ -56,7 +56,7 @@ or http://www.lua.org/doc/jucs05.pdf
   - RETURN (pos)	 	return R(A), ... ,R(A+B-2)
   - PROTO (&pos, lregs, need, regs) define function prototype
   - CLASS (pos, need)    	find class for register value
-  - DEBUG (pos, need)	        set lineno and filename
+  - DEBUG (pos, need)	        set lineno and ast
 
 (c) 2008 why the lucky stiff, the freelance professor
 (c) 2013 by perl11 org
@@ -314,7 +314,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(RETURN, (P, f, &asmb, pos))	// return R[a], ... ,R[a+b-2]
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))// define function prototype
       CASE_OP(CLASS, (P, f, &asmb, pos, need)) // find class for register value
-      case OP_DEBUG: break; // set ast
+      case OP_DEBUG: break; // skip ast debugging
     }
   }
 
@@ -744,11 +744,25 @@ reentry:
 	      PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
 	      if (potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
 	          && PN_STR_PTR(str)[0] == ':') {
-	        if (str == PN_STR(":c"))      { break; }
-	        else if (str == PN_STR(":q")) { P->flags -= EXEC_DEBUG; break; }
+	        if (str == PN_STR(":c"))         { break; }
+	        else if (str == PN_STR(":q"))    { P->flags -= EXEC_DEBUG; break; }
+	        else if (str == PN_STR(":exit")) { exit(0); }
+	        else if (str == PN_STR(":h"))    {
+		  printf("c readline debugger, no lexical env yet.\n"
+			 ":q      quit debugger and continue\n"
+			 ":exit   quit debugger and exit\n"
+			 ":c      continue\n"
+			 ":b line set breakpoint (nyi)\n"
+			 ":B line unset breakpoint (nyi)\n"
+			 ":n      step to next line (nyi)\n"
+			 ":s      step into function (nyi)\n"
+			 ":l      locals (nyi)\n"
+			 ":u      upvals (nyi)\n"
+			 ":p      paths (i.e. object fields) (nyi)\n"
+			 "expr    eval expr");
+		}
 	        else {
-                  printf("sorry, no debugger commands yet\n");
-                  break;
+                  printf("sorry, no debugger commands yet\n"); break;
                 }
 	      }
 	      else if (str && str != PN_STR("")) {

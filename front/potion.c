@@ -67,7 +67,7 @@ static void potion_cmd_version(Potion *P) {
     if (P->flags & DEBUG_VERBOSE) \
       potion_p(P, c)
 #define DBG_Pvi(c) \
-    if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE)) \
+    if (P->flags & DEBUG_INSPECT && P->flags & DEBUG_VERBOSE) \
       potion_p(P, c)
 
 static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char *addcode) {
@@ -126,9 +126,6 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
   }
   DBG_Pv(code);
   if (exec == EXEC_VM || exec == EXEC_DEBUG) {
-    // initialize default debug interface
-    //load debug/default
-
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
     DBG_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld, time=%0.6gms %dx/%dm/%di) --\n",
 	  (void *)code,
