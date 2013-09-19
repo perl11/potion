@@ -1,0 +1,71 @@
+#TODO: parse comma delim args. avoid readline (whois loading or calling)
+debug = class (args):
+  /state = 0
+  /break = ()
+  /init = (): load "readline".
+  /read = (): readline("> ").
+  /write = (o): o print.
+
+  /init()
+.
+
+# API (from lua)
+debug getinfo = (level, name): .
+debug getlocal = (f, i): .
+debug setlocal = (f, i, name): .
+debug setupvalue = (f, i, name): .
+debug traceback = (f| level): .
+debug sethook = (hook, name): .
+
+# state 0 for next/step
+#      1 for continue until break
+#      2 for exit: exit debugger
+debug loop = (src, proto):
+  if (self/state == 1):
+    if (self/break bsearch(src line)): return 1.
+    .
+  write = self/write
+  ("\ndebug line ", src file,":", src line string,
+   " (:h for help, :q,:c,:n)\n") join write
+  loop:
+    code = self/read()
+    if (code == ":c"):
+      "continue\n" write
+      self/state = 1
+      return 1.
+    if (code == ":q"):
+      "quit\n" write
+      return 2.
+    if (code == ":h"):
+     (":q      quit debugger and continue",
+      ":exit   quit debugger and exit",
+      ":c      continue",
+      ":b line set breakpoint",
+      ":B line unset breakpoint",
+      ":n      step to next line",
+      ":s      step into function",
+      ":l      locals",
+      ":u      upvals",
+      ":p      paths",
+      "expr    eval expr",
+      "src     current ast",
+      "proto   current function\n") join("\n") write
+      continue.
+    if (code slice(0,2) == ":b"):
+      b = code slice(4, code length) number
+      if (self/break bsearch(b)): ("breakpoint ",b string," already defined\n") join write.
+      else: self/break = self/break push (b) sort.
+      continue.
+    if (code slice(0,2) == ":B"):
+      b = code slice(4, code length) number
+      i = self/break bsearch(b)
+      if (i):
+        self/break delete(i)
+        ("breakpoint ", b string, " deleted") join write.
+      continue.
+    if (code != ""):
+      code = code eval
+      code string write.
+    .
+  2
+  .

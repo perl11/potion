@@ -34,6 +34,7 @@
 /lib/*.so
 /lib/*.so.*
 /lib/*.dll
+/lib/*.dylib
 /lib/*.bundle*
 /lib/*/*.[aoi]
 /lib/*/*.opic
@@ -41,6 +42,7 @@
 /lib/*/*.so
 /lib/*/*.so.*
 /lib/*/*.dll
+/lib/*/*.dylib
 /lib/*/*.bundle*
 /history.txt
 /pkg

@@ -1,23 +1,24 @@
-# via remote tcp socket to ZeroBrain Studio
-# TODO: comma delim args or nil
-debug = class (args):
-  /mode = 0
-  /break = ()
+# via tcp socket
+# TODO: sock callbacks
 
-  load "aio"
+load "debug"
+
+# TODO: parse comma delim args
+rdebug = debug class (args):
+  /init = (): load "aio".
+
+  /init()
+  /port = 8172
   /sock = Aio_tcp
-  /sock bind("127.0.0.1", 8172)
-.
+  /read = (): self/sock read.
+  /write = (o): self/sock write(o).
 
-debug connect_cb = (req, st): .
-debug read_cb = (req, st): .
-
-# mode 0 for next/step
-# 1 for continue/break
-# 2 for exit: exit debugger
-debug loop = (src, proto):
-  # listen and answer to remote commands
+  /sock bind("127.0.0.1", self/port)
   /sock listen(1, self connect_cb)
   /sock run
-  yield
 .
+
+rdebug connect_cb = (req, st): .
+rdebug read_cb = (req, st): .
+
+debug = rdebug
