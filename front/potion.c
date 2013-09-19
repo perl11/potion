@@ -254,7 +254,7 @@ char * addmodule(Potion *P, char *result, char *prefix, char *name) {
   } else {
     pn_printf(P, out, "load \"%s\"\n", name);
   }
-  if (args) // TODO split comma-delim args into list
+  if (args)
     pn_printf(P, out, "%s(%s)\n", name, args);
   else
     pn_printf(P, out, "%s()\n", name);

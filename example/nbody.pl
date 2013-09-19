@@ -46,7 +46,7 @@ sub advance {
     my $j = $i + 1;
     while ($j < $nbodies) {
       my ($dx, $dy, $dz) = ($bix - $xs[$j], $biy - $ys[$j], $biz - $zs[$j]);
-      my $distance = sqrt($dx * $dx + $dy * $dy + $dz * $dz);
+      my $distance = sqrt $dx * $dx + $dy * $dy + $dz * $dz;
       my $mag = $dt / ($distance * $distance * $distance);
       my $bim = $bimass * $mag;
       my $bjm = $mass[$j] * $mag;
@@ -57,11 +57,11 @@ sub advance {
       $vys[$j] += $dy * $bim;
       $vzs[$j] += $dz * $bim;
       $j++
-    }  
+    }
     ($vxs[$i],$vys[$i],$vzs[$i]) = ($vx, $vy, $vz);
-    $xs[$i] = $bix + $dt * $bivx;
-    $ys[$i] = $biy + $dt * $bivy;
-    $zs[$i] = $biz + $dt * $bivz;
+    $xs[$i] = $bix + $dt * $vx;
+    $ys[$i] = $biy + $dt * $vy;
+    $zs[$i] = $biz + $dt * $vz;
     $i++
   }
 }
@@ -77,7 +77,7 @@ sub energy {
     my $j = $i + 1;
     while ($j < $nbodies) {
       my ($dx, $dy, $dz) = ($bix - $xs[$j], $biy - $ys[$j], $biz - $zs[$j]);
-      my $distance = sqrt($dx * $dx + $dy * $dy + $dz * $dz);
+      my $distance = sqrt $dx * $dx + $dy * $dy + $dz * $dz;
       $e -= ($bimass * $mass[$j]) / $distance;
       $j++
     }
