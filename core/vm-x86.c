@@ -612,10 +612,12 @@ void potion_x86_test_asm(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MOV_RBP(0x8B, op.a); 				// mov -A(%rbp) %rax
 #ifdef P2
+  X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_STR0); 	// cmp "" %rax
+  ASM(0x74); ASM(X86C(23, 33)); 			// je +20
   X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_ZERO); 	// cmp 0 %rax
-#else
-  X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); 	// cmp FALSE %rax
+  ASM(0x74); ASM(X86C(18, 27)); 			// je +15
 #endif
+  X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); 	// cmp FALSE %rax
   ASM(0x74); ASM(X86C(13, 21)); 			// je +10
   X86_PRE(); ASM(0x85); ASM(0xC0); 			// test %rax %rax
   ASM(0x74); ASM(X86C(9, 16)); 				// je +5
