@@ -87,8 +87,17 @@ stmt = pkgdecl
     | subrout
     | u:use sep?              { $$ = PN_TUP0() }
     | i:ifstmt                { $$ = PN_AST(EXPR, i) }
+    | forlist
+    | a:assigndecl IF e:ifnexpr sep?
+      { $$ = PN_OP(AST_AND, e, a) }
+    | a:assigndecl UNLESS e:ifnexpr sep?
+      { $$ = PN_OP(AST_AND, PN_AST(NOT, e), a) }
     | assigndecl sep?
     | block
+    | a:sets IF e:ifnexpr sep?
+      { $$ = PN_OP(AST_AND, e, a) }
+    | a:sets UNLESS e:ifnexpr sep?
+      { $$ = PN_OP(AST_AND, PN_AST(NOT, e), a) }
     | s:sets
         ( or x:sets           { s = PN_OP(AST_OR, s, x) }
         | and x:sets          { s = PN_OP(AST_AND, s, x) })* sep?
@@ -108,9 +117,12 @@ USE     = "use" space+
 NO      = "no" space+
 SUB     = "sub" space+
 IF      = "if" space+
+UNLESS  = "unless" space+
 ELSIF   = "elsif" space+
 ELSE    = "else" space+
 MY      = "my" space+
+FOR     = "for" space+
+FOREACH = "foreach" space+
 
 p5-siglist = list-start args2* list-end { $$ = PN_AST(LIST, P->source); P->source = PN_NIL }
 #TODO: store name globally
@@ -145,7 +157,11 @@ ifstmt = IF e:ifexpr s:block !"els"   { $$ = PN_TUP(PN_OP(AST_AND, e, s)) }
        | IF e:ifexpr s1:block         { $$ = e = PN_AST3(MSG, PN_if, PN_AST(LIST, PN_TUP(e)), s1) }
          (ELSIF e1:ifexpr f:block     { $$ = e = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_elsif, PN_AST(LIST, PN_TUP(e1)), f)) } )*
          (ELSE s2:block               { $$ = PN_PUSH(PN_TUPIF(e), PN_AST3(MSG, PN_else, PN_NIL, s2)) } )?
-ifexpr = list-start - eqs - list-end
+ifexpr = list-start eqs - list-end
+ifnexpr = ifexpr | eqs
+
+forlist = (FOR | FOREACH) MY? i:global l:list b:block {
+            yyerror(G,"forlist iterator nyi") }
 
 assigndecl =
         MY? l:listvar assign r:list     { $$ = PN_AST2(ASSIGN, l, r) }
