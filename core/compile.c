@@ -677,10 +677,11 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 	  vPN(Source) blk = PN_S_(t,2);
           // TODO: a hack to make sure constructors always return self
           if (PN_S(blk, 0) == PN_NIL)
-            blk->a[0] = PN_SRC(PN_AST(CODE, PN_NIL, blk->loc.lineno));
+            blk->a[0] = PN_SRC(PN_AST(CODE, PN_NIL, blk->loc.lineno, blk->line));
           PN ctor = PN_S(blk, 0);
           PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MSG,
-	    PN_STRN("self", 4), blk->loc.lineno)), blk->loc.lineno));
+	    PN_STRN("self", 4), blk->loc.lineno, blk->line)),
+			        blk->loc.lineno, blk->line));
           breg++;
           PN_BLOCK(breg, (PN)blk, PN_S(t,1));
         }

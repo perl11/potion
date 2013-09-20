@@ -30,13 +30,14 @@ const int potion_ast_sizes[] = {
 ///\param p AST type
 ///\param a,b,c AST operands
 ///\returns a new three-address op AST leaf
-PN potion_source(Potion *P, u8 p, PN a, PN b, PN c, int lineno) {
+PN potion_source(Potion *P, u8 p, PN a, PN b, PN c, int lineno, PN line) {
   int size = potion_ast_sizes[p];
   // TODO: potion_ast_sizes[p] * sizeof(PN) (then fix gc_copy)
   vPN(Source) t = PN_ALLOC_N(PN_TSOURCE, struct PNSource, 0 * sizeof(PN));
   t->part = (enum PN_AST)p;
   t->loc.fileno = P->fileno; // only advanced by load/require
   t->loc.lineno = lineno;
+  t->line = line;
 #if 1
   switch (size) {
   case 3: t->a[2] = PN_SRC(c);

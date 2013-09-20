@@ -20,10 +20,10 @@
 #undef PN_AST2
 #undef PN_AST3
 #undef PN_OP
-#define PN_AST(T, A)        potion_source(P, AST_##T, A, PN_NIL, PN_NIL, G->lineno)
-#define PN_AST2(T, A, B)    potion_source(P, AST_##T, A, B, PN_NIL, G->lineno)
-#define PN_AST3(T, A, B, C) potion_source(P, AST_##T, A, B, C, G->lineno)
-#define PN_OP(T, A, B)      potion_source(P, T, A, B, PN_NIL, G->lineno)
+#define PN_AST(T, A)        potion_source(P, AST_##T, A, PN_NIL, PN_NIL, G->lineno, G->line)
+#define PN_AST2(T, A, B)    potion_source(P, AST_##T, A, B, PN_NIL, G->lineno, G->line)
+#define PN_AST3(T, A, B, C) potion_source(P, AST_##T, A, B, C, G->lineno, G->line)
+#define PN_OP(T, A, B)      potion_source(P, T, A, B, PN_NIL, G->lineno, G->line)
 
 #define YYSTYPE PN
 #define YY_XTYPE Potion *
@@ -446,7 +446,10 @@ comment	= '#' (!end-of-line utf8)*
 # \240 U+A0 NO-BREAK SPACE
 # \205 U+85 NEL
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
-end-of-line = ( '\r\n' | '\n' | '\r' )   { ++G->lineno }
+end-of-line = ( '\r\n' | '\n' | '\r' )
+  { char *s;
+    ++G->lineno;
+    if ((s = yylastline(G, thunk->begin))) { G->line = PN_STR(s); free(s); }}
 end-of-file = !'\0'
 # FIXME: starting wordchar (no numbers) + wordchars
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }

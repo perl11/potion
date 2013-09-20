@@ -589,6 +589,7 @@ typedef struct _GREG {\n\
   int	thunkslen;\n\
   int   thunkpos;\n\
   int	lineno;\n\
+  YYSTYPE line;\n\
   char	*filename;\n\
   FILE  *input;\n\
   YYSTYPE ss;\n\
@@ -620,8 +621,7 @@ YY_LOCAL(int) yymatchDot(GREG *G)\n\
   return 1;\n\
 }\n\
 \n\
-#ifdef YY_DEBUG\n\
-YY_LOCAL(void) yyprintcontext(FILE *stream, char *s)\n\
+YY_LOCAL(char *) yycontextline(char *s)\n\
 {\n\
   char *context = s;\n\
   char *nl = strchr(context, 10);\n\
@@ -629,9 +629,29 @@ YY_LOCAL(void) yyprintcontext(FILE *stream, char *s)\n\
     context = (char*)malloc(nl-s+1);\n\
     strncpy(context, s, nl-s);\n\
     context[nl-s] = '\\0'; /* replace nl by 0 */\n\
+    return context;\n\
+  } else return NULL;\n\
+}\n\
+YY_LOCAL(char *) yylastline(GREG *G, int pos)\n\
+{\n\
+  char *line, *nl, *s = G->buf;\n\
+  int i;\n\
+  for (i=pos-1; i && (*(s+i) != 10); i--); \n\
+  if (i) nl = s+i+1; else nl = s;\n\
+  int c = s + pos - nl;\n\
+  line = (char*)malloc(c);\n\
+  strncpy(line, nl, c);\n\
+  line[c] = '\\0'; /* replace last \n by 0 */\n\
+  return line;\n\
+}\n\
+#ifdef YY_DEBUG\n\
+YY_LOCAL(void) yyprintcontext(FILE *stream, char *s)\n\
+{\n\
+  char *context = yycontextline(s);\n\
+  if (context) {\n\
+    fprintf(stream, \" @ \\\"%s\\\"\", context);\n\
+    free(context);\n\
   }\n\
-  fprintf(stream, \" @ \\\"%s\\\"\", context);\n\
-  if (nl) free(context);\n\
 }\n\
 #endif\n\
 \n\

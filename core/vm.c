@@ -739,7 +739,14 @@ reentry:
 	  //	 AS_STR(PN_TUPLE_AT(pn_filenames,(int)reg[op.b])), (int)reg[op.a]);
 	  vPN(Source) t = (struct PNSource*)ast;
 	  if (t) {
-	    printf("\ndebug line %d (:h for help, :c for continue)\n", t->loc.lineno);
+	    printf("\n\ndebug (:h for help, <Enter> for continue)\n");
+	    if (t->line) {
+	      PN fn = PN_TUPLE_AT(pn_filenames, t->loc.fileno);
+	      if (fn)
+		printf("(%s:%d):\t%s\n", PN_STR_PTR(fn), t->loc.lineno, PN_STR_PTR(t->line));
+	      else
+	        printf("(:%d):\t%s\n", t->loc.lineno, PN_STR_PTR(t->line));
+	    }
 	    while (loop) {
 	      PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
 	      if (potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1

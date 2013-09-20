@@ -431,6 +431,7 @@ struct PNSource {
 #endif
   } loc;                ///< bitfield of fileno and lineno
   enum PN_AST part;     ///< AST type, avoid -Wswitch (aligned access: 4+4+8+4+24)
+  PN line;              ///< PNString of src line
   struct PNSource * volatile a[3];///< PNTuple of 1-3 kids, \see ast.c
 };
 
