@@ -3,7 +3,7 @@ sub fib($n) {
   else { fib($n-1) + fib($n-2) }
 }
 my $n = number $ARGV[0];
-if ($n < 1) { $n = 28 }
+if (!$n) { $n = 28 }
 
 @x = ("fib(",$n,")= ",fib($n));
 say join @x
