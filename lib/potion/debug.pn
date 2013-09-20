@@ -18,8 +18,8 @@ debug traceback = (f| level): .
 debug sethook = (hook, name): .
 
 # state 0 for next/step
-#      1 for continue until break
-#      2 for exit: exit debugger
+#       1 for continue until break
+#       2 for exit: exit debugger
 debug loop = (src, proto):
   if (self/state == 1):
     if (self/break bsearch(src line)): return 1.
@@ -64,8 +64,7 @@ debug loop = (src, proto):
         ("breakpoint ", b string, " deleted") join write.
       continue.
     if (code != ""):
-      code = code eval
-      code string write.
+      code = code eval string write.
     .
   2
   .
