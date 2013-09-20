@@ -53,7 +53,7 @@
 
 // -Dp: GC in the parser in potion_send fails in moved PNSource objects.
 // we may still hold refs in the parser to old objects, G->ss not on the stack
-# define YY_SET1(G, text, count, thunk, P) \
+# define YY_SET(G, text, count, thunk, P) \
   yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
            PN_STR_PTR(potion_send(yy, PN_string, 0)))); \
   G->val[count]= yy;
@@ -227,17 +227,19 @@ expr = c:method  	        { $$ = PN_AST(EXPR, c) }
     | c:call l:listexprs 	{ $$ = PN_SHIFT(PN_S(l,0));
             if (!PN_S(l, 0)) { PN_SRC(c)->a[1] = PN_SRC($$); }
             $$ = PN_PUSH(PN_TUP($$), c); }
-    | e:opexpr			{ $$ = PN_AST(EXPR, PN_TUPIF(e)) }
+    | e:opexpr			{ $$ = PN_TUPIF(e) }
     | c:call			{ $$ = PN_AST(EXPR, c) }
-    | e:atom			{ $$ = PN_AST(EXPR, PN_TUPIF(e)) }
+    | e:eatom
+
+eatom = e:atom                  { $$ = PN_AST(EXPR, PN_TUPIF(e)) }
 
 opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
     | bitnot e:expr		{ $$ = PN_AST(WAVY, e) }
     | minus  e:expr		{ $$ = PN_OP(AST_MINUS, PN_AST(VALUE, PN_ZERO), e) }
-    | l:atom times !times r:atom { $$ = PN_OP(AST_TIMES, l, r) }
-    | l:atom div   !div r:atom   { $$ = PN_OP(AST_DIV,  l, r) }
-    | l:atom minus !minus r:atom { $$ = PN_OP(AST_MINUS, l, r) }
-    | l:atom plus !plus r:atom   { $$ = PN_OP(AST_PLUS,  l, r) }
+    | l:eatom times !times r:eatom { $$ = PN_OP(AST_TIMES, l, r) }
+    | l:eatom div   !div r:eatom   { $$ = PN_OP(AST_DIV,  l, r) }
+    | l:eatom minus !minus r:eatom { $$ = PN_OP(AST_MINUS, l, r) }
+    | l:eatom plus !plus r:eatom   { $$ = PN_OP(AST_PLUS,  l, r) }
     | mminus e:mvalue		{ $$ = PN_OP(AST_INC, e, PN_NUM(-1) ^ 1) }
     | pplus e:mvalue		{ $$ = PN_OP(AST_INC, e, PN_NUM(1) ^ 1) }
     | e:mvalue (pplus		{ $$ = PN_OP(AST_INC, e, PN_NUM(1)) }
@@ -447,8 +449,7 @@ comment	= '#' (!end-of-line utf8)*
 # \205 U+85 NEL
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
 end-of-line = ( '\r\n' | '\n' | '\r' )
-  { char *s;
-    ++G->lineno;
+  { char *s; ++G->lineno;
     if ((P->flags & EXEC_DEBUG && (s = yylastline(G, thunk->begin)))) { 
       G->line = PN_STR(s); free(s); }}
 end-of-file = !'\0'

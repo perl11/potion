@@ -179,7 +179,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
 #define PN_REG(f, reg) \
   if (reg >= PN_INT(f->stack)) \
     f->stack = PN_NUM(reg + 1)
-#ifdef P2
+#ifdef P2XXX
 // uses global PN_SRC(t)
 #define PN_ARG(n, reg) \
   if (PN_PART(t->a[n]) == AST_LIST && PN_PART(PN_TUPLE_AT(PN_S(t->a[n],0), 0)) == AST_EXPR) { \
