@@ -334,7 +334,8 @@ space = ' ' | '\f' | '\v' | '\t'
 end-of-line = ( '\r\n' | '\n' | '\r' )
   { char *s;
     ++G->lineno;
-    if ((s = yylastline(G, thunk->begin))) { G->line = PN_STR(s); free(s); }}
+    if ((P->flags & EXEC_DEBUG && (s = yylastline(G, thunk->begin)))) { 
+      G->line = PN_STR(s); free(s); }}
 end-of-file = !.
 
 sig = args+ end-of-file

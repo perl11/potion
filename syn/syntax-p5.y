@@ -449,7 +449,8 @@ space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
 end-of-line = ( '\r\n' | '\n' | '\r' )
   { char *s;
     ++G->lineno;
-    if ((s = yylastline(G, thunk->begin))) { G->line = PN_STR(s); free(s); }}
+    if ((P->flags & EXEC_DEBUG && (s = yylastline(G, thunk->begin)))) { 
+      G->line = PN_STR(s); free(s); }}
 end-of-file = !'\0'
 # FIXME: starting wordchar (no numbers) + wordchars
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
