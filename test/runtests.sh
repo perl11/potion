@@ -123,7 +123,7 @@ else
     ${ECHO} "OK ($count tests)"
 fi
 
-if [ -z `grep DDEBUG config.inc` ]; then
+if [ -z "`grep DDEBUG config.inc`" ]; then
     ${ECHO} run examples
     log=log.example
     git log -1 >> $log

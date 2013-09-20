@@ -621,17 +621,6 @@ YY_LOCAL(int) yymatchDot(GREG *G)\n\
   return 1;\n\
 }\n\
 \n\
-YY_LOCAL(char *) yycontextline(char *s)\n\
-{\n\
-  char *context = s;\n\
-  char *nl = strchr(context, 10);\n\
-  if (nl) {\n\
-    context = (char*)malloc(nl-s+1);\n\
-    strncpy(context, s, nl-s);\n\
-    context[nl-s] = '\\0'; /* replace nl by 0 */\n\
-    return context;\n\
-  } else return NULL;\n\
-}\n\
 YY_LOCAL(char *) yylastline(GREG *G, int pos)\n\
 {\n\
   char *line, *nl, *s = G->buf;\n\
@@ -645,6 +634,17 @@ YY_LOCAL(char *) yylastline(GREG *G, int pos)\n\
   return line;\n\
 }\n\
 #ifdef YY_DEBUG\n\
+YY_LOCAL(char *) yycontextline(char *s)\n\
+{\n\
+  char *context = s;\n\
+  char *nl = strchr(context, 10);\n\
+  if (nl) {\n\
+    context = (char*)malloc(nl-s+1);\n\
+    strncpy(context, s, nl-s);\n\
+    context[nl-s] = '\\0'; /* replace nl by 0 */\n\
+    return context;\n\
+  } else return NULL;\n\
+}\n\
 YY_LOCAL(void) yyprintcontext(FILE *stream, char *s)\n\
 {\n\
   char *context = yycontextline(s);\n\
