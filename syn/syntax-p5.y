@@ -227,7 +227,7 @@ expr = c:method  	        { $$ = PN_AST(EXPR, c) }
     | c:call l:listexprs 	{ $$ = PN_SHIFT(PN_S(l,0));
             if (!PN_S(l, 0)) { PN_SRC(c)->a[1] = PN_SRC($$); }
             $$ = PN_PUSH(PN_TUP($$), c); }
-    | e:opexpr			{ $$ = PN_TUPIF(e) }
+    | e:opexpr			{ $$ = e }
     | c:call			{ $$ = PN_AST(EXPR, c) }
     | e:eatom
 
