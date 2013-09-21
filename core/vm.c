@@ -376,6 +376,8 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   if (!pn_readline) {
     void *handle = dlopen(potion_find_file(P,"readline",0), RTLD_LAZY);
     pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(handle, "pn_readline");
+  }
+  if (P->flags & EXEC_DEBUG) {
     DBG_vt("\nEntering c debug mode\n");
     printf("\nc debug (:h for help, <enter> for continue)\n");
   }
