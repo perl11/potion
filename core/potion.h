@@ -153,7 +153,7 @@ struct PNVtable;
 #define PN_FBOOLEAN     2
 #ifdef P2
 // in perl there is lot more false: undef,0,"",(), but {} is true
-//Beware: TEST1(PN_NUM(0)) vs TEST(0<1) i.e. test(1) vs test(1)
+//Beware: TEST1(PN_NUM(0)) vs TEST(0<1) i.e. test1(1) vs test(1)
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 #define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL \
                          && (PN)(v) != PN_ZERO && (PN)(v) != PN_STR0 \
@@ -163,7 +163,7 @@ struct PNVtable;
 #define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 #endif
 ///\class PNBoolean
-/// Immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
+/// From cmp (x<y) to immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
 #define PN_BOOL(v)      (PN_TEST(v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_PTR(v)    (!PN_IS_NUM(v) && ((PN)(v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
