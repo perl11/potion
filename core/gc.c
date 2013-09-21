@@ -470,6 +470,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->upvals);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->values);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->protos);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->debugs);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->tree);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;

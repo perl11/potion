@@ -749,8 +749,9 @@ reentry:
 	    }
 	    while (loop) {
 	      PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
-	      if (potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
-	          && PN_STR_PTR(str)[0] == ':') {
+	      if (str && potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
+	              && PN_STR_PTR(str)[0] == ':')
+	      {
 	        if (str == PN_STR(":c"))         { break; }
 	        else if (str == PN_STR(":q"))    { P->flags -= EXEC_DEBUG; break; }
 	        else if (str == PN_STR(":exit")) { exit(0); }
