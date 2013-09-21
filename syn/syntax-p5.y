@@ -1,6 +1,6 @@
 # -*- mode: antlr; tab-width:8 -*-
 #
-# syntax-p5.g
+# syntax-p5.y
 # perl5 tokens and grammar
 #
 # (c) 2009 _why
