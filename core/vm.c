@@ -779,7 +779,12 @@ reentry:
 	      }
 	      else if (str && str != PN_STR("")) {
 	        PN flags = (PN)P->flags; P->flags = (Potion_Flags)EXEC_VM;
-	        printf("%s\n", AS_STR(potion_eval(P, str)));
+		PN code = potion_parse(P, potion_send(str, PN_STR("bytes")), "-d");
+		if (PN_TYPE(code) == PN_TSOURCE) {
+		  code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
+		  printf("%s\n", AS_STR(potion_vm(P, code, self, PN_NIL,
+						     upc, upargs)));
+		}
 	        P->flags = (Potion_Flags)flags;
 	      }
 	      else loop=0;
