@@ -152,12 +152,12 @@ struct PNVtable;
 #define PN_FNUMBER      1
 #define PN_FBOOLEAN     2
 #ifdef P2
-// in perl there is lot more false
-//TODO: TEST(PN_NUM(0)) vs TEST(0<1) i.e. test(1) vs test(1)
-#define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL \
-                         && (PN)(v) != PN_STR0)
+// in perl there is lot more false: undef,0,"",(), but {} is true
+//Beware: TEST1(PN_NUM(0)) vs TEST(0<1) i.e. test(1) vs test(1)
+#define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 #define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL \
-                         && (PN)(v) != PN_ZERO && (PN)(v) != PN_STR0)
+                         && (PN)(v) != PN_ZERO && (PN)(v) != PN_STR0 \
+			 && (!PN_IS_TUPLE(v) || PN_IS_EMPTY(v)))
 #else
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 #define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
