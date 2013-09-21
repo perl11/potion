@@ -376,6 +376,8 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   if (!pn_readline) {
     void *handle = dlopen(potion_find_file(P,"readline",0), RTLD_LAZY);
     pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(handle, "pn_readline");
+    DBG_vt("\nEntering c debug mode\n");
+    printf("\nc debug (:h for help, <enter> for continue)\n");
   }
 #endif
 
@@ -739,13 +741,13 @@ reentry:
 	  //	 AS_STR(PN_TUPLE_AT(pn_filenames,(int)reg[op.b])), (int)reg[op.a]);
 	  vPN(Source) t = (struct PNSource*)ast;
 	  if (t) {
-	    printf("\n\ndebug (:h for help, <Enter> for continue)\n");
+	    //printf("\n\ndebug (:h for help, <enter> for continue)\n");
 	    if (t->line) {
 	      PN fn = PN_TUPLE_AT(pn_filenames, t->loc.fileno);
 	      if (fn)
-		printf("(%s:%d):\t%s\n", PN_STR_PTR(fn), t->loc.lineno, PN_STR_PTR(t->line));
+		printf("\n(%s:%d):\t%s\n", PN_STR_PTR(fn), t->loc.lineno, PN_STR_PTR(t->line));
 	      else
-	        printf("(:%d):\t%s\n", t->loc.lineno, PN_STR_PTR(t->line));
+	        printf("\n(:%d):\t%s\n", t->loc.lineno, PN_STR_PTR(t->line));
 	    }
 	    while (loop) {
 	      PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
