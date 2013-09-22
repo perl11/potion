@@ -256,7 +256,7 @@ u8 potion_source_debug(Potion *P, struct PNProto * volatile f, struct PNSource *
   static int lineno = 0;
   if ((P->flags & EXEC_DEBUG) && t && t->loc.lineno != lineno && (int)t->loc.lineno >= 0) {
     PN_SIZE num = PN_PUT(f->debugs, (PN)t);
-    PN_ASM2(OP_DEBUG, reg, num);
+    PN_ASM2(OP_DBG, reg, num);
     lineno = t->loc.lineno;
     DBG_c("debug %s :%d\n", PN_STR_PTR(potion_send(t, PN_name)), lineno);
   }

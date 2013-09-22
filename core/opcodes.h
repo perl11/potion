@@ -76,7 +76,7 @@ enum PN_OPCODE {
   OP_RETURN,
   OP_PROTO,
   OP_CLASS,
-  OP_DEBUG
+  OP_DBG
 };
 
 #endif

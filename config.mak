@@ -115,6 +115,7 @@ endif
 #endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
+        DEFINES += -DCGOTO
 	WARNINGS += -Wno-unused-value
   ifeq (${DEBUG},0)
 	DEBUGFLAGS += -finline
@@ -122,6 +123,7 @@ ifneq ($(shell tools/config.sh "${CC}" clang),0)
 else
 ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	ICC = 1
+        #DEFINES += -DCGOTO
 	DEBUGFLAGS += -falign-functions=16
 # 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
 # 177: label "l414" was declared but never referenced in syntax-p5.c sets fail case
@@ -134,6 +136,7 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
   endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
+  DEFINES += -DCGOTO
   ifeq (${DEBUG},0)
 	DEBUGFLAGS += -finline -falign-functions
   endif

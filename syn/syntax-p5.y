@@ -236,10 +236,12 @@ power = e:expr
 
 # always a list
 expr = c:method  	        { $$ = PN_AST(EXPR, c) }
-    | m:special l:list b:block  { PN_SRC(m)->a[1] = PN_SRC(l); PN_SRC(m)->a[2] = PN_SRC(b);
+    | m:special l:list b:block  { PN_SRC(m)->a[1] = PN_SRC(l);
+            PN_SRC(m)->a[2] = PN_SRC(b);
             $$ = PN_AST(EXPR, PN_TUP(m)) }
     | c:calllist		{ $$ = PN_AST(EXPR, c) }
-    | c:call e:expr 		{ $$ = PN_AST(EXPR, PN_PUSH(PN_S(e,0), PN_TUPLE_AT(c,0))); }
+    | c:call e:expr 		{ $$ = PN_AST(EXPR, PN_PUSH(PN_TUPIF(PN_S(e,0)),
+                                                            PN_TUPLE_AT(c,0))); }
     | c:call l:listexprs 	{ $$ = PN_SHIFT(PN_S(l,0));
             if (!PN_S(l, 0)) { PN_SRC(c)->a[1] = PN_SRC($$); }
             $$ = PN_PUSH(PN_TUP($$), c); }
@@ -469,7 +471,6 @@ end-of-line = ( '\r\n' | '\n' | '\r' )
     if ((P->flags & EXEC_DEBUG && (s = yylastline(G, thunk->begin)))) {
       G->line = PN_STR(s); free(s); }}
 end-of-file = !'\0'
-# FIXME: starting wordchar (no numbers) + wordchars
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
 # isWORDCHAR && IDFIRST, no numbers
 IDFIRST = [A-Za-z_]
