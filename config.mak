@@ -115,9 +115,9 @@ endif
 #endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
-        DEFINES += -DCGOTO
 	WARNINGS += -Wno-unused-value
   ifeq (${DEBUG},0)
+        DEFINES += -DCGOTO
 	DEBUGFLAGS += -finline
   endif
 else
@@ -136,9 +136,9 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
   endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
-  DEFINES += -DCGOTO
   ifeq (${DEBUG},0)
 	DEBUGFLAGS += -finline -falign-functions
+        DEFINES += -DCGOTO
   endif
 endif
 endif
