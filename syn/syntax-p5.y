@@ -53,7 +53,7 @@
 
 // -Dp: GC in the parser in potion_send fails in moved PNSource objects.
 // we may still hold refs in the parser to old objects, G->ss not on the stack
-# define YY_SET(G, text, count, thunk, P) \
+# define YY_SET1(G, text, count, thunk, P) \
   yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
            PN_STR_PTR(potion_send(yy, PN_string, 0)))); \
   G->val[count]= yy;
@@ -466,7 +466,7 @@ comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
 end-of-line = ( '\r\n' | '\n' | '\r' )
   { char *s; ++G->lineno;
-    if ((P->flags & EXEC_DEBUG && (s = yylastline(G, thunk->begin)))) { 
+    if ((P->flags & EXEC_DEBUG && (s = yylastline(G, thunk->begin)))) {
       G->line = PN_STR(s); free(s); }}
 end-of-file = !'\0'
 # FIXME: starting wordchar (no numbers) + wordchars

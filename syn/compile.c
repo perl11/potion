@@ -623,14 +623,15 @@ YY_LOCAL(int) yymatchDot(GREG *G)\n\
 \n\
 YY_LOCAL(char *) yylastline(GREG *G, int pos)\n\
 {\n\
-  char *line, *nl, *s = G->buf;\n\
-  int i;\n\
+  char *c, *line, *nl, *s = G->buf;\n\
+  int i, l;\n\
   for (i=pos-1; i && (*(s+i) != 10); i--); \n\
   if (i) nl = s+i+1; else nl = s;\n\
-  int c = s + pos - nl;\n\
-  line = (char*)malloc(c);\n\
-  strncpy(line, nl, c);\n\
-  line[c] = '\\0'; /* replace last \n by 0 */\n\
+  c = strchr(nl, 10);\n\
+  l = c ? c - nl : s + pos - nl;\n\
+  line = (char*)malloc(l);\n\
+  strncpy(line, nl, l);\n\
+  line[l] = '\\0'; /* replace last \\n by 0 */\n\
   return line;\n\
 }\n\
 #ifdef YY_DEBUG\n\
