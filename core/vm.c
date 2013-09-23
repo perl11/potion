@@ -71,8 +71,6 @@ or http://www.lua.org/doc/jucs05.pdf
 #include "asm.h"
 #include "khash.h"
 #include "table.h"
-#include <dlfcn.h>
-#include "ast.h"
 
 #if defined(POTION_JIT_TARGET) && defined(JIT_DEBUG)
 #  if defined(HAVE_LIBDISASM)
@@ -86,8 +84,11 @@ or http://www.lua.org/doc/jucs05.pdf
 #endif
 
 #define DEBUG_IN_C
+#include <dlfcn.h>
 #ifdef DEBUG_IN_C
 static PN (*pn_readline)(Potion *, PN, PN, PN);
+#else
+#include "ast.h"
 #endif
 
 #if DEBUG
@@ -369,8 +370,8 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN_SIZE upc, PN
       ast = PN_NIL;
 #ifndef DEBUG_IN_C
     // get AST from debug op
-    // run the "debug (src, proto) loop" method
-    DBG_vt("\nEntering debug loop\n");
+    DBG_t("\nEntering debug loop\n");
+    DBG_vt("calling debug loop(src, proto)\n");
     PN flags = (PN)P->flags; P->flags = (Potion_Flags)EXEC_VM; //turn off tracing,debugging,...
 # if 0
     PN debug = potion_message(P, (PN)f, PN_STR("debug"));
@@ -383,13 +384,16 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN_SIZE upc, PN
     PN code = (PN)PN_AST_(CODE,
       PN_TUP(PN_AST_(EXPR, PN_PUSH(PN_TUP(PN_AST_(MSG, PN_STR("debug"))),
 	PN_AST2_(MSG, PN_STR("loop"),
-	  PN_SRC(PN_AST_(LIST, PN_PUSH(PN_TUP(PN_AST_(MSG, ast)),				     PN_AST_(MSG, (PN)f)))))))));
+	  PN_AST_(LIST, PN_PUSH(PN_TUP(PN_AST_(MSG, ast)), PN_AST_(MSG, (PN)f))))))));
     code = potion_send(code, PN_compile, (PN)f, PN_NIL);
-    code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL); // upc?
+    code = potion_vm(P, code, P->lobby, PN_NIL, upc, upargs);
 # endif
     P->flags = (Potion_Flags)flags;
-    if (code == PN_NUM(2)) // :q
+    if (code >= PN_NUM(5)) { // :q, :exit
       P->flags &= ~EXEC_DEBUG;
+      if (code == PN_NUM(6)) // :exit
+        exit(0);
+    }
 #else
     int loop = 1;
     // TODO: check for breakpoints
@@ -463,10 +467,12 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(RTLD_DEFAULT, "pn_readline");
   if (!pn_readline) {
     void *handle = dlopen(potion_find_file(P,"readline",0), RTLD_LAZY);
+    if (!handle) potion_fatal("readline library not loaded");
     pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(handle, "pn_readline");
+    if (!pn_readline) potion_fatal("pn_readline function not loaded");
   }
   if (P->flags & EXEC_DEBUG) {
-    DBG_vt("\nEntering c debug mode\n");
+    DBG_t("\nEntering c debug mode");
     printf("\nc debug (:h for help, <enter> for continue)\n");
   }
 #endif
