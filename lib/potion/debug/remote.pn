@@ -4,7 +4,7 @@
 load "debug"
 
 # TODO: parse comma delim args
-remote.debug = debug class (args):
+remote.debug = Debug class (args):
   /init = (): load "aio".
 
   /init()
