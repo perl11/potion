@@ -20,10 +20,10 @@
 #undef PN_AST2
 #undef PN_AST3
 #undef PN_OP
-#define PN_AST(T, A)        potion_source(P, AST_##T, A, PN_NIL, PN_NIL, G->lineno, G->line)
-#define PN_AST2(T, A, B)    potion_source(P, AST_##T, A, B, PN_NIL, G->lineno, G->line)
-#define PN_AST3(T, A, B, C) potion_source(P, AST_##T, A, B, C, G->lineno, G->line)
-#define PN_OP(T, A, B)      potion_source(P, T, A, B, PN_NIL, G->lineno, G->line)
+#define PN_AST(T, A)        potion_source(P, AST_##T, A, PN_NIL, PN_NIL, G->lineno, P->line)
+#define PN_AST2(T, A, B)    potion_source(P, AST_##T, A, B, PN_NIL, G->lineno, P->line)
+#define PN_AST3(T, A, B, C) potion_source(P, AST_##T, A, B, C, G->lineno, P->line)
+#define PN_OP(T, A, B)      potion_source(P, T, A, B, PN_NIL, G->lineno, P->line)
 
 #define YYSTYPE PN
 #define YY_XTYPE Potion *
@@ -65,6 +65,7 @@
 #define SRC_TPL2(x,y)   P->source = PN_PUSH(PN_PUSH(DEF_PSRC, (x)), (y))
 #define SRC_TPL3(x,y,z) P->source = PN_PUSH(PN_PUSH(PN_PUSH(DEF_PSRC, (x)), (y)), (z))
 
+static PN yylastline(struct _GREG *G, int pos);
 %}
 
 perl5 = -- s:statements end-of-file
@@ -467,9 +468,7 @@ comment	= '#' (!end-of-line utf8)*
 # \205 U+85 NEL
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
 end-of-line = ( '\r\n' | '\n' | '\r' )
-  { char *s; ++G->lineno;
-    if ((P->flags & EXEC_DEBUG && (s = yylastline(G, thunk->begin)))) {
-      G->line = PN_STR(s); free(s); }}
+  { ++G->lineno; if (P->flags & EXEC_DEBUG) { P->line = yylastline(G, thunk->begin); }}
 end-of-file = !'\0'
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
 # isWORDCHAR && IDFIRST, no numbers
@@ -649,4 +648,16 @@ int potion_sig_find(Potion *P, PN cl, PN name)
   });
 
   return -1;
+}
+
+/** look back in the line for the prev. \n and back forth for the next \n
+  */
+static PN yylastline(GREG *G, int pos) {
+  char *c, *nl, *s = G->buf;
+  int i, l;
+  for (i=pos-1; i && (*(s+i) != 10); i--);
+  if (i) nl = s+i+1; else nl = s;
+  c = strchr(nl, 10);
+  l = c ? c - nl : s + pos - nl;
+  return l ? potion_byte_str2(G->data, nl, l) :PN_NIL;
 }

@@ -24,6 +24,18 @@
 #include <assert.h>
 
 #include "greg.h"
+#ifndef YY_ALLOC
+#define YY_ALLOC(N, D) malloc(N)
+#endif
+#ifndef YY_CALLOC
+#define YY_CALLOC(N, S, D) calloc(N, S)
+#endif
+#ifndef YY_REALLOC
+#define YY_REALLOC(B, N, D) realloc(B, N)
+#endif
+#ifndef YY_FREE
+#define YY_FREE free
+#endif
 
 static int indent= 0;
 
@@ -237,7 +249,7 @@ static void Node_compile_c_ko(Node *node, int ko)
 	pindent();
 	char *tmp = yyqq((char*)node->cclass.value);
 	fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", \"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), tmp, ko);
-	if (tmp != (char*)node->cclass.value) free(tmp);
+	if (tmp != (char*)node->cclass.value) YY_FREE(tmp);
       }
       break;
 
@@ -437,19 +449,21 @@ static void Rule_compile_c2(Node *node)
     Rule_compile_c2(node->rule.next);
 }
 
+#if 0
 #ifdef YY_DEBUG
 static void yyprintcontext(FILE *stream, char *s)
 {
   char *context = s;
   char *nl = strchr(context, 10);
   if (nl) {
-    context = (char*)malloc(nl-s+1);
+    context = (char*)YY_ALLOC(nl-s+1,0);
     strncpy(context, s, nl-s);
     context[nl-s] = '\0'; /* replace nl by 0 */
   }
   fprintf(stream, " @ \"%s\"", context);
-  if (nl) free(context);
+  if (nl) YY_FREE(context);
 }
+#endif
 #endif
 
 static char *header= "\
@@ -515,13 +529,13 @@ static char *preamble= "\
 # endif\n\
 # define yyprintf(args)	   if (yydebug & YYDEBUG_PARSE)         fprintf args\n\
 # define yyprintfv(args)   if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) fprintf args\n\
-# define yyprintfGcontext  if (yydebug & YYDEBUG_PARSE)         yyprintcontext(stderr,G->buf+G->pos)\n\
-# define yyprintfvGcontext if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) yyprintcontext(stderr,G->buf+G->pos)\n\
-# define yyprintfvTcontext(text) if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) yyprintcontext(stderr,text)\n\
+# define yyprintfGcontext  if (yydebug & YYDEBUG_PARSE)         yyprintcontext(G,stderr,G->buf+G->pos)\n\
+# define yyprintfvGcontext if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) yyprintcontext(G,stderr,G->buf+G->pos)\n\
+# define yyprintfvTcontext(text) if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) yyprintcontext(G,stderr,text)\n\
 # define yyprintfokrule(rule) if (yydebug & YYDEBUG_PARSE) {\\\n\
   if (G->buf[G->pos]) {\\\n\
     fprintf(stderr, \"  ok   %s\", rule);\\\n\
-    yyprintcontext(stderr,G->buf+G->pos);\\\n\
+    yyprintcontext(G,stderr,G->buf+G->pos);\\\n\
     fprintf(stderr, \"\\n\");\\\n\
   } else {\\\n\
     yyprintfv((stderr, \"  ok   %s @ \\\"\\\"\\n\", rule));\\\n\
@@ -529,14 +543,14 @@ static char *preamble= "\
 # define yyprintfvokrule(rule) if (yydebug  & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) {\\\n\
   if (G->buf[G->pos]) {\\\n\
     fprintf(stderr, \"  ok   %s\", rule);\\\n\
-    yyprintcontext(stderr,G->buf+G->pos);\\\n\
+    yyprintcontext(G,stderr,G->buf+G->pos);\\\n\
     fprintf(stderr, \"\\n\");\\\n\
   } else {\\\n\
     yyprintfv((stderr, \"  ok   %s @ \\\"\\\"\\n\", rule));\\\n\
   }}\n\
 # define yyprintfvfailrule(rule) if (yydebug  & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) {\\\n\
     fprintf(stderr, \"  fail %s\", rule);\\\n\
-    yyprintcontext(stderr,G->buf+G->pos);\\\n\
+    yyprintcontext(G,stderr,G->buf+G->pos);\\\n\
     fprintf(stderr, \"\\n\");\\\n\
   }\n\
 #else\n\
@@ -589,7 +603,6 @@ typedef struct _GREG {\n\
   int	thunkslen;\n\
   int   thunkpos;\n\
   int	lineno;\n\
-  YYSTYPE line;\n\
   char	*filename;\n\
   FILE  *input;\n\
   YYSTYPE ss;\n\
@@ -621,37 +634,24 @@ YY_LOCAL(int) yymatchDot(GREG *G)\n\
   return 1;\n\
 }\n\
 \n\
-YY_LOCAL(char *) yylastline(GREG *G, int pos)\n\
-{\n\
-  char *c, *line, *nl, *s = G->buf;\n\
-  int i, l;\n\
-  for (i=pos-1; i && (*(s+i) != 10); i--); \n\
-  if (i) nl = s+i+1; else nl = s;\n\
-  c = strchr(nl, 10);\n\
-  l = c ? c - nl : s + pos - nl;\n\
-  line = (char*)malloc(l);\n\
-  strncpy(line, nl, l);\n\
-  line[l] = '\\0'; /* replace last \\n by 0 */\n\
-  return line;\n\
-}\n\
 #ifdef YY_DEBUG\n\
-YY_LOCAL(char *) yycontextline(char *s)\n\
+YY_LOCAL(char *) yycontextline(struct _GREG *G, char *s)\n\
 {\n\
   char *context = s;\n\
   char *nl = strchr(context, 10);\n\
   if (nl) {\n\
-    context = (char*)malloc(nl-s+1);\n\
+    context = (char*)YY_ALLOC(nl-s+1, G->data);\n\
     strncpy(context, s, nl-s);\n\
     context[nl-s] = '\\0'; /* replace nl by 0 */\n\
     return context;\n\
   } else return NULL;\n\
 }\n\
-YY_LOCAL(void) yyprintcontext(FILE *stream, char *s)\n\
+YY_LOCAL(void) yyprintcontext(struct _GREG *G, FILE *stream, char *s)\n\
 {\n\
-  char *context = yycontextline(s);\n\
+  char *context = yycontextline(G, s);\n\
   if (context) {\n\
     fprintf(stream, \" @ \\\"%s\\\"\", context);\n\
-    free(context);\n\
+    YY_FREE(context);\n\
   }\n\
 }\n\
 #endif\n\
@@ -1023,7 +1023,7 @@ void Rule_compile_c(Node *node)
       fprintf(output, "  yyprintfvTcontext(yytext);\n");
       tmp = yyqq(block);
       fprintf(output, "  yyprintf((stderr, \"\\n  {%s}\\n\"));\n", tmp);
-      if (tmp != block) free(tmp);
+      if (tmp != block) YY_FREE(tmp);
       fprintf(output, "  %s;\n", block);
       undefineVariables(n->action.rule->rule.variables);
       fprintf(output, "}\n");

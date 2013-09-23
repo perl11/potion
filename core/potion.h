@@ -631,6 +631,7 @@ struct Potion_State {
   PN input, source, decl;  ///< parser input, output (AST) and 1st pass declarations
   int yypos;               ///< parser buffer position
   PNAsm * volatile pbuf;   ///< parser buffer
+  PN line;                 ///< currently parsed line (for debug)
   PN_SIZE fileno;          ///< currently parsed file
   PN unclosed;             ///< used by parser for named block endings
   PN call, callset;        ///< generic call and callset
