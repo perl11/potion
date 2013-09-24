@@ -245,10 +245,10 @@ ifneq (${FPIC},)
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
 %.c: %.y ${GREG}
-	@${ECHO} GREG $@
+	@${ECHO} GREG $<
 	@${GREG} $< > $@-new && ${MV} $@-new $@
 .y.c: ${GREG}
-	@${ECHO} GREG $@
+	@${ECHO} GREG $<
 	@${GREG} $< > $@-new && ${MV} $@-new $@
 
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
