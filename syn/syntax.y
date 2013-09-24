@@ -474,5 +474,5 @@ static PN yylastline(struct _GREG *G, int pos) {
   if (i) nl = s+i+1; else nl = s;
   c = strchr(nl, 10);
   l = c ? c - nl : s + pos - nl;
-  return l ? potion_byte_str2(G->data, nl, l) : PN_STR0;
+  return l ? potion_byte_str2(G->data, nl, l) : PN_NIL;
 }
