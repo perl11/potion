@@ -421,6 +421,8 @@ enum PN_AST {
 };
 struct PNSource {
   PN_OBJECT_HEADER;  	///< PNType vt; PNUniq uniq
+  enum PN_AST part;     ///< AST type, avoid -Wswitch (aligned access: 4+4+8+4+24)
+  struct PNSource * volatile a[3];///< PNTuple of 1-3 kids, \see ast.c
   struct {
 #if __WORDSIZE != 64
     PNType fileno:16;
@@ -430,9 +432,7 @@ struct PNSource {
     PNType lineno:32;
 #endif
   } loc;                ///< bitfield of fileno and lineno
-  enum PN_AST part;     ///< AST type, avoid -Wswitch (aligned access: 4+4+8+4+24)
   PN line;              ///< PNString of src line
-  struct PNSource * volatile a[3];///< PNTuple of 1-3 kids, \see ast.c
 };
 
 ///
@@ -628,16 +628,18 @@ struct Potion_State {
   struct PNTable *strings; ///< table of all strings
   PN lobby;                ///< root namespace
   PNFlex * volatile vts;   ///< built in types
-  PN input, source, decl;  ///< parser input, output (AST) and 1st pass declarations
+  Potion_Flags flags;      ///< vm flags: execution model and debug flags
+  struct PNMemory *mem;    ///< allocator/gc
+  PN call, callset;        ///< generic call and setter
+  int prec;                ///< decimal precision
+
+  //parser-only:
+  PN input, source;        ///< parser input and output (AST)
   int yypos;               ///< parser buffer position
   PNAsm * volatile pbuf;   ///< parser buffer
   PN line;                 ///< currently parsed line (for debug)
   PN_SIZE fileno;          ///< currently parsed file
   PN unclosed;             ///< used by parser for named block endings
-  PN call, callset;        ///< generic call and callset
-  int prec;                ///< decimal precision
-  struct PNMemory *mem;    ///< allocator/gc
-  Potion_Flags flags;      ///< vm flags: execution model and debug flags
 };
 
 ///

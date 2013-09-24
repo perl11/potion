@@ -104,7 +104,7 @@ sub offset_momentum {
 offset_momentum();
 say energy();
 
-my $n = number $ARGV[0];
+my $n = number $ARGV[0]; #TODO p2
 if (!$n) { $n = 50000 }
 my $i = 0;
 while ($i < $n) {

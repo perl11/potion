@@ -117,14 +117,14 @@ static void potion_init(Potion *P) {
 }
 
 Potion *potion_create(void *sp) {
-  Potion *P = potion_gc_boot(sp);
+  Potion *P = potion_gc_boot(sp); //zeros P
   P->vt = PN_TSTATE;
   P->uniq = (PNUniq)potion_rand_int();
   PN_FLEX_NEW(P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
   PN_FLEX_SIZE(P->vts) = PN_TYPE_ID(PN_TUSER) + 1;
   P->prec = PN_PREC;
   P->fileno = -1;
-  P->flags = (Potion_Flags)EXEC_VM;
+  //P->flags = (Potion_Flags)EXEC_VM;
   potion_init(P);
   return P;
 }

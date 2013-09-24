@@ -470,9 +470,9 @@ int potion_sig_find(Potion *P, PN cl, PN name)
 static PN yylastline(struct _GREG *G, int pos) {
   char *c, *nl, *s = G->buf;
   int i, l;
-  for (i=pos-1; i && (*(s+i) != 10); i--);
+  for (i=pos-1; i>=0 && (*(s+i) != 10); i--);
   if (i) nl = s+i+1; else nl = s;
   c = strchr(nl, 10);
   l = c ? c - nl : s + pos - nl;
-  return l ? potion_byte_str2(G->data, nl, l) :PN_NIL;
+  return l ? potion_byte_str2(G->data, nl, l) : PN_STR0;
 }

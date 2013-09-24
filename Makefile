@@ -268,10 +268,15 @@ ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@[ -d bin ] || mkdir bin
 	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
-bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${EXTLIBDEPS}
+lib/potion/readline.o:
+	@${ECHO} CC $@
+	@${MAKE} -s -C lib/readline static
+
+bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${EXTLIBDEPS} lib/aio.o lib/potion/readline.o
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ ${LIBPTH} lib/libpotion.a ${LIBS} ${EXTLIBS}
+	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ \
+	  lib/readline/*.o lib/*.o lib/libpotion.a ${LIBPTH} ${LIBS} ${EXTLIBS}
 
 bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${EXTLIBDEPS}
 	@${ECHO} LINK $@

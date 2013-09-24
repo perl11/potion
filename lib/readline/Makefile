@@ -9,6 +9,11 @@ endif
 
 all: readline${LOADEXT}
 
+static: readline.o linenoise.o
+
+%.o: %.c
+	@$(CC) -c $(CFLAGS) -o $@ $(INCS) $<
+
 %${LOADEXT}: %.c
 	@if [ -f ../../libpotion.a ]; then mv ../../libpotion.a ../../libpotion.a.tmp; fi
 	@$(CC) $(CFLAGS) -o $@ $(INCS) $(LDDLLFLAGS) $(SRC) $< $(LIBS)
@@ -17,4 +22,4 @@ all: readline${LOADEXT}
 test:
 
 clean:
-	@rm -f ../readline${LOADEXT} readline${LOADEXT}
+	@rm -f ../readline${LOADEXT} readline${LOADEXT} readline.o linenoise.o

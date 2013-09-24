@@ -62,7 +62,7 @@ PN potion_sig_string(Potion *P, PN cl, PN sig) {
       for (i = 0; i < t->len; i++) {
 	PN v = (PN)t->set[i];
 	if (PN_IS_NUM(v)) {
-    // currently types are still encoded as NUM, TODO: support VTABLE also
+          // currently types are still encoded as NUM, TODO: support VTABLE also
 	  int c = PN_INT(v); comma=0;
 	  if (c == '.')      // is end
 	    pn_printf(P, out, ".");
@@ -680,7 +680,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
             blk->a[0] = PN_SRC(PN_AST(CODE, PN_NIL, blk->loc.lineno, blk->line));
           PN ctor = PN_S(blk, 0);
           PN_PUSH(ctor, PN_AST(EXPR, PN_TUP(PN_AST(MSG,
-	    PN_STRN("self", 4), blk->loc.lineno, blk->line)),
+	    PN_STRN("self", 4), blk->loc.lineno, 0)),
 			        blk->loc.lineno, blk->line));
           breg++;
           PN_BLOCK(breg, (PN)blk, PN_S(t,1));
@@ -754,7 +754,14 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
             PN_ASM2(OP_MOVE, oreg, reg);
           }
           PN_ASM2(OP_LOADK, reg, num);
-          PN_ASM2(PN_S(t,1) != PN_NIL || PN_S(t,2) != PN_NIL ? OP_MSG : OP_BIND, reg, breg);
+          if (PN_S(t,2) != PN_NIL && (PN_PART(PN_S(t,2)) == AST_MSG)) {
+            vPN(Source) t2 = PN_S_(t,2); //TODO typed message (MSG LIST|NIL MSG)
+            DBG_c("typed %s %s\n", AS_STR(t->a[0]), AS_STR(t2));
+            PN_ASM2(OP_BIND, reg, breg);
+            //PN_ASM2(OP_MSG, reg, breg);
+          } else {
+            PN_ASM2(PN_S(t,1) != PN_NIL || PN_S(t,2) != PN_NIL ? OP_MSG : OP_BIND, reg, breg);
+          }
           if (t->part == AST_QUERY && PN_S(t,1) != PN_NIL) {
             jmp = PN_OP_LEN(f->asmb);
             PN_ASM2(OP_NOTJMP, reg, 0);
@@ -767,7 +774,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
             }
           }
           if (PN_S(t,2) != PN_NIL && (PN_PART(PN_S(t,2)) == AST_PROTO)) {
-            vPN(Source) t2 = PN_SRC(PN_S(t,2));
+            vPN(Source) t2 = PN_S_(t,2);
             breg++;
             PN_BLOCK(breg, PN_S(t2,1), PN_S(t2,0));
           } else {
@@ -1053,6 +1060,40 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
   return (PN)f;
 }
 
+///\memberof PNProto
+/// clone method of PNProto
+/// shares name, tree. copies the rest
+PN potion_proto_clone(Potion *P, PN cl, PN self) {
+  vPN(Proto) f = (struct PNProto *)self;
+  vPN(Proto) n = PN_ALLOC(PN_TPROTO, struct PNProto);
+  PN PN_clone = PN_STR("clone");
+  PNAsm * volatile asmb;
+  PN len;
+
+  n->source = f->source;
+  n->stack = f->stack;
+  n->protos = potion_send(PN_clone, f->protos);
+  n->paths  = potion_send(PN_clone, f->paths);
+  n->locals = potion_send(PN_clone, f->locals);
+  n->upvals = potion_send(PN_clone, f->upvals);
+  n->values = potion_send(PN_clone, f->values);
+  n->debugs = potion_send(PN_clone, f->debugs);
+  n->tree   = f->tree;
+  n->localsize = f->localsize;
+  n->upvalsize = f->upvalsize;
+  n->pathsize = f->pathsize;
+  n->name = f->name;
+  n->sig = PN_IS_TUPLE(f->sig) ? potion_send(PN_clone, f->sig) : f->sig;
+
+  len = ((PNAsm *)f->asmb)->len;
+  PN_FLEX_NEW(asmb, PN_TBYTES, PNAsm, len);
+  PN_MEMCPY_N(asmb->ptr, ((PNAsm *)f->asmb)->ptr, u8, len);
+  asmb->len = len;
+  n->asmb = (PN)asmb;
+
+  return (PN)n;
+}
+
 #define READ_U8(ptr) ({u8 rpu = *ptr; ptr += sizeof(u8); rpu;})
 #define READ_PN(pn, ptr) ({PN rpn = *(PN *)ptr; ptr += pn; rpn;})
 #define READ_CONST(pn, ptr) ({ \
@@ -1252,6 +1293,7 @@ void potion_compiler_init(Potion *P) {
   potion_method(pro_vt, "call", potion_proto_call, "args=u");
   potion_method(pro_vt, "tree", potion_proto_tree, 0);
   potion_method(pro_vt, "string", potion_proto_string, 0);
+  potion_method(pro_vt, "clone", potion_proto_clone, 0);
   potion_method(src_vt, "compile", potion_source_compile, "source=a,sig=u");
   potion_method(src_vt, "dump", potion_source_dump, "backend=S|options=S");
   potion_method(src_vt, "dumpbc", potion_source_dumpbc, "|options=S");

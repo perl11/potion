@@ -161,19 +161,23 @@ ifstmt = IF e:ifexpr s:block !"els"   { $$ = PN_TUP(PN_OP(AST_AND, e, s)) }
 ifexpr = list-start eqs - list-end
 ifnexpr = ifexpr | eqs
 
-forlist = (FOR | FOREACH) MY? i:global l:list b:block {
+forlist = (FOR | FOREACH) i:lexglobal l:list b:block {
             yyerror(G,"forlist iterator nyi") }
 
 assigndecl =
-        MY? l:listvar assign r:list     { $$ = PN_AST2(ASSIGN, l, r) }
-      | MY? l:list assign r:list        # aasign
+        MY t:name l:listvar assign r:list { PN_SRC(l)->a[2] = PN_SRC(t); $$ = PN_AST2(ASSIGN, l, r) }
+      | MY? l:listvar assign r:list       { $$ = PN_AST2(ASSIGN, l, r) }
+      | MY t:name l:list assign r:list    # typed lists
+          { PN s1 = PN_TUP0(); PN_TUPLE_EACH(PN_S(l,0), i, v, {
+            PN_SRC(v)->a[2] = PN_SRC(t);
+            s1 = PN_PUSH(s1, PN_AST2(ASSIGN, v, potion_tuple_at(P,0,PN_S(r,0),PN_NUM(i))));
+          }); $$ = PN_AST(EXPR, s1) }
+      | MY? l:list assign r:list          # aasign
           { PN s1 = PN_TUP0(); PN_TUPLE_EACH(PN_S(l,0), i, v, {
             s1 = PN_PUSH(s1, PN_AST2(ASSIGN, v, potion_tuple_at(P,0,PN_S(r,0),PN_NUM(i))));
           }); $$ = PN_AST(EXPR, s1) }
-      | MY? l:global assign e:eqs -       { $$ = PN_AST2(ASSIGN, l, e) }
-#     | MY - l:lexical assign e:eqs -     { $$ = PN_AST2(ASSIGN, l, e) }
-      | l:global assign r:list { YY_ERROR(G, "** Assignment error") } # @x = () nyi
-#lexical = global
+      | l:lexglobal assign e:eqs -  { $$ = PN_AST2(ASSIGN, l, e) }
+      | l:global assign r:list      { YY_ERROR(G, "** Assignment error") } # @x = () nyi
 
 #TODO most of these stack-like assign-expr cases can probably go away
 sets = e:eqs
@@ -287,8 +291,8 @@ method = v:methlhs - arrow m:name - l:list -
        | v:methlhs - arrow m:name -
          { $$ = PN_PUSH(PN_TUPIF(v), m) }
 
-name = !keyword m:id      { $$ = PN_AST(MSG, m) }
-     | !keyword m:funcvar { $$ = PN_AST(MSG, m) }
+name = !keyword m:id -      { $$ = PN_AST(MSG, m) }
+     | !keyword m:funcvar - { $$ = PN_AST(MSG, m) }
 
 #listref-items = i1:listref-item     { $$ = i1 = PN_TUP(i1) }
 #            (sep i2:listref-item { $$ = i1 = PN_PUSH(i1, i2) })*
@@ -327,7 +331,7 @@ hash = hash-start h:hash-items - hash-end     { $$ = PN_AST(LIST, h) }
 #msg = < utfw+ > -   	{ $$ = PN_STRN(yytext, yyleng) }
 
 mvalue = i:immed - { $$ = PN_AST(VALUE, i) }
-      | global
+       | global
 
 methlhs = global
         | name
@@ -344,6 +348,10 @@ immed = undef { $$ = PN_NIL }
       | dec   { $$ = ($$ == YY_TNUM) ? PN_NUM(PN_ATOI(yytext, yyleng, 10))
                    : potion_decimal(P, yytext, yyleng) }
       | str1 | str2
+
+lexglobal = MY t:name i:global { PN_SRC(i)->a[2] = PN_SRC(t); $$ = i }
+          | MY i:global        { $$ = i }
+          | i:global
 
 global  = scalar | listvar | hashvar | listel | hashel | funcvar | globvar
 # send the value a msg, every global is a closure (see name)
@@ -655,9 +663,9 @@ int potion_sig_find(Potion *P, PN cl, PN name)
 static PN yylastline(GREG *G, int pos) {
   char *c, *nl, *s = G->buf;
   int i, l;
-  for (i=pos-1; i && (*(s+i) != 10); i--);
+  for (i=pos-1; i>=0 && (*(s+i) != 10); i--);
   if (i) nl = s+i+1; else nl = s;
   c = strchr(nl, 10);
   l = c ? c - nl : s + pos - nl;
-  return l ? potion_byte_str2(G->data, nl, l) :PN_NIL;
+  return l ? potion_byte_str2(G->data, nl, l) : PN_STR0;
 }

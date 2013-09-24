@@ -35,7 +35,7 @@ ifneq (${JIT_TARGET},)
 endif
 
 ifeq (${JIT},1)
-#ifeq (${JIT_TARGET},X86)
+ifeq (${JIT_TARGET},X86)
 ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/ x86 16,32,64 bit
 # port install udis86
@@ -82,6 +82,7 @@ endif
 endif
 endif
 endif
+endif
 
 ifeq ($(shell tools/config.sh "${CC}" lib -luv uv.h /usr/local),1)
 	HAVE_LIBUV = 1
@@ -93,6 +94,8 @@ else
 	INCS += -I3rd/libuv/include
 endif
 
+#yet disabled
+ifeq (0,1)
 ifeq ($(shell tools/config.sh "${CC}" lib -lpcre pcre.h /usr/local),1)
 	HAVE_PCRE = 1
 	DEFINES += -DHAVE_PCRE
@@ -104,6 +107,7 @@ ifeq ($(shell tools/config.sh "${CC}" lib -lpcre pcre.h /usr),1)
 	DEFINES += -DHAVE_PCRE
 else
 	HAVE_PCRE = 0
+endif
 endif
 endif
 

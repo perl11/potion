@@ -9,6 +9,7 @@ Cygwin) CCS="clang gcc gcc-3" ;;
 esac
 fi
 
+cp config.inc config.inc.test
 testdebug() {
     make -s realclean
     echo make CC="$1" DEBUG=$2
@@ -45,3 +46,5 @@ if test -f /opt/intel/bin/icc; then
     dotest icc
 fi
 
+cp config.inc.test config.inc
+make
