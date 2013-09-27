@@ -87,6 +87,13 @@ or http://www.lua.org/doc/jucs05.pdf
 #define DEBUG_IN_C
 #include <dlfcn.h>
 #ifdef DEBUG_IN_C
+enum {
+  DBG_STEP = 0,
+  DBG_NEXT,
+  DBG_RUN,
+  DBG_QUIT,
+  DBG_EXIT
+};
 static PN (*pn_readline)(Potion *, PN, PN, PN);
 #else
 #include "ast.h"
@@ -379,7 +386,8 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
     DBG_t("\nEntering debug loop\n");
     DBG_vt("calling debug loop(src, proto)\n");
     PN flags = (PN)P->flags; P->flags = (Potion_Flags)EXEC_VM; //turn off tracing,debugging,...
-# ifdef DEBUG_PROTO_DEBUG_LOOP
+# ifdef DEBUG_PROTO_DEBUG_LOOP // This is the planned way to go.
+    // debug.pn loaded, debug object in upvals, call the init and loop method on it
     PN debug = potion_message(P, self, PN_STR("debug")); // find debug object =>0
     if (!debug) return PN_NUM(0);
     PN loopmeth = potion_message(P, debug, PN_STR("loop"));
@@ -403,7 +411,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
       if (code == PN_NUM(6)) // :exit
         exit(0);
     }
-#else // DEBUG_IN_C
+#else // DEBUG_IN_C This is a hack and will go away
     int loop = 1;
     // TODO: check for breakpoints
     vPN(Source) t = (struct PNSource*)ast;
@@ -476,7 +484,8 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
           regs = (struct PNTuple *) potion_tuple_with_size(P, PN_INT(f->stack));
           for (i=0; i < PN_INT(f->stack); i++) { regs->set[i] = reg[i]; }
           debug_fn = PN_CLOSURE_F(cl);
-          printf("%s\n", AS_STR(debug_fn(P, (PN)cl, code, regs, f->locals, f->upvals, f->values, f->paths)));
+          printf("%s\n", AS_STR(debug_fn(P, (PN)cl, code, regs, f->locals,
+					 f->upvals, f->values, f->paths)));
           f->sig = oldsig;
 	  P->flags = (Potion_Flags)flags;
 	}
@@ -557,6 +566,7 @@ reentry:
     if (P->flags & DEBUG_TRACE) {
       if (potion_ops[op.code].args > 1)
 	fprintf(stderr, "%d", op.b);
+      if (op.code == OP_DBG) fprintf(stderr, "\n");
     }
 #endif
 

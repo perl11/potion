@@ -270,7 +270,7 @@ opexpr = not e:expr		{ $$ = PN_AST(NOT, e) }
 
 atom = e:value | e:list | e:anonsub
 
-special = < ( "for"|"foreach"|"while"|"class"|"if"|"elseif" ) > - { $$ = PN_AST(MSG, PN_STRN(yytext, yyleng)) }
+special = < ( "foreach"|"for"|"while"|"class"|"if"|"elseif" ) > - { $$ = PN_AST(MSG, PN_STRN(yytext, yyleng)) }
 
 #FIXME methods and indirect methods:
 #   chr 101  => (expr (value (101), msg ("chr")))
