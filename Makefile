@@ -254,13 +254,13 @@ endif
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 ${GREG}: syn/greg.c syn/compile.c syn/tree.c
@@ -275,13 +275,13 @@ lib/potion/readline.o:
 bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${EXTLIBDEPS} lib/aio.o lib/potion/readline.o
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_POTION} -o $@ \
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_POTION} -o $@ \
 	  lib/readline/*.o lib/*.o lib/libpotion.a ${LIBPTH} ${LIBS} ${EXTLIBS}
 
 bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${EXTLIBDEPS}
 	@${ECHO} LINK $@
 	@[ -d bin ] || mkdir bin
-	@${CC} ${CFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS} ${EXTLIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS} ${EXTLIBS}
 
 lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
@@ -556,21 +556,21 @@ fulltest: testable test/spectest.data
 # for LTO gold -O4
 bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
-	@if ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}; then true; else \
-	  ${CC} ${CFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBS}; fi
+	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBS}; then true; else \
+	  ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBS}; fi
 
 bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${LIBS}
 
 bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${LIBS}
 
 bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK $@
-	@if ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}; then true; else \
-	  ${CC} ${CFLAGS} ${OBJ_P2_TEST} -o $@ ${OBJ2} ${OBJ_P2_SYN} ${LIBS}; fi
+	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}; then true; else \
+	  ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2_TEST} -o $@ ${OBJ2} ${OBJ_P2_SYN} ${LIBS}; fi
 
 dist: bins libs static doc ${SRC_SYN} ${SRC_P2_SYN}
 	@if [ -n "${RPATH}" ]; then \

@@ -407,7 +407,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
     locals = locals;
     P->flags = (Potion_Flags)flags;
     if (code >= PN_NUM(5)) { // :q, :exit
-      P->flags &= ~EXEC_DEBUG;
+      P->flags (Potion_Flags)((int)P->flags & ~EXEC_DEBUG);
       if (code == PN_NUM(6)) // :exit
         exit(0);
     }
@@ -427,7 +427,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
 	    && PN_STR_PTR(str)[0] == ':')
 	{
 	  if (str == PN_STR(":c"))         { break; }
-	  else if (str == PN_STR(":q"))    { P->flags -= EXEC_DEBUG; break; }
+	  else if (str == PN_STR(":q"))    { P->flags = (Potion_Flags)((int)P->flags - EXEC_DEBUG); break; }
 	  else if (str == PN_STR(":exit")) { exit(0); }
 	  else if (str == PN_STR(":h"))    {
 	    printf("c readline debugger (no breakpoints and lexical env yet)\n"
@@ -494,6 +494,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
     }
 #endif // DEBUG_IN_C
   }
+  return PN_NUM(0);
 }
 
 /** the bytecode run-loop */

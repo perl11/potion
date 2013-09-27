@@ -144,8 +144,8 @@ anonsub = SUB l:p5-siglist? b:block
 # TODO: parse-time sideeffs: require + import, in the compiler its too late
 use = (u:USE|u:NO) v:version
         { p2_eval(P, PN_AST(BLOCK, PN_TUP(PN_AST2(MSG, PN_use, PN_AST(LIST, PN_PUSH(PN_TUP(u), v)))))) }
-    | u:USE n:id - "p2"          { P->flags |= MODE_P2; }
-    | u:NO n:id - "p2"           { P->flags &= ~MODE_P2; }
+    | u:USE n:id - "p2"          { P->flags = (Potion_Flags)((int)P->flags | MODE_P2); }
+    | u:NO n:id - "p2"           { P->flags = (Potion_Flags)((int)P->flags & ~MODE_P2); }
     | (u:USE|u:NO) n:id
         { p2_eval(P, PN_AST(BLOCK, PN_TUP(PN_AST2(MSG, PN_use, PN_AST(LIST, PN_PUSH(PN_TUP(u), n)))))) }
     | (u:USE|u:NO) n:id fatcomma l:atom

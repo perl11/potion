@@ -3,14 +3,14 @@
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
 # -pedantic not yet
-WARNINGS = -Wall -Werror -Wno-zero-length-array -Wno-gnu -Wno-variadic-macros -Wno-pointer-arith \
-           -Wno-switch -Wno-return-type -Wno-unused-label
+WARNINGS = -Wall -Werror -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
 CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing -D_FORTIFY_SOURCE=2
 INCS   = -Icore
 LIBPTH = -Llib
 RPATH         = -Wl,-rpath=$(shell pwd)/lib
 RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib
 LIBS   = -lm
+LDFLAGS ?=
 RDLLFLAGS  =
 LDDLLFLAGS = -shared -fpic
 AR    ?= ar
@@ -120,8 +120,10 @@ endif
 #endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
-	WARNINGS += -Wno-unused-value
-	LDDLLFLAGS += -Wl,--as-needed
+	WARNINGS += -Wno-unused-value -Wno-switch -Wno-unused-label -Wno-zero-length-array -Wno-gnu
+	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
+	LDDLLFLAGS += $(LDFLAGS)
+#todo: 64bit => -fPIE and -fpie for the linker
   ifeq (${DEBUG},0)
         DEFINES += -DCGOTO
 	DEBUGFLAGS += -finline
@@ -131,6 +133,8 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	ICC = 1
         #DEFINES += -DCGOTO
 	DEBUGFLAGS += -falign-functions=16
+	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
+	LDDLLFLAGS += $(LDFLAGS)
 # 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
 # 177: label "l414" was declared but never referenced in syntax-p5.c sets fail case
 	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177
@@ -138,15 +142,18 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 # -Ofast
 	DEBUGFLAGS += -finline
   else
-        DEBUGFLAGS += -gdwarf-3
+        DEBUGFLAGS += -g3 -gdwarf-3
   endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
+	WARNINGS += -Wno-switch -Wno-unused-label -Wno-zero-length-array -Wno-gnu
+	DEBUGFLAGS += --param ssp-buffer-size=1
+	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
+	LDDLLFLAGS += $(LDFLAGS)
   ifeq (${DEBUG},0)
 	DEBUGFLAGS += -finline -falign-functions
         DEFINES += -DCGOTO
   endif
-	LDDLLFLAGS += -Wl,--as-needed
 endif
 endif
 endif
@@ -238,6 +245,7 @@ config.inc.echo:
 	@${ECHO} "RPATH   = ${RPATH}"
 	@${ECHO} "RPATH_INSTALL = " ${RPATH_INSTALL}
 	@${ECHO} "LIBS    = ${LIBS}"
+	@${ECHO} "LDFLAGS = ${LDFLAGS}"
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "RDLLFLAGS  = ${RDLLFLAGS}"
 	@${ECHO} "HAVE_LIBUV = ${HAVE_LIBUV}"
@@ -259,6 +267,7 @@ config.inc.echo:
 config.h.echo:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
 	@${ECHO} "#define POTION_CFLAGS \"${CFLAGS}\""
+	@${ECHO} "#define POTION_LDFLAGS \"${LDFLAGS}\""
 	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
 	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
 	@${ECHO} "#define POTION_EXE    \"${EXE}\""
