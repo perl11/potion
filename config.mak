@@ -2,9 +2,10 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
-# -Wno-return-type
-WARNINGS = -Wall -Werror -Wno-switch -Wno-return-type -Wno-unused-label
-CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing
+# -pedantic not yet
+WARNINGS = -Wall -Werror -Wno-zero-length-array -Wno-gnu -Wno-variadic-macros -Wno-pointer-arith \
+           -Wno-switch -Wno-return-type -Wno-unused-label
+CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing -D_FORTIFY_SOURCE=2
 INCS   = -Icore
 LIBPTH = -Llib
 RPATH         = -Wl,-rpath=$(shell pwd)/lib
@@ -120,6 +121,7 @@ endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	WARNINGS += -Wno-unused-value
+	LDDLLFLAGS += -Wl,--as-needed
   ifeq (${DEBUG},0)
         DEFINES += -DCGOTO
 	DEBUGFLAGS += -finline
@@ -144,19 +146,20 @@ ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
 	DEBUGFLAGS += -finline -falign-functions
         DEFINES += -DCGOTO
   endif
+	LDDLLFLAGS += -Wl,--as-needed
 endif
 endif
 endif
 
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -fno-stack-protector
+	DEBUGFLAGS += -fstack-protector-all
 else
 	DEFINES += -DDEBUG
 	STRIP = echo
   ifneq (${CLANG},1)
-	DEBUGFLAGS += -g3 -fstack-protector
+	DEBUGFLAGS += -g3 -fstack-protector-all
   else
-	DEBUGFLAGS += -g -fstack-protector
+	DEBUGFLAGS += -g -fstack-protector-all
   endif
 endif
 ifeq (${ASAN},1)

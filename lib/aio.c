@@ -1015,7 +1015,7 @@ aio_udp_send6(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN p
 static uv_buf_t aio_alloc_cb(uv_handle_t* handle, size_t size) {
   aio_handle_t* wrap = (aio_handle_t*)handle;
   struct PNBytes *buf = potion_gc_alloc(wrap->P, PN_TBYTES, size);
-  return (uv_buf_t)uv_buf_init(buf->chars, size);
+  return uv_buf_init(buf->chars, size);
 }
 
 /**\memberof Aio_udp

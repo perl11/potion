@@ -184,9 +184,8 @@ PN potion_file_string(Potion *P, PN cl, pn_file self) {
   global "read" method, read next line from stdin via fgets()
   \return PNString or or PN_NIL */
 PN potion_lobby_read(Potion *P, PN cl, PN self) {
-  const int linemax = 1024;
-  char line[linemax];
-  if (fgets(line, linemax, stdin) != NULL)
+  char line[1024];
+  if (fgets(line, 1024, stdin) != NULL)
     return potion_str(P, line);
   return PN_NIL;
 }

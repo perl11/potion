@@ -43,7 +43,7 @@ struct PNTable {
   char table[0];
 };
 
-KHASH_MAP_INIT_PN(PN, struct PNTable);
-KHASH_MAP_INIT_STR(str, struct PNTable);
+KHASH_MAP_INIT_PN(PN, struct PNTable)
+KHASH_MAP_INIT_STR(str, struct PNTable)
 
 #endif

@@ -869,19 +869,27 @@ void potion_x86_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
   ASM(0x8B); ASM(0x55); ASM(0x08);	// mov 0x8(%ebp) %edx
 #else
 #endif
+#if __WORDSIZE != 64
   PN_TUPLE_EACH(ivars, i, v, {
     ASM(0x81); ASM(X86C(0xFA, 0xFF));
       ASMI(PN_UNIQ(v));			// cmp UNIQ %edi
     ASM(0x75); ASM(X86C(7, 6));		// jne +7
     ASM(0xB8); ASMI(i);			// mov i %rax
-#if __WORDSIZE != 64
-    ASM(0x5D);
-#endif
+    ASM(0x5D);                          // pop %rbp
     ASM(0xC3);				// retq
   });
+#else
+  PN_TUPLE_EACH(ivars, i, v, {
+    ASM(0x81); ASM(X86C(0xFA, 0xFF));
+      ASMI(PN_UNIQ(v));			// cmp UNIQ %edi
+    ASM(0x75); ASM(X86C(7, 6));		// jne +7
+    ASM(0xB8); ASMI(i);			// mov i %rax
+    ASM(0xC3);				// retq
+  });
+#endif
   X86_PRE(); ASM(0xB8); ASMN(-1);	// mov -1 %rax
 #if __WORDSIZE != 64
-  ASM(0x5D);
+  ASM(0x5D);                            // pop %rbp
 #endif
   ASM(0xC3);				// retq
 }

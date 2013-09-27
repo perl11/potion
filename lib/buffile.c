@@ -131,9 +131,8 @@ PN potion_buffile_fgetc(Potion *P, PN cl, pn_ffile self) {
   \see potion_lobby_read() and potion_file_read()
   \return PNBytes or PN_NIL */
 PN potion_buffile_fgets(Potion *P, PN cl, pn_ffile self) {
-  const int linemax = 1024;
-  char line[linemax];
-  if (fgets(line, linemax, self->file) != NULL)
+  char line[1024];
+  if (fgets(line, 1024, self->file) != NULL)
     return potion_byte_str(P, line);
   return PN_NIL;
 }
