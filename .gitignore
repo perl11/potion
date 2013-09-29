@@ -58,3 +58,4 @@
 /doc/footer.inc
 /tools/bisect*.sh
 /MANIFEST
+/config.inc-*
