@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/perl11/p2.png?branch=p2)](https://travis-ci.org/perl11/p2)
+
   ~ p2 ~
 
          .ooo
@@ -18,7 +20,7 @@
 
 
   p2 is a she. She is a perl5 and possible perl6/nqp backend, based
-  on why the luck stiff's potion. See README why potion is exciting.
+  on why the luck stiff's potion. See README.potion why potion is exciting.
   Homepage: http://perl11.org/p2/
 
   parrot example/fib.pir 28  0m1.746s
@@ -39,7 +41,7 @@
 
    * Should parse most of perl5, just some XS and B tricks not.
 
-   * signatures, fast mop, types, native threads, call-replacing
+   * Signatures, fast mop, types, native threads, call-replacing
      macros for perl5.
 
    * Using most of Damian Conway's p5i recommendations:
@@ -47,7 +49,8 @@
      See <http://web.archive.org/web/20040207072905/http://www.yetanother.org/damian/Perl5+i/>
 
    * libp2 is usable as a fast backend for nqp/perl6, but parsing and supporting
-     p6 natively without going through nqp should be easier (and faster).
+     p6 natively without going through nqp should be easier and faster.
+     Tokuhiro Matsuno already wrote a p6 parser, pvip.
 
    * Native and fast calling convention, no XS stack args on the heap.
      XS is replaced by dlcall (dynamic ffi), and/or shared libraries
