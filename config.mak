@@ -121,6 +121,7 @@ endif
 
 ifneq (,$(findstring ccache,${CC}))
 	WARNINGS = -Wall -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
+	CFLAGS += -Qunused-arguments
 endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
