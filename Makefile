@@ -145,11 +145,11 @@ grammar: syn/greg.y
 
 syn/greg.c: syn/greg.y
 	@${ECHO} GREG $<
-	@if [ -f ${GREG} ]; then ${GREG} syn/greg.y > syn/greg-new.c && \
-	  ${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg.c syn/compile.c syn/tree.c -Isyn && \
+	@if test -f ${GREG}; then ${GREG} syn/greg.y > syn/greg-new.c && \
+	  ${CC} ${GREGCFLAGS} -o syn/greg-new syn/greg-new.c syn/compile.c syn/tree.c -Isyn && \
 	  ${MV} syn/greg-new.c syn/greg.c && \
 	  ${MV} syn/greg-new syn/greg; \
-        fi
+	fi
 
 core/callcc.o core/callcc.o2: core/callcc.c core/config.h core/p2.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
