@@ -3,6 +3,7 @@
 .PHONY: all pn static usage config clean doc rebuild test bench tarball dist release install
 
 SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
+GREGCFLAGS = -O3 -DNDEBUG
 
 # bootstrap config.inc with make -f config.mak
 include config.inc
@@ -101,7 +102,7 @@ core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 tools/greg.c: tools/greg.h tools/greg.y tools/compile.c tools/tree.c
 	@${ECHO} GREG $<
 	${GREG} tools/greg.y > tools/greg-new.c
-	${CC} -O3 -DNDEBUG -o tools/greg-new tools/greg.c tools/compile.c tools/tree.c -Itools
+	${CC} ${GREGCFLAGS} -o tools/greg-new tools/greg.c tools/compile.c tools/tree.c -Itools
 	${MV} tools/greg-new.c tools/greg.c
 	${MV} tools/greg-new tools/greg
 
@@ -153,7 +154,7 @@ endif
 
 ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
-	@${CC} -O3 -DNDEBUG -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
+	@${CC} ${GREGCFLAGS} -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
 
 # the installed version assumes bin/potion loading from ../lib/libpotion (relocatable)
 # on darwin we generate a parallel potion/../lib to use @executable_path/../lib/libpotion
