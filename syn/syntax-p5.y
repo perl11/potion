@@ -563,7 +563,9 @@ PN p2_parse(Potion *P, PN code, char *filename) {
   P->input = code;
   P->source = PN_NIL;
   P->pbuf = potion_asm_new(P);
+#ifdef DEBUG
   yydebug = P->flags;
+#endif
 
   G->filename = filename;
   P->fileno = PN_PUT(pn_filenames, PN_STR(filename));
@@ -594,7 +596,9 @@ PN potion_sig(Potion *P, char *fmt) {
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
+#ifdef DEBUG
   yydebug = P->flags;
+#endif
 
   if (!YY_NAME(parse_from)(G, yy_sig))
     YY_ERROR("** Signature syntax error");
@@ -620,7 +624,9 @@ PN p2_sig(Potion *P, char *fmt) {
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
   P->pbuf = NULL;
+#ifdef DEBUG
   yydebug = P->flags;
+#endif
 
   if (!YY_NAME(parse_from)(G, yy_sig_p5))
     YY_ERROR("** Signature syntax error");

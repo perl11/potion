@@ -502,7 +502,6 @@ static char *preamble= "\
 #ifndef YY_END\n\
 #define YY_END		( G->end= G->pos, 1)\n\
 #endif\n\
-#define yydebug G->debug\n\
 #ifdef YY_DEBUG\n\
 # define yydebug G->debug\n\
 # ifndef YYDEBUG_PARSE\n\
