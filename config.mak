@@ -125,10 +125,8 @@ ifneq (,$(findstring ccache,${CC}))
 endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
-	WARNINGS += -Wno-unused-value -Wno-switch -Wno-unused-label -Wno-zero-length-array -Wno-gnu
-	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
-	LDDLLFLAGS += $(LDFLAGS)
-#todo: 64bit => -fPIE and -fpie for the linker
+	WARNINGS += -Wno-unused-value -Wno-switch -Wno-unused-label
+  #todo: 64bit => -fPIE and -fpie for the linker
   ifeq (${DEBUG},0)
         DEFINES += -DCGOTO
 	DEBUGFLAGS += -finline
@@ -138,8 +136,6 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	ICC = 1
         #DEFINES += -DCGOTO
 	DEBUGFLAGS += -falign-functions=16
-	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
-	LDDLLFLAGS += $(LDFLAGS)
 # 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
 # 177: label "l414" was declared but never referenced in syntax-p5.c sets fail case
 	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177
@@ -151,10 +147,8 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
   endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
-	WARNINGS += -Wno-switch -Wno-unused-label -Wno-zero-length-array -Wno-gnu
+	WARNINGS += -Wno-switch -Wno-unused-label
 	DEBUGFLAGS += --param ssp-buffer-size=1
-	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
-	LDDLLFLAGS += $(LDFLAGS)
   ifeq (${DEBUG},0)
 	DEBUGFLAGS += -finline -falign-functions
         DEFINES += -DCGOTO
@@ -228,6 +222,13 @@ else
 endif
 endif
 endif
+
+ifneq ($(APPLE),1)
+	WARNINGS += -Wno-zero-length-array -Wno-gnu
+	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
+	LDDLLFLAGS += $(LDFLAGS)
+endif
+
 
 # let an existing config.inc overwrite everything
 include config.inc
