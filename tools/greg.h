@@ -19,12 +19,16 @@
  */
 
 #include <stdio.h>
+#ifdef WIN32
+# undef inline
+# define inline __inline
+#endif
 
 #define GREG_MAJOR	0
 #define GREG_MINOR	4
 #define GREG_LEVEL	5
 
-typedef enum { Freed = -1, Unknown= 0, Rule, Variable, Name, Dot, Character, String, Class, Action, Predicate, Alternate, Sequence, PeekFor, PeekNot, Query, Star, Plus, Any } NodeType;
+typedef enum { Freed = -1, Unknown= 0, Rule, Variable, Name, Dot, Character, String, Class, Action, Predicate, Error, Alternate, Sequence, PeekFor, PeekNot, Query, Star, Plus, Any } NodeType;
 
 enum {
   RuleUsed	= 1<<0,
@@ -33,7 +37,7 @@ enum {
 
 typedef union Node Node;
 
-#define NODE_COMMON NodeType type;  Node *next; char *errblock
+#define NODE_COMMON NodeType type;  Node *next
 struct Rule	 { NODE_COMMON; char *name; Node *variables;  Node *expression;  int id;  int flags;	};
 struct Variable	 { NODE_COMMON; char *name; Node *value;  int offset;					};
 struct Name	 { NODE_COMMON; Node *rule; Node *variable;						};
@@ -43,6 +47,7 @@ struct String	 { NODE_COMMON; char *value;								};
 struct Class	 { NODE_COMMON; unsigned char *value;							};
 struct Action	 { NODE_COMMON; char *text;  Node *list;  char *name;  Node *rule;			};
 struct Predicate { NODE_COMMON; char *text;								};
+struct Error     { NODE_COMMON; Node *element; char *text;						};
 struct Alternate { NODE_COMMON; Node *first;  Node *last;						};
 struct Sequence	 { NODE_COMMON; Node *first;  Node *last;						};
 struct PeekFor	 { NODE_COMMON; Node *element;								};
@@ -65,6 +70,7 @@ union Node
   struct Class		cclass;
   struct Action		action;
   struct Predicate	predicate;
+  struct Error	 	error;
   struct Alternate	alternate;
   struct Sequence	sequence;
   struct PeekFor	peekFor;
@@ -96,6 +102,7 @@ extern Node *makeString(char *text);
 extern Node *makeClass(char *text);
 extern Node *makeAction(char *text);
 extern Node *makePredicate(char *text);
+extern Node *makeError(Node *e, char *text);
 extern Node *makeAlternate(Node *e);
 extern Node *Alternate_append(Node *e, Node *f);
 extern Node *makeSequence(Node *e);

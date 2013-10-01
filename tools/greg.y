@@ -18,7 +18,7 @@
 # 
 # THE SOFTWARE IS PROVIDED 'AS IS'.  USE ENTIRELY AT YOUR OWN RISK.
 # 
-# Last edited: 2013-04-11 15:58:07 rurban
+# Last edited: 2013-10-01 11:36:41 rurban
 
 %{
 # include "greg.h"
@@ -38,6 +38,18 @@
 
   static char	*trailer= 0;
   static Header	*headers= 0;
+  static char   *deftrailer= "\n\
+#ifdef YY_MAIN\n\
+int main()\n\
+{\n\
+  GREG g;\n\
+  yyinit(&g);\n\
+  while (yyparse(&g));\n\
+  yydeinit(&g);\n\
+  return 0;\n\
+}\n\
+#endif\n\
+";
 
   void makeHeader(char *text);
   void makeTrailer(char *text);
@@ -59,8 +71,11 @@ definition=	s:identifier 				{ if (push(beginRule(findRule(yytext, s)))->rule.ex
 expression=	sequence (BAR sequence			{ Node *f= pop();  push(Alternate_append(pop(), f)); }
 			    )*
 
-sequence=	prefix (prefix				{ Node *f= pop();  push(Sequence_append(pop(), f)); }
+sequence=	error (error				{ Node *f= pop();  push(Sequence_append(pop(), f)); }
 			  )*
+
+error=		prefix  (TILDE action			{ push(makeError(pop(), yytext)); }
+			)?
 
 prefix=		AND action				{ push(makePredicate(yytext)); }
 |		AND suffix				{ push(makePeekFor(pop())); }
@@ -72,8 +87,7 @@ suffix=		primary (QUESTION			{ push(makeQuery(pop())); }
 			| PLUS			        { push(makePlus (pop())); }
 			)?
 
-primary=	(
-                identifier				{ push(makeVariable(yytext)); }
+primary=	identifier				{ push(makeVariable(yytext)); }
 		COLON identifier !EQUAL			{ Node *name= makeName(findRule(yytext, 0));  name->name.variable= pop();  push(name); }
 |		identifier !EQUAL			{ push(makeName(findRule(yytext, 0))); }
 |		OPEN expression CLOSE
@@ -83,29 +97,29 @@ primary=	(
 |		action					{ push(makeAction(yytext)); }
 |		BEGIN					{ push(makePredicate("YY_BEGIN")); }
 |		END					{ push(makePredicate("YY_END")); }
-                ) (errblock { Node *node = pop(); ((struct Any *) node)->errblock = strdup(yytext); push(node); })?
 
 # Lexical syntax
 
 identifier=	< [-a-zA-Z_][-a-zA-Z_0-9]* > -
 
-literal=	['] < ( !['] char )* > ['] -
+literal=	['] < ( !['] char )* > ['] -   #'
 |		["] < ( !["] char )* > ["] -
 
 class=		'[' < ( !']' range )* > ']' -
 
 range=		char '-' char | char
 
-char=		'\\' [abefnrtv'"\[\]\\]
+char=		'\\' [-abefnrtv'"\[\]\\]
+|		'\\' 'x'[0-9A-Fa-f][0-9A-Fa-f]
+|		'\\' 'x'[0-9A-Fa-f]
 |		'\\' [0-3][0-7][0-7]
 |		'\\' [0-7][0-7]?
 |		!'\\' .
 
 
-errblock=       '~{' < braces* > '}' -
 action=		'{' < braces* > '}' -
 
-braces=		'{' (!'}' .)* '}'
+braces=		'{' braces* '}'
 |		!'}' .
 
 EQUAL=		'=' -
@@ -122,6 +136,7 @@ CLOSE=		')' -
 DOT=		'.' -
 BEGIN=		'<' -
 END=		'>' -
+TILDE=		'~' -
 RPERCENT=	'%}' -
 
 -=		(space | comment)*
@@ -208,13 +223,9 @@ int main(int argc, char **argv)
   argv += optind;
 
   G = yyparse_new(NULL);
-  G->lineno= 1;
-  G->filename= "-";
 #ifdef YY_DEBUG
-  if (verboseFlag > 0) {
-    yydebug = YYDEBUG_PARSE;
-    if (verboseFlag > 1)
-      yydebug = YYDEBUG_PARSE + YYDEBUG_VERBOSE;
+  if (verboseFlag > 0) { yydebug = YYDEBUG_PARSE;
+    if (verboseFlag > 1) yydebug = YYDEBUG_PARSE + YYDEBUG_VERBOSE;
   }
 #endif
 
@@ -263,9 +274,12 @@ int main(int argc, char **argv)
   }
 
   if (trailer) {
-    fprintf(output, "%s\n", trailer);
+    fputs(trailer, output);
+    fputs("\n", output);
     free(trailer);
   }
+  else
+    fputs(deftrailer, output);
 
   return 0;
 }

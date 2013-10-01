@@ -162,9 +162,9 @@ struct PNVtable;
 #define DBG_v(...) \
   if (P->flags & DEBUG_VERBOSE) fprintf(stderr, __VA_ARGS__)
 #define DBG_vt(...) \
-  if (P->flags & (DEBUG_VERBOSE|DEBUG_TRACE)) fprintf(stderr, __VA_ARGS__)
+  if (P->flags & DEBUG_VERBOSE && P->flags & DEBUG_TRACE) fprintf(stderr, __VA_ARGS__)
 #define DBG_vi(...) \
-  if (P->flags & (DEBUG_VERBOSE|DEBUG_INSPECT)) fprintf(stderr, __VA_ARGS__)
+  if (P->flags & DEBUG_VERBOSE && P->flags & DEBUG_INSPECT) fprintf(stderr, __VA_ARGS__)
 #define DBG_c(...) \
   if (P->flags & DEBUG_COMPILE) fprintf(stderr, __VA_ARGS__)
 #else
