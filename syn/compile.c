@@ -656,13 +656,10 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
 	  if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
 	  fputc(G->buf[G->pos++], stderr);\n\
 	}\n\
+        fputc('\\\"', stderr);\n\
       }\n\
-      fputc('\\\"', stderr);\n\
     }\n\
-  if (!strcmp(\"-\", G->filename))\n\
-    fprintf(stderr, \" at line %d\\n\", G->lineno);\n\
-  else\n\
-    fprintf(stderr, \" at %s:%d\\n\", G->filename, G->lineno);\n\
+  fprintf(stderr, \" at %s:%d\\n\", G->filename, G->lineno);\n\
   exit(1);\n\
 }\n\
 \n\
