@@ -15,7 +15,7 @@
  * 
  * THE SOFTWARE IS PROVIDED 'AS IS'.  USE ENTIRELY AT YOUR OWN RISK.
  * 
- * Last edited: 2013-04-10 11:15:49 rurban
+ * Last edited: 2013-09-30 20:44:59 rurban
  */
 
 #include <stdio.h>
@@ -449,23 +449,6 @@ static void Rule_compile_c2(Node *node)
     Rule_compile_c2(node->rule.next);
 }
 
-#if 0
-#ifdef YY_DEBUG
-static void yyprintcontext(FILE *stream, char *s)
-{
-  char *context = s;
-  char *nl = strchr(context, 10);
-  if (nl) {
-    context = (char*)YY_ALLOC(nl-s+1,0);
-    strncpy(context, s, nl-s);
-    context[nl-s] = '\0'; /* replace nl by 0 */
-  }
-  fprintf(stream, " @ \"%s\"", context);
-  if (nl) YY_FREE(context);
-}
-#endif
-#endif
-
 static char *header= "\
 #include <stdio.h>\n\
 #include <stdlib.h>\n\
@@ -502,7 +485,7 @@ static char *preamble= "\
 #define YY_NAME(N) yy##N\n\
 #endif\n\
 #ifndef YY_INPUT\n\
-#define YY_INPUT(G, buf, result, max_size)		\\\n\
+#define YY_INPUT(buf, result, max_size)			\\\n\
   {							\\\n\
     int yyc= fgetc(G->input);				\\\n\
     if ('\\n' == yyc) ++G->lineno;      		\\\n\
@@ -511,7 +494,7 @@ static char *preamble= "\
   }\n\
 #endif\n\
 #ifndef YY_ERROR\n\
-#define YY_ERROR(G, message) yyerror(G, message)\n\
+#define YY_ERROR(message) yyerror(G, message)\n\
 #endif\n\
 #ifndef YY_BEGIN\n\
 #define YY_BEGIN	( G->begin= G->pos, 1)\n\
@@ -521,6 +504,7 @@ static char *preamble= "\
 #endif\n\
 #define yydebug G->debug\n\
 #ifdef YY_DEBUG\n\
+# define yydebug G->debug\n\
 # ifndef YYDEBUG_PARSE\n\
 #  define YYDEBUG_PARSE   1\n\
 # endif\n\
@@ -554,6 +538,7 @@ static char *preamble= "\
     fprintf(stderr, \"\\n\");\\\n\
   }\n\
 #else\n\
+# define yydebug 0\n\
 # define yyprintf(args)\n\
 # define yyprintfv(args)\n\
 # define yyprintfGcontext\n\
@@ -610,7 +595,9 @@ typedef struct _GREG {\n\
   YYSTYPE *vals;\n\
   int valslen;\n\
   YY_XTYPE data;\n\
+#ifdef YY_DEBUG\n\
   int debug;\n\
+#endif\n\
 } GREG;\n\
 \n\
 YY_LOCAL(int) yyrefill(GREG *G)\n\
@@ -621,7 +608,7 @@ YY_LOCAL(int) yyrefill(GREG *G)\n\
       G->buflen *= 2;\n\
       G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);\n\
     }\n\
-  YY_INPUT(G, (G->buf + G->pos), yyn, (G->buflen - G->pos));\n\
+  YY_INPUT((G->buf + G->pos), yyn, (G->buflen - G->pos));\n\
   if (!yyn) return 0;\n\
   G->limit += yyn;\n\
   return 1;\n\
@@ -663,15 +650,20 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
   if (G->pos < G->limit || !feof(G->input))\n\
     {\n\
       G->buf[G->limit]= '\\0';\n\
-      if (G->pos < G->limit) {\n\
+      if (G->pos < G->limit)\n\
         fprintf(stderr, \" before text \\\"\");\n\
-        while (G->pos < G->limit)\n\
+      while (G->pos < G->limit)\n\
 	{\n\
 	  if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
 	  fputc(G->buf[G->pos++], stderr);\n\
 	}\n\
-        fputc('\\\"', stderr);\n\
-      }\n\
+      if (G->pos == G->limit)\n\
+	{\n\
+	  int c;\n\
+	  while (EOF != (c= fgetc(G->input)) && '\\n' != c && '\\r' != c)\n\
+	    fputc(c, stderr);\n\
+	}\n\
+      fputc('\\\"', stderr);\n\
     }\n\
   if (!strcmp(\"-\", G->filename))\n\
     fprintf(stderr, \" at line %d\\n\", G->lineno);\n\
@@ -901,10 +893,20 @@ YY_PARSE(int) YY_NAME(parse)(GREG *G)\n\
   return YY_NAME(parse_from)(G, yy_%s);\n\
 }\n\
 \n\
+YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)\n\
+{\n\
+  GREG *G= (GREG *)YY_CALLOC(1, sizeof(GREG), G->data);\n\
+  G->data= data;\n\
+  G->input= stdin;\n\
+  G->lineno= 1;\n\
+  G->filename= \"-\";\n\
+  return G;\n\
+}\n\
 YY_PARSE(void) YY_NAME(init)(GREG *G)\n\
 {\n\
-    memset(G, 0, sizeof(GREG));\n\
+    memcpy(G, YY_NAME(parse_new)(NULL), sizeof(GREG));\n\
 }\n\
+\n\
 YY_PARSE(void) YY_NAME(deinit)(GREG *G)\n\
 {\n\
     if (G->buf) YY_FREE(G->buf);\n\
@@ -912,17 +914,6 @@ YY_PARSE(void) YY_NAME(deinit)(GREG *G)\n\
     if (G->thunks) YY_FREE(G->thunks);\n\
     if (G->vals) YY_FREE((void*)G->vals);\n\
 }\n\
-YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)\n\
-{\n\
-  GREG *G= (GREG *)YY_CALLOC(1, sizeof(GREG), G->data);\n\
-  G->data= data;\n\
-  G->input= stdin;\n\
-  G->pos = G->limit = 0;\n\
-  G->lineno= 1;\n\
-  G->filename= \"-\";\n\
-  return G;\n\
-}\n\
-\n\
 YY_PARSE(void) YY_NAME(parse_free)(GREG *G)\n\
 {\n\
   YY_NAME(deinit)(G);\n\

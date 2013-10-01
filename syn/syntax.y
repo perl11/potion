@@ -25,7 +25,7 @@
 #define YY_XTYPE Potion *
 #define YY_XVAR P
 
-#define YY_INPUT(G, buf, result, max) { \
+#define YY_INPUT(buf, result, max) { \
   YY_XTYPE P = G->data; \
   if (P->yypos < PN_STR_LEN(P->input)) { \
     result = max; \
@@ -271,12 +271,12 @@ escu        = esc 'u' < hexl hexl hexl hexl > {
     utfc[nbuf++] = code;
   } else if (code < 0x7ff) {  // 110xxxxx 10xxxxxx
     if (code == 0xC0 || code == 0xC1)
-      YY_ERROR(G, "Invalid utf-8 unicode character (U+C0,U+C1)");
+      YY_ERROR("Invalid utf-8 unicode character (U+C0,U+C1)");
     utfc[nbuf++] = (code >> 6) | 0xc0;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
   } else { // 1110xxxx 10xxxxxx 10xxxxxx
     if (code >= 0xD800 && code < 0xDFFF) // utf-16 surrogate halves RFC 3629
-      YY_ERROR(G, "Invalid utf-8 unicode character (U+D800-U+DFFF)");
+      YY_ERROR("Invalid utf-8 unicode character (U+D800-U+DFFF)");
     utfc[nbuf++] = (code >> 12) | 0xe0;
     utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
@@ -291,12 +291,12 @@ escU       = esc 'U' '{' < hexl+ > '}' {
     utfc[nbuf++] = code;
   } else if (code < 0x7ff) {  // 110xxxxx 10xxxxxx
     if (code == 0xC0 || code == 0xC1)
-      YY_ERROR(G, "Invalid utf-8 unicode character (U+C0,U+C1)");
+      YY_ERROR("Invalid utf-8 unicode character (U+C0,U+C1)");
     utfc[nbuf++] = (code >> 6) | 0xc0;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
   } else if (code < 0xffff) { // 1110xxxx 10xxxxxx 10xxxxxx
     if (code >= 0xD800 && code < 0xDFFF) // utf-16 surrogate halves RFC 3629
-      YY_ERROR(G, "Invalid utf-8 unicode character (U+D800-U+DFFF)");
+      YY_ERROR("Invalid utf-8 unicode character (U+D800-U+DFFF)");
     utfc[nbuf++] = (code >> 12) | 0xe0;
     utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
@@ -306,7 +306,7 @@ escU       = esc 'U' '{' < hexl+ > '}' {
     utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
   } else {
-    YY_ERROR(G, "Invalid utf-8 unicode character (> U+10FFFF)");
+    YY_ERROR("Invalid utf-8 unicode character (> U+10FFFF)");
   }
   P->pbuf = potion_asm_write(P, P->pbuf, utfc, nbuf);
 }
@@ -376,7 +376,7 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   G->filename = filename;
   P->fileno = PN_PUT(pn_filenames, PN_STR(filename));
   if (!YY_NAME(parse)(G)) {
-    YY_ERROR(G, "** Syntax error");
+    YY_ERROR("** Syntax error");
     fprintf(stderr, "%s", PN_STR_PTR(code));
   }
   YY_NAME(parse_free)(G);
@@ -430,7 +430,7 @@ PN potion_sig(Potion *P, char *fmt) {
   yydebug = P->flags;
 
   if (!YY_NAME(parse_from)(G, yy_sig))
-    YY_ERROR(G, "** Syntax error in signature");
+    YY_ERROR("** Syntax error in signature");
   YY_NAME(parse_free)(G);
 
   out = P->source;

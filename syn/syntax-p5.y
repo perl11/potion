@@ -29,7 +29,7 @@
 #define YY_XTYPE Potion *
 #define YY_XVAR P
 
-#define YY_INPUT(G, buf, result, max) { \
+#define YY_INPUT(buf, result, max) { \
   YY_XTYPE P = G->data; \
   if (P->yypos < PN_STR_LEN(P->input)) { \
     result = max; \
@@ -71,8 +71,8 @@ static PN yylastline(struct _GREG *G, int pos);
 perl5 = -- s:statements end-of-file
    { $$ = P->source = PN_AST(CODE, s);
      s = (PN)(G->buf+G->pos);
-     if (yyleng) YY_ERROR(G,"** Syntax error");
-     else if (*(char*)s) YY_ERROR(G,"** Internal parser error: Couldn't parse all statements") }
+     if (yyleng) YY_ERROR("** Syntax error");
+     else if (*(char*)s) YY_ERROR("** Internal parser error: Couldn't parse all statements") }
 
 # AST BLOCK captures lexicals
 # Note that if/else blocks (mblock) do not capture lexicals
@@ -177,7 +177,7 @@ assigndecl =
             s1 = PN_PUSH(s1, PN_AST2(ASSIGN, v, potion_tuple_at(P,0,PN_S(r,0),PN_NUM(i))));
           }); $$ = PN_AST(EXPR, s1) }
       | l:lexglobal assign e:eqs -  { $$ = PN_AST2(ASSIGN, l, e) }
-      | l:global assign r:list      { YY_ERROR(G, "** Assignment error") } # @x = () nyi
+      | l:global assign r:list      { YY_ERROR("** Assignment error") } # @x = () nyi
 
 #TODO most of these stack-like assign-expr cases can probably go away
 sets = e:eqs
@@ -568,7 +568,7 @@ PN p2_parse(Potion *P, PN code, char *filename) {
   G->filename = filename;
   P->fileno = PN_PUT(pn_filenames, PN_STR(filename));
   if (!YY_NAME(parse)(G)) {
-    YY_ERROR(G, "** Syntax error");
+    YY_ERROR("** Syntax error");
     fprintf(stderr, "%s", PN_STR_PTR(code));
   }
   YY_NAME(parse_free)(G);
@@ -597,7 +597,7 @@ PN potion_sig(Potion *P, char *fmt) {
   yydebug = P->flags;
 
   if (!YY_NAME(parse_from)(G, yy_sig))
-    YY_ERROR(G, "** Signature syntax error");
+    YY_ERROR("** Signature syntax error");
   YY_NAME(parse_free)(G);
 
   out = P->source;
@@ -623,7 +623,7 @@ PN p2_sig(Potion *P, char *fmt) {
   yydebug = P->flags;
 
   if (!YY_NAME(parse_from)(G, yy_sig_p5))
-    YY_ERROR(G, "** Signature syntax error");
+    YY_ERROR("** Signature syntax error");
   YY_NAME(parse_free)(G);
 
   out = P->source;
@@ -660,7 +660,7 @@ int potion_sig_find(Potion *P, PN cl, PN name)
 
 /** look back in the line for the prev. \n and back forth for the next \n
   */
-static PN yylastline(GREG *G, int pos) {
+static PN yylastline(struct _GREG *G, int pos) {
   char *c, *nl, *s = G->buf;
   int i, l;
   for (i=pos-1; i>=0 && (*(s+i) != 10); i--);
