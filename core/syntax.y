@@ -16,7 +16,7 @@
 #define YY_XTYPE Potion *
 #define YY_XVAR P
 
-#define YY_INPUT(G, buf, result, max) { \
+#define YY_INPUT(buf, result, max) { \
   YY_XTYPE P = G->data; \
   if (P->yypos < PN_STR_LEN(P->input)) { \
     result = max; \
@@ -314,7 +314,7 @@ PN potion_parse(Potion *P, PN code, char *filename) {
 
   G->filename = filename;
   if (!YY_NAME(parse)(G)) {
-    YY_ERROR(G, "** Syntax error!");
+    YY_ERROR("** Syntax error!");
     fprintf(stderr, "%s", PN_STR_PTR(code));
   }
   YY_NAME(parse_free)(G);
@@ -344,7 +344,7 @@ PN potion_sig(Potion *P, char *fmt) {
 #endif
 
   if (!YY_NAME(parse_from)(G, yy_sig))
-    YY_ERROR(G, "** Signature Syntax error!");
+    YY_ERROR("** Signature Syntax error!");
   YY_NAME(parse_free)(G);
 
   out = P->source;

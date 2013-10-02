@@ -15,7 +15,7 @@
  * 
  * THE SOFTWARE IS PROVIDED 'AS IS'.  USE ENTIRELY AT YOUR OWN RISK.
  * 
- * Last edited: 2013-04-10 11:15:49 rurban
+ * Last edited: 2013-09-30 20:44:59 rurban
  */
 
 #include <stdio.h>
@@ -24,6 +24,18 @@
 #include <assert.h>
 
 #include "greg.h"
+#ifndef YY_ALLOC
+#define YY_ALLOC(N, D) malloc(N)
+#endif
+#ifndef YY_CALLOC
+#define YY_CALLOC(N, S, D) calloc(N, S)
+#endif
+#ifndef YY_REALLOC
+#define YY_REALLOC(B, N, D) realloc(B, N)
+#endif
+#ifndef YY_FREE
+#define YY_FREE free
+#endif
 
 static int indent= 0;
 
@@ -207,7 +219,8 @@ static void Node_compile_c_ko(Node *node, int ko)
       }
       if (node->name.variable) {
 	pindent();
-	fprintf(output, "  yyDo(G, yySet, %d, 0, \"yySet\");\n", node->name.variable->variable.offset);
+	fprintf(output, "  yyDo(G, yySet, %d, 0, \"yySet %s\");\n",
+		node->name.variable->variable.offset, node->name.rule->rule.name);
       }
       break;
 
@@ -236,7 +249,7 @@ static void Node_compile_c_ko(Node *node, int ko)
 	pindent();
 	char *tmp = yyqq((char*)node->cclass.value);
 	fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", \"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), tmp, ko);
-	if (tmp != (char*)node->cclass.value) free(tmp);
+	if (tmp != (char*)node->cclass.value) YY_FREE(tmp);
       }
       break;
 
@@ -407,9 +420,18 @@ static void Rule_compile_c2(Node *node)
 	fprintf(output, "  yyDo(G, yyPush, %d, 0, \"yyPush\");\n", countVariables(node->rule.variables));
       fprintf(output, "  yyprintfv((stderr, \"%%s\\n\", \"%s\"));\n", node->rule.name);
       Node_compile_c_ko(node->rule.expression, ko);
-      fprintf(output, "  yyprintf((stderr, \"  ok   %s\"));\n", node->rule.name);
-      fprintf(output, "  yyprintfGcontext;\n");
-      fprintf(output, "  yyprintf((stderr, \"\\n\"));\n");
+      if (!memcmp("utf",node->rule.name,3)
+       || !memcmp("_",node->rule.name,1)
+       || !memcmp("end_of",node->rule.name,6)
+       || !strcmp("space",node->rule.name)
+       || !strcmp("sep",node->rule.name)
+       || !strcmp("comment",node->rule.name)
+       || !strcmp("IDFIRST",node->rule.name)
+       || !strcmp("id",node->rule.name)
+          )
+        fprintf(output, "  yyprintfvokrule(\"%s\");\n", node->rule.name);
+      else
+        fprintf(output, "  yyprintfokrule(\"%s\");\n", node->rule.name);
       if (node->rule.variables)
 	fprintf(output, "  yyDo(G, yyPop, %d, 0, \"yyPop\");\n", countVariables(node->rule.variables));
       fprintf(output, "  return 1;");
@@ -417,9 +439,7 @@ static void Rule_compile_c2(Node *node)
 	{
 	  label(ko);
 	  restore(0);
-	  fprintf(output, "  yyprintfv((stderr, \"  fail %%s\", \"%s\"));\n", node->rule.name);
-	  fprintf(output, "  yyprintfvGcontext;\n");
-	  fprintf(output, "  yyprintfv((stderr, \"\\n\"));\n");
+	  fprintf(output, "  yyprintfvfailrule(\"%s\");\n", node->rule.name);
 	  fprintf(output, "  return 0;");
 	}
       fprintf(output, "\n}");
@@ -428,21 +448,6 @@ static void Rule_compile_c2(Node *node)
   if (node->rule.next)
     Rule_compile_c2(node->rule.next);
 }
-
-#ifdef YY_DEBUG
-static void yyprintcontext(GREG *G, FILE *stream, char *s)
-{
-  char *context = s;
-  char *nl = strchr(context, 10);
-  if (nl) {
-    context = (char*)malloc(nl-s+1);
-    strncpy(context, s, nl-s);
-    context[nl-s] = '\0'; /* replace nl by 0 */
-  }
-  fprintf(stream, " @ \"%s\"", context);
-  if (nl) free(context);
-}
-#endif
 
 static char *header= "\
 #include <stdio.h>\n\
@@ -480,7 +485,7 @@ static char *preamble= "\
 #define YY_NAME(N) yy##N\n\
 #endif\n\
 #ifndef YY_INPUT\n\
-#define YY_INPUT(G, buf, result, max_size)		\\\n\
+#define YY_INPUT(buf, result, max_size)			\\\n\
   {							\\\n\
     int yyc= fgetc(G->input);				\\\n\
     if ('\\n' == yyc) ++G->lineno;      		\\\n\
@@ -489,7 +494,7 @@ static char *preamble= "\
   }\n\
 #endif\n\
 #ifndef YY_ERROR\n\
-#define YY_ERROR(G, message) yyerror(G, message)\n\
+#define YY_ERROR(message) yyerror(G, message)\n\
 #endif\n\
 #ifndef YY_BEGIN\n\
 #define YY_BEGIN	( G->begin= G->pos, 1)\n\
@@ -505,11 +510,32 @@ static char *preamble= "\
 # ifndef YYDEBUG_VERBOSE\n\
 #  define YYDEBUG_VERBOSE 2\n\
 # endif\n\
-# define yyprintf(args)	  if (G->debug & YYDEBUG_PARSE)          fprintf args\n\
-# define yyprintfv(args)  if (G->debug & YYDEBUG_PARSE && G->debug & YYDEBUG_VERBOSE) fprintf args\n\
-# define yyprintfGcontext  if (G->debug & YYDEBUG_PARSE)         yyprintcontext(G,stderr,G->buf+G->pos)\n\
-# define yyprintfvGcontext if (G->debug & YYDEBUG_PARSE && G->debug & YYDEBUG_VERBOSE) yyprintcontext(G,stderr,G->buf+G->pos)\n\
-# define yyprintfvTcontext(text) if (G->debug & YYDEBUG_PARSE && G->debug & YYDEBUG_VERBOSE) yyprintcontext(G,stderr,text)\n\
+# define yyprintf(args)	   if (yydebug & YYDEBUG_PARSE)         fprintf args\n\
+# define yyprintfv(args)   if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) fprintf args\n\
+# define yyprintfGcontext  if (yydebug & YYDEBUG_PARSE)         yyprintcontext(G,stderr,G->buf+G->pos)\n\
+# define yyprintfvGcontext if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) yyprintcontext(G,stderr,G->buf+G->pos)\n\
+# define yyprintfvTcontext(text) if (yydebug & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) yyprintcontext(G,stderr,text)\n\
+# define yyprintfokrule(rule) if (yydebug & YYDEBUG_PARSE) {\\\n\
+  if (G->buf[G->pos]) {\\\n\
+    fprintf(stderr, \"  ok   %s\", rule);\\\n\
+    yyprintcontext(G,stderr,G->buf+G->pos);\\\n\
+    fprintf(stderr, \"\\n\");\\\n\
+  } else {\\\n\
+    yyprintfv((stderr, \"  ok   %s @ \\\"\\\"\\n\", rule));\\\n\
+  }}\n\
+# define yyprintfvokrule(rule) if (yydebug  & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) {\\\n\
+  if (G->buf[G->pos]) {\\\n\
+    fprintf(stderr, \"  ok   %s\", rule);\\\n\
+    yyprintcontext(G,stderr,G->buf+G->pos);\\\n\
+    fprintf(stderr, \"\\n\");\\\n\
+  } else {\\\n\
+    yyprintfv((stderr, \"  ok   %s @ \\\"\\\"\\n\", rule));\\\n\
+  }}\n\
+# define yyprintfvfailrule(rule) if (yydebug  & YYDEBUG_PARSE && yydebug & YYDEBUG_VERBOSE) {\\\n\
+    fprintf(stderr, \"  fail %s\", rule);\\\n\
+    yyprintcontext(G,stderr,G->buf+G->pos);\\\n\
+    fprintf(stderr, \"\\n\");\\\n\
+  }\n\
 #else\n\
 # define yydebug 0\n\
 # define yyprintf(args)\n\
@@ -517,6 +543,9 @@ static char *preamble= "\
 # define yyprintfGcontext\n\
 # define yyprintfvGcontext\n\
 # define yyprintfvTcontext(text)\n\
+# define yyprintfokrule(rule)\n\
+# define yyprintfvokrule(rule)\n\
+# define yyprintfvfailrule(rule)\n\
 #endif\n\
 #ifndef YYSTYPE\n\
 #define YYSTYPE	int\n\
@@ -578,7 +607,7 @@ YY_LOCAL(int) yyrefill(GREG *G)\n\
       G->buflen *= 2;\n\
       G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);\n\
     }\n\
-  YY_INPUT(G, (G->buf + G->pos), yyn, (G->buflen - G->pos));\n\
+  YY_INPUT((G->buf + G->pos), yyn, (G->buflen - G->pos));\n\
   if (!yyn) return 0;\n\
   G->limit += yyn;\n\
   return 1;\n\
@@ -592,17 +621,24 @@ YY_LOCAL(int) yymatchDot(GREG *G)\n\
 }\n\
 \n\
 #ifdef YY_DEBUG\n\
-YY_LOCAL(void) yyprintcontext(GREG *G, FILE *stream, char *s)\n\
+YY_LOCAL(char *) yycontextline(struct _GREG *G, char *s)\n\
 {\n\
   char *context = s;\n\
   char *nl = strchr(context, 10);\n\
   if (nl) {\n\
-    context = (char*)malloc(nl-s+1);\n\
+    context = (char*)YY_ALLOC(nl-s+1, G->data);\n\
     strncpy(context, s, nl-s);\n\
     context[nl-s] = '\\0'; /* replace nl by 0 */\n\
+    return context;\n\
+  } else return NULL;\n\
+}\n\
+YY_LOCAL(void) yyprintcontext(struct _GREG *G, FILE *stream, char *s)\n\
+{\n\
+  char *context = yycontextline(G, s);\n\
+  if (context) {\n\
+    fprintf(stream, \" @ \\\"%s\\\"\", context);\n\
+    YY_FREE(context);\n\
   }\n\
-  fprintf(stream, \" @ \\\"%s\\\"\", context);\n\
-  if (nl) free(context);\n\
 }\n\
 #endif\n\
 \n\
@@ -613,21 +649,17 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
   if (G->pos < G->limit || !feof(G->input))\n\
     {\n\
       G->buf[G->limit]= '\\0';\n\
-      fprintf(stderr, \" before text \\\"\");\n\
-      while (G->pos < G->limit)\n\
-	{\n\
-	  if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
-	  fputc(G->buf[G->pos++], stderr);\n\
-	}\n\
-      if (G->pos == G->limit)\n\
-	{\n\
-	  int c;\n\
-	  while (EOF != (c= fgetc(G->input)) && '\\n' != c && '\\r' != c)\n\
-	    fputc(c, stderr);\n\
-	}\n\
-      fputc('\\\"', stderr);\n\
+      if (G->pos < G->limit) {\n\
+        fprintf(stderr, \" before text \\\"\");\n\
+        while (G->pos < G->limit)\n\
+	  {\n\
+	    if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
+	   fputc(G->buf[G->pos++], stderr);\n\
+	  }\n\
+        fputc('\\\"', stderr);\n\
+      }\n\
     }\n\
-  fprintf(stderr, \"\\n\");\n\
+  fprintf(stderr, \" at %s:%d\\n\", G->filename, G->lineno);\n\
   exit(1);\n\
 }\n\
 \n\
@@ -636,11 +668,17 @@ YY_LOCAL(int) yymatchChar(GREG *G, int c)\n\
   if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
   if ((unsigned char)G->buf[G->pos] == c)\n\
     {\n\
+#ifdef YY_DEBUG\n\
+      if (c) {\n\
+        if (c<32) { yyprintfv((stderr, \"  ok   yymatchChar '0x%x'\", c));}\n\
+        else      { yyprintfv((stderr, \"  ok   yymatchChar '%c'\", c));}\n\
+        yyprintfvGcontext;\n\
+        yyprintfv((stderr, \"\\n\"));\n\
+      } else {\n\
+        yyprintfv((stderr, \"  ok   yymatchChar '0x0' @ \\\"\\\"\\n\"));\n\
+      }\n\
+#endif\n\
       ++G->pos;\n\
-      if (c<32) { yyprintf((stderr, \"  ok   yymatchChar '0x%x'\", c));}\n\
-      else      { yyprintf((stderr, \"  ok   yymatchChar '%c'\", c));}\n\
-      yyprintfGcontext;\n\
-      yyprintf((stderr, \"\\n\"));\n\
       return 1;\n\
     }\n\
   if (c<32) { yyprintfv((stderr, \"  fail yymatchChar '0x%x'\", c));}\n\
@@ -674,10 +712,16 @@ YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, char *cclass)\n\
   c= (unsigned char)G->buf[G->pos];\n\
   if (bits[c >> 3] & (1 << (c & 7)))\n\
     {\n\
+#ifdef YY_DEBUG\n\
+      if (G->buf[G->pos]) {\n\
+        yyprintfv((stderr, \"  ok   yymatchClass [%s]\", cclass));\n\
+        yyprintfvGcontext;\n\
+        yyprintfv((stderr, \"\\n\"));\n\
+      } else {\n\
+        yyprintfv((stderr, \"  ok   yymatchClass [%s] @ \\\"\\\"\\n\", cclass));\n\
+      }\n\
+#endif\n\
       ++G->pos;\n\
-      yyprintf((stderr, \"  ok   yymatchClass [%s]\", cclass));\n\
-      yyprintfGcontext;\n\
-      yyprintf((stderr, \"\\n\"));\n\
       return 1;\n\
     }\n\
   yyprintfv((stderr, \"  fail yymatchClass [%s]\", cclass));\n\
@@ -777,8 +821,12 @@ YY_LOCAL(void) yyPop(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY
   G->val -= count;\n\
 }\n\
 YY_LOCAL(void) yySet(GREG *G, char *text, int count, yythunk *thunk, YY_XTYPE YY_XVAR)	{\n\
-  yyprintf((stderr, \"yySet %d %p\\n\", count, (void*)yy));\n\
+#ifdef YY_SET\n\
+  YY_SET(G,text,count,thunk,YY_XVAR);\n\
+#else\n\
+  yyprintf((stderr, \"%s %d %p\\n\", thunk->name, count, (void *)yy));\n\
   G->val[count]= yy;\n\
+#endif\n\
 }\n\
 \n\
 #endif /* YY_PART */\n\
@@ -836,17 +884,6 @@ YY_PARSE(int) YY_NAME(parse)(GREG *G)\n\
   return YY_NAME(parse_from)(G, yy_%s);\n\
 }\n\
 \n\
-YY_PARSE(void) YY_NAME(init)(GREG *G)\n\
-{\n\
-    memset(G, 0, sizeof(GREG));\n\
-}\n\
-YY_PARSE(void) YY_NAME(deinit)(GREG *G)\n\
-{\n\
-    if (G->buf) YY_FREE(G->buf);\n\
-    if (G->text) YY_FREE(G->text);\n\
-    if (G->thunks) YY_FREE(G->thunks);\n\
-    if (G->vals) YY_FREE((void*)G->vals);\n\
-}\n\
 YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)\n\
 {\n\
   GREG *G= (GREG *)YY_CALLOC(1, sizeof(GREG), G->data);\n\
@@ -856,7 +893,18 @@ YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)\n\
   G->filename= \"-\";\n\
   return G;\n\
 }\n\
+YY_PARSE(void) YY_NAME(init)(GREG *G)\n\
+{\n\
+    memcpy(G,YY_NAME(parse_new)(NULL),sizeof(GREG));\n\
+}\n\
 \n\
+YY_PARSE(void) YY_NAME(deinit)(GREG *G)\n\
+{\n\
+    if (G->buf) YY_FREE(G->buf);\n\
+    if (G->text) YY_FREE(G->text);\n\
+    if (G->thunks) YY_FREE(G->thunks);\n\
+    if (G->vals) YY_FREE((void*)G->vals);\n\
+}\n\
 YY_PARSE(void) YY_NAME(parse_free)(GREG *G)\n\
 {\n\
   YY_NAME(deinit)(G);\n\
@@ -957,7 +1005,7 @@ void Rule_compile_c(Node *node)
       fprintf(output, "  yyprintfvTcontext(yytext);\n");
       tmp = yyqq(block);
       fprintf(output, "  yyprintf((stderr, \"\\n  {%s}\\n\"));\n", tmp);
-      if (tmp != block) free(tmp);
+      if (tmp != block) YY_FREE(tmp);
       fprintf(output, "  %s;\n", block);
       undefineVariables(n->action.rule->rule.variables);
       fprintf(output, "}\n");

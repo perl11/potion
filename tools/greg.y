@@ -34,8 +34,6 @@
     Header *next;
   };
 
-  FILE *input= 0;
-
   int   verboseFlag= 0;
 
   static char	*trailer= 0;
@@ -43,16 +41,6 @@
 
   void makeHeader(char *text);
   void makeTrailer(char *text);
-
-# define YY_LOCAL(T)	static T
-# define YY_RULE(T)	static T
-# define YY_INPUT(G, buf, result, max_size)		\
-  {							\
-    int yyc= fgetc(input);				\
-    if ('\n' == yyc) ++G->lineno;                       \
-    result= (EOF == yyc) ? 0 : (*(buf)= yyc, 1);	\
-  }
-
 %}
 
 # Hierarchical syntax
@@ -186,7 +174,6 @@ int main(int argc, char **argv)
   int   c;
 
   output= stdout;
-  input= stdin;
 
   while (-1 != (c= getopt(argc, argv, "Vho:v")))
     {
@@ -238,21 +225,21 @@ int main(int argc, char **argv)
 	  if (strcmp(*argv, "-"))
 	    {
 	      G->filename= *argv;
-	      if (!(input= fopen(G->filename, "r")))
+	      if (!(G->input= fopen(G->filename, "r")))
 		{
 		  perror(G->filename);
 		  exit(1);
 		}
 	    }
 	  if (!yyparse(G))
-	    YY_ERROR(G, "syntax error");
-	  if (input != stdin)
-	    fclose(input);
+	    YY_ERROR("syntax error");
+	  if (G->input != stdin)
+	    fclose(G->input);
 	}
     }
   else
     if (!yyparse(G))
-      YY_ERROR(G, "syntax error");
+      YY_ERROR("syntax error");
   yyparse_free(G);
 
   if (verboseFlag)

@@ -19,8 +19,6 @@ struct _GREG;
     Header *next;
   };
 
-  FILE *input= 0;
-
   int   verboseFlag= 0;
 
   static char	*trailer= 0;
@@ -28,16 +26,6 @@ struct _GREG;
 
   void makeHeader(char *text);
   void makeTrailer(char *text);
-
-# define YY_LOCAL(T)	static T
-# define YY_RULE(T)	static T
-# define YY_INPUT(G, buf, result, max_size)		\
-  {							\
-    int yyc= fgetc(input);				\
-    if ('\n' == yyc) ++G->lineno;                       \
-    result= (EOF == yyc) ? 0 : (*(buf)= yyc, 1);	\
-  }
-
 
 #ifndef YY_ALLOC
 #define YY_ALLOC(N, D) malloc(N)
@@ -67,16 +55,16 @@ struct _GREG;
 #define YY_NAME(N) yy##N
 #endif
 #ifndef YY_INPUT
-#define YY_INPUT(G, buf, result, max_size)		\
+#define YY_INPUT(buf, result, max_size)			\
   {							\
     int yyc= fgetc(G->input);				\
-    if ('\n' == yyc) ++G->lineno;      		\
+    if ('\n' == yyc) ++G->lineno;			\
     result= (EOF == yyc) ? 0 : (*(buf)= yyc, 1);	\
     yyprintfv((stderr, "<%c>", yyc));			\
   }
 #endif
 #ifndef YY_ERROR
-#define YY_ERROR(G, message) yyerror(G, message)
+#define YY_ERROR(message) yyerror(G, message)
 #endif
 #ifndef YY_BEGIN
 #define YY_BEGIN	( G->begin= G->pos, 1)
@@ -84,8 +72,8 @@ struct _GREG;
 #ifndef YY_END
 #define YY_END		( G->end= G->pos, 1)
 #endif
-#define yydebug G->debug
 #ifdef YY_DEBUG
+# define yydebug G->debug
 # ifndef YYDEBUG_PARSE
 #  define YYDEBUG_PARSE   1
 # endif
@@ -119,6 +107,7 @@ struct _GREG;
     fprintf(stderr, "\n");\
   }
 #else
+# define yydebug 0
 # define yyprintf(args)
 # define yyprintfv(args)
 # define yyprintfGcontext
@@ -175,7 +164,9 @@ typedef struct _GREG {
   YYSTYPE *vals;
   int valslen;
   YY_XTYPE data;
+#ifdef YY_DEBUG
   int debug;
+#endif
 } GREG;
 
 YY_LOCAL(int) yyrefill(GREG *G)
@@ -186,7 +177,7 @@ YY_LOCAL(int) yyrefill(GREG *G)
       G->buflen *= 2;
       G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);
     }
-  YY_INPUT(G, (G->buf + G->pos), yyn, (G->buflen - G->pos));
+  YY_INPUT((G->buf + G->pos), yyn, (G->buflen - G->pos));
   if (!yyn) return 0;
   G->limit += yyn;
   return 1;
@@ -223,25 +214,26 @@ YY_LOCAL(void) yyprintcontext(struct _GREG *G, FILE *stream, char *s)
 
 YY_LOCAL(void) yyerror(struct _GREG *G, char *message)
 {
-  fputs(message, stderr);
+  fprintf(stderr, "%s:%d: %s", G->filename, G->lineno, message);
   if (G->text[0]) fprintf(stderr, " near token '%s'", G->text);
   if (G->pos < G->limit || !feof(G->input))
     {
       G->buf[G->limit]= '\0';
-      if (G->pos < G->limit) {
-        fprintf(stderr, " before text \"");
-        while (G->pos < G->limit)
+      fprintf(stderr, " before text \"");
+      while (G->pos < G->limit)
 	{
 	  if ('\n' == G->buf[G->pos] || '\r' == G->buf[G->pos]) break;
 	  fputc(G->buf[G->pos++], stderr);
 	}
-        fputc('\"', stderr);
-      }
+      if (G->pos == G->limit)
+	{
+	  int c;
+	  while (EOF != (c= fgetc(G->input)) && '\n' != c && '\r' != c)
+	    fputc(c, stderr);
+	}
+      fputc('\"', stderr);
     }
-  if (!strcmp("-", G->filename))
-    fprintf(stderr, " at line %d\n", G->lineno);
-  else
-    fprintf(stderr, " at %s:%d\n", G->filename, G->lineno);
+  fprintf(stderr, "\n");
   exit(1);
 }
 
@@ -1693,7 +1685,6 @@ int main(int argc, char **argv)
   int   c;
 
   output= stdout;
-  input= stdin;
 
   while (-1 != (c= getopt(argc, argv, "Vho:v")))
     {
@@ -1745,21 +1736,21 @@ int main(int argc, char **argv)
 	  if (strcmp(*argv, "-"))
 	    {
 	      G->filename= *argv;
-	      if (!(input= fopen(G->filename, "r")))
+	      if (!(G->input= fopen(G->filename, "r")))
 		{
 		  perror(G->filename);
 		  exit(1);
 		}
 	    }
 	  if (!yyparse(G))
-	    YY_ERROR(G, "syntax error");
-	  if (input != stdin)
-	    fclose(input);
+	    YY_ERROR("syntax error");
+	  if (G->input != stdin)
+	    fclose(G->input);
 	}
     }
   else
     if (!yyparse(G))
-      YY_ERROR(G, "syntax error");
+      YY_ERROR("syntax error");
   yyparse_free(G);
 
   if (verboseFlag)
