@@ -31,7 +31,7 @@ struct _GREG;
 
 # define YY_LOCAL(T)	static T
 # define YY_RULE(T)	static T
-# define YY_INPUT(G, buf, result, max_size)		\
+# define YY_INPUT(buf, result, max_size)		\
   {							\
     int yyc= fgetc(input);				\
     if ('\n' == yyc) ++G->lineno;                       \
@@ -67,7 +67,7 @@ struct _GREG;
 #define YY_NAME(N) yy##N
 #endif
 #ifndef YY_INPUT
-#define YY_INPUT(G, buf, result, max_size)		\
+#define YY_INPUT(buf, result, max_size)			\
   {							\
     int yyc= fgetc(G->input);				\
     if ('\n' == yyc) ++G->lineno;      		\
@@ -76,7 +76,7 @@ struct _GREG;
   }
 #endif
 #ifndef YY_ERROR
-#define YY_ERROR(G, message) yyerror(G, message)
+#define YY_ERROR(message) yyerror(G, message)
 #endif
 #ifndef YY_BEGIN
 #define YY_BEGIN	( G->begin= G->pos, 1)
@@ -84,8 +84,8 @@ struct _GREG;
 #ifndef YY_END
 #define YY_END		( G->end= G->pos, 1)
 #endif
-#define yydebug G->debug
 #ifdef YY_DEBUG
+# define yydebug G->debug
 # ifndef YYDEBUG_PARSE
 #  define YYDEBUG_PARSE   1
 # endif
@@ -119,6 +119,7 @@ struct _GREG;
     fprintf(stderr, "\n");\
   }
 #else
+# define yydebug 0
 # define yyprintf(args)
 # define yyprintfv(args)
 # define yyprintfGcontext
@@ -175,7 +176,9 @@ typedef struct _GREG {
   YYSTYPE *vals;
   int valslen;
   YY_XTYPE data;
+#ifdef YY_DEBUG
   int debug;
+#endif
 } GREG;
 
 YY_LOCAL(int) yyrefill(GREG *G)
@@ -186,7 +189,7 @@ YY_LOCAL(int) yyrefill(GREG *G)
       G->buflen *= 2;
       G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);
     }
-  YY_INPUT(G, (G->buf + G->pos), yyn, (G->buflen - G->pos));
+  YY_INPUT((G->buf + G->pos), yyn, (G->buflen - G->pos));
   if (!yyn) return 0;
   G->limit += yyn;
   return 1;
@@ -228,20 +231,21 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)
   if (G->pos < G->limit || !feof(G->input))
     {
       G->buf[G->limit]= '\0';
-      if (G->pos < G->limit) {
-        fprintf(stderr, " before text \"");
-        while (G->pos < G->limit)
+      fprintf(stderr, " before text \"");
+      while (G->pos < G->limit)
 	{
 	  if ('\n' == G->buf[G->pos] || '\r' == G->buf[G->pos]) break;
 	  fputc(G->buf[G->pos++], stderr);
 	}
-        fputc('\"', stderr);
-      }
+      if (G->pos == G->limit)
+        {
+	  int c;
+	  while (EOF != (c= fgetc(G->input)) && '\n' != c && '\r' != c)
+	    fputc(c, stderr);
+	}
+      fputc('\"', stderr);
     }
-  if (!strcmp("-", G->filename))
-    fprintf(stderr, " at line %d\n", G->lineno);
-  else
-    fprintf(stderr, " at %s:%d\n", G->filename, G->lineno);
+  fprintf(stderr, " at %s:%d\n", G->filename, G->lineno);
   exit(1);
 }
 
@@ -458,126 +462,162 @@ YY_ACTION(void) yy_10_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk,
   yyprintf((stderr, "do yy_10_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {Node *node = pop(); ((struct Any *) node)->errblock = strdup(yytext); push(node); }\n"));
-  Node *node = pop(); ((struct Any *) node)->errblock = strdup(yytext); push(node); ;
+  {
+    Node *node = pop(); ((struct Any *) node)->errblock = strdup(yytext); push(node); ;
+  }
 }
 YY_ACTION(void) yy_9_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_9_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makePredicate(\"YY_END\")); }\n"));
-  push(makePredicate("YY_END")); ;
+  {
+    push(makePredicate("YY_END")); ;
+  }
 }
 YY_ACTION(void) yy_8_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_8_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makePredicate(\"YY_BEGIN\")); }\n"));
-  push(makePredicate("YY_BEGIN")); ;
+  {
+    push(makePredicate("YY_BEGIN")); ;
+  }
 }
 YY_ACTION(void) yy_7_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_7_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makeAction(yytext)); }\n"));
-  push(makeAction(yytext)); ;
+  {
+    push(makeAction(yytext)); ;
+  }
 }
 YY_ACTION(void) yy_6_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_6_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makeDot()); }\n"));
-  push(makeDot()); ;
+  {
+    push(makeDot()); ;
+  }
 }
 YY_ACTION(void) yy_5_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_5_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makeClass(yytext)); }\n"));
-  push(makeClass(yytext)); ;
+  {
+    push(makeClass(yytext)); ;
+  }
 }
 YY_ACTION(void) yy_4_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_4_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makeString(yytext)); }\n"));
-  push(makeString(yytext)); ;
+  {
+    push(makeString(yytext)); ;
+  }
 }
 YY_ACTION(void) yy_3_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_3_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makeName(findRule(yytext,0))); }\n"));
-  push(makeName(findRule(yytext,0))); ;
+  {
+    push(makeName(findRule(yytext,0))); ;
+  }
 }
 YY_ACTION(void) yy_2_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_2_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {Node *name= makeName(findRule(yytext,0));  name->name.variable= pop();  push(name); }\n"));
-  Node *name= makeName(findRule(yytext,0));  name->name.variable= pop();  push(name); ;
+  {
+    Node *name= makeName(findRule(yytext,0));  name->name.variable= pop();  push(name); ;
+  }
 }
 YY_ACTION(void) yy_1_primary(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_1_primary"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makeVariable(yytext)); }\n"));
-  push(makeVariable(yytext)); ;
+  {
+    push(makeVariable(yytext)); ;
+  }
 }
 YY_ACTION(void) yy_3_suffix(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_3_suffix"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makePlus (pop())); }\n"));
-  push(makePlus (pop())); ;
+  {
+    push(makePlus (pop())); ;
+  }
 }
 YY_ACTION(void) yy_2_suffix(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_2_suffix"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makeStar (pop())); }\n"));
-  push(makeStar (pop())); ;
+  {
+    push(makeStar (pop())); ;
+  }
 }
 YY_ACTION(void) yy_1_suffix(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_1_suffix"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makeQuery(pop())); }\n"));
-  push(makeQuery(pop())); ;
+  {
+    push(makeQuery(pop())); ;
+  }
 }
 YY_ACTION(void) yy_3_prefix(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_3_prefix"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makePeekNot(pop())); }\n"));
-  push(makePeekNot(pop())); ;
+  {
+    push(makePeekNot(pop())); ;
+  }
 }
 YY_ACTION(void) yy_2_prefix(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_2_prefix"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makePeekFor(pop())); }\n"));
-  push(makePeekFor(pop())); ;
+  {
+    push(makePeekFor(pop())); ;
+  }
 }
 YY_ACTION(void) yy_1_prefix(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_1_prefix"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {push(makePredicate(yytext)); }\n"));
-  push(makePredicate(yytext)); ;
+  {
+    push(makePredicate(yytext)); ;
+  }
 }
 YY_ACTION(void) yy_1_sequence(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_1_sequence"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {Node *f= pop();  push(Sequence_append(pop(), f)); }\n"));
-  Node *f= pop();  push(Sequence_append(pop(), f)); ;
+  {
+    Node *f= pop();  push(Sequence_append(pop(), f)); ;
+  }
 }
 YY_ACTION(void) yy_1_expression(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_1_expression"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {Node *f= pop();  push(Alternate_append(pop(), f)); }\n"));
-  Node *f= pop();  push(Alternate_append(pop(), f)); ;
+  {
+    Node *f= pop();  push(Alternate_append(pop(), f)); ;
+  }
 }
 YY_ACTION(void) yy_2_definition(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
@@ -585,7 +625,9 @@ YY_ACTION(void) yy_2_definition(GREG *G, char *yytext, int yyleng, yythunk *thun
   yyprintf((stderr, "do yy_2_definition"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {Node *e= pop();  Rule_setExpression(pop(), e); }\n"));
-  Node *e= pop();  Rule_setExpression(pop(), e); ;
+  {
+    Node *e= pop();  Rule_setExpression(pop(), e); ;
+  }
   #undef s
 }
 YY_ACTION(void) yy_1_definition(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
@@ -595,8 +637,10 @@ YY_ACTION(void) yy_1_definition(GREG *G, char *yytext, int yyleng, yythunk *thun
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {if (push(beginRule(findRule(yytext,s)))->rule.expression)\n\
 \t\t\t\t\t\t\t    fprintf(stderr, \"rule '%%s' redefined\\n\", yytext); }\n"));
-  if (push(beginRule(findRule(yytext,s)))->rule.expression)
+  {
+    if (push(beginRule(findRule(yytext,s)))->rule.expression)
 							    fprintf(stderr, "rule '%s' redefined\n", yytext); ;
+  }
   #undef s
 }
 YY_ACTION(void) yy_1_trailer(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
@@ -604,14 +648,18 @@ YY_ACTION(void) yy_1_trailer(GREG *G, char *yytext, int yyleng, yythunk *thunk, 
   yyprintf((stderr, "do yy_1_trailer"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {makeTrailer(yytext); }\n"));
-  makeTrailer(yytext); ;
+  {
+    makeTrailer(yytext); ;
+  }
 }
 YY_ACTION(void) yy_1_declaration(GREG *G, char *yytext, int yyleng, yythunk *thunk, YY_XTYPE YY_XVAR)
 {
   yyprintf((stderr, "do yy_1_declaration"));
   yyprintfvTcontext(yytext);
   yyprintf((stderr, "\n  {makeHeader(yytext); }\n"));
-  makeHeader(yytext); ;
+  {
+    makeHeader(yytext); ;
+  }
 }
 
 YY_RULE(int) yy_end_of_line(GREG *G)
@@ -632,6 +680,7 @@ YY_RULE(int) yy_end_of_line(GREG *G)
   }
 
   l2:
+  ;
   yyprintfvokrule("end_of_line");
   return 1;
   l1:
@@ -686,6 +735,7 @@ YY_RULE(int) yy_space(GREG *G)
   }
 
   l10:
+  ;
   yyprintfvokrule("space");
   return 1;
   l9:
@@ -731,6 +781,7 @@ YY_RULE(int) yy_braces(GREG *G)
   }
 
   l14:
+  ;
   yyprintfokrule("braces");
   return 1;
   l13:
@@ -754,6 +805,7 @@ YY_RULE(int) yy_range(GREG *G)
   }
 
   l21:
+  ;
   yyprintfokrule("range");
   return 1;
   l20:
@@ -781,16 +833,15 @@ YY_RULE(int) yy_char(GREG *G)
     G->pos= yypos24; G->thunkpos= yythunkpos24;
     if (!yymatchChar(G, '\\')) goto l27;
     if (!yymatchClass(G, (unsigned char *)"\000\000\000\000\000\000\377\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000", "0-7")) goto l27;
-    {
-      int yypos28= G->pos, yythunkpos28= G->thunkpos;
-      if (!yymatchClass(G, (unsigned char *)"\000\000\000\000\000\000\377\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000", "0-7")) goto l28;
-      goto l29;
-      l28:
-      G->pos= yypos28; G->thunkpos= yythunkpos28;
-    }
 
-    l29:
-    ;
+    l28:
+    {
+      int yypos29= G->pos, yythunkpos29= G->thunkpos;
+      if (!yymatchClass(G, (unsigned char *)"\000\000\000\000\000\000\377\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000", "0-7")) goto l29;
+      goto l28;
+      l29:
+      G->pos= yypos29; G->thunkpos= yythunkpos29;
+    }
     goto l24;
     l27:
     G->pos= yypos24; G->thunkpos= yythunkpos24;
@@ -805,6 +856,7 @@ YY_RULE(int) yy_char(GREG *G)
   }
 
   l24:
+  ;
   yyprintfokrule("char");
   return 1;
   l23:
@@ -818,7 +870,14 @@ YY_RULE(int) yy_errblock(GREG *G)
   yyprintfv((stderr, "%s\n", "errblock"));
   if (!yymatchString(G, "~{")) goto l31;
   yyText(G, G->begin, G->end);
-  if (!(YY_BEGIN)) goto l31;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_BEGIN)) goto l31;
+    #undef yytext
+    #undef yyleng
+  }
+
 
   l32:
   {
@@ -829,7 +888,14 @@ YY_RULE(int) yy_errblock(GREG *G)
     G->pos= yypos33; G->thunkpos= yythunkpos33;
   }
   yyText(G, G->begin, G->end);
-  if (!(YY_END)) goto l31;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_END)) goto l31;
+    #undef yytext
+    #undef yyleng
+  }
+
   if (!yymatchChar(G, '}')) goto l31;
   if (!yy__(G))   goto l31;
   yyprintfokrule("errblock");
@@ -884,7 +950,14 @@ YY_RULE(int) yy_class(GREG *G)
   yyprintfv((stderr, "%s\n", "class"));
   if (!yymatchChar(G, '[')) goto l37;
   yyText(G, G->begin, G->end);
-  if (!(YY_BEGIN)) goto l37;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_BEGIN)) goto l37;
+    #undef yytext
+    #undef yyleng
+  }
+
 
   l38:
   {
@@ -902,7 +975,14 @@ YY_RULE(int) yy_class(GREG *G)
     G->pos= yypos39; G->thunkpos= yythunkpos39;
   }
   yyText(G, G->begin, G->end);
-  if (!(YY_END)) goto l37;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_END)) goto l37;
+    #undef yytext
+    #undef yyleng
+  }
+
   if (!yymatchChar(G, ']')) goto l37;
   if (!yy__(G))   goto l37;
   yyprintfokrule("class");
@@ -920,7 +1000,14 @@ YY_RULE(int) yy_literal(GREG *G)
     int yypos42= G->pos, yythunkpos42= G->thunkpos;
     if (!yymatchClass(G, (unsigned char *)"\000\000\000\000\200\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000", "'")) goto l43;
     yyText(G, G->begin, G->end);
-  if (!(YY_BEGIN)) goto l43;
+    {
+      #define yytext G->text
+      #define yyleng G->textlen
+      if (!(YY_BEGIN)) goto l43;
+      #undef yytext
+      #undef yyleng
+    }
+
 
     l44:
     {
@@ -938,7 +1025,14 @@ YY_RULE(int) yy_literal(GREG *G)
       G->pos= yypos45; G->thunkpos= yythunkpos45;
     }
     yyText(G, G->begin, G->end);
-  if (!(YY_END)) goto l43;
+    {
+      #define yytext G->text
+      #define yyleng G->textlen
+      if (!(YY_END)) goto l43;
+      #undef yytext
+      #undef yyleng
+    }
+
     if (!yymatchClass(G, (unsigned char *)"\000\000\000\000\200\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000", "'")) goto l43;
     if (!yy__(G))     goto l43;
     goto l42;
@@ -946,7 +1040,14 @@ YY_RULE(int) yy_literal(GREG *G)
     G->pos= yypos42; G->thunkpos= yythunkpos42;
     if (!yymatchClass(G, (unsigned char *)"\000\000\000\000\004\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000", "\"")) goto l41;
     yyText(G, G->begin, G->end);
-  if (!(YY_BEGIN)) goto l41;
+    {
+      #define yytext G->text
+      #define yyleng G->textlen
+      if (!(YY_BEGIN)) goto l41;
+      #undef yytext
+      #undef yyleng
+    }
+
 
     l47:
     {
@@ -964,12 +1065,20 @@ YY_RULE(int) yy_literal(GREG *G)
       G->pos= yypos48; G->thunkpos= yythunkpos48;
     }
     yyText(G, G->begin, G->end);
-  if (!(YY_END)) goto l41;
+    {
+      #define yytext G->text
+      #define yyleng G->textlen
+      if (!(YY_END)) goto l41;
+      #undef yytext
+      #undef yyleng
+    }
+
     if (!yymatchClass(G, (unsigned char *)"\000\000\000\000\004\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000", "\"")) goto l41;
     if (!yy__(G))     goto l41;
   }
 
   l42:
+  ;
   yyprintfokrule("literal");
   return 1;
   l41:
@@ -1124,17 +1233,17 @@ YY_RULE(int) yy_primary(GREG *G)
   }
 
   l57:
-  {
-    int yypos68= G->pos, yythunkpos68= G->thunkpos;
-    if (!yy_errblock(G))     goto l68;
-    yyDo(G, yy_10_primary, G->begin, G->end, "yy_10_primary");
-    goto l69;
-    l68:
-    G->pos= yypos68; G->thunkpos= yythunkpos68;
-  }
-
-  l69:
   ;
+
+  l68:
+  {
+    int yypos69= G->pos, yythunkpos69= G->thunkpos;
+    if (!yy_errblock(G))     goto l69;
+    yyDo(G, yy_10_primary, G->begin, G->end, "yy_10_primary");
+    goto l68;
+    l69:
+    G->pos= yypos69; G->thunkpos= yythunkpos69;
+  }
   yyprintfokrule("primary");
   return 1;
   l56:
@@ -1160,8 +1269,10 @@ YY_RULE(int) yy_suffix(GREG *G)
   int yypos0= G->pos, yythunkpos0= G->thunkpos;
   yyprintfv((stderr, "%s\n", "suffix"));
   if (!yy_primary(G))   goto l71;
+
+  l72:
   {
-    int yypos72= G->pos, yythunkpos72= G->thunkpos;
+    int yypos73= G->pos, yythunkpos73= G->thunkpos;
     {
       int yypos74= G->pos, yythunkpos74= G->thunkpos;
       if (!yy_QUESTION(G))       goto l75;
@@ -1174,18 +1285,16 @@ YY_RULE(int) yy_suffix(GREG *G)
       goto l74;
       l76:
       G->pos= yypos74; G->thunkpos= yythunkpos74;
-      if (!yy_PLUS(G))       goto l72;
+      if (!yy_PLUS(G))       goto l73;
       yyDo(G, yy_3_suffix, G->begin, G->end, "yy_3_suffix");
     }
 
     l74:
-    goto l73;
-    l72:
-    G->pos= yypos72; G->thunkpos= yythunkpos72;
+    ;
+    goto l72;
+    l73:
+    G->pos= yypos73; G->thunkpos= yythunkpos73;
   }
-
-  l73:
-  ;
   yyprintfokrule("suffix");
   return 1;
   l71:
@@ -1199,7 +1308,14 @@ YY_RULE(int) yy_action(GREG *G)
   yyprintfv((stderr, "%s\n", "action"));
   if (!yymatchChar(G, '{')) goto l77;
   yyText(G, G->begin, G->end);
-  if (!(YY_BEGIN)) goto l77;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_BEGIN)) goto l77;
+    #undef yytext
+    #undef yyleng
+  }
+
 
   l78:
   {
@@ -1210,7 +1326,14 @@ YY_RULE(int) yy_action(GREG *G)
     G->pos= yypos79; G->thunkpos= yythunkpos79;
   }
   yyText(G, G->begin, G->end);
-  if (!(YY_END)) goto l77;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_END)) goto l77;
+    #undef yytext
+    #undef yyleng
+  }
+
   if (!yymatchChar(G, '}')) goto l77;
   if (!yy__(G))   goto l77;
   yyprintfokrule("action");
@@ -1261,6 +1384,7 @@ YY_RULE(int) yy_prefix(GREG *G)
   }
 
   l82:
+  ;
   yyprintfokrule("prefix");
   return 1;
   l81:
@@ -1357,7 +1481,14 @@ YY_RULE(int) yy_identifier(GREG *G)
   int yypos0= G->pos, yythunkpos0= G->thunkpos;
   yyprintfv((stderr, "%s\n", "identifier"));
   yyText(G, G->begin, G->end);
-  if (!(YY_BEGIN)) goto l95;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_BEGIN)) goto l95;
+    #undef yytext
+    #undef yyleng
+  }
+
   if (!yymatchClass(G, (unsigned char *)"\000\000\000\000\000\040\000\000\376\377\377\207\376\377\377\007\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000", "-a-zA-Z_")) goto l95;
 
   l96:
@@ -1369,7 +1500,14 @@ YY_RULE(int) yy_identifier(GREG *G)
     G->pos= yypos97; G->thunkpos= yythunkpos97;
   }
   yyText(G, G->begin, G->end);
-  if (!(YY_END)) goto l95;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_END)) goto l95;
+    #undef yytext
+    #undef yyleng
+  }
+
   if (!yy__(G))   goto l95;
   yyprintfokrule("identifier");
   return 1;
@@ -1415,7 +1553,14 @@ YY_RULE(int) yy_trailer(GREG *G)
   yyprintfv((stderr, "%s\n", "trailer"));
   if (!yymatchString(G, "%%")) goto l101;
   yyText(G, G->begin, G->end);
-  if (!(YY_BEGIN)) goto l101;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_BEGIN)) goto l101;
+    #undef yytext
+    #undef yyleng
+  }
+
 
   l102:
   {
@@ -1426,7 +1571,14 @@ YY_RULE(int) yy_trailer(GREG *G)
     G->pos= yypos103; G->thunkpos= yythunkpos103;
   }
   yyText(G, G->begin, G->end);
-  if (!(YY_END)) goto l101;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_END)) goto l101;
+    #undef yytext
+    #undef yyleng
+  }
+
   yyDo(G, yy_1_trailer, G->begin, G->end, "yy_1_trailer");
   yyprintfokrule("trailer");
   return 1;
@@ -1446,16 +1598,15 @@ YY_RULE(int) yy_definition(GREG *G)
   if (!yy_EQUAL(G))   goto l104;
   if (!yy_expression(G))   goto l104;
   yyDo(G, yy_2_definition, G->begin, G->end, "yy_2_definition");
-  {
-    int yypos105= G->pos, yythunkpos105= G->thunkpos;
-    if (!yy_SEMICOLON(G))     goto l105;
-    goto l106;
-    l105:
-    G->pos= yypos105; G->thunkpos= yythunkpos105;
-  }
 
-  l106:
-  ;
+  l105:
+  {
+    int yypos106= G->pos, yythunkpos106= G->thunkpos;
+    if (!yy_SEMICOLON(G))     goto l106;
+    goto l105;
+    l106:
+    G->pos= yypos106; G->thunkpos= yythunkpos106;
+  }
   yyprintfokrule("definition");
   yyDo(G, yyPop, 1, 0, "yyPop");
   return 1;
@@ -1470,7 +1621,14 @@ YY_RULE(int) yy_declaration(GREG *G)
   yyprintfv((stderr, "%s\n", "declaration"));
   if (!yymatchString(G, "%{")) goto l107;
   yyText(G, G->begin, G->end);
-  if (!(YY_BEGIN)) goto l107;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_BEGIN)) goto l107;
+    #undef yytext
+    #undef yyleng
+  }
+
 
   l108:
   {
@@ -1488,7 +1646,14 @@ YY_RULE(int) yy_declaration(GREG *G)
     G->pos= yypos109; G->thunkpos= yythunkpos109;
   }
   yyText(G, G->begin, G->end);
-  if (!(YY_END)) goto l107;
+  {
+    #define yytext G->text
+    #define yyleng G->textlen
+    if (!(YY_END)) goto l107;
+    #undef yytext
+    #undef yyleng
+  }
+
   if (!yy_RPERCENT(G))   goto l107;
   yyDo(G, yy_1_declaration, G->begin, G->end, "yy_1_declaration");
   yyprintfokrule("declaration");
@@ -1514,6 +1679,7 @@ YY_RULE(int) yy__(GREG *G)
     }
 
     l114:
+    ;
     goto l112;
     l113:
     G->pos= yypos113; G->thunkpos= yythunkpos113;
@@ -1536,6 +1702,7 @@ YY_RULE(int) yy_grammar(GREG *G)
   }
 
   l119:
+  ;
 
   l117:
   {
@@ -1550,20 +1717,20 @@ YY_RULE(int) yy_grammar(GREG *G)
     }
 
     l121:
+    ;
     goto l117;
     l118:
     G->pos= yypos118; G->thunkpos= yythunkpos118;
   }
-  {
-    int yypos123= G->pos, yythunkpos123= G->thunkpos;
-    if (!yy_trailer(G))     goto l123;
-    goto l124;
-    l123:
-    G->pos= yypos123; G->thunkpos= yythunkpos123;
-  }
 
-  l124:
-  ;
+  l123:
+  {
+    int yypos124= G->pos, yythunkpos124= G->thunkpos;
+    if (!yy_trailer(G))     goto l124;
+    goto l123;
+    l124:
+    G->pos= yypos124; G->thunkpos= yythunkpos124;
+  }
   if (!yy_end_of_file(G))   goto l116;
   yyprintfokrule("grammar");
   return 1;
@@ -1620,10 +1787,23 @@ YY_PARSE(int) YY_NAME(parse)(GREG *G)
   return YY_NAME(parse_from)(G, yy_grammar);
 }
 
+YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)
+{
+  GREG *G= (GREG *)YY_CALLOC(1, sizeof(GREG), G->data);
+  G->data= data;
+  G->input= stdin;
+  G->lineno= 1;
+  G->filename= "-";
+  return G;
+}
 YY_PARSE(void) YY_NAME(init)(GREG *G)
 {
-    memset(G, 0, sizeof(GREG));
+  memset(G, 0, sizeof(GREG));
+  G->input= stdin;
+  G->lineno= 1;
+  G->filename= "-";
 }
+
 YY_PARSE(void) YY_NAME(deinit)(GREG *G)
 {
     if (G->buf) YY_FREE(G->buf);
@@ -1631,17 +1811,6 @@ YY_PARSE(void) YY_NAME(deinit)(GREG *G)
     if (G->thunks) YY_FREE(G->thunks);
     if (G->vals) YY_FREE((void*)G->vals);
 }
-YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)
-{
-  GREG *G= (GREG *)YY_CALLOC(1, sizeof(GREG), G->data);
-  G->data= data;
-  G->input= stdin;
-  G->pos = G->limit = 0;
-  G->lineno= 1;
-  G->filename= "-";
-  return G;
-}
-
 YY_PARSE(void) YY_NAME(parse_free)(GREG *G)
 {
   YY_NAME(deinit)(G);
@@ -1752,14 +1921,14 @@ int main(int argc, char **argv)
 		}
 	    }
 	  if (!yyparse(G))
-	    YY_ERROR(G, "syntax error");
+	    YY_ERROR("syntax error");
 	  if (input != stdin)
 	    fclose(input);
 	}
     }
   else
     if (!yyparse(G))
-      YY_ERROR(G, "syntax error");
+      YY_ERROR("syntax error");
   yyparse_free(G);
 
   if (verboseFlag)

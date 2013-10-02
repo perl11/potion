@@ -46,7 +46,7 @@
 
 # define YY_LOCAL(T)	static T
 # define YY_RULE(T)	static T
-# define YY_INPUT(G, buf, result, max_size)		\
+# define YY_INPUT(buf, result, max_size)		\
   {							\
     int yyc= fgetc(input);				\
     if ('\n' == yyc) ++G->lineno;                       \
@@ -245,14 +245,14 @@ int main(int argc, char **argv)
 		}
 	    }
 	  if (!yyparse(G))
-	    YY_ERROR(G, "syntax error");
+	    YY_ERROR("syntax error");
 	  if (input != stdin)
 	    fclose(input);
 	}
     }
   else
     if (!yyparse(G))
-      YY_ERROR(G, "syntax error");
+      YY_ERROR("syntax error");
   yyparse_free(G);
 
   if (verboseFlag)
