@@ -39,7 +39,7 @@ pkg/${PKGBIN}.tar.gz: core/config.h core/version.h core/syntax.c potion${EXE} \
 	cp core/config.h               dist/include/potion/
 	-cp doc/*.html doc/*.png       dist/share/potion/doc/
 	-cp doc/core-files.txt         dist/share/potion/doc/
-	-cp README COPYING LICENSE     dist/share/potion/doc/
+	-cp *.md README COPYING LICENSE dist/share/potion/doc/
 	cp example/*                   dist/share/potion/example/
 	-mkdir -p pkg
 	(cd dist && tar czf ../pkg/${PKGBIN}.tar.gz * && cd ..)
