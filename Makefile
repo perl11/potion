@@ -111,15 +111,15 @@ tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	  ${MV} tools/greg-new tools/greg; \
 	fi
 
-core/callcc.o: core/callcc.c
+core/callcc.o: core/callcc.c core/config.h
 	@${ECHO} CC $@ +frame-pointer
 	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
-core/callcc.opic: core/callcc.c
+core/callcc.opic: core/callcc.c core/config.h
 	@${ECHO} CC $@ +frame-pointer
 	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 
-core/vm.o core/vm.opic: core/vm-dis.c
+core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 
 # no optimizations
 #core/vm-x86.opic: core/vm-x86.c
