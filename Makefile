@@ -34,7 +34,7 @@ OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
 PLIBS = libpotion${DLL} lib/readline${LOADEXT}
-DOC = doc/start.textile
+DOC = doc/start.textile doc/glossary.textile
 DOCHTML = ${DOC:.textile=.html}
 
 CAT  = /bin/cat
