@@ -330,7 +330,7 @@ website:
 	@${MAKE} doc
 	cp doc/*.html ${WEBSITE}/potion/
 	@${MAKE} GTAGS
-	cp -r HTML/* ${WEBSITE}/potion/ref/
+	cp -r doc/ref/* ${WEBSITE}/potion/ref/
 	cd ${WEBSITE}/potion/ && git add *.html html ref && git ci -m'doc: automatic update'
 	@${ECHO} "need to cd ${WEBSITE}; git push"
 
@@ -362,7 +362,7 @@ clean:
 realclean: clean
 	@rm -f config.inc ${GREG} core/syntax.c
 	@rm -f GPATH GTAGS GRTAGS
-	@rm -rf HTML
+	@rm -rf doc/ref
 	@find . -name \*.gcov -delete
 
 .PHONY: all config clean doc docall rebuild check test test.pn test.p2 bench tarball dist \

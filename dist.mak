@@ -56,7 +56,7 @@ pkg/${PKGBIN}-devel.tar.gz: tools/greg${EXE} potion-s${EXE}
 	rm dist/include/potion/potion.h dist/include/potion/config.h
 	-cp -r doc/*.textile doc/html   dist/share/potion/doc/
 	-cp -r doc/latex I*.md          dist/share/potion/doc/
-	-cp -r HTML/*                   dist/share/potion/doc/ref/
+	-cp -r doc/ref/*                dist/share/potion/doc/ref/
 	-mkdir -p pkg
 	(cd dist && tar czf ../pkg/${PKGBIN}-devel.tar.gz * && cd ..)
 	rm -rf dist
@@ -76,7 +76,7 @@ tarball: core/version.h core/syntax.c
 	rm -rf ${PKG}
 
 GTAGS: ${SRC} core/*.h
-	rm -rf ${PKG} HTML
+	rm -rf ${PKG} doc/ref
 	git checkout-index --prefix=${PKG}/ -a
 	-cp core/version.h ${PKG}/core/
 	cd ${PKG} && \
@@ -86,7 +86,8 @@ GTAGS: ${SRC} core/*.h
 	  mv HTML/style.new HTML/style.css && \
 	  mv tools/greg-c.tmp tools/greg.c && \
 	  cd ..  && \
-	  mv ${PKG}/HTML .
+	  mv ${PKG}/HTML ${PKG}/ref && \
+	  mv ${PKG}/ref doc/
 	rm -rf ${PKG}
 
 .PHONY: dist release install tarball src-dist bin-dist
