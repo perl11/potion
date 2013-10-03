@@ -26,10 +26,10 @@ install: bin-dist
 bin-dist: pkg/${PKGBIN}.tar.gz pkg/${PKGBIN}-devel.tar.gz
 
 pkg/${PKGBIN}.tar.gz: core/config.h core/version.h core/syntax.c potion${EXE} \
-  libpotion.a libpotion${DLL} lib/readline${LOADEXT}
+  doc libpotion.a libpotion${DLL} lib/readline${LOADEXT}
 	rm -rf dist
-	mkdir -p dist dist/bin dist/include/potion dist/lib/potion dist/share/potion/doc \
-                 dist/share/potion/example
+	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
+                 dist/share/potion/doc dist/share/potion/example
 	cp potion${EXE}                dist/bin/
 	cp libpotion.a                 dist/lib/
 	cp libpotion${DLL}             dist/lib/
@@ -65,6 +65,7 @@ src-dist: pkg/${PKG}-src.tar.gz
 
 pkg/${PKG}-src.tar.gz: tarball
 
+# you should be able to build without git
 tarball: core/version.h core/syntax.c
 	-mkdir -p pkg
 	rm -rf ${PKG}
