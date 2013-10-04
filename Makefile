@@ -238,7 +238,7 @@ lib/libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
-  lib/readline/linenoise.h
+  lib/readline/linenoise.h lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/readline
 	@[ -d lib/potion ] || mkdir lib/potion
