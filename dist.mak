@@ -71,6 +71,8 @@ tarball: core/version.h core/syntax.c
 	rm -rf ${PKG}
 	git checkout-index --prefix=${PKG}/ -a
 	rm -f ${PKG}/.gitignore
+	+${MAKE} MANIFEST
+	cp MANIFEST ${PKG}/
 	cp core/version.h ${PKG}/core/
 	cp core/syntax.c ${PKG}/core/
 	tar czf pkg/${PKG}-src.tar.gz ${PKG}
