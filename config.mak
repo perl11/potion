@@ -2,7 +2,7 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
-WARNINGS = -Wall -Werror -fno-strict-aliasing -Wno-switch -Wno-return-type -Wno-unused-label
+WARNINGS = -Wall -Werror -Wno-switch -Wno-return-type -Wno-unused-label
 CFLAGS = -D_GNU_SOURCE
 INCS   = -Icore
 LIBPTH = -Llib
@@ -87,6 +87,8 @@ endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	WARNINGS += -Wno-unused-value
+else
+	CFLAGS += -fno-strict-aliasing
 endif
 ifeq (${DEBUG},0)
 	DEBUGFLAGS += -fno-stack-protector

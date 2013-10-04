@@ -135,6 +135,10 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
+%.in: %.c core/config.h
+	@${ECHO} CPP ASTYLE $@
+	@${CC} -c ${CFLAGS} ${INCS} -E -c $< | perl -pe's,^# (\d+) ",//# \1 ",' > $@.tmp && \
+	  astyle -s2 < $@.tmp > $@
 %.o: %.c core/config.h
 	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
@@ -147,6 +151,10 @@ endif
 .c.i: core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
+.c.in: core/config.h
+	@${ECHO} CPP ASTYLE $@
+	@${CC} -c ${CFLAGS} ${INCS} -E -c $< | perl -pe's,^# (\d+) ",//# \1 ",' > $@.tmp && \
+	  astyle -s2 < $@.tmp > $@
 .c.o: core/config.h
 	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<

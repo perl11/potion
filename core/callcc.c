@@ -103,10 +103,15 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
   PN_SIZE n;
   PN *start, *sp1 = P->mem->cstack, *sp2, *sp3;
-#if defined(DEBUG) && (__WORDSIZE == 64)
+#if defined(DEBUG) && defined(__APPLE__)
   if ((_PN)sp1 & 0xF) {
     fprintf(stderr,"P->mem->cstack=0x%lx ", (_PN)sp1);
     potion_fatal("stack not 16byte aligned");
+  }
+#elsif defined(DEBUG) && (__WORDSIZE == 64)
+  if (((_PN)sp1 & 0xF) || (((_PN)sp1 & 0xF) != 8)) {
+    fprintf(stderr,"P->mem->cstack=0x%lx ", (_PN)sp1);
+    potion_fatal("stack not 8byte aligned");
   }
 #endif
   POTION_ESP(&sp2); // usually P
