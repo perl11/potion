@@ -26,11 +26,11 @@ dorelease() {
 docross() {
     make clean
     rm config.inc
-    echo make CC="$1"
-    make -s -f config.mak CC="$1" DEBUG=0
-    touch tools/greg
+    echo make CC="$1" DEBUG=0 CROSS=1
+    make -s -f config.mak CC="$1" DEBUG=0 CROSS=1
+    touch bin/greg
     touch core/syntax.c
-    make CC="$1" DEBUG=0
+    make CC="$1" DEBUG=0 CROSS=1
     make dist
 }
 

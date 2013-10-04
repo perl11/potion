@@ -43,7 +43,8 @@
     void *protend = (void *)PN_ALIGN((_PN)M->protect, POTION_PAGESIZE); \
     pngc_page_delete(protend, (char *)M->birth_hi - (char *)protend); \
   } else { \
-    pngc_page_delete((void *)M->birth_lo, (char *)M->birth_hi - (char *)M->birth_lo); \
+    void *protend = (void *)M->birth_lo; \
+    pngc_page_delete(protend, (char *)M->birth_hi - (char *)protend); \
   }
 
 #define IS_GC_PROTECTED(p) \

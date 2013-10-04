@@ -44,9 +44,13 @@ SED  = sed
 EXPR = expr
 GREG = bin/greg${EXE}
 RANLIB ?= ranlib
+ifeq (${CROSS},1)
+  GREGCROSS = bin/greg
+else
+  GREGCROSS = ${GREG}
+endif
 
 RUNPRE = bin/
-INCS = -Icore
 # perl11.org only
 WEBSITE = ../perl11.org
 
@@ -154,10 +158,10 @@ endif
 
 %.c: %.y ${GREG}
 	@${ECHO} GREG $@
-	@${GREG} $< > $@-new && ${MV} $@-new $@
+	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
 .y.c: ${GREG}
 	@${ECHO} GREG $@
-	@${GREG} $< > $@-new && ${MV} $@-new $@
+	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
 
 ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
@@ -363,7 +367,7 @@ clean:
 	@rm -rf doc/html doc/latex doc/ref
 
 realclean: clean
-	@rm -f config.inc ${GREG} core/syntax.c
+	@rm -f config.inc ${GREG} ${GREGCROSS} core/syntax.c
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf doc/ref
 	@find . -name \*.gcov -delete

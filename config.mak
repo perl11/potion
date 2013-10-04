@@ -206,6 +206,7 @@ config.h.echo:
 # bootstrap config.inc via `make -f config.mak`
 config.inc: tools/config.sh config.mak
 	@${ECHO} MAKE $@
+	-test -d bin || mkdir bin
 	@${ECHO} "# -*- makefile -*-" > config.inc
 	@${ECHO} "# created by ${MAKE} -f config.mak" >> config.inc
 	@${MAKE} -s -f config.mak config.inc.echo >> $@
