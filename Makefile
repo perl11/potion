@@ -54,6 +54,8 @@ all: pn
 	+${MAKE} -s usage
 
 pn: bin/potion${EXE} ${PLIBS}
+bins: bin/potion${EXE}
+libs: ${PLIBS}
 static: lib/libpotion.a bin/potion-s${EXE}
 rebuild: clean pn test
 
@@ -269,17 +271,21 @@ test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libpotion.a
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libpotion.a ${LIBS}
 
-dist: pn static docall
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
+dist: bins libs static docall
+	@if [ -n "${RPATH}" ]; then \
+	  rm -f ${BINS} ${PLIBS}; \
+	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
+	fi
+	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: dist
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
 tarball: dist
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
 release: dist
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
 %.html: %.textile
 	@${ECHO} DOC $@
