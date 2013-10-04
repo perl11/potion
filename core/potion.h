@@ -200,7 +200,7 @@ struct PNVtable;
 #define PN_UNIQ(x)      (PN_IS_PTR(x) ? ((struct PNObject *)(x))->uniq : PN_NUMHASH(x))
 
 #define AS_STR(x)       PN_STR_PTR(potion_send(x, PN_string))
-#if DEBUG
+#ifdef DEBUG
 #define DBG_t(...) \
   if (P->flags & DEBUG_TRACE) fprintf(stderr, __VA_ARGS__)
 #define DBG_v(...) \
@@ -498,8 +498,8 @@ static inline char *potion_str_ptr(PN s) {
   return ((struct PNBytes *)s)->chars;
 }
 
-PN_FLEX(PNFlex, PN);
-PN_FLEX(PNAsm, unsigned char);
+PN_FLEX(PNFlex, PN)
+PN_FLEX(PNAsm, unsigned char)
 
 ///
 /// the jit
@@ -535,7 +535,7 @@ typedef enum {
   EXEC_CHECK,          ///< -c stop after compilation
   EXEC_COMPILE,        ///< to bytecode (dumpbc)
   EXEC_COMPILE_C,      ///< compile-c
-  EXEC_COMPILE_NATIVE, ///< compile-exec
+  EXEC_COMPILE_NATIVE  ///< compile-exec
 } exec_mode_t;
 
 typedef enum {
@@ -544,14 +544,14 @@ typedef enum {
   MODE_P6       = 2,  ///< syntax p6. other via use syntax ""
 
   DEBUG_INSPECT = 1<<8,
-  DEBUG_VERBOSE = 1<<9,
+  DEBUG_VERBOSE = 1<<9
 #ifdef DEBUG
-  DEBUG_TRACE  = 1<<10,
+ ,DEBUG_TRACE  = 1<<10,
   DEBUG_PARSE  = 1<<11,
   DEBUG_PARSE_VERBOSE  = 1<<12,
   DEBUG_COMPILE= 1<<13,
   DEBUG_GC     = 1<<14,
-  DEBUG_JIT    = 1<<15,
+  DEBUG_JIT    = 1<<15
 #endif
 } Potion_Flags;
 

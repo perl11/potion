@@ -2,12 +2,15 @@
 .SUFFIXES: .y .c .i .o .opic .textile .html
 .PHONY: all pn static usage config clean doc rebuild test bench tarball dist release install grammar
 
-SRC = core/asm.c core/ast.c core/callcc.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
+SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
 GREGCFLAGS = -O3 -DNDEBUG
 
 # bootstrap config.inc with make -f config.mak
 include config.inc
 
+ifneq (${DISABLE_CALLCC},1)
+SRC += core/callcc.c
+endif
 ifeq (${JIT_X86},1)
 SRC += core/vm-x86.c
 else
@@ -36,6 +39,10 @@ OBJ_GC_BENCH = test/api/gc-bench.o
 PLIBS = lib/libpotion${DLL} lib/potion/readline${LOADEXT}
 DOC = doc/start.textile doc/glossary.textile
 DOCHTML = ${DOC:.textile=.html}
+OBJS = .o
+ifneq (${FPIC},)
+  OBJS += ${OPIC}
+endif
 
 CAT  = /bin/cat
 ECHO = /bin/echo
@@ -122,15 +129,42 @@ tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	  ${MV} tools/greg-new ${GREG}; \
 	fi
 
-core/callcc.o: core/callcc.c core/config.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
-
-core/callcc.opic: core/callcc.c core/config.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
-
+core/callcc.o: core/callcc.c core/config.h core/internal.h
+	@${ECHO} CC $@ -O0 +frame-pointer
+	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/callcc.opic: core/callcc.c core/config.h core/internal.h
+	@${ECHO} CC $@ -O0 +frame-pointer
+	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/potion.o: core/potion.c core/config.h core/potion.h core/internal.h
+	@${ECHO} CC $@ -O0
+	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
+ifneq (${FPIC},)
+core/potion.${OPIC}: core/potion.c core/config.h core/potion.h core/internal.h
+	@${ECHO} CC $@ -O0
+	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+endif
 core/vm.o core/vm.opic: core/vm-dis.c core/config.h
+
+core/potion.h: core/config.h
+core/table.h: core/potion.h core/internal.h core/khash.h
+$(foreach o,${OBJS},core/asm${o} ): core/asm.c core/config.h core/potion.h core/internal.h core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/ast${o} ): core/ast.c core/config.h core/potion.h core/internal.h core/ast.h
+$(foreach o,${OBJS},core/compile${o} ): core/compile.c core/config.h core/potion.h core/internal.h core/ast.h core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/contrib${o} ): core/contrib.c core/config.h
+$(foreach o,${OBJS},core/file${o} ): core/file.c core/config.h core/potion.h core/internal.h core/table.h
+$(foreach o,${OBJS},core/gc${o} ): core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+$(foreach o,${OBJS},core/internal${o} ): core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
+$(foreach o,${OBJS},core/lick${o} ): core/lick.c core/config.h core/potion.h core/internal.h
+$(foreach o,${OBJS},core/load${o} ): core/load.c core/config.h core/potion.h core/internal.h core/table.h
+$(foreach o,${OBJS},core/mt19937ar${o} ): core/mt19937ar.c
+$(foreach o,${OBJS},core/number${o} ): core/number.c core/config.h core/potion.h core/internal.h
+$(foreach o,${OBJS},core/objmodel${o} ): core/objmodel.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/asm.h
+$(foreach o,${OBJS},core/primitive${o} ): core/primitive.c core/config.h core/potion.h core/internal.h
+$(foreach o,${OBJS},core/string${o} ): core/string.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h
+$(foreach o,${OBJS},core/table${o} ): core/table.c core/config.h core/potion.h core/internal.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/vm${o} ): core/vm.c core/vm-dis.c core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/vm-ppc${o} ): core/vm-ppc.c core/config.h core/potion.h core/internal.h core/opcodes.h
+$(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
 
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
@@ -219,8 +253,6 @@ check: test
 test: bin/potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
-	LD_LIBRARY_PATH=`pwd`/lib:$LD_LIBRARY_PATH \
-	export LD_LIBRARY_PATH; \
 	test/api/potion-test; \
 	count=0; failed=0; pass=0; \
 	while [ $$pass -lt 3 ]; do \

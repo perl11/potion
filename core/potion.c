@@ -58,48 +58,46 @@ static void potion_cmd_version(Potion *P) {
   printf(potion_banner, POTION_JIT);
 }
 
-#define dbg_v(...) \
-    if (P->flags & DEBUG_VERBOSE) \
-      fprintf(stderr, __VA_ARGS__)
-#define dbgP_v(c) \
+#define DBG_Pv(c) \
     if (P->flags & DEBUG_VERBOSE) \
       potion_p(P, c)
-#define dbgP_vi(c) \
+//v OR i!
+#define DBG_Pvi(c) \
     if (P->flags & (DEBUG_INSPECT|DEBUG_VERBOSE)) \
       potion_p(P, c)
 
 static PN potion_cmd_exec(Potion *P, PN buf, char *filename, exec_mode_t exec) {
   PN code = potion_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
-    dbg_v("\n-- loaded --\n");
+    DBG_v("\n-- loaded --\n");
   } else {
     code = potion_parse(P, buf, filename);
     if (!code || PN_TYPE(code) == PN_TERROR) {
       potion_p(P, code);
       return code;
     }
-    dbg_v("\n-- parsed --\n");
-    dbgP_v(code);
+    DBG_v("\n-- parsed --\n");
+    DBG_Pv(code);
     code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
-    dbg_v("\n-- compiled --\n");
+    DBG_v("\n-- compiled --\n");
   }
-  dbgP_v(code);
+  DBG_Pv(code);
   if (exec == EXEC_VM) {
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-    dbg_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
+    DBG_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
 	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
 	  PN_INT(potion_gc_reserved(P, 0, 0)));
-    dbgP_vi(code);
+    DBG_Pvi(code);
   } else if (exec == EXEC_JIT) {
 #ifdef POTION_JIT_TARGET
     PN val;
     PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = code;
     val = PN_PROTO(code)->jit(P, cl, P->lobby);
-    dbg_v("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
+    DBG_v("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
 	  PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
 	  PN_INT(potion_gc_reserved(P, 0, 0)));
-    dbgP_vi(val);
+    DBG_Pvi(val);
 #else
     fprintf(stderr, "** potion built without JIT support\n");
 #endif
@@ -137,35 +135,35 @@ static void potion_cmd_compile(Potion *P, char *filename, exec_mode_t exec) {
     // haven't found the wrong stack ptr yet
   code = potion_source_load(P, PN_NIL, buf);
   if (PN_IS_PROTO(code)) {
-    dbg_v("\n-- loaded --\n");
+    DBG_v("\n-- loaded --\n");
   } else {
     code = potion_parse(P, buf, filename);
     if (!code || PN_TYPE(code) == PN_TERROR) {
       potion_p(P, code);
       goto done;
     }
-    dbg_v("\n-- parsed --\n");
-    dbgP_v(code);
+    DBG_v("\n-- parsed --\n");
+    DBG_Pv(code);
     code = potion_send(code, PN_compile, potion_str(P, filename), PN_NIL);
-    dbg_v("\n-- compiled --\n");
+    DBG_v("\n-- compiled --\n");
   }
-  dbgP_v(code);
+  DBG_Pv(code);
   if (exec == EXEC_VM) {
     code = potion_vm(P, code, P->lobby, PN_NIL, 0, NULL);
-    dbg_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
+    DBG_v("\n-- vm returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", (void *)code,
           PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
           PN_INT(potion_gc_reserved(P, 0, 0)));
-    dbgP_vi(code);
+    DBG_Pvi(code);
   } else if (exec == EXEC_JIT) {
 #ifdef POTION_JIT_TARGET
     PN val;
     PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);
     PN_CLOSURE(cl)->data[0] = code;
     val = PN_PROTO(code)->jit(P, cl, P->lobby);
-    dbg_v("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
+    DBG_v("\n-- jit returned %p (fixed=%ld, actual=%ld, reserved=%ld) --\n", PN_PROTO(code)->jit,
           PN_INT(potion_gc_fixed(P, 0, 0)), PN_INT(potion_gc_actual(P, 0, 0)),
           PN_INT(potion_gc_reserved(P, 0, 0)));
-    dbgP_vi(val);
+    DBG_Pvi(val);
 #else
     fprintf(stderr, "** potion built without JIT support\n");
 #endif

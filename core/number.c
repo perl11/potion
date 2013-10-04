@@ -187,12 +187,14 @@ static PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
  \param end  PNNumber (int only)
  \param step PNNumber (int only)
  \param block PNClosure
+ \return self PNNumber (normally unused)
  \sa potion_num_to. */
 static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) {
   long i, j = PN_INT(end), k = PN_INT(step);
   for (i = PN_INT(self); i <= j; i += k) {
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   }
+  return PN_NUM(abs(i - j));
 }
 /**\memberof PNNumber
   "chr" of int only, no UTF-8 multi-byte sequence

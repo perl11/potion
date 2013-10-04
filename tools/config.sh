@@ -18,7 +18,7 @@ CCEX="$CC $AC -o $AOUT"
 LANG=C
 
 CCv=`$CC -v 2>&1`
-CLANG=`echo "$CCv" | sed "/clang/!d"`
+ICC=`echo "$CCv" | sed "/icc version/!d"`
 TARGET=`echo "$CCv" | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
 MINGW_GCC=`echo "$TARGET" | sed "/mingw/!d"`
 if [ "$MINGW_GCC" = "" ]; then MINGW=0
@@ -33,6 +33,14 @@ JIT_I686=`echo "$TARGET" | sed "/i686/!d"`
 JIT_AMD64=`echo "$TARGET" | sed "/amd64/!d"`
 JIT_ARM=`echo "$TARGET" | sed "/arm/!d"`
 JIT_X86_64=`echo "$TARGET" | sed "/x86_64/!d"`
+if [ "$ICC" != "" ]; then
+    TARGET=`$CC -V 2>&1 | sed -e "/running on/b" -e "s,.*running on,," -e d`
+    JIT_PPC=`echo "$TARGET" | sed "/powerpc/!d"`
+    JIT_X86=`echo "$TARGET" | sed "/IA-32/!d"`
+    JIT_AMD64=`echo "$TARGET" | sed "/Intel(R) 64/!d"`
+    JIT_X86_64=`echo "$TARGET" | sed "/Intel(R) 64/!d"`
+    JIT_ARM=`echo "$TARGET" | sed "/arm/!d"`
+fi
 CROSS=0
 
 if [ $MINGW -eq 0 ]; then
@@ -77,7 +85,15 @@ elif [ "$2" = "cygwin" ]; then
   if [ $CYGWIN -eq 0 ]; then echo "0"
   else echo "1"; fi
 elif [ "$2" = "clang" ]; then
+  CLANG=`echo "$CCv" | sed "/clang/!d"`
   if [ "$CLANG" = "" ]; then echo "0"
+  else echo "1"; fi
+elif [ "$2" = "gcc" ]; then
+  GCC=`echo "$CCv" | sed "/^gcc version/!d"`
+  if [ "$GCC" = "" ]; then echo "0"
+  else echo "1"; fi
+elif [ "$2" = "icc" ]; then
+  if [ "$ICC" = "" ]; then echo "0"
   else echo "1"; fi
 elif [ "$2" = "bsd" ]; then
   if [ "$BSD" = "" ]; then echo "0"

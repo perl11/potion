@@ -205,7 +205,9 @@ char potion_type_char(PNType type) {
   case PN_TSTRINGS:    	return 'x'; //18
   case PN_TERROR:      	return 'r'; //19
   case PN_TCONT:       	return 'c'; //20
-  case PN_TUSER:       	return 'u'; //21
+  case PN_TDECIMAL:    	return 'd'; //21
+  case PN_TUSER:       	return 'm'; //22
+  default:       	return 'm'; //22++
   }
 }
 

@@ -2,13 +2,15 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
-WARNINGS = -Wall -Werror -Wno-switch -Wno-return-type -Wno-unused-label
-CFLAGS = -D_GNU_SOURCE
+# -pedantic not yet
+WARNINGS = -Wall -Werror -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
+CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing -D_FORTIFY_SOURCE=2
 INCS   = -Icore
 LIBPTH = -Llib
 RPATH         = -Wl,-rpath=$(shell pwd)/lib
 RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib
 LIBS   = -lm
+LDFLAGS ?=
 LDDLLFLAGS = -shared -fpic
 AR    ?= ar
 DEBUG ?= 0
@@ -18,6 +20,7 @@ JIT    = 0
 EXE    =
 APPLE  = 0
 CYGWIN = 0
+RUNPRE = ./
 
 CAT  = /bin/cat
 ECHO = /bin/echo
@@ -32,7 +35,7 @@ ifneq (${JIT_TARGET},)
 endif
 
 ifeq (${JIT},1)
-#ifeq (${JIT_TARGET},X86)
+ifeq (${JIT_TARGET},X86)
 ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/ x86 16,32,64 bit
 # port install udis86
@@ -79,26 +82,63 @@ endif
 endif
 endif
 endif
+endif
 
-# JIT with -O still fails callcc tests
-ifneq (${JIT},1)
+# JIT with -O still fails some tests
+#ifneq (${JIT},1)
+ifeq (${DEBUG},0)
        DEBUGFLAGS += -O3
+endif
+#endif
+
+ifneq (,$(findstring ccache,${CC}))
+	WARNINGS = -Wall -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
+	CFLAGS += -Qunused-arguments
 endif
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
-	WARNINGS += -Wno-unused-value
+	WARNINGS += -Wno-unused-value -Wno-switch -Wno-unused-label
+  #todo: 64bit => -fPIE and -fpie for the linker
+  ifeq (${DEBUG},0)
+        DEFINES += -DCGOTO
+	DEBUGFLAGS += -finline
+  endif
 else
-	CFLAGS += -fno-strict-aliasing
+ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
+	ICC = 1
+        #DEFINES += -DCGOTO
+	DEBUGFLAGS += -falign-functions=16
+# 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
+# 177: label "l414" was declared but never referenced in syntax.c sets fail case
+# 188: enumerated type mixed with another type (treating P->flags as int)
+	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177,188
+  ifeq (${DEBUG},0)
+# -Ofast
+	DEBUGFLAGS += -finline
+  else
+        DEBUGFLAGS += -g3 -gdwarf-3
+  endif
+else
+ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
+	WARNINGS += -Wno-switch -Wno-unused-label
+	DEBUGFLAGS += --param ssp-buffer-size=1
+  ifeq (${DEBUG},0)
+	DEBUGFLAGS += -finline -falign-functions
+        DEFINES += -DCGOTO
+  endif
 endif
+endif
+endif
+
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -fno-stack-protector
+	DEBUGFLAGS += -fstack-protector-all
 else
 	DEFINES += -DDEBUG
 	STRIP = echo
   ifneq (${CLANG},1)
-	DEBUGFLAGS += -g3 -fstack-protector
+	DEBUGFLAGS += -g3 -fstack-protector-all
   else
-	DEBUGFLAGS += -g -fstack-protector
+	DEBUGFLAGS += -g -fstack-protector-all
   endif
 endif
 ifeq (${ASAN},1)
@@ -126,6 +166,7 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
     ifneq (${CROSS},1)
 	ECHO = echo
 	CAT = type
+	RUNPRE =
     else
         RANLIB = $(shell echo "${CC}" | sed -e "s,-gcc,-ranlib,")
     endif
@@ -142,7 +183,7 @@ ifeq ($(shell tools/config.sh "${CC}" apple),1)
 	DLL      = .dylib
 	LOADEXT  = .bundle
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
-	LDDLLFLAGS += -install_name @executable_path/../lib/libpotion${DLL}
+	RDLLFLAGS  = -install_name "@executable_path/../lib/libpotion${DLL}"
 	RPATH =
 	RPATH_INSTALL =
 else
@@ -154,6 +195,15 @@ else
 endif
 endif
 endif
+
+ifneq ($(APPLE),1)
+ifneq ($(ICC),1)
+	WARNINGS += -Wno-zero-length-array -Wno-gnu
+endif
+	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
+	LDDLLFLAGS += $(LDFLAGS)
+endif
+
 
 # let an existing config.inc overwrite everything
 include config.inc
@@ -172,17 +222,21 @@ config.inc.echo:
 	@${ECHO} "WARNINGS   = ${WARNINGS}"
 	@${ECHO} "CFLAGS  = ${CFLAGS} " "\$$"{DEFINES} "\$$"{DEBUGFLAGS} "\$$"{WARNINGS}
 	@${ECHO} "INCS    = ${INCS}"
-	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
+	@${ECHO} "LIBPTH  = ${LIBPTH}"
 	@${ECHO} "RPATH   = ${RPATH}"
 	@${ECHO} "RPATH_INSTALL = " ${RPATH_INSTALL}
-	@${ECHO} "LIBPTH  = ${LIBPTH}"
 	@${ECHO} "LIBS    = ${LIBS}"
+	@${ECHO} "LDFLAGS = ${LDFLAGS}"
+	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "STRIP   = ${STRIP}"
+	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "CROSS   = ${CROSS}"
 	@${ECHO} "APPLE   = ${APPLE}"
 	@${ECHO} "WIN32   = ${WIN32}"
 	@${ECHO} "CYGWIN  = ${CYGWIN}"
 	@${ECHO} "CLANG   = ${CLANG}"
+	@${ECHO} "ICC     = ${ICC}"
+	@${ECHO} "GCC     = ${GCC}"
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
@@ -192,6 +246,7 @@ config.inc.echo:
 config.h.echo:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
 	@${ECHO} "#define POTION_CFLAGS \"${CFLAGS}\""
+	@${ECHO} "#define POTION_LDFLAGS \"${LDFLAGS}\""
 	@${ECHO} "#define POTION_MAKE   \"${MAKE}\""
 	@${ECHO} "#define POTION_PREFIX \"${PREFIX}\""
 	@${ECHO} "#define POTION_EXE    \"${EXE}\""

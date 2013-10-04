@@ -108,8 +108,8 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
     fprintf(stderr,"P->mem->cstack=0x%lx ", (_PN)sp1);
     potion_fatal("stack not 16byte aligned");
   }
-#elsif defined(DEBUG) && (__WORDSIZE == 64)
-  if (((_PN)sp1 & 0xF) || (((_PN)sp1 & 0xF) != 8)) {
+#elif defined(DEBUG) && (__WORDSIZE == 64)
+  if (((_PN)sp1 & 0xF) != 0 && ((_PN)sp1 & 0xF) != 8) {
     fprintf(stderr,"P->mem->cstack=0x%lx ", (_PN)sp1);
     potion_fatal("stack not 8byte aligned");
   }
