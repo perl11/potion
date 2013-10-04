@@ -41,3 +41,4 @@
 /README.md
 /doc/footer.inc
 /tools/bisect*.sh
+/mcc.sh
