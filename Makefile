@@ -109,7 +109,7 @@ grammar: tools/greg.y
 # bootstrap tools/greg.c, tools/compile.c not yet
 tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	@${ECHO} GREG $<
-	@[ -d bin ] || mkdir bin
+	@test -d bin || mkdir bin
 	@if test -f ${GREG}; then ${GREG} tools/greg.y > tools/greg-new.c && \
 	  ${CC} ${GREGCFLAGS} -o tools/greg-new tools/greg-new.c tools/compile.c tools/tree.c -Itools && \
 	  ${MV} tools/greg-new.c tools/greg.c && \
@@ -163,7 +163,7 @@ ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
-	@[ -d bin ] || mkdir bin
+	@test -d bin || mkdir bin
 	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${RPATH} \
 	  -Llib -lpotion ${LIBPTH} ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
@@ -173,7 +173,7 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 
 bin/potion-s${EXE}: core/potion.o lib/libpotion.a
 	@${ECHO} LINK $@
-	@[ -d bin ] || mkdir bin
+	@test -d bin || mkdir bin
 	@${CC} ${CFLAGS} core/potion.o -o $@ lib/libpotion.a ${LIBPTH} ${LIBS}
 
 lib/libpotion.a: ${OBJ} core/config.h core/potion.h
