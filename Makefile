@@ -37,6 +37,7 @@ OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
 PLIBS = lib/libpotion${DLL} lib/potion/readline${LOADEXT}
+DYNLIBS = $(foreach m,readline buffile,lib/potion/$m${LOADEXT})
 DOC = doc/start.textile doc/glossary.textile
 DOCHTML = ${DOC:.textile=.html}
 OBJS = .o
@@ -64,9 +65,9 @@ WEBSITE = ../perl11.org
 all: pn
 	+${MAKE} -s usage
 
-pn: bin/potion${EXE} ${PLIBS}
+pn: bin/potion${EXE} libs
 bins: bin/potion${EXE}
-libs: ${PLIBS}
+libs: ${PLIBS} ${DYNLIBS}
 static: lib/libpotion.a bin/potion-s${EXE}
 rebuild: clean pn test
 
@@ -249,6 +250,7 @@ lib/libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 	  ${PIC_OBJ} -Llib ${LIBPTH} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
+# DYNLIBS
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h lib/libpotion${DLL}
@@ -258,6 +260,13 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
+
+lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
+  lib/buffile.${OPIC} lib/buffile.c
+	@${ECHO} LD $@
+	@[ -d lib/potion ] || mkdir lib/potion
+	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
+	  lib/buffile.${OPIC} ${LIBPTH} ${LIBS} > /dev/null
 
 bench: test/api/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \
