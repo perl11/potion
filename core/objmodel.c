@@ -276,11 +276,11 @@ PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   return self;
 }
 
-/// find class by name.
+/// find class by name. At first only system metaclasses (types), no user classes yet.
 PN potion_class_find(Potion *P, PN name) {
   int i;
   for (i=0; i < PN_FLEX_SIZE(P->vts); i++) {
-    struct PNVtable *vt = (struct PNVtable *)PN_FLEX_AT(P->vts, i);
+    vPN(Vtable) vt = (struct PNVtable *)PN_FLEX_AT(P->vts, i);
     if (vt && vt->name == name)
       return (PN)vt;
   }
@@ -650,12 +650,10 @@ void potion_object_init(Potion *P) {
 
 # ifdef P2
 #   define LOBBY_NAME   "P2"
-#   define NILKIND_NAME "Undef"
 #   define NUMBER_NAME  "Int"
 #   define STRING_NAME  "Str"
 # else
 #   define LOBBY_NAME   "Lobby"
-#   define NILKIND_NAME "NilKind"
 #   define NUMBER_NAME  "Number"
 #   define STRING_NAME  "String"
 # endif
@@ -684,9 +682,7 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Lick"),         PN_VTABLE(PN_TLICK));
   potion_init_class_reference(P, potion_str(P, "Error"),        PN_VTABLE(PN_TERROR));
   potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
-#if defined(P2)
   potion_init_class_reference(P, potion_str(P, "Num"),          PN_VTABLE(PN_TDECIMAL));
-#endif
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
   
@@ -708,15 +704,3 @@ void potion_lobby_init(Potion *P) {
   potion_method(P->lobby, "print", potion_lobby_print, 0);
   potion_method(P->lobby, "say", potion_lobby_say, 0);
 }
-
-#ifdef DEBUG
-void potion_dump(Potion *P, PN data) {
-  PN pd = potion_send(data, PN_string);
-  PN pt = potion_send(PN_VTABLE(PN_TYPE(data)), PN_string);
-  char *d = pd ? PN_STR_PTR(pd) : NIL_NAME;
-  char *t = pt ? PN_STR_PTR(pt) : NILKIND_NAME;
-  printf("%s (%s)\n", d, t);
-}
-#define pdump(data) potion_dump(P, data)
-#endif
-

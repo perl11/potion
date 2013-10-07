@@ -2,6 +2,7 @@
 include config.inc
 
 SUDO = sudo
+GREG = bin/greg${EXE}
 
 ifeq (${PREFIX},)
 	$(error need to make config first)
@@ -25,7 +26,7 @@ install: bin-dist
 
 bin-dist: pkg/${PKGBIN}.tar.gz pkg/${PKGBIN}-devel.tar.gz
 
-pkg/${PKGBIN}.tar.gz: bin/potion${EXE} bin/p2${EXE} doc \
+pkg/${PKGBIN}.tar.gz: core/config.h core/version.h bin/potion${EXE} bin/p2${EXE}  \
   lib/libp*${DLL} lib/potion/*${LOADEXT} lib/potion/libsyntax*${DLL}
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
@@ -40,7 +41,7 @@ pkg/${PKGBIN}.tar.gz: bin/potion${EXE} bin/p2${EXE} doc \
 	cp core/config.h               dist/include/potion/
 	-cp doc/*.html doc/*.png       dist/share/potion/doc/
 	-cp doc/core-files.txt         dist/share/potion/doc/
-	-cp README COPYING LICENSE README.p2   dist/share/potion/doc/
+	-cp README COPYING LICENSE README.potion   dist/share/potion/doc/
 	cp example/*                   dist/share/potion/example/
 	-mkdir -p pkg
 	(cd dist && tar czf ../pkg/${PKGBIN}.tar.gz * && cd ..)
@@ -55,9 +56,10 @@ pkg/${PKGBIN}-devel.tar.gz: ${GREG} lib/libpotion.a lib/libp2.a bin/p2-s${EXE} b
 	cp bin/p*-s${EXE}               dist/bin/
 	cp lib/libp*.a                  dist/lib/
 	cp core/*.h                     dist/include/potion/
+	rm dist/include/potion/potion.h dist/include/potion/config.h
 	-cp -r doc/*.textile doc/html   dist/share/potion/doc/
 	-cp -r doc/latex I*.md          dist/share/potion/doc/
-	-cp -r HTML/*                   dist/share/potion/doc/ref/
+	-cp -r doc/ref/*                dist/share/potion/doc/ref/
 	-mkdir -p pkg
 	(cd dist && tar czf ../pkg/${PKGBIN}-devel.tar.gz * && cd ..)
 	rm -rf dist
@@ -66,28 +68,32 @@ src-dist: pkg/${PKG}-src.tar.gz
 
 pkg/${PKG}-src.tar.gz: tarball
 
-tarball: core/version.h
+#TODO: you should be able to build without git
+tarball: core/version.h syn/syntax.c
 	-mkdir -p pkg
 	rm -rf ${PKG}
 	git checkout-index --prefix=${PKG}/ -a
 	rm -f ${PKG}/.gitignore
+	+${MAKE} MANIFEST
+	cp MANIFEST ${PKG}/
 	cp core/version.h ${PKG}/core/
 	cp syn/syntax*.c ${PKG}/syn/
 	tar czf pkg/${PKG}-src.tar.gz ${PKG}
 	rm -rf ${PKG}
 
 GTAGS: ${SRC} core/*.h
-	rm -rf ${PKG} HTML
+	rm -rf ${PKG} doc/ref
 	git checkout-index --prefix=${PKG}/ -a
 	-cp core/version.h ${PKG}/core/
 	cd ${PKG} && \
 	  mv syn/greg.c syn/greg-c.tmp && \
 	  gtags && htags && \
-	  mv syn/greg-c.tmp syn/greg.c && \
 	  sed -e's,background-color: #f5f5dc,background-color: #ffffff,' < HTML/style.css > HTML/style.new && \
 	  mv HTML/style.new HTML/style.css && \
+	  mv syn/greg-c.tmp syn/greg.c && \
 	  cd ..  && \
-	  mv ${PKG}/HTML .
+	  mv ${PKG}/HTML ${PKG}/ref && \
+	  mv ${PKG}/ref doc/
 	rm -rf ${PKG}
 
 .PHONY: dist release install tarball src-dist bin-dist

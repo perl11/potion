@@ -148,6 +148,7 @@ struct PNVtable;
 #define POTION_COPIED   0xFFFFFFFF
 
 #define NIL_NAME        "nil" // "undef" in p2
+#define NILKIND_NAME    "NilKind"
 
 #define PN_FNUMBER      1
 #define PN_FBOOLEAN     2
@@ -602,7 +603,7 @@ typedef enum {
   MODE_P2     = MODE_STD+1,     ///< 0x11 17 use p2 extensions
   MODE_P6     = MODE_STD+2,     ///< 0x12 18 syntax p6. other via use syntax ""
 #endif
-  // room for registered syntax modules 18-63 (45 modules: sql, c, ...)
+  // room for registered syntax modules 18-63 (45 modules: p5, p6, sql, c, ...)
   MAX_SYNTAX  = (1<<(EXEC_BITS+2))-1     ///< sanity-check
 } syntax_mode_t;
 

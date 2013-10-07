@@ -1029,7 +1029,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 ///\param source  PNProto or PN_NIL of the current closure definition stored in f->source of each block
 ///\param sig     PNSource signature tree or PN_NIL or PNTuple in P2, parsed via yy_sig()
 ///\return PNProto a closure
- PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
+PN potion_source_compile(Potion *P, PN cl, PN self, PN source, PN sig) {
   vPN(Proto) f;
   vPN(Source) t = (struct PNSource *)self;
 

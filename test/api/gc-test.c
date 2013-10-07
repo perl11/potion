@@ -16,10 +16,10 @@
 
 Potion *P;
 
-#if defined(DEBUG)
-#define DBG_Gv(P,...)				\
-  if (P->flags & (DEBUG_GC | DEBUG_VERBOSE)) {	\
-    printf(__VA_ARGS__);			\
+#ifdef DEBUG
+#define DBG_Gv(P,...)	       \
+  if (P->flags & DEBUG_GC && P->flags & DEBUG_VERBOSE) { \
+    printf(__VA_ARGS__);       \
   }
 #define DBG_G(P,...)	       \
   if (P->flags & DEBUG_GC) {   \
@@ -111,9 +111,8 @@ int main(int argc, char **argv) {
   P = potion_gc_boot(sp);
   if (argc == 2) {
 #ifdef DEBUG
-#   define ADD_FLAGS(flag) P->flags = (Potion_Flags)((int)P->flags | (flag))
-    if (!strcmp(argv[1], "-DG"))  ADD_FLAGS(DEBUG_GC);
-    if (!strcmp(argv[1], "-DGv")) ADD_FLAGS(DEBUG_GC|DEBUG_VERBOSE);
+    if (!strcmp(argv[1], "-DG"))  P->flags |= DEBUG_GC;
+    if (!strcmp(argv[1], "-DGv")) P->flags |= (DEBUG_GC|DEBUG_VERBOSE);
 #endif
   }
   if (P->mem->old_lo == NULL) {

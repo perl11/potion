@@ -31,8 +31,6 @@
   ")\n"
 #endif
 
-#define ADD_FLAGS(flag) P->flags = (Potion_Flags)((int)P->flags | flag)
-
 const char p2_banner[]  = P2_BANNER(_XSTR(POTION_JIT_NAME));
 const char p2_version[] = P2_VERSION;
 
@@ -272,9 +270,9 @@ int main(int argc, char *argv[]) {
       continue;
     }
     if (!strcmp(argv[i], "--inspect")) {
-      P->flags = (Potion_Flags)(int)(P->flags | DEBUG_INSPECT); continue; }
+      P->flags |= DEBUG_INSPECT; continue; }
     if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--verbose")) {
-      P->flags = (Potion_Flags)(int)(P->flags | DEBUG_VERBOSE); continue; }
+      P->flags |= DEBUG_VERBOSE; continue; }
 #ifdef DEBUG
     if (argv[i][0] == '-' && argv[i][1] == 'D') {
       if (strchr(&argv[i][2], '?')) {
@@ -289,15 +287,15 @@ int main(int argc, char *argv[]) {
 	printf("  G  GC\n");
 	goto END;
       }
-      if (strchr(&argv[i][2], 'i')) ADD_FLAGS(DEBUG_INSPECT);
-      if (strchr(&argv[i][2], 'v')) ADD_FLAGS(DEBUG_VERBOSE);
-      if (strchr(&argv[i][2], 't')) { ADD_FLAGS(DEBUG_TRACE);
+      if (strchr(&argv[i][2], 'i')) P->flags |= DEBUG_INSPECT;
+      if (strchr(&argv[i][2], 'v')) P->flags |= DEBUG_VERBOSE;
+      if (strchr(&argv[i][2], 't')) { P->flags |= DEBUG_TRACE;
 	exec = exec==EXEC_JIT ? EXEC_VM : exec; }
-      if (strchr(&argv[i][2], 'p')) ADD_FLAGS(DEBUG_PARSE);
-      if (strchr(&argv[i][2], 'P')) ADD_FLAGS(DEBUG_PARSE | DEBUG_PARSE_VERBOSE);
-      if (strchr(&argv[i][2], 'c')) ADD_FLAGS(DEBUG_COMPILE);
-      if (strchr(&argv[i][2], 'J')) ADD_FLAGS(DEBUG_JIT);
-      if (strchr(&argv[i][2], 'G')) ADD_FLAGS(DEBUG_GC);
+      if (strchr(&argv[i][2], 'p')) P->flags |= DEBUG_PARSE;
+      if (strchr(&argv[i][2], 'P')) P->flags |= DEBUG_PARSE_VERBOSE;
+      if (strchr(&argv[i][2], 'c')) P->flags |= DEBUG_COMPILE;
+      if (strchr(&argv[i][2], 'J')) P->flags |= DEBUG_JIT;
+      if (strchr(&argv[i][2], 'G')) P->flags |= DEBUG_GC;
       continue;
     }
 #endif
@@ -328,7 +326,7 @@ int main(int argc, char *argv[]) {
         if (argv[i][1] == 'E') {
           potion_define_global(P, potion_str(P, "$0"), potion_str(P, "-E"));
           if (arg) buf = potion_str(P, arg);
-          P->flags = (Potion_Flags)(((int)P->flags & 0xff00) + MODE_P2);
+          P->flags = (P->flags & 0xff00) + MODE_P2;
           //buf = potion_str(P, "use p2;\n");
           //buf = potion_bytes_append(P, 0, buf, potion_str(P, arg));
         } else {
@@ -344,7 +342,7 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
-  P->flags = (Potion_Flags)((int)P->flags + exec);
+  P->flags += exec;
 
   potion_define_global(P, potion_str(P, "$P2::mode"), PN_NUM((P->flags & 0xff))); // first flags word: p5,p2,p6
   potion_define_global(P, potion_str(P, "$P2::execmode"), PN_NUM(exec)); // exec_jit, exec_vm

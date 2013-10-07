@@ -43,7 +43,7 @@
     pngc_page_delete(protend, (char *)M->birth_hi - (char *)protend); \
   } else { \
     void *protend = (void *)M->birth_lo; \
-    pngc_page_delete(protend, (char *)M->birth_hi - (char *)M->birth_lo); \
+    pngc_page_delete(protend, (char *)M->birth_hi - (char *)protend); \
   }
 
 #define IS_GC_PROTECTED(p) \

@@ -195,14 +195,14 @@ Wrong:
 
 Better:
 
-    long flags = (long)P->flags;
+    long oldflags = (long)P->flags;
     if (P->flags & EXEC_JIT) P->flags -= EXEC_JIT;
     PN add = potion_eval(P, "(x=N|y=N): x + y.");
     PN_F addfn = PN_CLOSURE_F(add);
     PN num = addfn(P, add, 0, PN_NUM(3), PN_NUM(5));
     printf("3 + 5 = %d\n", PN_INT(num));     //ok
     PN num1 = addfn(P, add, 0, PN_NUM(3));   //ok
-    P->flags = (Potion_Flags)flags;
+    P->flags = (Potion_Flags)oldflags;
 
 ## ~ the jit's assembly ~
 

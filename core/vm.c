@@ -385,7 +385,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
     // get AST from debug op
     DBG_t("\nEntering debug loop\n");
     DBG_vt("calling debug loop(src, proto)\n");
-    PN flags = (PN)P->flags; P->flags = (Potion_Flags)EXEC_VM; //turn off tracing,debugging,...
+    PN flags = (PN)P->flags; P->flags = EXEC_VM; //turn off tracing,debugging,...
 # ifdef DEBUG_PROTO_DEBUG_LOOP // This is the planned way to go.
     // debug.pn loaded, debug object in upvals, call the init and loop method on it
     PN debug = potion_message(P, self, PN_STR("debug")); // find debug object =>0
@@ -405,9 +405,9 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
     code = potion_vm(P, code, P->lobby, PN_NIL, f->upvalsize, upvals);
 # endif // DEBUG_PROTO_DEBUG_LOOP
     locals = locals;
-    P->flags = (Potion_Flags)flags;
+    P->flags = flags;
     if (code >= PN_NUM(5)) { // :q, :exit
-      P->flags (Potion_Flags)((int)P->flags & ~EXEC_DEBUG);
+      P->flags &= ~EXEC_DEBUG);
       if (code == PN_NUM(6)) // :exit
         exit(0);
     }
@@ -427,7 +427,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
 	    && PN_STR_PTR(str)[0] == ':')
 	{
 	  if (str == PN_STR(":c"))         { break; }
-	  else if (str == PN_STR(":q"))    { P->flags = (Potion_Flags)((int)P->flags - EXEC_DEBUG); break; }
+	  else if (str == PN_STR(":q"))    { P->flags -= EXEC_DEBUG; break; }
 	  else if (str == PN_STR(":exit")) { exit(0); }
 	  else if (str == PN_STR(":h"))    {
 	    printf("c readline debugger (no breakpoints and lexical env yet)\n"
@@ -487,7 +487,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
           printf("%s\n", AS_STR(debug_fn(P, (PN)cl, code, regs, f->locals,
 					 f->upvals, f->values, f->paths)));
           f->sig = oldsig;
-	  P->flags = (Potion_Flags)flags;
+	  P->flags = flags;
 	}
 	else loop=0;
       }
@@ -563,7 +563,7 @@ reentry:
   while (pos < len) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
     DBG_t("[%2d] %-8s %d ", pos+1, potion_ops[op.code].name, op.a);
-#if DEBUG
+#ifdef DEBUG
     if (P->flags & DEBUG_TRACE) {
       if (potion_ops[op.code].args > 1)
 	fprintf(stderr, "%d", op.b);

@@ -136,11 +136,12 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	ICC = 1
         #DEFINES += -DCGOTO
 	DEBUGFLAGS += -falign-functions=16
-# 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
 # 177: label "l414" was declared but never referenced in syntax-p5.c sets fail case
-	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177
+# 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
+# 188: enumerated type mixed with another type (treating P->flags as int)
+	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 177,186,188
   ifeq (${DEBUG},0)
-# -Ofast
+                    # -Ofast
 	DEBUGFLAGS += -finline
   else
         DEBUGFLAGS += -g3 -gdwarf-3
@@ -224,7 +225,9 @@ endif
 endif
 
 ifneq ($(APPLE),1)
+  ifneq ($(ICC),1)
 	WARNINGS += -Wno-zero-length-array -Wno-gnu
+  endif
 	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
 	LDDLLFLAGS += $(LDFLAGS)
 endif
@@ -268,6 +271,7 @@ config.inc.echo:
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
+	@${ECHO} "#TODO get rid of git here, read from POTION_REV in core/version.h"
 	@${ECHO} "REVISION  = " $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
 
 config.h.echo:
@@ -290,6 +294,7 @@ config.h.echo:
 # bootstrap config.inc via `make -f config.mak`
 config.inc: tools/config.sh config.mak
 	@${ECHO} MAKE $@
+	-test -d bin || mkdir bin
 	@${ECHO} "# -*- makefile -*-" > config.inc
 	@${ECHO} "# created by ${MAKE} -f config.mak" >> config.inc
 	@${MAKE} -s -f config.mak config.inc.echo >> $@
@@ -300,6 +305,7 @@ core/config.h: config.inc core/version.h tools/config.sh config.mak
 	@${CAT} core/version.h > core/config.h
 	@${MAKE} -s -f config.mak config.h.echo >> core/config.h
 
+#TODO: fix when git is not available
 core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${ECHO} MAKE $@
 	@${ECHO} "/* created by ${MAKE} -f config.mak */" > core/version.h

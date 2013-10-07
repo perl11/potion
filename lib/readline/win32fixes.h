@@ -19,7 +19,6 @@
 #define NOGDI
 #define __USE_W32_SOCKETS
 
-#include "fmacros.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <io.h>
@@ -36,6 +35,11 @@
 #include <limits.h>  /* INT_MAX */
 #include <process.h>
 #include <sys/types.h>
+
+// mingw32 only
+#if !defined(__MINGW_SCANF_FORMAT)
+#include "fmacros.h"
+#endif
 
 #define fseeko fseeko64
 #define ftello ftello64

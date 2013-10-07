@@ -47,9 +47,7 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TLICK, obj_vt);
   potion_type_new(P, PN_TERROR, obj_vt);
   potion_type_new(P, PN_TCONT, obj_vt);
-#ifdef P2
   potion_type_new(P, PN_TDECIMAL, obj_vt);
-#endif
 
   potion_str_hash_init(P);
   PN_STR0 = PN_STRN("", 0);
@@ -304,6 +302,15 @@ void potion_esp(void **esp) {
 }
 
 #ifdef DEBUG
+void potion_dump(Potion *P, PN data) {
+  PN pd = potion_send(data, PN_string);
+  PN pt = potion_send(PN_VTABLE(PN_TYPE(data)), PN_string);
+  char *d = pd ? PN_STR_PTR(pd) : NIL_NAME;
+  char *t = pt ? PN_STR_PTR(pt) : NILKIND_NAME;
+  printf("%s (%s)\n", d, t);
+}
+#define pdump(data) potion_dump(P, data)
+
 void potion_dump_stack(Potion *P) {
   long n;
   PN *end, *ebp, *start = P->mem->cstack;
