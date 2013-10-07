@@ -36,8 +36,10 @@ PIC_OBJ_POTION = core/potion.${OPIC}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
-PLIBS = lib/libpotion${DLL} lib/potion/readline${LOADEXT}
-DYNLIBS = $(foreach m,readline buffile,lib/potion/$m${LOADEXT})
+PLIBS = lib/libpotion${DLL}
+EXTLIBS = -Llib -luv
+EXTLIBDEPS = lib/libuv${DLL}
+DYNLIBS = $(foreach m,readline buffile aio,lib/potion/$m${LOADEXT})
 DOC = doc/start.textile doc/glossary.textile
 DOCHTML = ${DOC:.textile=.html}
 OBJS = .o
@@ -250,6 +252,29 @@ lib/libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 	  ${PIC_OBJ} -Llib ${LIBPTH} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
+# 3rdparty EXTLIBS statically linked
+3rd/libuv/Makefile: 3rd/libuv/Makefile.am
+	cd 3rd/libuv && ./autogen.sh && \
+	  ./configure --enable-shared
+
+lib/libuv.a: core/config.h core/potion.h \
+  3rd/libuv/Makefile
+	@${ECHO} MAKE $@
+	@${MAKE} -s -C 3rd/libuv libuv.a
+	@cp 3rd/libuv/libuv.a lib/
+
+# default: shared
+lib/libuv$(DLL): core/config.h core/potion.h \
+  3rd/libuv/Makefile
+	@${ECHO} MAKE $@
+	@if test -f 3rd/libuv/Makefile.am; then \
+	  ${MAKE} -s -C 3rd/libuv libuv.la && \
+	  cp 3rd/libuv/.libs/libuv${DLL}* lib/; \
+	else \
+	  ${MAKE} -s -C 3rd/libuv libuv${DLL} && \
+	  cp 3rd/libuv/libuv${DLL} lib/; \
+        fi
+
 # DYNLIBS
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
@@ -267,6 +292,21 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
 	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
 	  lib/buffile.${OPIC} ${LIBPTH} ${LIBS} > /dev/null
+
+ifeq ($(HAVE_LIBUV),1)
+AIO_DEPS =
+else
+AIO_DEPS = lib/libuv$(DLL)
+endif
+
+lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
+  lib/aio.c $(AIO_DEPS)
+	@[ -d lib/potion ] || mkdir lib/potion
+	@${ECHO} CC lib/aio.${OPIC}
+	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC} lib/aio.c > /dev/null
+	@${ECHO} LD $@
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
+	  lib/aio.${OPIC} ${LIBPTH} ${LIBS} -luv > /dev/null
 
 bench: test/api/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \

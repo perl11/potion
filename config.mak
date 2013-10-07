@@ -85,6 +85,16 @@ endif
 endif
 endif
 
+ifeq ($(shell tools/config.sh "${CC}" lib -luv uv.h /usr/local),1)
+	HAVE_LIBUV = 1
+	DEFINES += -DHAVE_LIBUV
+	INCS += -I/usr/local/include
+	LIBS += -L/usr/local/lib
+else
+	HAVE_LIBUV = 0
+	INCS += -I3rd/libuv/include
+endif
+
 # JIT with -O still fails some tests
 #ifneq (${JIT},1)
 ifeq (${DEBUG},0)

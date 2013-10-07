@@ -27,6 +27,12 @@
 /lib/*/*.bundle.dSYM
 /lib/*/*.i
 /lib/*/*.opic
+/lib/*.i
+/lib/*.opic
+/lib/*.so
+/lib/*.dll
+/lib/*.bundle
+/lib/*.bundle.dSYM
 /lib/libpotion.a
 /lib/libpotion.so
 /lib/libpotion.dll

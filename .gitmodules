@@ -1,0 +1,3 @@
+[submodule "3rd/libuv"]
+	path = 3rd/libuv
+	url = git://github.com/joyent/libuv.git
