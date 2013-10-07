@@ -46,17 +46,16 @@ current_time(void)
 // TODO: use a b-tree class rather than tuples
 //
 PN gc_make_tree(int depth, PN PN_left, PN PN_right) {
-  vPN(Object) x;
-  PN l, r;
+  PN x, l, r;
   if (depth <= 0)
     return ALLOC_NODE();
 
   l = gc_make_tree(depth - 1, PN_left, PN_right);
   r = gc_make_tree(depth - 1, PN_left, PN_right);
   x = ALLOC_NODE();
-  potion_obj_set(P, PN_NIL, (PN)x, PN_left, l);
-  potion_obj_set(P, PN_NIL, (PN)x, PN_right, r);
-  return (PN)x;
+  potion_obj_set(P, PN_NIL, x, PN_left, l);
+  potion_obj_set(P, PN_NIL, x, PN_right, r);
+  return x;
 }
 
 PN gc_populate_tree(PN node, int depth, PN PN_left, PN PN_right) {
@@ -91,7 +90,7 @@ int tree_size(int i) {
 int main(void) {
   POTION_INIT_STACK(sp);
   PN klass, ary, temp, long_lived, PN_left, PN_right;
-  int i, j, count;
+  int i, j;
 
   P = potion_create(sp);
   ary = potion_tuple_with_size(P, 2);
