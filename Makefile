@@ -274,7 +274,7 @@ bench: test/api/gc-bench${EXE} bin/potion${EXE}
 	  time test/api/gc-bench
 
 check: test
-test: bin/potion${EXE} test/api/potion-test${EXE} test/api/gc-test${EXE}
+test: pn test/api/potion-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
 	test/api/potion-test; \
