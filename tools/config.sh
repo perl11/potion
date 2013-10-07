@@ -165,9 +165,14 @@ else
       DOUBLE="8"
       LLONG="8"
       LILEND="1"
-      PAGESIZE="4096"
+      if [ "$LONG" = "8" ]; then
+        PAGESIZE="65536"
+        ARGDIR="1"
+      else
+        PAGESIZE="4096"
+        ARGDIR="1"
+      fi
       STACKDIR="-1"
-      ARGDIR="1"
       HAVE_ASAN="0"
   fi
 

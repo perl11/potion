@@ -59,7 +59,8 @@ make test will not work, you need to copy a make dist tarball
 to the machine and test it there.
 
 Building for win64 does not work yet.
-I tried cygwin64 and x86_64-w64-mingw32-gcc on linux.
+cygwin64 misses pthread\_barrier\_t.
+x86_64-w64-mingw32-gcc fails by creating a wrong config.h
 
 ## ~ building on bsd ~
 
