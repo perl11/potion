@@ -272,10 +272,10 @@ lib/libuv$(DLL): core/config.h core/potion.h \
 	@${ECHO} MAKE $@
 	@if test -f 3rd/libuv/Makefile.am; then \
 	  ${MAKE} -s -C 3rd/libuv libuv.la && \
-	  cp 3rd/libuv/.libs/libuv${DLL}* lib/; \
+	  cp 3rd/libuv/.libs/libuv${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
 	else \
 	  ${MAKE} -s -C 3rd/libuv libuv${DLL} && \
-	  cp 3rd/libuv/libuv${DLL} lib/; \
+	  cp 3rd/libuv/libuv${DLL} lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
         fi
 
 # DYNLIBS
@@ -309,7 +309,7 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC} lib/aio.c > /dev/null
 	@${ECHO} LD $@
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
-	  lib/aio.${OPIC} ${LIBPTH} ${LIBS} -lpotion -luv > /dev/null
+	  lib/aio.${OPIC} ${LIBPTH} -lpotion -luv ${LIBS} > /dev/null
 
 bench: test/api/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \
