@@ -19,7 +19,7 @@ Lastly, to verify your build
 ## ~ the latest potion ~
 
 To build the bleeding edge, you will need
-GNU make, binutils, perl, sed, and gcc or clang.
+GNU make, binutils, perl, sed, and gcc or better clang.
 
     $ git clone --branch master git://github.com/perl11/potion.git
     $ cd potion
@@ -74,7 +74,7 @@ Potion's win32 binaries are built using MinGW.
 
 It's a bit hard to setup mingw and gmake on Windows.
 I usually run a shell under Cygwin and add MinGW
-to my $PATH.
+to my `$PATH`.
 
 Once that's all done,
 
@@ -88,12 +88,16 @@ On Ubuntu, if you have MinGW installed,
     $ touch core/syntax.c
     $ make && make dist
 
-This will first create a native greg and core/syntax.c,
-sets CROSS=1 and cross-compile with the given CC.
-See tools/mk-release.sh
+This will first create a native greg and `core/syntax.c`,
+sets `CROSS=1` and cross-compile with the given CC.
+See `tools/mk-release.sh`
 
-make test will not work, you need to copy a make dist tarball
+`make test` will not work, you need to copy a make dist tarball
 to the machine and test it there.
+
+Building for win64 does not work yet.
+cygwin64 misses `pthread_barrier_t`.
+`x86_64-w64-mingw32-gcc` fails by creating a wrong `config.h`
 
 ## ~ building on bsd ~
 
@@ -102,9 +106,9 @@ You can either install gnu make (gmake)
 
     $ sudo port install gmake
 
-or try ./configure which creates a special BSD config.mk
+or try `./configure` which creates a special BSD config.mk
 
-or try to merge 'master' with the branch 'bsd'
+or try to merge `master` with the branch `bsd`
 
     $ git merge bsd
     ... resolve conflicts, or not
@@ -112,19 +116,19 @@ or try to merge 'master' with the branch 'bsd'
 ## ~ building with a strict C++ compiler ~
 
 potion does not support strict C++ compilers.
+If you have no modern C compiler:
 
-Either add a C dialect to CC in config.inc (i.e. -std=c89),
+Either add a C dialect to CC in config.inc (i.e. `-std=c89`),
 
     g++ --help=C; clang++ -x C -std=gnu89
 
-or try to merge with the branch 'p2-c++'.
+or try to merge with the branch `p2-c++`.
 
 ## ~ creating documentation ~
 
-This is required for make install and release admins.
-You'll need
+This is required for `make install` and release admins.
+You'll need:
 
     redcloth to convert .textile to html,
     doxygen (1.8 or 1.9), and
     GNU global for gtags and htags
-
