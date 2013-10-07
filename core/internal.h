@@ -77,9 +77,9 @@ struct PNBHeader {
 size_t potion_cp_strlen_utf8(const char *);
 void *potion_mmap(size_t, const char);
 int potion_munmap(void *, size_t);
-// i686-w64-mingw32/include/stdio.h HAS asprintf defined
+// i686-w64-mingw32/include/stdio.h has asprintf defined
 #if POTION_WIN32 && !defined(__MINGW_SCANF_FORMAT)
-int vasprintf (char **strp, const char *fmt, ...);
+int vasprintf (char **strp, const char *fmt, va_list ap);
 int asprintf (char **string_ptr, const char *format, ...);
 #endif
 #define PN_ALLOC_FUNC(size) potion_mmap(size, 1)
