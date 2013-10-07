@@ -1,0 +1,22 @@
+# TODO write this c compiler
+Source = class(source|opts=S): /source = source, /opts = opts.
+
+# optionally transform ast
+# no methods for the various ast types, as we have no ast types yet :)
+# TODO: support method combinations? before, after, around
+#SourceBlock compile :after = (): .
+
+# the walker
+#Source compile :after = ():
+#  "compilec" /opts join say
+#  /source.
+
+# the emitter
+# dump c code for compiled ast
+Source dumpc = (source|opts=S):
+  /source = source
+  /opts = opts
+  "dumpc" opts join say
+  source string.
+
+1
