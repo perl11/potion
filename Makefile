@@ -253,6 +253,9 @@ lib/libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 # 3rdparty EXTLIBS statically linked
+3rd/libuv/Makefile.am: .gitmodules .git/modules/3rd/libuv/HEAD
+	git submodule update --init
+
 3rd/libuv/Makefile: 3rd/libuv/Makefile.am
 	cd 3rd/libuv && ./autogen.sh && \
 	  ./configure --enable-shared
@@ -291,7 +294,7 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
-	  lib/buffile.${OPIC} ${LIBPTH} ${LIBS} > /dev/null
+	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
 
 ifeq ($(HAVE_LIBUV),1)
 AIO_DEPS =
@@ -306,7 +309,7 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC} lib/aio.c > /dev/null
 	@${ECHO} LD $@
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
-	  lib/aio.${OPIC} ${LIBPTH} ${LIBS} -luv > /dev/null
+	  lib/aio.${OPIC} ${LIBPTH} ${LIBS} -lpotion -luv > /dev/null
 
 bench: test/api/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \

@@ -215,8 +215,10 @@ ifneq ($(WIN32),1)
   ifneq ($(ICC),1)
 	WARNINGS += -Wno-zero-length-array -Wno-gnu
   endif
+  ifneq ($(CYGWIN),1)
 	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
 	LDDLLFLAGS += $(LDFLAGS)
+  endif
 endif
 endif
 endif

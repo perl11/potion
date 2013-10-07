@@ -47,16 +47,19 @@ Once that's all done,
 The easiest way to do this, actually, is on Linux or Darwin.
 On Ubuntu, if you have MinGW installed,
 
-    $ make; make clean
-    $ make config CC=i586-mingw32msvc-gcc
+    $ make clean; make core/syntax.c
+    $ make config CC=i686-w64-mingw32-gcc CROSS=1
     $ touch core/syntax.c
     $ make && make dist
 
 This will first create a native greg and core/syntax.c,
-sets CROSS=1 and cross-compile with the given CC.
-See tools/mk-release.sh
+sets CROSS=1 and cross-compiles with the given CC.
+See tools/mk-release.sh.
 make test will not work, you need to copy a make dist tarball
 to the machine and test it there.
+
+Building for win64 does not work yet.
+I tried cygwin64 and x86_64-w64-mingw32-gcc on linux.
 
 ## ~ building on bsd ~
 
