@@ -63,12 +63,13 @@
     distorm_decode64(offset,
       (const unsigned char*)asmb->ptr,
       asmb->len,
-      __WORDSIZE == 64 ? 2 : 1,
+      PN_SIZE_T == 8 ? 2 : 1,
       disassembled,
       MAX_INSTRUCTIONS,
       &decodedInstructionsCount);
     for (i = 0; i < decodedInstructionsCount; i++) {
-      printf("0x%04x (%02d) %-24s %s%s%s\r\n",
+      printf("0x%012lx 0x%04x (%02d) %-24s %s%s%s\r\n",
+	     disassembled[i].offset + (unsigned long)asmb->ptr,
 	     (unsigned int)disassembled[i].offset,
 	     disassembled[i].size,
 	     (char*)disassembled[i].instructionHex.p,

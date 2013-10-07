@@ -56,7 +56,7 @@ or http://www.lua.org/doc/jucs05.pdf
   - RETURN (pos)	 	return R(A), ... ,R(A+B-2)
   - PROTO (&pos, lregs, need, regs) define function prototype
   - CLASS (pos, need)    	find class for register value
-  - DEBUG (pos, need)	        set lineno and filename
+  - DEBUG (pos)	                set ast
 
 (c) 2008 why the lucky stiff, the freelance professor
 (c) 2013 by perl11 org
@@ -89,7 +89,7 @@ extern const struct {
   const u8 args;
 } potion_ops[];
 
-#define STRINGIFY(_obj) PN_STR_PTR(potion_send(_obj, PN_string))
+#define STRINGIFY(_obj) ({PN str=potion_send(_obj,PN_string);str?PN_STR_PTR(str):"";})
 #endif
 
 #ifdef POTION_JIT_TARGET
@@ -114,23 +114,66 @@ void potion_vm_init(Potion *P) {
 #endif
 }
 
+/**
+ entrypoint for all bytecode methods from the C api. \see potion_test_eval()
+ \param cl PNClosure to be called
+ \param self PN - sets self (ignored for most user defined functions).
+                  if self is a int < 10 it defines the number of args provided
+ \param ... - arguments to the cl
+x
+ \verbatim
+   add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."));
+   addfn = PN_CLOSURE_F(add); // i.e. potion_vm_proto
+   num = addfn(P, add, 2, PN_NUM(3), PN_NUM(5));
+   num = addfn(P, add, 1, PN_NUM(3)); // 1 arg provided, 2nd arg=0
+ \endverbatim
+
+ Note that methods with optional arguments ... are not very safe to call.
+ potion_vm_proto() does not know the number of arguments on the stack.
+ So it checks for all optional args the matching type.
+ You can help by providing numargs as self argument if numargs < 10. */
 PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
   PN ary = PN_NIL;
   vPN(Proto) f = (struct PNProto *)PN_CLOSURE(cl)->data[0];
   if (PN_IS_TUPLE(f->sig)) {
+    PN_SIZE i;
+    int arity = PN_CLOSURE(cl)->arity;
+    int minargs = PN_CLOSURE(cl)->minargs;
+    int numargs = 0;
     va_list args;
-    va_start(args, self);
     ary = PN_TUP0();
-    PN_TUPLE_EACH(f->sig, i, v, {
-      if (PN_IS_STR(v))
+    va_start(args, self);
+    if (self < 10) {
+      numargs = self;
+      self = 0;
+    }
+    for (i=0; i < arity; i++) {
+      PN s = potion_sig_at(P, f->sig, i);
+      if (i < minargs || PN_TUPLE_LEN(s) < 2) { //mandatory or no type
         ary = PN_PUSH(ary, va_arg(args, PN));
-    });
+      } else { //vararg call heuristic: check type of stack var, replace with default
+        PN arg = va_arg(args, PN);
+        char type = (char)(PN_TUPLE_LEN(s) > 2
+			   ? potion_type_char(PN_TYPE(PN_TUPLE_AT(s,2)))
+			   : PN_TUPLE_LEN(s) > 1
+			     ? PN_INT(PN_TUPLE_AT(s,1)) : 0);
+        if ((numargs && (i >= numargs)) //numargs provided via self
+	  || PN_IS_FFIPTR(arg)
+	  || (type && (potion_type_char(PN_TYPE(arg)) != type))) { //replace with default
+          // default value or 0
+          ary = PN_PUSH(ary, PN_TUPLE_LEN(s) == 3 ? PN_TUPLE_AT(s,2) : potion_type_default(type));
+        } else {
+          ary = PN_PUSH(ary, arg);
+        }
+      }
+    }
     va_end(args);
   }
   return potion_vm(P, (PN)f, self, ary,
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
 
+/** implements the class op */
 PN potion_vm_class(Potion *P, PN cl, PN self) {
   if (PN_TYPE(cl) == PN_TCLOSURE) {
     vPN(Proto) proto = PN_PROTO(PN_CLOSURE(cl)->data[0]);
@@ -165,7 +208,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   if (PN_TUPLE_LEN(f->protos) > 0) {
     PN_SIZE j;
     vPN(Tuple) tp = (vPN(Tuple)) potion_fwd(f->protos);
-    DBG_vt(";  %u subprotos\n", tp->len);
+    DBG_vt(";  %d subprotos\n", tp->len);
     for (j=0; j < tp->len; j++) {
       PN proto2 = (PN)tp->set[j];
       vPN(Proto) f2 = (struct PNProto *)proto2;
@@ -198,7 +241,8 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       // arg names, except string default
       if (PN_IS_STR(v) && !(i>0 && PN_IS_NUM(t->set[i-1]) && t->set[i-1] == PN_NUM(':'))) {
         PN_SIZE num = PN_GET(f->locals, v);
-        target->local(P, f, &asmb, regs + num, argx);
+        if (num != PN_NONE)
+          target->local(P, f, &asmb, regs + num, argx);
         argx++;
       }
     }
@@ -268,13 +312,13 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(RETURN, (P, f, &asmb, pos))	// return R[a], ... ,R[a+b-2]
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))// define function prototype
       CASE_OP(CLASS, (P, f, &asmb, pos, need)) // find class for register value
-      CASE_OP(DEBUG, (P, f, &asmb, pos, need)) // set lineno and filename
+      case OP_DEBUG: break; // skip ast debugging
     }
   }
 
   target->finish(P, f, &asmb);
 
-  fn = PN_ALLOC_FUNC(asmb->len);
+  fn = (u8*)PN_ALLOC_FUNC(asmb->len);
 #if defined(JIT_DEBUG)
   if (P->flags & DEBUG_JIT) {
     #include "vm-dis.c"
@@ -291,6 +335,31 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   else \
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);
 
+static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
+  if (numargs > 0) {  //allow fun() to return the closure
+    if (numargs < cl->minargs)
+      return potion_error
+	(P, (cl->minargs == arity
+	     ? potion_str_format(P, "Not enough arguments to %s. Required %d, given %d",
+				 AS_STR(cl), arity, numargs)
+	     : potion_str_format(P, "Not enough arguments to %s. Required %d to %d, given %d",
+				 AS_STR(cl), cl->minargs, arity, numargs)),
+	 0, 0, 0);
+    if (numargs > arity)
+      return potion_error
+	(P, potion_str_format(P, "Too many arguments to %s. Allowed %d, given %d",
+			      AS_STR(cl), arity, numargs), 0, 0, 0);
+  }
+  return PN_NIL;
+}
+
+PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* stack) {
+  //if (P->flags & EXEC_DEBUG) {
+    return PN_NUM(0);
+  //}
+}
+
+/** the bytecode run-loop */
 PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   vPN(Proto) f = (struct PNProto *)proto;
 
@@ -306,9 +375,10 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
 
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
   memset((void*)stack, 0, STACK_MAX*sizeof(PN));
+  DBG_t("-- run-time --\n");
 
 reentry:
-  if (current - stack >= STACK_MAX) {
+  if (current - stack >= STACK_MAX) { // 4096
     potion_fatal("Out of stack, all registers used up!");
   }
 
@@ -327,215 +397,235 @@ reentry:
     if (args != NULL) {
       long argx;
       for (argx = 0; argx < potion_sig_arity(P, f->sig); argx++) {
-        PN s = potion_sig_at(P, f->sig, argx);
-        PN_SIZE num = PN_GET(f->locals, PN_TUPLE_AT(s, 0));
-        locals[num] = args[argx];
+        PN s = potion_sig_name_at(P, f->sig, argx);
+        PN_SIZE num = PN_GET(f->locals, s);
+        if (num != PN_NONE)
+          locals[num] = args[argx];
       }
     }
   }
-  DBG_t("-- run-time --\n");
 
-  while (pos < PN_OP_LEN(f->asmb)) {
+  PN_SIZE len = PN_OP_LEN(f->asmb);
+  while (pos < len) {
     PN_OP op = PN_OP_AT(f->asmb, pos);
     DBG_t("[%2d] %-8s %d ", pos+1, potion_ops[op.code].name, op.a);
 #ifdef DEBUG
     if (P->flags & DEBUG_TRACE) {
       if (potion_ops[op.code].args > 1)
-	fprintf(stderr, " %d", op.b);
+	fprintf(stderr, "%d", op.b);
+      if (op.code == OP_DEBUG) fprintf(stderr, "\n");
     }
 #endif
-    // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
-    switch (op.code) {
-      case OP_MOVE:
-        reg[op.a] = reg[op.b];
-      break;
-      case OP_LOADK:
-        reg[op.a] = PN_TUPLE_AT(f->values, op.b);
-      break;
-      case OP_LOADPN:
-        reg[op.a] = (PN)op.b;
-      break;
-      case OP_SELF:
-        reg[op.a] = reg[-1];
-      break;
-      case OP_GETLOCAL:
-        if (PN_IS_REF(locals[op.b]))
-          reg[op.a] = PN_DEREF(locals[op.b]);
-        else
-          reg[op.a] = locals[op.b];
-      break;
-      case OP_SETLOCAL:
+
+// computed goto jmptable instead of switch does not check boundaries, ~3-11% faster
+#ifdef CGOTO
+#define L(op) L_##op
+
+    static void *jmptbl[] = {
+      &&L(NONE), &&L(MOVE), &&L(LOADK), &&L(LOADPN), &&L(SELF), &&L(NEWTUPLE),
+      &&L(SETTUPLE), &&L(GETLOCAL), &&L(SETLOCAL), &&L(GETUPVAL), &&L(SETUPVAL),
+      &&L(GLOBAL), &&L(GETTABLE), &&L(SETTABLE), &&L(NEWLICK), &&L(GETPATH),
+      &&L(SETPATH), &&L(ADD), &&L(SUB), &&L(MULT), &&L(DIV), &&L(REM), &&L(POW),
+      &&L(NOT), &&L(CMP), &&L(EQ), &&L(NEQ), &&L(LT), &&L(LTE), &&L(GT), &&L(GTE),
+      &&L(BITN), &&L(BITL), &&L(BITR), &&L(DEF), &&L(BIND), &&L(MSG), &&L(JMP),
+      &&L(TEST), &&L(TESTJMP), &&L(NOTJMP), &&L(NAMED), &&L(CALL), &&L(CALLSET),
+      &&L(TAILCALL), &&L(RETURN), &&L(PROTO), &&L(CLASS), &&L_DEBUG
+    };
+
+#define SWITCH_START(op) goto *jmptbl[op.code];
+#define CASE(op, block) L(op): { block; } goto L_end;
+#define SWITCH_END      L_end: ;
+#else
+#define SWITCH_START(op) switch (op.code) {
+#define CASE(op, block) case OP_##op: block; break;
+#define SWITCH_END       }
+#endif
+
+    SWITCH_START(op)
+      CASE(MOVE,   reg[op.a] = reg[op.b] )
+      CASE(LOADK,  reg[op.a] = PN_TUPLE_AT(f->values, op.b) )
+      CASE(LOADPN, reg[op.a] = (PN)op.b )
+      CASE(SELF,   reg[op.a] = reg[-1] )
+      CASE(GETLOCAL,
         if (PN_IS_REF(locals[op.b])) {
+	  DBG_vt(";  deref locals %d\n", op.b);
+          reg[op.a] = PN_DEREF(locals[op.b]);
+        } else {
+          reg[op.a] = locals[op.b];
+	}
+      )
+      CASE(SETLOCAL,
+        if (PN_IS_REF(locals[op.b])) {
+	  DBG_vt(";  deref locals %d\n", op.b);
           PN_DEREF(locals[op.b]) = reg[op.a];
           PN_TOUCH(locals[op.b]);
         } else
-          locals[op.b] = reg[op.a];
-      break;
-      case OP_GETUPVAL:
-        reg[op.a] = PN_DEREF(upvals[op.b]);
-      break;
-      case OP_SETUPVAL:
+          locals[op.b] = reg[op.a]
+      )
+      CASE(GETUPVAL, reg[op.a] = PN_DEREF(upvals[op.b]) )
+      CASE(SETUPVAL,
         PN_DEREF(upvals[op.b]) = reg[op.a];
-        PN_TOUCH(upvals[op.b]);
-      break;
-      case OP_GLOBAL:
-        potion_define_global(P, reg[op.a], reg[op.b]);
-        reg[op.a] = reg[op.b];
-      break;
-      case OP_NEWTUPLE:
-        reg[op.a] = PN_TUP0();
-      break;
-      case OP_SETTUPLE:
-        reg[op.a] = PN_PUSH(reg[op.a], reg[op.b]);
-      break;
-      case OP_SETTABLE:
-        potion_table_set(P, reg[op.a], reg[op.a + 1], reg[op.b]);
-      break;
-      case OP_NEWLICK: {
+        PN_TOUCH(upvals[op.b])
+      )
+      CASE(GLOBAL,
+           potion_define_global(P, reg[op.a], reg[op.b]);
+	   reg[op.a] = reg[op.b])
+      CASE(NEWTUPLE,
+	   reg[op.a] = PN_TUP0())
+      CASE(SETTUPLE,
+	   reg[op.a] = PN_PUSH(reg[op.a], reg[op.b]))
+      CASE(SETTABLE,
+	   potion_table_set(P, reg[op.a], reg[op.a + 1], reg[op.b]); )
+      CASE(NEWLICK, {
         PN attr = op.b > op.a ? reg[op.a + 1] : PN_NIL;
         PN inner = op.b > op.a + 1 ? reg[op.b] : PN_NIL;
         reg[op.a] = potion_lick(P, reg[op.a], attr, inner);
-      }
-      break;
-      case OP_GETPATH:
-        reg[op.a] = potion_obj_get(P, PN_NIL, reg[op.a], reg[op.b]);
-      break;
-      case OP_SETPATH:
-        potion_obj_set(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]);
-      break;
-      case OP_ADD:
-        PN_VM_MATH(add, +);
-      break;
-      case OP_SUB:
-        PN_VM_MATH(sub, -);
-      break;
-      case OP_MULT:
-        PN_VM_MATH(mult, *);
-      break;
-      case OP_DIV:
-        PN_VM_MATH(div, /);
-      break;
-      case OP_REM:
-        PN_VM_MATH(rem, %);
-      break;
-      case OP_POW:
-        reg[op.a] = PN_NUM((int)pow((double)PN_INT(reg[op.a]),
-          (double)PN_INT(reg[op.b])));
-      break;
-      case OP_NOT:
-        reg[op.a] = PN_BOOL(!PN_TEST(reg[op.a]));
-      break;
-      case OP_CMP:
-        reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a]));
-      break;
-      case OP_NEQ:
-        reg[op.a] = PN_BOOL(reg[op.a] != reg[op.b]);
-      break;
-      case OP_EQ:
-        reg[op.a] = PN_BOOL(reg[op.a] == reg[op.b]);
-      break;
-      case OP_LT:
-        reg[op.a] = PN_BOOL((long)(reg[op.a]) < (long)(reg[op.b]));
-      break;
-      case OP_LTE:
-        reg[op.a] = PN_BOOL((long)(reg[op.a]) <= (long)(reg[op.b]));
-      break;
-      case OP_GT:
-        reg[op.a] = PN_BOOL((long)(reg[op.a]) > (long)(reg[op.b]));
-      break;
-      case OP_GTE:
-        reg[op.a] = PN_BOOL((long)(reg[op.a]) >= (long)(reg[op.b]));
-      break;
-      case OP_BITN:
-        reg[op.a] = PN_IS_NUM(reg[op.b]) ? PN_NUM(~PN_INT(reg[op.b])) : potion_obj_bitn(P, reg[op.b]);
-      break;
-      case OP_BITL:
-        PN_VM_MATH(bitl, <<);
-      break;
-      case OP_BITR:
-        PN_VM_MATH(bitr, >>);
-      break;
-      case OP_DEF:
-        reg[op.a] = potion_def_method(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]);
-      break;
-      case OP_BIND:
-        reg[op.a] = potion_bind(P, reg[op.b], reg[op.a]);
-      break;
-      case OP_MSG:
-        reg[op.a] = potion_message(P, reg[op.b], reg[op.a]);
-      break;
-      case OP_JMP:
-        pos += op.a;
-      break;
-      case OP_TEST:
-        reg[op.a] = PN_BOOL(PN_TEST(reg[op.a]));
-      break;
-      case OP_TESTJMP:
-        if (PN_TEST(reg[op.a])) pos += op.b;
-      break;
-      case OP_NOTJMP:
-        if (!PN_TEST(reg[op.a])) pos += op.b;
-      break;
-      case OP_NAMED: {
+      })
+      CASE(GETPATH,
+	   reg[op.a] = potion_obj_get(P, PN_NIL, reg[op.a], reg[op.b]))
+      CASE(SETPATH,
+	   potion_obj_set(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]))
+      CASE(ADD, PN_VM_MATH(add, +))
+      CASE(SUB, PN_VM_MATH(sub, -))
+      CASE(MULT,PN_VM_MATH(mult, *))
+      CASE(DIV, PN_VM_MATH(div, /))
+      CASE(REM, PN_VM_MATH(rem, %))
+      CASE(POW, reg[op.a] = PN_NUM((int)pow((double)PN_INT(reg[op.a]),
+					    (double)PN_INT(reg[op.b]))))
+#ifdef P2
+      CASE(NOT, reg[op.a] = PN_ZERO == reg[op.a] ? PN_TRUE : PN_BOOL(!PN_TEST(reg[op.a])))
+#else
+      CASE(NOT, reg[op.a] = PN_BOOL(!PN_TEST(reg[op.a])))
+#endif
+      CASE(CMP, reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a])))
+      CASE(NEQ,
+        DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+	   reg[op.a] = PN_BOOL(reg[op.a] != reg[op.b]))
+      CASE(EQ,
+        DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+	   reg[op.a] = PN_BOOL(reg[op.a] == reg[op.b]))
+      CASE(LT,
+        DBG_t("\t; %s<%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+	   reg[op.a] = PN_BOOL((long)(reg[op.a]) < (long)(reg[op.b])))
+      CASE(LTE,
+	   DBG_t("\t; %s<=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+	   reg[op.a] = PN_BOOL((long)(reg[op.a]) <= (long)(reg[op.b])))
+      CASE(GT,
+	   DBG_t("\t; %s>%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+	   reg[op.a] = PN_BOOL((long)(reg[op.a]) > (long)(reg[op.b])))
+      CASE(GTE,
+	   DBG_t("\t; %s>=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+	   reg[op.a] = PN_BOOL((long)(reg[op.a]) >= (long)(reg[op.b])))
+      CASE(BITN,
+	   reg[op.a] = PN_IS_NUM(reg[op.b]) ? PN_NUM(~PN_INT(reg[op.b])) : potion_obj_bitn(P, reg[op.b]))
+      CASE(BITL, PN_VM_MATH(bitl, <<))
+      CASE(BITR, PN_VM_MATH(bitr, >>))
+      CASE(DEF,
+	   reg[op.a] = potion_def_method(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]))
+      CASE(BIND,
+	   reg[op.a] = potion_bind(P, reg[op.b], reg[op.a]))
+      CASE(MSG,
+	   reg[op.a] = potion_message(P, reg[op.b], reg[op.a]))
+      CASE(JMP,
+	   pos += op.a)
+      CASE(TEST,
+	   reg[op.a] = PN_BOOL(PN_TEST1(reg[op.a])))
+      CASE(TESTJMP,
+	   if (PN_TEST1(reg[op.a])) pos += op.b)
+      CASE(NOTJMP,
+	   if (!PN_TEST1(reg[op.a])) pos += op.b)
+      CASE(NAMED,  {
         int x = potion_sig_find(P, reg[op.a], reg[op.b - 1]);
         if (x >= 0) reg[op.a + x + 2] = reg[op.b];
-      }
-      break;
-      case OP_CALL: /* R[a]( R[a+1],...,R[a+b-1] ) */
+        else potion_fatal("named parameter not found in signature");
+        DBG_t("\t; %s=%s at %d", STRINGIFY(reg[op.b-1]), STRINGIFY(reg[op.b]), x);
+	})
+      CASE(CALL,  /* R[a]( R[a+1],...,R[a+b-1] ) */
         switch (PN_TYPE(reg[op.a])) {
           case PN_TVTABLE:
+	    DBG_vt(" VTABLE\n");
             reg[op.a + 1] = potion_object_new(P, PN_NIL, reg[op.a]);
             reg[op.a] = ((struct PNVtable *)reg[op.a])->ctor;
           case PN_TCLOSURE:
-            if (PN_CLOSURE(reg[op.a])->method != (PN_F)potion_vm_proto) { //ffi?
+	  {
+	    vPN(Closure) cl = PN_CLOSURE(reg[op.a]);
+	    int i;
+	    PN sig = cl->sig;
+	    int numargs = op.b - op.a - 1;
+            if (cl->method != (PN_F)potion_vm_proto) { //call into a lib or jit or ffi
+	      //DBG_vt(" ext");
+              if (PN_IS_TUPLE(sig)) {
+		int arity = cl->arity;
+		PN err = potion_sig_check(P, cl, arity, numargs);
+		if (err) return err;
+                for (i=numargs; i < arity; i++) { // fill in defaults
+                  PN s = potion_sig_at(P, sig, i);
+                  if (s) // default or zero: && !filled by NAMED (?)
+                    reg[op.a + i + 2] = PN_TUPLE_LEN(s) == 3
+                      ? PN_TUPLE_AT(s, 2)
+                      : potion_type_default(PN_INT(PN_TUPLE_AT(s,1)));
+                  op.b++;
+                }
+              }
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, reg + op.a + 1);
             } else if (((reg - stack) + PN_INT(f->stack) + f->upvalsize + f->localsize + 8) >= STACK_MAX) {
-              int i;
+	      DBG_vt(" >stack");
               PN argt = potion_tuple_with_size(P, (op.b - op.a) - 1);
               for (i = 2; i < op.b - op.a; i++)
                 PN_TUPLE_AT(argt, i - 2) = reg[op.a + i];
-              reg[op.a] = potion_vm(P, PN_CLOSURE(reg[op.a])->data[0], reg[op.a + 1], argt,
-                PN_CLOSURE(reg[op.a])->extra - 1, &PN_CLOSURE(reg[op.a])->data[1]);
+              reg[op.a] = potion_vm(P, cl->data[0], reg[op.a + 1], argt,
+                cl->extra - 1, &cl->data[1]);
             } else {
-              int i;
-              PN sig = PN_CLOSURE(reg[op.a])->sig;
-              int numargs = op.b - op.a - 1;
+	      DBG_vt(" stack");
               self = reg[op.a + 1];
               args = &reg[op.a + 2];
               if (PN_IS_TUPLE(sig)) {
-                for (i=numargs; i < PN_CLOSURE(reg[op.a])->arity; i++) { // fill in defaults
+		int arity = cl->arity;
+		PN err = potion_sig_check(P, cl, arity, numargs);
+		if (err) return err;
+                for (i=numargs; i < arity; i++) { // fill in defaults
                   PN s = potion_sig_at(P, sig, i);
-                  if (s && PN_TUPLE_LEN(s) == 3) { // && !filled by NAMED (?)
-                    reg[op.a + i + 2] = PN_TUPLE_AT(s, 2);
-                    f->stack = PN_NUM(PN_INT(f->stack)+1);
-                    op.b++; }}}
-              upc = PN_CLOSURE(reg[op.a])->extra - 1;
-              upargs = &PN_CLOSURE(reg[op.a])->data[1];
+                  if (s) // default or zero: && !filled by NAMED (?)
+                    reg[op.a + i + 2] = PN_TUPLE_LEN(s) == 3
+		      ? PN_TUPLE_AT(s, 2)
+		      : potion_type_default(PN_INT(PN_TUPLE_AT(s,1)));
+                  f->stack = PN_NUM(PN_INT(f->stack)+1);
+                  op.b++;
+                }
+              }
+              upc = cl->extra - 1;
+              upargs = &cl->data[1];
               current = reg + PN_INT(f->stack) + 2;
               current[-2] = (PN)f;
               current[-1] = (PN)pos;
 
-              f = PN_PROTO(PN_CLOSURE(reg[op.a])->data[0]);
+              f = PN_PROTO(cl->data[0]);
               pos = 0;
-              DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
+	      DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
               goto reentry;
             }
+	  }
           break;
-          
+
           default: {
             reg[op.a + 1] = reg[op.a];
             reg[op.a] = potion_obj_get_call(P, reg[op.a]);
-            if (PN_IS_CLOSURE(reg[op.a]))
+            if (PN_IS_CLOSURE(reg[op.a])) {
+	      //DBG_vt(" def");
               reg[op.a] = potion_call(P, reg[op.a], op.b - op.a, &reg[op.a + 1]);
-              DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
+	    }
+	    DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
           }
           break;
-        }
-      break;
-      case OP_CALLSET:
-        reg[op.a] = potion_obj_get_callset(P, reg[op.b]);
-      break;
-      case OP_RETURN:
+        })
+      CASE(CALLSET,
+	   reg[op.a] = potion_obj_get_callset(P, reg[op.b]))
+      CASE(TAILCALL,
+	   potion_fatal("OP_TAILCALL not implemented"))
+      CASE(GETTABLE,
+	   potion_fatal("OP_GETTABLE not implemented"))
+      CASE(NONE, )     // ignored
+      CASE(RETURN,
         if (current != stack) {
           val = reg[op.a];
 
@@ -547,15 +637,15 @@ reentry:
           current = reg - (f->localsize + f->upvalsize + 1);
           reg[op.a] = val;
           pos++;
-          DBG_t("\t; %s\n", STRINGIFY(val));
+	  DBG_t("\t; %s\n", STRINGIFY(val));
           goto reentry;
         } else {
           reg[0] = reg[op.a];
-          DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
+	  DBG_t("\t; %s\n", STRINGIFY(reg[op.a]));
           goto done;
         }
-      break;
-      case OP_PROTO: {
+      )
+      CASE(PROTO, {
         vPN(Closure) cl;
         unsigned areg = op.a;
         proto = PN_TUPLE_AT(f->protos, op.b);
@@ -565,7 +655,6 @@ reentry:
         PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
           pos++;
           op = PN_OP_AT(f->asmb, pos);
-
           if (op.code == OP_GETUPVAL) {
             cl->data[i+1] = upvals[op.b];
           } else if (op.code == OP_GETLOCAL) {
@@ -575,20 +664,21 @@ reentry:
           }
         });
         reg[areg] = (PN)cl;
-      }
-      break;
-      case OP_CLASS:
-        reg[op.a] = potion_vm_class(P, reg[op.b], reg[op.a]);
-      break;
-      case OP_DEBUG:
-	//check breakpoints vs lineno (a), switch to debugger
-        //lineno: reg[op.a], filename: reg[op.b]
-        reg[op.a] = reg[-1];
-      break;
-    }
+      })
+      CASE(CLASS, reg[op.a] = potion_vm_class(P, reg[op.b], reg[op.a]))
+#ifdef CGOTO
+      L_DEBUG:
+#else
+      case OP_DEBUG: 
+#endif
+        potion_debug(P, f, self, op, reg, stack);
+
+    SWITCH_END
+
 #ifdef DEBUG
     if (P->flags & DEBUG_TRACE) {
-      if (op.code == OP_JMP || op.code == OP_NOTJMP || op.code == OP_TESTJMP)
+      if (op.code == OP_JMP || op.code == OP_NOTJMP || op.code == OP_TESTJMP ||
+	  op.code == OP_NAMED)
 	fprintf(stderr, "\n");
       else
 	fprintf(stderr, "\t; %s\n", STRINGIFY(reg[op.a]));

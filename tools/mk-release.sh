@@ -25,7 +25,7 @@ dorelease() {
 
 docross() {
     make clean
-    rm config.inc
+    rm config.inc lib/libpotion*
     echo make CC="$1" DEBUG=0 CROSS=1
     make -s -f config.mak CC="$1" DEBUG=0 CROSS=1
     touch bin/greg

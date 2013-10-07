@@ -287,7 +287,7 @@ void CuSuiteDetails(CuSuite* testSuite, CuString* details)
 					failCount, testCase->name, testCase->message);
 			}
 		}
-		CuStringAppend(details, "\n!!!FAILURES!!!\n");
+		CuStringAppend(details, "FAIL:\n");
 
 		CuStringAppendFormat(details, "Runs: %d ",   testSuite->count);
 		CuStringAppendFormat(details, "Passes: %d ", testSuite->count - testSuite->failCount);

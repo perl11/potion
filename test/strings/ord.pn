@@ -1,5 +1,3 @@
 'a' ord string print
-
-'aa' ord
-
-#=> 97nil
+"a\uABCD" ord(1)
+#=> 9743981

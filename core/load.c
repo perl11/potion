@@ -1,10 +1,8 @@
-//
-// load.c
-// loading of external code
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2013 by perl11 org
-//
+/** \file load.c
+ loading of external code, bytecode and shared libs
+
+ (c) 2008 why the lucky stiff, the freelance professor
+ (c) 2013 by perl11 org */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -15,7 +13,7 @@
 #include "internal.h"
 #include "table.h"
 
-PN potion_load_code(Potion *P, const char *filename) {
+static PN potion_load_code(Potion *P, const char *filename) {
   PN buf, code;
   struct stat stats;
   int fd = -1;
@@ -63,7 +61,7 @@ static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE le
   return func_name;
 }
 
-PN potion_load_dylib(Potion *P, const char *filename) {
+static PN potion_load_dylib(Potion *P, const char *filename) {
   void *handle = dlopen(filename, RTLD_LAZY);
   void (*func)(Potion *);
   char *err, *init_func_name;
@@ -110,9 +108,10 @@ static const char *find_extension(char *str) {
   return NULL;
 }
 
-char *potion_find_file(char *str, PN_SIZE str_len) {
+char *potion_find_file(Potion *P, char *str, PN_SIZE str_len) {
   char *r = NULL;
   struct stat st;
+  if (!str_len) str_len = strlen(str);
   PN_TUPLE_EACH(pn_loader_path, i, prefix, {
     PN_SIZE prefix_len = PN_STR_LEN(prefix);
     char dirname[prefix_len + 1 + str_len + 1];
@@ -154,7 +153,10 @@ char *potion_find_file(char *str, PN_SIZE str_len) {
 }
 
 PN potion_load(Potion *P, PN cl, PN self, PN file) {
-  char *filename = potion_find_file(PN_STR_PTR(file), PN_STR_LEN(file)), *file_ext;
+  if (!file && PN_IS_STR(self))
+    file = self;
+  char *filename = potion_find_file(P, PN_STR_PTR(file), PN_STR_LEN(file));
+  char *file_ext;
   PN result = PN_NIL;
   if (filename == NULL) {
     fprintf(stderr, "** can't find %s\n", PN_STR_PTR(file));

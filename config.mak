@@ -2,12 +2,13 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
+PWD    = $(shell pwd)
 # -pedantic not yet
 WARNINGS = -Wall -Werror -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
 CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing -D_FORTIFY_SOURCE=2
-INCS   = -Icore
-LIBPTH = -Llib
-RPATH         = -Wl,-rpath=$(shell pwd)/lib
+INCS   = -I${PWD}/core
+LIBPTH = -L${PWD}/lib
+RPATH         = -Wl,-rpath=${PWD}/lib
 RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib
 LIBS   = -lm
 LDFLAGS ?=
@@ -159,8 +160,8 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 	EXE  = .exe
 	DLL  = .dll
 	LOADEXT = .dll
-	INCS += -Itools/dlfcn-win32/include
-	LIBS += -Ltools/dlfcn-win32/lib
+	INCS += -I${PWD}/tools/dlfcn-win32/include
+	LIBS += -L${PWD}/tools/dlfcn-win32/lib
 	RPATH =
 	RPATH_INSTALL =
     ifneq (${CROSS},1)
@@ -168,6 +169,8 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 	CAT = type
 	RUNPRE =
     else
+	W := $(WARNINGS)
+	override WARNINGS = $(subst -Werror,,$(W))
         RANLIB = $(shell echo "${CC}" | sed -e "s,-gcc,-ranlib,")
     endif
 else
@@ -197,11 +200,15 @@ endif
 endif
 
 ifneq ($(APPLE),1)
-ifneq ($(ICC),1)
+ifneq ($(CROSS),1)
+ifneq ($(WIN32),1)
+  ifneq ($(ICC),1)
 	WARNINGS += -Wno-zero-length-array -Wno-gnu
-endif
+  endif
 	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
 	LDDLLFLAGS += $(LDFLAGS)
+endif
+endif
 endif
 
 

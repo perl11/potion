@@ -129,16 +129,29 @@ tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	  ${MV} tools/greg-new ${GREG}; \
 	fi
 
+# objects observing POTION_STACK_DIR must use -fno-omit-frame-pointer
+core/gc.o: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/internal.o: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/callcc.o: core/callcc.c core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/callcc.opic: core/callcc.c core/config.h core/internal.h
-	@${ECHO} CC $@ -O0 +frame-pointer
-	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/potion.o: core/potion.c core/config.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
 ifneq (${FPIC},)
+core/gc.${OPIC}: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/internal.${OPIC}: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/callcc.${OPIC}: core/callcc.c core/config.h core/internal.h
+	@${ECHO} CC $@ -O0 +frame-pointer
+	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/potion.${OPIC}: core/potion.c core/config.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
@@ -152,8 +165,8 @@ $(foreach o,${OBJS},core/ast${o} ): core/ast.c core/config.h core/potion.h core/
 $(foreach o,${OBJS},core/compile${o} ): core/compile.c core/config.h core/potion.h core/internal.h core/ast.h core/opcodes.h core/asm.h
 $(foreach o,${OBJS},core/contrib${o} ): core/contrib.c core/config.h
 $(foreach o,${OBJS},core/file${o} ): core/file.c core/config.h core/potion.h core/internal.h core/table.h
-$(foreach o,${OBJS},core/gc${o} ): core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-$(foreach o,${OBJS},core/internal${o} ): core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
+# $(foreach o,${OBJS},core/gc${o} ): core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+# $(foreach o,${OBJS},core/internal${o} ): core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
 $(foreach o,${OBJS},core/lick${o} ): core/lick.c core/config.h core/potion.h core/internal.h
 $(foreach o,${OBJS},core/load${o} ): core/load.c core/config.h core/potion.h core/internal.h core/table.h
 $(foreach o,${OBJS},core/mt19937ar${o} ): core/mt19937ar.c
@@ -240,7 +253,9 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h lib/libpotion${DLL}
 	@${ECHO} MAKE $@
+	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${MAKE} -s -C lib/readline
+	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
 
@@ -400,8 +415,7 @@ clean:
 	@rm -f core/config.h core/version.h
 	@rm -f bin/potion${EXE} bin/potion-s${EXE} lib/libpotion.* \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
-	@rm -rf doc/html doc/latex
-	@rm -f lib/potion/readline${LOADEXT} lib/readline/readline${LOADEXT}
+	@rm -f lib/potion/*${LOADEXT} lib/readline/readline${LOADEXT}
 	@rm -f tools/*.o core/config.h core/version.h
 	@rm -f tools/*~ doc/*~ example/*~ tools/config.c
 	@rm -rf doc/html doc/latex doc/ref

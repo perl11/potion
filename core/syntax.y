@@ -12,6 +12,15 @@
 #include "asm.h"
 #include "ast.h"
 
+#undef PN_AST
+#undef PN_AST2
+#undef PN_AST3
+#undef PN_OP
+#define PN_AST(T, A)        potion_source(P, AST_##T, A, PN_NIL, PN_NIL, G->lineno, P->line)
+#define PN_AST2(T, A, B)    potion_source(P, AST_##T, A, B, PN_NIL, G->lineno, P->line)
+#define PN_AST3(T, A, B, C) potion_source(P, AST_##T, A, B, C, G->lineno, P->line)
+#define PN_OP(T, A, B)      potion_source(P, T, A, B, PN_NIL, G->lineno, P->line)
+
 #define YYSTYPE PN
 #define YY_XTYPE Potion *
 #define YY_XVAR P
@@ -46,6 +55,7 @@
 #define SRC_TPL2(x,y)     P->source = PN_PUSH(PN_PUSH(P->source, x), y)
 #define SRC_TPL3(x,y,z)   P->source = PN_PUSH(PN_PUSH(PN_PUSH(P->source, x), y), z)
 
+static PN yylastline(struct _GREG *G, int pos);
 %}
 
 potion = -- s:statements end-of-file { $$ = P->source = PN_AST(CODE, s) }
@@ -61,21 +71,21 @@ stmt = s:sets
        { $$ = s; }
 
 sets = e:eqs
-       ( assign s:sets       { e = PN_AST2(ASSIGN, e, s); }
-       | defassign s:value   { e = PN_AST2(ASSIGN, e, s); }
-       | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)); }
-       | and assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_AND, e, s)); }
-       | pipe assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PIPE, e, s)); }
-       | caret assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_CARET, e, s)); }
-       | amp assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_AMP, e, s)); }
-       | bitl assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITL, e, s)); }
-       | bitr assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITR, e, s)); }
-       | plus assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PLUS, e, s)); }
-       | minus assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_MINUS, e, s)); }
-       | times assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_TIMES, e, s)); }
-       | div assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_DIV, e, s)); }
-       | rem assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_REM, e, s)); }
-       | pow assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_POW, e, s)); })?
+       ( assign s:sets       { e = PN_AST2(ASSIGN, e, s) }
+       | defassign s:value   { e = PN_AST2(ASSIGN, e, s) }
+       | or assign s:sets    { e = PN_AST2(ASSIGN, e, PN_OP(AST_OR, e, s)) }
+       | and assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_AND, e, s)) }
+       | pipe assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PIPE, e, s)) }
+       | caret assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_CARET, e, s)) }
+       | amp assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_AMP, e, s)) }
+       | bitl assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITL, e, s)) }
+       | bitr assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_BITR, e, s)) }
+       | plus assign s:sets  { e = PN_AST2(ASSIGN, e, PN_OP(AST_PLUS, e, s)) }
+       | minus assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_MINUS, e, s)) }
+       | times assign s:sets { e = PN_AST2(ASSIGN, e, PN_OP(AST_TIMES, e, s)) }
+       | div assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_DIV, e, s)) }
+       | rem assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_REM, e, s)) }
+       | pow assign s:sets   { e = PN_AST2(ASSIGN, e, PN_OP(AST_POW, e, s)) })?
        { $$ = e; }
 
 eqs = c:cmps
@@ -138,33 +148,35 @@ call = (n:name { v = PN_NIL; b = PN_NIL; } (v:value | v:list)? (b:block | b:clos
          { $$ = n; PN_SRC(n)->a[1] = PN_SRC(v); PN_SRC(n)->a[2] = PN_SRC(b) }
 
 name = p:path           { $$ = PN_AST(PATH, p) }
-     | quiz ( m:message { $$ = PN_AST(QUERY, m) }
+     | quiz ( m:msg     { $$ = PN_AST(QUERY, m) }
             | p:path    { $$ = PN_AST(PATHQ, p) })
      | !keyword
-       m:message        { $$ = PN_AST(MSG, m) }
+       m:msg            { $$ = PN_AST(MSG, m) }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1) }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2) })*
              sep?
            | ''               { $$ = PN_NIL; }
 
-lick-item = m:message t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
-          | m:message t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
-          | m:message v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
-          | m:message v:loose { $$ = PN_AST2(LICK, m, v) }
-          | m:message         { $$ = PN_AST(LICK, m) }
+lick-item = m:msg t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
+          | m:msg t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
+          | m:msg v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
+          | m:msg v:loose { $$ = PN_AST2(LICK, m, v) }
+          | m:msg         { $$ = PN_AST(LICK, m) }
 
 loose = value
       | v:unquoted { $$ = PN_AST(VALUE, v) }
 
 closure = t:list? b:block { $$ = PN_AST2(PROTO, t, b) }
-list = list-start s:statements list-end { $$ = PN_AST(LIST, s) }
+list  = list-start s:statements list-end   { $$ = PN_AST(LIST, s) }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s) }
-lick = lick-start i:lick-items lick-end { $$ = PN_AST(LIST, i) }
+lick  = lick-start i:lick-items lick-end   { $$ = PN_AST(LIST, i) }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s) }
 
-path = '/' < utfw+ > -       { $$ = PN_STRN(yytext, yyleng); }
-message = < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
+path = '/' < utfw+ > -    { $$ = PN_STRN(yytext, yyleng); }
+msg  =
+       < utfw ( utfw | [.:] )+ utfw+ '?'? > - { $$ = PN_STRN(yytext, yyleng); }
+     | < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
       | lick
@@ -186,11 +198,12 @@ utfw = [A-Za-z0-9_$@;`{}]
      | [\305-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
-utf8 = [\t\r\40-\176]
+utf8 = [\t\40-\176]
      | [\302-\337] [\200-\277]
      | [\340-\357] [\200-\277] [\200-\277]
      | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
      | end-of-line
+
 comma = ','
 block-start = ':' --
 block-end = '.' -
@@ -254,15 +267,46 @@ escu        = esc 'u' < hexl hexl hexl hexl > {
   int nbuf = 0;
   char utfc[4] = {0, 0, 0, 0};
   unsigned long code = PN_ATOI(yytext, yyleng, 16);
-  if (code < 0x80) {
+  if (code < 0x80) {          // 0xxxxxxx
     utfc[nbuf++] = code;
-  } else if (code < 0x7ff) {
+  } else if (code < 0x7ff) {  // 110xxxxx 10xxxxxx
+    if (code == 0xC0 || code == 0xC1)
+      YY_ERROR("Invalid utf-8 unicode character (U+C0,U+C1)");
     utfc[nbuf++] = (code >> 6) | 0xc0;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
-  } else {
+  } else { // 1110xxxx 10xxxxxx 10xxxxxx
+    if (code >= 0xD800 && code < 0xDFFF) // utf-16 surrogate halves RFC 3629
+      YY_ERROR("Invalid utf-8 unicode character (U+D800-U+DFFF)");
     utfc[nbuf++] = (code >> 12) | 0xe0;
     utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
     utfc[nbuf++] = (code & 0x3f) | 0x80;
+  }
+  P->pbuf = potion_asm_write(P, P->pbuf, utfc, nbuf);
+}
+escU       = esc 'U' '{' < hexl+ > '}' {
+  int nbuf = 0;
+  char utfc[4] = {0, 0, 0, 0};
+  unsigned long code = PN_ATOI(yytext, yyleng, 16);
+  if (code < 0x80) {          // 0xxxxxxx
+    utfc[nbuf++] = code;
+  } else if (code < 0x7ff) {  // 110xxxxx 10xxxxxx
+    if (code == 0xC0 || code == 0xC1)
+      YY_ERROR("Invalid utf-8 unicode character (U+C0,U+C1)");
+    utfc[nbuf++] = (code >> 6) | 0xc0;
+    utfc[nbuf++] = (code & 0x3f) | 0x80;
+  } else if (code < 0xffff) { // 1110xxxx 10xxxxxx 10xxxxxx
+    if (code >= 0xD800 && code < 0xDFFF) // utf-16 surrogate halves RFC 3629
+      YY_ERROR("Invalid utf-8 unicode character (U+D800-U+DFFF)");
+    utfc[nbuf++] = (code >> 12) | 0xe0;
+    utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
+    utfc[nbuf++] = (code & 0x3f) | 0x80;
+  } else if (code < 0x10ffff) { // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    utfc[nbuf++] = (code >> 18) | 0xf0;
+    utfc[nbuf++] = ((code >> 12) & 0x3f) | 0x80;
+    utfc[nbuf++] = ((code >> 6) & 0x3f) | 0x80;
+    utfc[nbuf++] = (code & 0x3f) | 0x80;
+  } else {
+    YY_ERROR("Invalid utf-8 unicode character (> U+10FFFF)");
   }
   P->pbuf = potion_asm_write(P, P->pbuf, utfc, nbuf);
 }
@@ -272,7 +316,7 @@ q2 = ["]
 e2 = '\\' ["] { P->pbuf = potion_asm_write(P, P->pbuf, "\"", 1) }
 c2 = < (!q2 !esc utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng) }
 str2 = q2 { P->pbuf = potion_asm_clear(P, P->pbuf) }
-       < (e2 | escn | escb | escf | escr | esct | escu | escc | c2)* >
+       < (e2 | escn | escb | escf | escr | esct | escu | escU | escc | c2)* >
        q2 { $$ = potion_bytes_string(P, PN_NIL, (PN)P->pbuf) }
 
 unq-char = '{' unq-char+ '}'
@@ -287,7 +331,8 @@ unquoted = < (!unq-sep !lick-end unq-char)+ > { $$ = PN_STRN(yytext, yyleng); }
 sep = (end-of-line | comma) (space | comment | end-of-line | comma)*
 comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t'
-end-of-line = '\n' { $$ = PN_AST3(DEBUG, $$, PN_NUM(G->lineno), potion_str(P, G->filename)); }
+end-of-line = ( '\r\n' | '\n' | '\r' )
+  { ++G->lineno; if (P->flags & EXEC_DEBUG) { P->line = yylastline(G, thunk->begin); }}
 end-of-file = !.
 
 sig = args+ end-of-file
@@ -296,12 +341,11 @@ arg-list = arg-set (optional arg-set)?
          | optional arg-set
 arg-set = arg (comma - arg)*
 
-arg-name = < utfw+ > -    { $$ = PN_STRN(yytext, yyleng); }
+arg-name = < utfw+ > -    { $$ = PN_STRN(yytext, yyleng) }
 # not with :=, const '-' would make sense, \ and * not
 arg-modifier = < ('-' | '\\' | '*' ) >  { $$ = PN_NUM(yytext[0]); }
-# for FFIs, map to potion and C types
-arg-type = < ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&') > -
-       { $$ = PN_NUM(yytext[0]) }
+# for FFIs, map to potion and C types. See potion_type_char()
+arg-type = < [NS&oTaubnBsFPlkftxrcdm] > - { $$ = PN_NUM(yytext[0]) }
 arg = m:arg-modifier n:arg-name assign t:arg-type
                         { SRC_TPL3(n,t,m) }
     | m:arg-modifier n:arg-name
@@ -332,8 +376,9 @@ PN potion_parse(Potion *P, PN code, char *filename) {
 #endif
 
   G->filename = filename;
+  P->fileno = PN_PUT(pn_filenames, PN_STR(filename));
   if (!YY_NAME(parse)(G)) {
-    YY_ERROR("** Syntax error!");
+    YY_ERROR("** Syntax error");
     fprintf(stderr, "%s", PN_STR_PTR(code));
   }
   YY_NAME(parse_free)(G);
@@ -351,7 +396,7 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   Currently:
     (name type|modifier default)
     name = PNString - variable name
-    type = NUM of potion_type_char, currently used: oNS&
+    type = NUM of potion_type_char, currently used: oNS&Tau
     modifier = NUM of '|' optional, '.' end, ':' default
     \see potion_sig_arity
 
@@ -422,4 +467,16 @@ int potion_sig_find(Potion *P, PN cl, PN name)
     prev = v;
   });
   return -1;
+}
+
+/** look back in the line for the prev. \n and back forth for the next \n
+  */
+static PN yylastline(struct _GREG *G, int pos) {
+  char *c, *nl, *s = G->buf;
+  int i, l;
+  for (i=pos-1; i>=0 && (*(s+i) != 10); i--);
+  if (i) nl = s+i+1; else nl = s;
+  c = strchr(nl, 10);
+  l = c ? c - nl : s + pos - nl;
+  return l ? potion_byte_str2(G->data, nl, l) : PN_NIL;
 }

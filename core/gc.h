@@ -1,8 +1,7 @@
-//
-// gc.h
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/** \file gc.h
+ non-API GC internals
+
+ (c) 2008 why the lucky stiff, the freelance professor */
 #ifndef POTION_GC_H
 #define POTION_GC_H
 

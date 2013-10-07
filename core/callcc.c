@@ -37,7 +37,7 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
   // move stack pointer, fill in stack, resume
   cc->stack[3] = (PN)cc;
 #if POTION_X86 == POTION_JIT_TARGET
-#if __WORDSIZE == 64
+#if PN_SIZE_T == 8
   __asm__ ("mov 0x8(%2), %%rsp;"
            "mov 0x10(%2), %%rbp;"
            "mov %2, %%rbx;"
@@ -101,12 +101,12 @@ PN potion_continuation_yield(Potion *P, PN cl, PN self) {
 ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 PN potion_callcc(Potion *P, PN cl, PN self) {
   struct PNCont *cc;
-  PN_SIZE n;
+  long n;
   PN *start, *sp1 = P->mem->cstack, *sp2, *sp3;
-#if defined(DEBUG) && (__WORDSIZE == 64)
-  if ((_PN)sp1 & 0x1F) {
+#if defined(DEBUG) && (PN_SIZE_T == 8)
+  if ((_PN)sp1 & 0xF) {
     fprintf(stderr,"P->mem->cstack=0x%lx ", (_PN)sp1);
-    potion_fatal("stack not 32byte aligned");
+    potion_fatal("stack not 16byte aligned");
   }
 #endif
   POTION_ESP(&sp2); // usually P
@@ -119,6 +119,11 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   start = sp2;
 #endif
 
+  if (n < 0) {
+    DBG_vt("\ncallcc: n=%ld, start=%p, end=%p, cc=%p\n", n, start, sp2, sp1);
+    potion_fatal("invalid stack direction");
+    return 0;
+  }
   cc = PN_ALLOC_N(PN_TCONT, struct PNCont, sizeof(PN) * (n + 3 + PN_SAVED_REGS));
   cc->len = n + 3;
   cc->stack[0] = (PN)sp1;
@@ -127,7 +132,7 @@ PN potion_callcc(Potion *P, PN cl, PN self) {
   cc->stack[3] = PN_NIL;
   DBG_vt("\ncallcc: start=%p, end=%p, cc=%p\n", start, sp2, cc->stack);
 #if POTION_X86 == POTION_JIT_TARGET
-#if __WORDSIZE == 64
+#if PN_SIZE_T == 8
   __asm__ ("mov %%rbx, 0x20(%0);"
            "mov %%r12, 0x28(%0);"
            "mov %%r13, 0x30(%0);"

@@ -18,7 +18,7 @@ the x86 and x86_64 jit.
 #define RBP(x)  (0x100 - ((x + 1) * sizeof(PN)))
 #define RBPI(x) (0x100 - ((x + 1) * sizeof(int)))
 
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
 #define X86_PRE_T 0
 #define X86_PRE()
 #define X86_POST()
@@ -32,7 +32,7 @@ the x86 and x86_64 jit.
 
 #define X86_MOV_RBP(reg, x) \
         X86_PRE(); ASM(reg); ASM(0x45); ASM(RBP(x))
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
 # define X86_MOVQ(reg, x) \
         ASM(0xC7); 			/* movl */ \
         ASM(0x45); ASM(RBP(reg)); 	/* -A(%rbp) */ \
@@ -100,7 +100,7 @@ void potion_x86_debug() {
   _PN rax, *rbp, *sp;
 
 #if POTION_X86 == POTION_JIT_TARGET
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   __asm__ ("mov %%eax, %0;"
 #else
   __asm__ ("mov %%rax, %0;"
@@ -109,7 +109,7 @@ void potion_x86_debug() {
           );
 
   printf("RAX = %lx (%u)\n", rax, potion_type(rax));
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   __asm__ ("mov %%ebp, %0;"
 #else
   __asm__ ("mov %%rbp, %0;"
@@ -141,7 +141,7 @@ again:
   \param regn: value (usually indirect stack ptr, relative to ebp)
   \param argn: argument index (0-5 in regs on 64bit) */
 static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int regn, int argn) {
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
     // IA-32 cdecl ABI, non-microsoft only. TODO: win32 stdcall for the w32api ffi
     if (argn == 0) {
       // OPT: the first argument is always (Potion *)
@@ -638,7 +638,7 @@ void potion_x86_testjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile
   X86_PRE(); ASM(0x83); ASM(0xF8); ASM(PN_FALSE); 	// cmp FALSE %rax
   ASM(0x74); ASM(X86C(9, 10)); 				// jz +10
   X86_PRE(); ASM(0x85); ASM(0xC0); 			// test %rax %rax
-  ASM(0x74); ASM(5);
+  ASM(0x74); ASM(5);					// jz +5
   TAG_JMP(pos + op.b);
 }
 
@@ -665,7 +665,7 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   ASM(0x78); ASM(X86C(9, 12));				// js +12
   X86_PRE(); ASM(0xF7); ASM(0xD8);			// neg %rax
   X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.b));	// mov -B(%rbp) %rdx
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   ASM(0x89); ASM(0x54); ASM(0x85); ASM(RBP(op.a + 2));	// mov %edx -A(%ebp,%eax,4)
 #else
   X86_PRE(); ASM(0x89); ASM(0x54); ASM(0xC5); ASM(RBP(op.a + 2)); // mov %rdx -A(%rbp,%rax,8)
@@ -731,12 +731,18 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
   // fill in defaults, arity from protos[0], not f
   if (!PN_IS_EMPTY(f->protos)) {
     vPN(Proto) c = (vPN(Proto)) PN_TUPLE_AT(f->protos, 0);
-    if ((argc-1 < c->arity) && c->arity) {
-      for (i = argc+1; i <= c->arity+1; i++) { //2: [0,1],2,3
+    int arity = c->arity;
+    if (arity && (argc-1 < arity)) {
+      for (i = argc+1; i <= arity+1; i++) { //2: [0,1],2,3
 	PN sig = potion_sig_at(P, c->sig, i-2);
 	if (sig && PN_TUPLE_LEN(sig) == 3) {
 	  DBG_t(":=*%s[%d] ", AS_STR(PN_TUPLE_AT(sig, 2)), i+1);
 	  X86_ARGO_IMM(PN_TUPLE_AT(sig, 2), i+1); 	// mov $value, i(%esp) - default
+	} else if (sig) {
+	  DBG_t("|0 ");                                 // mov 0, i(%esp) - optional
+	  char type = (char)(PN_TUPLE_LEN(sig) > 1
+			     ? PN_INT(PN_TUPLE_AT(sig,1)) : 0);
+	  X86_ARGO_IMM(type ? potion_type_default(type) : 0, i+1);
 	}}}}
   DBG_t("\n");
   ASM(0xFF); ASM(0xD0); 				// callq *%rax
@@ -814,7 +820,7 @@ void potion_x86_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 
 void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
   unsigned k;
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   ASM(0x55); 							// push %ebp
   ASM(0x89); ASM(0xE5);						// mov %esp %ebp
   ASM(0x8B); ASM(0x55); ASM(0x08);				// mov 0x8(%ebp) %edx
@@ -825,39 +831,47 @@ void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
         ASMI(PN_UNIQ(kh_key(PN, vt->methods, k - 1)));		// cmp NAME %edi
       ASM(0x75); ASM(X86C(7, 11)); 				// jne +11
       X86_PRE(); ASM(0xB8); ASMN(kh_val(PN, vt->methods, k - 1)); // mov CL %rax
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
       ASM(0x5D);
 #endif
       ASM(0xC3); // retq
     }
   }
   ASM(0xB8); ASMI(0); // mov NIL %eax
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   ASM(0x5D);
 #endif
   ASM(0xC3); // retq
 }
 
 void potion_x86_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   ASM(0x55); 				// push %ebp
   ASM(0x89); ASM(0xE5); 		// mov %esp %ebp
   ASM(0x8B); ASM(0x55); ASM(0x08);	// mov 0x8(%ebp) %edx
 #else
 #endif
+#if PN_SIZE_T != 8
   PN_TUPLE_EACH(ivars, i, v, {
     ASM(0x81); ASM(X86C(0xFA, 0xFF));
       ASMI(PN_UNIQ(v));			// cmp UNIQ %edi
     ASM(0x75); ASM(X86C(7, 6));		// jne +7
     ASM(0xB8); ASMI(i);			// mov i %rax
-#if __WORDSIZE != 64
-    ASM(0x5D);
-#endif
+    ASM(0x5D);                          // pop %rbp
     ASM(0xC3);				// retq
   });
+#else
+  PN_TUPLE_EACH(ivars, i, v, {
+    ASM(0x81); ASM(X86C(0xFA, 0xFF));
+      ASMI(PN_UNIQ(v));			// cmp UNIQ %edi
+    ASM(0x75); ASM(X86C(7, 6));		// jne +7
+    ASM(0xB8); ASMI(i);			// mov i %rax
+    ASM(0xC3);				// retq
+  });
+#endif
   X86_PRE(); ASM(0xB8); ASMN(-1);	// mov -1 %rax
-#if __WORDSIZE != 64
-  ASM(0x5D);
+#if PN_SIZE_T != 8
+  ASM(0x5D);                            // pop %rbp
 #endif
   ASM(0xC3);				// retq
 }

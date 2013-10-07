@@ -1,0 +1,5 @@
+# https://github.com/fogus/potion/issues/33
+"snowman - \u2603 " print
+"attic 50 - \U{10144}" print
+"\U{10144}" ord
+#=> snowman - ☃ attic 50 - 𐅄65860

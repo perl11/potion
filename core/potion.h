@@ -1,18 +1,20 @@
-//
-// potion.h
-//
-// (c) 2008 why the lucky stiff, the freelance professor
-//
+/** \file potion.h
+  The potion API
+
+  (c) 2008 why the lucky stiff, the freelance professor */
 /**
 \mainpage potion
 
-Every object is a closure (lambda), even values, classes, types, metaclasses,
-just local (lexical) variables not, but they are called as such.
+\see INTERNALS.md
 
-PN is either an immediate tagged value for int, bool and nil
+Everything is an object.
+Every object is a closure (lambda), even values, variables, classes, types, metaclasses, ...
+It's essentially a LISP-1.
+
+PN is either an immediate tagged value for int, bool and nil,
 or a ptr to an object.
 
-ops use a three-addresss layout: dest =  op src what
+ops use a three-addresss layout: "dest = op src what" in a single word
 
 The root class is P->lobby, which holds global values and methods.
 
@@ -25,7 +27,7 @@ The root class is P->lobby, which holds global values and methods.
 
 and optionally args, statically typed via signature strings.
 
-# Method signatures:
+# Potion method signatures:
 
   name=one-char type.
   - o PN (any)
@@ -33,8 +35,6 @@ and optionally args, statically typed via signature strings.
   - & Closure
   - S String
 
-\see README.md
-\see INTERNALS.md
 */
 
 #ifndef POTION_H
@@ -48,7 +48,7 @@ and optionally args, statically typed via signature strings.
 
 #define POTION_X86      0
 #define POTION_PPC      1
-#define POTION_TARGETS  2
+#define POTION_ARM      2
 
 #include <limits.h>
 #include <string.h>
@@ -97,13 +97,12 @@ struct PNVtable;
 
 /* patch for issue #1 supplied by joeatwork */
 #ifndef __WORDSIZE
-#ifdef __LP64__
-#define __WORDSIZE 64
-#else /* ! __LP64__ */
-#define __WORDSIZE 32
+# if PN_SIZE_T == 8
+#  define __WORDSIZE 64
+# else
+#  define __WORDSIZE 32
+# endif
 #endif
-#endif
-/* end patch for issue #1 */
 
 #define PN_TNIL         0x250000    /// NIL is magic 0x250000 (type 0)
 #define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a Num (TDecimal)
@@ -137,6 +136,7 @@ struct PNVtable;
 #define PN_TYPECHECK(t) (PN_TYPE_ID(t) >= 0 && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
 
 #define PN_NIL          ((PN)0)
+//i.e. PN_NUM(0)
 #define PN_ZERO         ((PN)1)
 #define PN_FALSE        ((PN)2)
 #define PN_TRUE         ((PN)6)
@@ -149,8 +149,10 @@ struct PNVtable;
 #define PN_FNUMBER      1
 #define PN_FBOOLEAN     2
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
+//Beware: TEST1(PN_NUM(0)) vs TEST(0<1) i.e. test1(1) vs test(1)
+#define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 ///\class PNBoolean
-/// Immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
+/// From cmp (x<y) to immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
 #define PN_BOOL(v)      (PN_TEST(v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_PTR(v)    (!PN_IS_NUM(v) && ((PN)(v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
@@ -164,6 +166,21 @@ struct PNVtable;
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
 #define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
 #define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
+#define PN_IS_FFIPTR(p)  ((PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->birth_hi)) \
+			  || (!PN_IS_PTR(p) && p > (_PN)P->mem->birth_hi))
+
+#define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, obj, "String")
+#define PN_CHECK_INT(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, obj, "Integer")
+#define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, obj, "Bool")
+#define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, obj, "Tuple")
+#define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, obj, "Closure")
+//TODO: check parents and mixins via bind
+#define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, obj)
+#ifdef DEBUG
+#define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE((PN)obj,type)
+#else
+#define DBG_CHECK_TYPE(obj,type)
+#endif
 
 ///\class PNNumber
 /// Either a PN_INT immediate object (no struct) 0x...1
@@ -178,18 +195,23 @@ struct PNVtable;
 #define PN_STR(x)       potion_str(P, x)
 #define PN_STRN(x, l)   potion_str2(P, x, l)
 #define PN_STRCAT(a, b) potion_strcat(P, (a), (b))
-#define PN_STR_PTR(x)   potion_str_ptr(x)
-#define PN_STR_LEN(x)   ((struct PNString *)(x))->len
-#define PN_STR_B(x)     potion_bytes_string(P, PN_NIL, x)
-#define PN_CLOSURE(x)   ((struct PNClosure *)(x))
-#define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method
-#define PN_PROTO(x)     ((struct PNProto *)(x))
-#define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0)
-#define PN_DEREF(x)     ((struct PNWeakRef *)(x))->data
+#define PN_STR_PTR(x)   potion_str_ptr(x)                     ///<\memberof PNString \memberof PNBytes
+#define PN_STR_LEN(x)   ((struct PNString *)(x))->len         ///<\memberof PNString
+#define PN_STR_B(x)     potion_bytes_string(P, PN_NIL, x)     ///<\memberof PNBytes
+#define PN_CLOSURE(x)   ((struct PNClosure *)(x))             ///<\memberof PNClosure
+#define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method     ///<\memberof PNClosure
+#define PN_PROTO(x)     ((struct PNProto *)(x))               ///<\memberof PNProto
+#define PN_FUNC(f, s)   potion_closure_new(P, (PN_F)f, potion_sig(P, s), 0) ///<\memberof PNClosure
+#define PN_DEREF(x)     ((struct PNWeakRef *)(x))->data       ///<\memberof PNWeakRef
+#define PN_DATA(x)      ((struct PNData *)(x))->data          ///<\memberof PNData
 #define PN_TOUCH(x)     potion_gc_update(P, (PN)(x))
-
 #define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
-#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[0]; } N;
+
+#define PN_OBJECT_HEADER \
+  PNType vt; \
+  PNUniq uniq
+
+#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[0]; } N
 #define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
 #define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
 
@@ -220,15 +242,17 @@ struct PNVtable;
 #define DBG_c(...)
 #endif
 
-#define PN_IS_EMPTY(T)  (PN_GET_TUPLE(T)->len == 0)
-#define PN_TUP0()       potion_tuple_empty(P)
-#define PN_TUP(X)       potion_tuple_new(P, X)
-#define PN_PUSH(T, X)   potion_tuple_push(P, T, (PN)X)
-#define PN_GET(T, X)    potion_tuple_find(P, T, X)
-#define PN_PUT(T, X)    potion_tuple_push_unless(P, T, X)
-#define PN_GET_TUPLE(t) ((struct PNTuple *)potion_fwd((PN)t))
-#define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len
-#define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]
+#define PN_IS_EMPTY(T)  (PN_TUPLE_LEN(T) == 0)           ///<\memberof PNTuple
+#define PN_TUP0()       potion_tuple_empty(P)            ///<\memberof PNTuple
+#define PN_TUP(X)       potion_tuple_new(P, X)           ///<\memberof PNTuple
+#define PN_PUSH(T, X)   potion_tuple_push(P, T, (PN)X)   ///<\memberof PNTuple
+#define PN_SHIFT(T)     potion_tuple_shift(P, 0, T)      ///<\memberof PNTuple
+#define PN_GET(T, X)    potion_tuple_find(P, T, X)       ///<\memberof PNTuple
+#define PN_PUT(T, X)    potion_tuple_push_unless(P, T, X) ///<\memberof PNTuple
+#define PN_GET_TUPLE(t) ((struct PNTuple *)potion_fwd((PN)t)) ///<\memberof PNTuple
+#define PN_TUPLE_LEN(t) PN_GET_TUPLE(t)->len             ///<\memberof PNTuple
+#define PN_TUPLE_AT(t, n) PN_GET_TUPLE(t)->set[n]        ///<\memberof PNTuple
+///\memberof PNTuple
 #define PN_TUPLE_COUNT(T, I, B) ({ \
     struct PNTuple * volatile __t##I = PN_GET_TUPLE(T); \
     if (__t##I->len != 0) { \
@@ -236,6 +260,7 @@ struct PNVtable;
       for (I = 0; I < __t##I->len; I++) B \
     } \
   })
+///\memberof PNTuple
 #define PN_TUPLE_EACH(T, I, V, B) ({ \
     struct PNTuple * volatile __t##V = PN_GET_TUPLE(T); \
     if (__t##V->len != 0) { \
@@ -246,10 +271,6 @@ struct PNVtable;
       } \
     } \
   })
-
-#define PN_OBJECT_HEADER \
-  PNType vt; \
-  PNUniq uniq
 
 ///
 /// standard objects act like C structs
@@ -274,6 +295,9 @@ struct PNFwd {
 ///
 /// struct to wrap arbitrary data that
 /// we may want to allocate from Potion.
+///
+/// constructor: potion_data_alloc()
+/// accessor: PN_DATA()
 ///
 struct PNData {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
@@ -336,8 +360,10 @@ struct PNClosure {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_F method;
   PN sig;            ///< signature PNTuple
-  int arity;         ///< cached number of args
+  int arity;         ///< cached number of declared args, including optional
+  int minargs;       ///< cached number of mandatory args, without optional
   PN_SIZE extra;     ///< 0 or 1 if has code attached at data
+  PN name;           /// PNString
   PN data[0];        ///< code
 };
 
@@ -376,7 +402,7 @@ enum PN_AST {
   AST_QUERY,
   AST_PATHQ,
   AST_EXPR,
-  AST_LIST, /* was TABLE, it is a TUPLE */
+  AST_LIST, /* for TABLE (=,..) and TUPLE (,...) */
   AST_BLOCK,
   AST_LICK,
   AST_PROTO,
@@ -384,8 +410,18 @@ enum PN_AST {
 };
 struct PNSource {
   PN_OBJECT_HEADER;  	///< PNType vt; PNUniq uniq
-  enum PN_AST part;     ///< AST type, avoid -Wswitch
+  enum PN_AST part;     ///< AST type, avoid -Wswitch (aligned access: 4+4+8+4+24)
   struct PNSource * volatile a[3];///< PNTuple of 1-3 kids, \see ast.c
+  struct {
+#if PN_SIZE_T != 8
+    PNType fileno:16;
+    PNType lineno:16;
+#else
+    PNType fileno:32;
+    PNType lineno:32;
+#endif
+  } loc;                ///< bitfield of fileno and lineno
+  PN line;              ///< PNString of src line
 };
 
 ///
@@ -402,11 +438,13 @@ struct PNProto {
   PN upvals; ///< variables in upper scopes
   PN values; ///< numbers, strings, etc.
   PN protos; ///< nested closures
+  PN debugs; ///< tree parts
   PN tree;   ///< abstract syntax tree
   PN_SIZE pathsize, localsize, upvalsize;
   PN asmb;   ///< assembled instructions
   PN_F jit;  ///< jit function pointer
-  int arity;  ///< cached sig arity (number of args)
+  int arity; ///< cached sig arity (number of args)
+  PN name;   ///< PNString
 };
 
 ///
@@ -416,6 +454,7 @@ struct PNProto {
 struct PNTuple {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE len;
+  PN_SIZE alloc;     ///< overallocate a bit
   PN set[0];
 };
 
@@ -471,13 +510,16 @@ static inline PNType potion_type(PN obj) {
   if (PN_IS_NUM(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
+#if 1
   while (1) {
     struct PNFwd *o = (struct PNFwd *)obj;
     if (o->fwd != POTION_FWD)
       return ((struct PNObject *)o)->vt;
     obj = o->ptr;
   }
-  //return ((struct PNObject *)potion_fwd(obj))->vt;
+#else
+  return ((struct PNObject *)potion_fwd(obj))->vt;
+#endif
 }
 
 /// PN_QUICK_FWD - doing a single fwd check after a possible realloc
@@ -500,8 +542,9 @@ static inline char *potion_str_ptr(PN s) {
   return ((struct PNBytes *)s)->chars;
 }
 
-PN_FLEX(PNFlex, PN)
-PN_FLEX(PNAsm, unsigned char)
+PN_FLEX(PNFlex, PN);
+//PN_FLEX(PNAsm, unsigned char);
+typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; unsigned char ptr[0]; } PNAsm;
 
 ///
 /// the jit
@@ -529,31 +572,37 @@ typedef struct {
 /// (one per thread, houses its own garbage collector)
 ///
 
-
 typedef enum {
-  EXEC_VM = 0,  ///< bytecode (switch or cgoto)
-  EXEC_JIT,     ///< JIT if detected at config-time (x86, ppc)
-  EXEC_DEBUG,   ///< -d: instrumented bytecode (line stepping) or just slow runloop?
-  EXEC_CHECK,          ///< -c stop after compilation
-  EXEC_COMPILE,        ///< to bytecode (dumpbc)
-  EXEC_COMPILE_C,      ///< compile-c
-  EXEC_COMPILE_NATIVE  ///< compile-exec
+  EXEC_VM = 0,      ///< bytecode (switch or cgoto)
+  EXEC_JIT = 1,     ///< JIT if detected at config-time (x86, ppc)
+  EXEC_DEBUG = 2,   ///< -d: instrumented bytecode (line stepping) or just slow runloop?
+  EXEC_CHECK = 3,   ///< -c stop after compilation
+  EXEC_COMPILE = 4, ///< to bytecode (dumpbc)
+  MAX_EXEC = 5      ///< sanity-check (possible stack overwrites by callcc)
 } exec_mode_t;
 
-typedef enum {
-  MODE_P5       = 0,  ///< plain p5
-  MODE_P2       = 1,  ///< use p2
-  MODE_P6       = 2,  ///< syntax p6. other via use syntax ""
+// we combine the exclusive enum 0-4 for exec, then the exclusive syntax modes 16-18,
+// and finally the inclusive debugging modes
+#define EXEC_BITS 4 ///< 0-4
 
-  DEBUG_INSPECT = 1<<8,
-  DEBUG_VERBOSE = 1<<9
+typedef enum {
+  MODE_STD    = 1<<EXEC_BITS,            ///< 0x10 16 plain potion
+  // room for registered syntax modules 18-63 (45 modules: p5, p6, sql, c, ...)
+  MAX_SYNTAX  = (1<<(EXEC_BITS+2))-1     ///< sanity-check
+} syntax_mode_t;
+
+typedef enum {
+  // exec + syntax + debug flags:
+  DEBUG_INSPECT = 1<<(EXEC_BITS+2),	 // 0x0040
+  DEBUG_VERBOSE = 1<<(EXEC_BITS+3)	 // 0x0080
 #ifdef DEBUG
- ,DEBUG_TRACE  = 1<<10,
-  DEBUG_PARSE  = 1<<11,
-  DEBUG_PARSE_VERBOSE  = 1<<12,
-  DEBUG_COMPILE= 1<<13,
-  DEBUG_GC     = 1<<14,
-  DEBUG_JIT    = 1<<15
+  ,
+  DEBUG_TRACE   = 1<<(EXEC_BITS+4),  	 // 0x0100
+  DEBUG_PARSE   = 1<<(EXEC_BITS+5),	 // 0x0200
+  DEBUG_PARSE_VERBOSE = 1<<(EXEC_BITS+6),// 0x0400
+  DEBUG_COMPILE = 1<<(EXEC_BITS+7),	 // 0x2000
+  DEBUG_GC      = 1<<(EXEC_BITS+8),	 // 0x0800
+  DEBUG_JIT     = 1<<(EXEC_BITS+9)	 // 0x1000
 #endif
 } Potion_Flags;
 
@@ -564,14 +613,18 @@ struct Potion_State {
   struct PNTable *strings; ///< table of all strings
   PN lobby;                ///< root namespace
   PNFlex * volatile vts;   ///< built in types
-  PN source, input;        ///< parser input and output
+  Potion_Flags flags;      ///< vm flags: execution model and debug flags
+  struct PNMemory *mem;    ///< allocator/gc
+  PN call, callset;        ///< generic call and setter
+  int prec;                ///< decimal precision
+
+  //parser-only:
+  PN input, source;        ///< parser input and output (AST)
   int yypos;               ///< parser buffer position
   PNAsm * volatile pbuf;   ///< parser buffer
+  PN line;                 ///< currently parsed line (for debug)
+  PN_SIZE fileno;          ///< currently parsed file
   PN unclosed;             ///< used by parser for named block endings
-  PN call, callset;        ///< generic call and callset
-  int prec;                ///< decimal precision
-  struct PNMemory *mem;    ///< allocator/gc
-  Potion_Flags flags;      ///< vm flags: execution model and debug flags
 };
 
 ///
@@ -588,6 +641,9 @@ struct PNMemory {
   volatile int collecting, dirty, pass, majors, minors;
   void *cstack;  ///< machine stack start
   void *protect; ///< end of protected memory
+#ifdef DEBUG
+  double time;
+#endif
 };
 
 #define POTION_INIT_STACK(x) \
@@ -652,6 +708,9 @@ static inline void *potion_gc_realloc(Potion *P, PNType vt, struct PNObject * vo
   return dst;
 }
 
+///\memberof PNData
+/// default constructor for PNData user-objects, as PN_TUSER type
+/// \see also PNWeakRef to store external pointers only
 static inline struct PNData *potion_data_alloc(Potion *P, int siz) {
   struct PNData *data = potion_gc_alloc(P, PN_TUSER, sizeof(struct PNData) + siz);
   data->siz = siz;
@@ -687,7 +746,15 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
   PN_lookup, PN_loop, PN_print, PN_return, PN_self, PN_string,
   PN_while;
 extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
-extern PN PN_cmp, PN_number;
+extern PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
+extern PN pn_filenames;
+
+/// zero values per type
+static inline PN potion_type_default(char type) {
+  return type == 'N' ? PN_ZERO
+       : type == 'S' ? PN_STR0
+                     : PN_NIL;
+}
 
 ///
 /// the potion API
@@ -697,18 +764,25 @@ void potion_destroy(Potion *);
 PN potion_error(Potion *, PN, long, long, PN);
 void potion_fatal(char *);
 void potion_allocation_error(void);
-void potion_syntax_error(Potion *, const char *, ...);
+PN potion_io_error(Potion *, const char *);
+PN potion_type_error(Potion *, PN);
+PN potion_type_error_want(Potion *, PN, const char *);
+void potion_syntax_error(Potion *, const char *, ...)
+  __attribute__ ((format (printf, 2, 3)));
 PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
 PN potion_str2(Potion *, char *, size_t);
 PN potion_strcat(Potion *P, char *str, char *str2);
-PN potion_str_format(Potion *, const char *, ...);
+PN potion_str_add(Potion *P, PN, PN, PN);
+PN potion_str_format(Potion *, const char *, ...)
+  __attribute__ ((format (printf, 2, 3)));
 PN potion_byte_str(Potion *, const char *);
 PN potion_byte_str2(Potion *, const char *, size_t len);
 PN potion_bytes(Potion *, size_t);
 PN potion_bytes_string(Potion *, PN, PN);
-PN_SIZE pn_printf(Potion *, PN, const char *, ...);
+PN_SIZE pn_printf(Potion *, PN, const char *, ...)
+  __attribute__ ((format (printf, 3, 4)));
 void potion_bytes_obj_string(Potion *, PN, PN);
 PN potion_bytes_append(Potion *, PN, PN, PN);
 void potion_release(Potion *, PN);
@@ -743,8 +817,11 @@ PN potion_rand(Potion *, PN, PN);
 PN potion_num_rand(Potion *, PN, PN);
 PN potion_real(Potion *, double);
 PN potion_sig_at(Potion *, PN, int);
+PN potion_sig_name_at(Potion *, PN, int);
 int potion_sig_arity(Potion *, PN);
+int potion_sig_minargs(Potion *, PN);
 PN potion_closure_arity(Potion *, PN, PN);
+PN potion_closure_minargs(Potion *, PN, PN);
 void potion_define_global(Potion *, PN, PN);
 
 PN potion_obj_add(Potion *, PN, PN);
@@ -764,19 +841,22 @@ PN potion_tuple_push(Potion *, PN, PN);
 PN_SIZE potion_tuple_push_unless(Potion *, PN, PN);
 PN_SIZE potion_tuple_find(Potion *, PN, PN);
 PN potion_tuple_at(Potion *, PN, PN, PN);
+PN potion_tuple_shift(Potion *, PN, PN);
+PN potion_tuple_bsearch(Potion *, PN, PN, PN);
+PN potion_tuple_ins_sort(Potion *, PN, PN, PN);
 PN potion_table_empty(Potion *);
 PN potion_table_put(Potion *, PN, PN, PN, PN);
 PN potion_table_set(Potion *, PN, PN, PN);
 PN potion_table_at(Potion *, PN, PN, PN);
-PN potion_tuple_bsearch(Potion *, PN, PN, PN);
-PN potion_tuple_ins_sort(Potion *, PN, PN, PN);
 PN potion_lick(Potion *, PN, PN, PN);
 PN potion_source_compile(Potion *, PN, PN, PN, PN);
 PN potion_source_load(Potion *, PN, PN);
-PN potion_source_dump(Potion *, PN, PN, PN);
-PN potion_source_dumpbc(Potion *, PN, PN);
+PN potion_source_dump(Potion *, PN, PN, PN, PN);
+PN potion_source_dumpbc(Potion *, PN, PN, PN);
 PN potion_greg_parse(Potion *, PN);
 PN potion_sig_string(Potion *, PN, PN);
+PN potion_filename_find(Potion *, PN);
+PN potion_filename_push(Potion *, PN);
 
 Potion *potion_gc_boot(void *);
 void potion_lobby_init(Potion *);
@@ -802,14 +882,17 @@ PN potion_gc_reserved(Potion *, PN, PN);
 PN potion_gc_actual(Potion *, PN, PN);
 PN potion_gc_fixed(Potion *, PN, PN);
 
-PN potion_parse(Potion *, PN, char *);
+PN potion_parse(Potion *, PN, char*);
 PN potion_vm_proto(Potion *, PN, PN, ...);
 PN potion_vm_class(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
-PN potion_eval(Potion *, PN, int);
+PN potion_eval(Potion *, PN);
 PN potion_run(Potion *, PN, int);
 PN_F potion_jit_proto(Potion *, PN);
 
+PN potion_load(Potion *, PN, PN, PN);
+char *potion_find_file(Potion *, char *str, PN_SIZE str_len);
 PN potion_class_find(Potion *, PN);
+PNType potion_class_type(Potion *, PN);
 
 #endif

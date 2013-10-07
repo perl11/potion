@@ -187,15 +187,15 @@ static PN potion_num_to(Potion *P, PN cl, PN self, PN end, PN block) {
  \param end  PNNumber (int only)
  \param step PNNumber (int only)
  \param block PNClosure
- \return self PNNumber (normally unused)
  \sa potion_num_to. */
 static PN potion_num_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) {
   long i, j = PN_INT(end), k = PN_INT(step);
   for (i = PN_INT(self); i <= j; i += k) {
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   }
-  return PN_NUM(abs(i - j));
+  return PN_NUM(abs(i - j) / k);
 }
+
 /**\memberof PNNumber
   "chr" of int only, no UTF-8 multi-byte sequence
  \return PNString one char <255 */
@@ -249,17 +249,18 @@ static PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
   if (PN_IS_DECIMAL(self)) {
     double d1 = PN_DBL(self);
     double d2 = PN_DBL(potion_send(PN_number, n));
-    return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_NUM(0) : PN_NUM(1);
+    return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_ZERO : PN_NUM(1);
   } else {
     long n1, n2;
     n1 = PN_INT(self);
     n2 = PN_IS_NUM(n) ? PN_INT(n) : PN_INT(potion_send(PN_number, n));
-    return n1 < n2 ? PN_NUM(-1) : n1 == n2 ? PN_NUM(0) : PN_NUM(1);
+    return n1 < n2 ? PN_NUM(-1) : n1 == n2 ? PN_ZERO : PN_NUM(1);
   }
 }
 
 void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
+  PN dbl_vt = PN_VTABLE(PN_TDECIMAL);
   potion_method(num_vt, "+", potion_add, "value=N");
   potion_method(num_vt, "-", potion_sub, "value=N");
   potion_method(num_vt, "*", potion_mult, "value=N");
@@ -282,4 +283,5 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "abs", potion_abs, 0);
   potion_method(num_vt, "cmp", potion_num_cmp, "value=o");
   potion_method(num_vt, "rand", potion_num_rand, 0);
+  potion_method(dbl_vt, "string", potion_num_string, 0);
 }

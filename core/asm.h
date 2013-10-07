@@ -1,15 +1,14 @@
-///
-/// asm.h
-/// some assembler macros
-///
-/// (c) 2008 why the lucky stiff, the freelance professor
-///
-///
-/// PNAsm(vt = PN_TUSER, siz, ptr, len)
-///   -> PNFlex(vt = PN_TUSER, siz, ...)
-/// overhead of 6 words on x86, but don't have to
-/// do constant forwarding tricks.
-///
+/** \file asm.h
+ some assembler macros
+
+ (c) 2008 why the lucky stiff, the freelance professor
+
+
+ PNAsm(vt = PN_TUSER, siz, ptr, len)
+   -> PNFlex(vt = PN_TUSER, siz, ...)
+ overhead of 6 words on x86, but don't have to
+ do constant forwarding tricks.
+*/
 
 #ifndef POTION_ASM_H
 #define POTION_ASM_H

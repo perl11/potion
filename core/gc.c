@@ -16,17 +16,39 @@ http://starynkevitch.net/Basile/qishintro.html
 #include "table.h"
 
 #if defined(DEBUG)
-#define dbg_Gv(P,...)				\
-  if (P->flags & (DEBUG_GC | DEBUG_VERBOSE)) {	\
+#ifdef WIN32
+# include <time.h>
+#else
+# include <sys/time.h>
+#endif
+#ifdef WIN32
+# include <time.h>
+#else
+# include <sys/time.h>
+#endif
+static double mytime() {
+    struct timeval Tp;
+    struct timezone Tz;
+    int status;
+    status = gettimeofday (&Tp, &Tz);
+    if (status == 0) {
+        Tp.tv_sec += Tz.tz_minuteswest * 60;	/* adjust for TZ */
+        return Tp.tv_sec + (Tp.tv_usec / 1000000.0);
+    } else {
+        return -1.0;
+    }
+}
+#define DBG_Gv(P,...)				\
+  if (P->flags & DEBUG_GC && P->flags & DEBUG_VERBOSE) { \
     printf(__VA_ARGS__);			\
   }
-#define dbg_G(P,...)	       \
+#define DBG_G(P,...)	       \
   if (P->flags & DEBUG_GC) {   \
     printf(__VA_ARGS__);       \
   }
 #else
-#define dbg_Gv(...)
-#define dbg_G(...)
+#define DBG_Gv(...)
+#define DBG_G(...)
 #endif
 
 PN_SIZE potion_stack_len(Potion *P, _PN **p) {
@@ -39,7 +61,7 @@ PN_SIZE potion_stack_len(Potion *P, _PN **p) {
 #define HAS_REAL_TYPE(v) (P->vts == NULL || (((struct PNFwd *)v)->fwd == POTION_COPIED || PN_TYPECHECK(PN_VTYPE(v))))
 
 ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
-static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int forward) {
+static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int type) {
   _PN v;
   PN_SIZE i = 0;
   struct PNMemory *M = P->mem;
@@ -48,25 +70,25 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
     v = *x;
     if (IS_GC_PROTECTED(v) || IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) {
       v = potion_fwd(v);
-      switch (forward) {
+      switch (type) {
         case 0: // count only
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
             i++;
-	    dbg_Gv(P,"GC mark count only\n");
+            DBG_Gv(P,"GC mark count only %p %6x\n", x, PN_TYPE(*x));
 	  }
         break;
         case 1: // minor
           if (!IS_GC_PROTECTED(v) && IN_BIRTH_REGION(v) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
-	    dbg_Gv(P,"GC mark minor\n");
+            DBG_Gv(P,"GC mark minor %p -> 0x%lx %6x\n", x, v, PN_TYPE(*x));
           }
         break;
         case 2: // major
           if (!IS_GC_PROTECTED(v) && (IN_BIRTH_REGION(v) || IN_OLDER_REGION(v)) && HAS_REAL_TYPE(v)) {
             GC_FORWARD(x, v);
             i++;
-	    dbg_Gv(P,"GC mark major\n");
+            DBG_Gv(P,"GC mark major %p -> 0x%lx %6x\n", x, v, PN_TYPE(*x));
           }
         break;
       }
@@ -77,20 +99,20 @@ static PN_SIZE pngc_mark_array(Potion *P, register _PN *x, register long n, int 
 }
 
 ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
-PN_SIZE potion_mark_stack(Potion *P, int forward) {
-  PN_SIZE n;
+PN_SIZE potion_mark_stack(Potion *P, int type) {
+  long n;
   _PN *end, *start = P->mem->cstack;
-  struct PNMemory *M = P->mem;
   POTION_ESP(&end);
 #if POTION_STACK_DIR > 0
   n = end - start;
 #else
   n = start - end + 1;
   start = end;
-  end = M->cstack;
+  end = P->mem->cstack;
 #endif
+  DBG_Gv(P,"mark_stack (%p -> %p = %ld, type=%d)\n", start, end, n, type);
   if (n <= 0) return 0;
-  return pngc_mark_array(P, start, n, forward);
+  return pngc_mark_array(P, start, n, type);
 }
 
 void *pngc_page_new(int *sz, const char exec) {
@@ -131,9 +153,9 @@ static int potion_gc_minor(Potion *P, int sz) {
     return POTION_NO_MEM;
 
   scanptr = (void *) M->old_cur;
-  dbg_G(P,"running gc_minor\n"
-	"(young: %p -> %p = %ld)\n"
-	"(old: %p -> %p = %ld)\n"
+  DBG_G(P,"running gc_minor "
+	"(young: %p -> %p = %ld) "
+	"(old: %p -> %p = %ld) "
 	"(storeptr len = %ld)\n",
 	M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
 	M->old_lo, M->old_hi, (long)(M->old_hi - M->old_lo),
@@ -160,7 +182,7 @@ static int potion_gc_minor(Potion *P, int sz) {
   sz = NEW_BIRTH_REGION(M, wb, sz);
   M->minors++;
 
-  dbg_G(P,"(new young: %p -> %p = %ld)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
+  DBG_G(P,"(new young: %p -> %p = %ld)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
   return POTION_OK;
 }
 
@@ -187,8 +209,8 @@ static int potion_gc_major(Potion *P, int siz) {
   prevoldhi = (void *)M->old_hi;
   prevoldcur = (void *)M->old_cur;
 
-  dbg_G(P,"running gc_major\n"
-	"(young: %p -> %p = %ld)\n"
+  DBG_G(P,"running gc_major "
+	"(young: %p -> %p = %ld) "
 	"(old: %p -> %p = %ld)\n",
 	M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo),
 	M->old_lo, M->old_hi, (long)(M->old_hi - M->old_lo));
@@ -197,7 +219,7 @@ static int potion_gc_major(Potion *P, int siz) {
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
   newold = pngc_page_new(&newoldsiz, 0);
   M->old_cur = scanptr = newold + (sizeof(PN) * 2);
-  dbg_G(P,"(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
+  DBG_G(P,"(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
 
   potion_mark_stack(P, 2);
 
@@ -239,6 +261,9 @@ static int potion_gc_major(Potion *P, int siz) {
 void potion_garbagecollect(Potion *P, int sz, int full) {
   struct PNMemory *M = P->mem;
   if (M->collecting) return;
+#ifdef DEBUG
+  double time = mytime();
+#endif
   M->pass++;
   M->collecting = 1;
 
@@ -262,6 +287,9 @@ void potion_garbagecollect(Potion *P, int sz, int full) {
   else
     potion_gc_minor(P, sz);
 
+#ifdef DEBUG
+  M->time += mytime() - time;
+#endif
   M->dirty = 0;
   M->collecting = 0;
 }
@@ -277,16 +305,20 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
   }
 
   if (ptr->vt > PN_TUSER) {
-    if (P->vts && PN_VTABLE(ptr->vt) && PN_TYPECHECK(ptr->vt))
+    if (P->vts && PN_VTABLE(ptr->vt) && PN_TYPECHECK(ptr->vt)) {
       sz = sizeof(struct PNObject) +
-	(((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen * sizeof(PN));
-    else if (P->flags & (DEBUG_VERBOSE
+        (((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen * sizeof(PN));
+      //sz = potion_send((PN)ptr, PN_size); //cannot use bind with POTION_COPIED objs during GC!
+    } else {
+      if (P->flags & (DEBUG_VERBOSE
 #ifdef DEBUG
 			 |DEBUG_GC
 #endif
 			 ))
       fprintf(stderr, "** Invalid User Object 0x%lx vt: 0x%lx\n",
 	      (unsigned long)ptr, (unsigned long)ptr->vt);
+      return 0;
+    }
     goto done;
   }
 
@@ -301,7 +333,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNClosure) + (PN_CLOSURE(ptr)->extra * sizeof(PN));
     break;
     case PN_TTUPLE:
-      sz = sizeof(struct PNTuple) + (sizeof(PN) * ((struct PNTuple *)ptr)->len);
+      sz = sizeof(struct PNTuple) + (sizeof(PN) * ((struct PNTuple *)ptr)->alloc);
     break;
     case PN_TSTATE:
       sz = sizeof(Potion);
@@ -313,7 +345,6 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
       sz = sizeof(struct PNVtable);
     break;
     case PN_TSOURCE:
-    // TODO: look up ast size (see core/ast.c)
       sz = sizeof(struct PNSource);
     break;
     case PN_TBYTES:
@@ -351,6 +382,8 @@ done:
 void *potion_gc_copy(Potion *P, struct PNObject *ptr) {
   void *dst = (void *)P->mem->old_cur;
   PN_SIZE sz = potion_type_size(P, (const struct PNObject *)ptr);
+  if (!sz)
+    return ptr;
   memcpy(dst, ptr, sz);
   P->mem->old_cur = (char *)dst + sz;
 
@@ -397,15 +430,17 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     }
     break;
     case PN_TSTATE:
+      DBG_G(P,"GC mark minor Potion_State\n");  // only with threads
       GC_MINOR_UPDATE(((Potion *)ptr)->strings);
       GC_MINOR_UPDATE(((Potion *)ptr)->lobby);
       GC_MINOR_UPDATE(((Potion *)ptr)->vts);
-      GC_MINOR_UPDATE(((Potion *)ptr)->source);
-      GC_MINOR_UPDATE(((Potion *)ptr)->input);
-      GC_MINOR_UPDATE(((Potion *)ptr)->pbuf);
-      GC_MINOR_UPDATE(((Potion *)ptr)->unclosed);
       GC_MINOR_UPDATE(((Potion *)ptr)->call);
       GC_MINOR_UPDATE(((Potion *)ptr)->callset);
+      GC_MINOR_UPDATE(((Potion *)ptr)->input);
+      GC_MINOR_UPDATE(((Potion *)ptr)->source);
+      GC_MINOR_UPDATE(((Potion *)ptr)->pbuf);
+      GC_MINOR_UPDATE(((Potion *)ptr)->line);
+      GC_MINOR_UPDATE(((Potion *)ptr)->unclosed);
     break;
     case PN_TFILE:
       GC_MINOR_UPDATE(((struct PNFile *)ptr)->path);
@@ -425,6 +460,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[0]);
       GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[1]);
       GC_MINOR_UPDATE(((struct PNSource *)ptr)->a[2]);
+      GC_MINOR_UPDATE(((struct PNSource *)ptr)->line);
     break;
     case PN_TPROTO:
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->source);
@@ -435,6 +471,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->upvals);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->values);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->protos);
+      GC_MINOR_UPDATE(((struct PNProto *)ptr)->debugs);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->tree);
       GC_MINOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
@@ -497,15 +534,17 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     }
     break;
     case PN_TSTATE:
+      DBG_G(P,"GC mark major Potion_State\n"); // only with threads
       GC_MAJOR_UPDATE(((Potion *)ptr)->strings);
       GC_MAJOR_UPDATE(((Potion *)ptr)->lobby);
       GC_MAJOR_UPDATE(((Potion *)ptr)->vts);
-      GC_MAJOR_UPDATE(((Potion *)ptr)->source);
-      GC_MAJOR_UPDATE(((Potion *)ptr)->input);
-      GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
-      GC_MAJOR_UPDATE(((Potion *)ptr)->unclosed);
       GC_MAJOR_UPDATE(((Potion *)ptr)->call);
       GC_MAJOR_UPDATE(((Potion *)ptr)->callset);
+      GC_MAJOR_UPDATE(((Potion *)ptr)->input);
+      GC_MAJOR_UPDATE(((Potion *)ptr)->source);
+      GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
+      GC_MAJOR_UPDATE(((Potion *)ptr)->line);
+      GC_MAJOR_UPDATE(((Potion *)ptr)->unclosed);
     break;
     case PN_TFILE:
       GC_MAJOR_UPDATE(((struct PNFile *)ptr)->path);
@@ -525,6 +564,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[0]);
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[1]);
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[2]);
+      GC_MINOR_UPDATE(((struct PNSource *)ptr)->line);
     break;
     case PN_TPROTO:
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->source);
@@ -535,6 +575,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->upvals);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->values);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->protos);
+      GC_MAJOR_UPDATE(((struct PNProto *)ptr)->debugs);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->tree);
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->asmb);
     break;
@@ -589,13 +630,16 @@ Potion *potion_gc_boot(void *sp) {
   void *page1 = pngc_page_new(&bootsz, 0);
   struct PNMemory *M = (struct PNMemory *)page1;
   PN_MEMZERO(M, struct PNMemory);
+#ifdef DEBUG
+  M->time = 0.0;
+#endif
 
   SET_GEN(birth, page1, bootsz);
   SET_STOREPTR(4);
 
   // stack must be 16-byte aligned on amd64 SSE or __APPLE__, and 32-byte with AVX instrs.
   // at least amd64 atof() does SSE register return.
-#if (__WORDSIZE == 64) || defined(__APPLE__)
+#if (PN_SIZE_T == 8) || defined(__APPLE__)
   M->cstack = (((_PN)sp & ((1<<5)-1)) == 0 )
     ? sp : (void *)(_PN)((_PN)sp | ((1<<5)-1) )+1;
 #else
