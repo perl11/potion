@@ -369,7 +369,7 @@ lib/libpcre$(DLL): core/config.h core/potion.h \
 # DYNLIBS
 lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
-  lib/readline/linenoise.h
+  lib/readline/linenoise.h lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${MAKE} -s -C lib/readline
@@ -377,7 +377,7 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@cp lib/readline/readline${LOADEXT} $@
 
 lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
-  lib/buffile.${OPIC}2 lib/buffile.c
+  lib/buffile.${OPIC}2 lib/buffile.c lib/libpotion${DLL}
 	@${ECHO} LD $@
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
@@ -391,7 +391,7 @@ AIO_DEPS = lib/libuv$(DLL)
 endif
 
 lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
-  lib/aio.c $(AIO_DEPS)
+  lib/aio.c $(AIO_DEPS) lib/libpotion${DLL}
 	@${ECHO} CC lib/aio.${OPIC}2
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
 	@${ECHO} LD $@
@@ -407,19 +407,19 @@ PCRE_DEPS = lib/libpcre.a
 endif
 
 lib/potion/pcre${LOADEXT}: core/config.h core/potion.h \
-  lib/pcre/Makefile lib/pcre/pcre.c $(PCRE_DEPS)
+  lib/pcre/Makefile lib/pcre/pcre.c $(PCRE_DEPS) lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/pcre
 	@cp lib/pcre/pcre${LOADEXT} $@
 
 lib/potion/m_apm${LOADEXT}: core/config.h core/potion.h \
-  lib/m_apm/Makefile
+  lib/m_apm/Makefile lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/m_apm
 	@cp lib/m_apm/m_apm${LOADEXT} $@
 
 lib/potion/libtommath${LOADEXT}: core/config.h core/potion.h \
-  3rd/libtommath/makefile.shared
+  3rd/libtommath/makefile.shared lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	cd 3rd/libtommath; ${CC} -c -I. ${FPIC} ${CFLAGS} *.c; \
 	  ${CC} ${DEBUGFLAGS} -o ../../$@ ${LDDLLFLAGS} \
