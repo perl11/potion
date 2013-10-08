@@ -322,7 +322,7 @@ lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2 lib/libp2${DLL}
 	  $< ${LIBPTH} -lp2 $(LIBS)
 
 # 3rdparty EXTLIBS statically linked
-3rd/libuv/Makefile.am: .gitmodules .git/modules/3rd/libuv/HEAD
+3rd/libuv/Makefile.am: .gitmodules
 	git submodule update --init
 
 3rd/libuv/Makefile: 3rd/libuv/Makefile.am
