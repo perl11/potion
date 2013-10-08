@@ -299,7 +299,6 @@ lib/libp2.a: ${OBJ_P2_SYN} ${OBJ2} core/config.h core/potion.h
 
 lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
-	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
 	  ${PIC_OBJ} ${PIC_OBJ_SYN} ${LIBS} > /dev/null
@@ -307,7 +306,6 @@ lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 
 lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
-	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} $(subst libpotion,libp2,${RDLLFLAGS}) ${RPATH} \
 	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} > /dev/null
@@ -315,13 +313,11 @@ lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/c
 
 lib/potion/libsyntax${DLL}: syn/syntax.${OPIC} lib/libpotion${DLL}
 	@${ECHO} LD $@
-	@[ -d lib/potion ] || mkdir lib/potion
 	@$(CC) ${DEBUGFLAGS} -o $@ $(INCS) ${LDDLLFLAGS} ${RPATH} \
 	  $< ${LIBPTH} -lpotion $(LIBS)
 
 lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2 lib/libp2${DLL}
 	@${ECHO} LD $@
-	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) ${LDDLLFLAGS} ${RPATH} \
 	  $< ${LIBPTH} -lp2 $(LIBS)
 
@@ -378,16 +374,14 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${MAKE} -s -C lib/readline
 	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
-	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
 
 lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC}2 lib/buffile.c
 	@${ECHO} LD $@
-	@[ -d lib/potion ] || mkdir lib/potion
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
-	  lib/buffile.${OPIC}2 ${LIBPTH} ${LIBS} > /dev/null
+	  lib/buffile.${OPIC}2 ${LIBPTH} -lpotion ${LIBS} > /dev/null
 	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 
 ifeq ($(HAVE_LIBUV),1)
@@ -398,13 +392,12 @@ endif
 
 lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
   lib/aio.c $(AIO_DEPS)
-	@[ -d lib/potion ] || mkdir lib/potion
 	@${ECHO} CC lib/aio.${OPIC}2
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
 	@${ECHO} LD $@
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
-	  lib/aio.${OPIC}2 ${LIBPTH} ${LIBS} -luv > /dev/null
+	  lib/aio.${OPIC}2 ${LIBPTH} -lpotion -luv ${LIBS} > /dev/null
 	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 
 ifeq ($(HAVE_PCRE),1)
@@ -417,23 +410,20 @@ lib/potion/pcre${LOADEXT}: core/config.h core/potion.h \
   lib/pcre/Makefile lib/pcre/pcre.c $(PCRE_DEPS)
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/pcre
-	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/pcre/pcre${LOADEXT} $@
 
 lib/potion/m_apm${LOADEXT}: core/config.h core/potion.h \
   lib/m_apm/Makefile
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/m_apm
-	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/m_apm/m_apm${LOADEXT} $@
 
 lib/potion/libtommath${LOADEXT}: core/config.h core/potion.h \
   3rd/libtommath/makefile.shared
 	@${ECHO} MAKE $@
-	@[ -d lib/potion ] || mkdir lib/potion
 	cd 3rd/libtommath; ${CC} -c -I. ${FPIC} ${CFLAGS} *.c; \
 	  ${CC} ${DEBUGFLAGS} -o ../../$@ ${LDDLLFLAGS} \
-	  *.o ${LIBPTH} ${LIBS}; cd ../..
+	  *.o ${LIBPTH} -lpotion ${LIBS}; cd ../..
 
 bench: bin/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \

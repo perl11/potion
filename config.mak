@@ -2,12 +2,13 @@
 # create config.inc and core/config.h
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
+PWD    = $(shell pwd)
 # -pedantic not yet
 WARNINGS = -Wall -Werror -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
 CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing -D_FORTIFY_SOURCE=2
-INCS   = -Icore
-LIBPTH = -Llib
-RPATH         = -Wl,-rpath=$(shell pwd)/lib
+INCS   = -I${PWD}/core
+LIBPTH = -L${PWD}/lib
+RPATH         = -Wl,-rpath=${PWD}/lib
 RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib
 LIBS   = -lm
 LDFLAGS ?=
@@ -92,7 +93,7 @@ ifeq ($(shell tools/config.sh "${CC}" lib -luv uv.h /usr/local),1)
 	LIBS += -L/usr/local/lib
 else
 	HAVE_LIBUV = 0
-	INCS += -I3rd/libuv/include
+	INCS += -I${PWD}/3rd/libuv/include
 endif
 
 #yet disabled
@@ -187,8 +188,8 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 	EXE  = .exe
 	DLL  = .dll
 	LOADEXT = .dll
-	INCS += -Itools/dlfcn-win32/include
-	LIBS += -Ltools/dlfcn-win32/lib
+	INCS += -I${PWD}/tools/dlfcn-win32/include
+	LIBS += -L${PWD}/tools/dlfcn-win32/lib
 	RPATH =
 	RPATH_INSTALL =
     ifneq (${CROSS},1)
