@@ -4,7 +4,7 @@ case `uname -s` in
         CC="clang-3.3"
         CROSS="i686-w64-mingw32-gcc x86_64-w64-mingw32-gcc" ;;
 Darwin) # native clang not stable enough (16byte %esp alignment), use ports gcc
-        CC="gcc-mp-4.8"
+        CC="clang-mp-3.3" #gcc-mp-4.8"
         CROSS="i386-mingw32-gcc" ;;
 CYGWIN*) # native via gcc4
         CC="gcc-4"
