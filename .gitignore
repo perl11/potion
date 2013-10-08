@@ -26,8 +26,10 @@
 /lib/*/*.bundle
 /lib/*/*.bundle.dSYM
 /lib/*/*.i
+/lib/*/*.o
 /lib/*/*.opic
 /lib/*.i
+/lib/*.o
 /lib/*.opic
 /lib/*.so
 /lib/*.dll
