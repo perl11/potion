@@ -189,7 +189,8 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 	DLL  = .dll
 	LOADEXT = .dll
 	INCS += -I${PWD}/tools/dlfcn-win32/include
-	LIBS += -L${PWD}/tools/dlfcn-win32/lib
+	LIBPTH += -L${PWD}/tools/dlfcn-win32/lib
+	LIBS += -lpthread -lws2_32 -lpsapi
 	RPATH =
 	RPATH_INSTALL =
     ifneq (${CROSS},1)

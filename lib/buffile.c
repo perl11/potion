@@ -237,6 +237,7 @@ PN potion_buffile_unlink(Potion *P, PN cl, pn_ffile self) {
   }
   return PN_TRUE;
 }
+#ifndef __MINGW32__
 /**\memberof PNBufFile
    acquire for a thread ownership of a PNBufFile object */
 PN potion_buffile_flockfile(Potion *P, PN cl, pn_ffile self) {
@@ -253,6 +254,7 @@ PN potion_buffile_ftrylockfile(Potion *P, PN cl, pn_ffile self) {
 PN potion_buffile_funlockfile(Potion *P, PN cl, pn_ffile self) {
   funlockfile(self->file); return PN_TRUE;
 }
+#endif
 /**\memberof PNBufFile
   \c "fprintf" to file.
   \param obj any
@@ -304,9 +306,11 @@ void Potion_Init_buffile(Potion *P) {
   potion_method(ffile_vt, "ftell", potion_buffile_ftell, 0);
   potion_method(ffile_vt, "feof", potion_buffile_feof, 0);
   potion_method(ffile_vt, "fileno", potion_buffile_fileno, 0);
+#ifndef __MINGW32__
   potion_method(ffile_vt, "flockfile", potion_buffile_flockfile, 0);
   potion_method(ffile_vt, "ftrylockfile", potion_buffile_ftrylockfile, 0);
   potion_method(ffile_vt, "funlockfile", potion_buffile_funlockfile, 0);
+#endif
   potion_method(ffile_vt, "unlink", potion_buffile_unlink, 0);
   potion_method(ffile_vt, "string", potion_buffile_string, 0);
   potion_method(P->lobby, "tmpfile", potion_buffile_tmpfile, 0);
