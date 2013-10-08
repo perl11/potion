@@ -122,7 +122,7 @@ usage:
 	@${ECHO} "   $$ make test"
 	@${ECHO} " "
 	@${ECHO} " Written by _why and rurban."
-	@${ECHO} " Maintained at https://github.com/perl11/potion, branch p2"
+	@${ECHO} " Maintained at https://github.com/perl11/p2, branch p2"
 
 config:
 	@${ECHO} MAKE -f config.mak $@
