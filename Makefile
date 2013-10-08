@@ -468,6 +468,7 @@ clean:
 	@rm -f bin/potion${EXE} bin/potion-s${EXE} lib/libpotion.* \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 	@rm -f lib/potion/*${LOADEXT} lib/readline/readline${LOADEXT}
+	@rm -f lib/lib*$(DLL) lib/lib*.a
 	@rm -f tools/*.o core/config.h core/version.h
 	@rm -f tools/*~ doc/*~ example/*~ tools/config.c
 	@rm -rf doc/html doc/latex doc/ref
