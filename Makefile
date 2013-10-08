@@ -125,7 +125,6 @@ grammar: tools/greg.y
 # bootstrap tools/greg.c, tools/compile.c not yet
 tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	@${ECHO} GREG $<
-	@test -d bin || mkdir bin
 	@if test -f ${GREG}; then ${GREG} tools/greg.y > tools/greg-new.c && \
 	  ${CC} ${GREGCFLAGS} -o tools/greg-new tools/greg-new.c tools/compile.c tools/tree.c -Itools && \
 	  ${MV} tools/greg-new.c tools/greg.c && \
@@ -214,10 +213,10 @@ ifneq (${FPIC},)
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
 
-%.c: %.y ${GREG}
+%.c: %.y ${GREGCROSS}
 	@${ECHO} GREG $@
 	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
-.y.c: ${GREG}
+.y.c: ${GREGCROSS}
 	@${ECHO} GREG $@
 	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
 
@@ -227,7 +226,6 @@ ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
-	@test -d bin || mkdir bin
 	@${CC} ${CFLAGS} ${PIC_OBJ_POTION} -o $@ ${RPATH} \
 	  -Llib -lpotion ${LIBPTH} ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then \
@@ -237,7 +235,6 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 
 bin/potion-s${EXE}: core/potion.o lib/libpotion.a
 	@${ECHO} LINK $@
-	@test -d bin || mkdir bin
 	@${CC} ${CFLAGS} core/potion.o -o $@ lib/libpotion.a ${LIBPTH} ${LIBS}
 
 lib/libpotion.a: ${OBJ} core/config.h core/potion.h
@@ -275,7 +272,7 @@ lib/libuv$(DLL): core/config.h core/potion.h \
 	  cp 3rd/libuv/.libs/libuv${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
 	else \
 	  ${MAKE} -s -C 3rd/libuv libuv${DLL} && \
-	  cp 3rd/libuv/libuv${DLL} lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
+	  cp 3rd/libuv/libuv${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
         fi
 
 # DYNLIBS
@@ -286,13 +283,11 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${MAKE} -s -C lib/readline
 	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
-	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
 
 lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC} lib/buffile.c
 	@${ECHO} LD $@
-	@[ -d lib/potion ] || mkdir lib/potion
 	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
 	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
 
@@ -304,7 +299,6 @@ endif
 
 lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
   lib/aio.c $(AIO_DEPS)
-	@[ -d lib/potion ] || mkdir lib/potion
 	@${ECHO} CC lib/aio.${OPIC}
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC} lib/aio.c > /dev/null
 	@${ECHO} LD $@

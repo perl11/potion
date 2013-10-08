@@ -92,7 +92,7 @@ ifeq ($(shell tools/config.sh "${CC}" lib -luv uv.h /usr/local),1)
 	LIBS += -L/usr/local/lib
 else
 	HAVE_LIBUV = 0
-	INCS += -I3rd/libuv/include
+	INCS += -I${PWD}/3rd/libuv/include
 endif
 
 # JIT with -O still fails some tests

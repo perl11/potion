@@ -18,4 +18,4 @@ static: readline.o linenoise.o
 test:
 
 clean:
-	@rm -f ../potion/readline${LOADEXT} readline${LOADEXT} *.o
+	@rm -f readline${LOADEXT} *.o
