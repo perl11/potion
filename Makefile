@@ -76,6 +76,12 @@ SED  = sed
 EXPR = expr
 GREG = syn/greg${EXE}
 RANLIB ?= ranlib
+RANLIB ?= ranlib
+ifeq (${CROSS},1)
+  GREGCROSS = syn/greg
+else
+  GREGCROSS = ${GREG}
+endif
 
 RUNPRE = bin/
 # perl11.org only
@@ -151,13 +157,43 @@ syn/greg.c: syn/greg.y
 	  ${MV} syn/greg-new syn/greg; \
 	fi
 
-core/callcc.o core/callcc.o2: core/callcc.c core/config.h core/p2.h core/internal.h
+core/gc.o: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/gc.o2: core/gc.c core/config.h core/p2.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c -DP2 ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/internal.o: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/internal.o2: core/internal.c core/config.h core/p2.h core/potion.h core/internal.h core/table.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c -DP2 ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/callcc.o: core/callcc.c core/config.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
-ifneq (${FPIC},)
-core/callcc.${OPIC} core/callcc.${OPIC}2: core/callcc.c core/config.h core/p2.h core/internal.h
+core/callcc.o2: core/callcc.c core/config.h core/p2.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
-	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c -DP2 ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
+ifneq (${FPIC},)
+core/gc.${OPIC}: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/gc.${OPIC}2: core/gc.c core/config.h core/p2.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c -DP2 ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/internal.${OPIC}: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/internal.${OPIC}2: core/internal.c core/config.h core/p2.h core/potion.h core/internal.h core/table.h core/gc.h
+	@${ECHO} CC $@ +frame-pointer
+	@${CC} -c -DP2 ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/callcc.${OPIC}: core/callcc.c core/config.h core/p2.h core/internal.h
+	@${ECHO} CC $@ -O0 +frame-pointer
+	@${CC} -c ${CFLAGS} ${FPIC} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
+core/callcc.${OPIC}2: core/callcc.c core/config.h core/p2.h core/potion.h core/internal.h
+	@${ECHO} CC $@ -O0 +frame-pointer
+	@${CC} -c -DP2 ${CFLAGS} ${FPIC} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
 endif
 
 front/potion.o: front/potion.c core/config.h core/potion.h core/internal.h
@@ -183,8 +219,6 @@ $(foreach o,${OBJS},core/ast${o} ): core/ast.c core/p2.h core/config.h core/poti
 $(foreach o,${OBJS},core/compile${o} ): core/compile.c core/p2.h core/config.h core/potion.h core/internal.h core/ast.h core/opcodes.h core/asm.h
 $(foreach o,${OBJS},core/contrib${o} ): core/contrib.c core/config.h
 $(foreach o,${OBJS},core/file${o} ): core/file.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h
-$(foreach o,${OBJS},core/gc${o} ): core/gc.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-$(foreach o,${OBJS},core/internal${o} ): core/internal.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/gc.h
 $(foreach o,${OBJS},core/lick${o} ): core/lick.c core/p2.h core/config.h core/potion.h core/internal.h
 $(foreach o,${OBJS},core/load${o} ): core/load.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h
 $(foreach o,${OBJS},core/mt19937ar${o} ): core/mt19937ar.c core/p2.h
@@ -244,28 +278,25 @@ ifneq (${FPIC},)
 	@${ECHO} CC $<
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
-%.c: %.y ${GREG}
-	@${ECHO} GREG $<
-	@${GREG} $< > $@-new && ${MV} $@-new $@
-.y.c: ${GREG}
-	@${ECHO} GREG $<
-	@${GREG} $< > $@-new && ${MV} $@-new $@
+%.c: %.y ${GREGCROSS}
+	@${ECHO} GREG $@
+	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
+.y.c: ${GREGCROSS}
+	@${ECHO} GREG $@
+	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
 
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
-	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${LDFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${ECHO} LINK $@
-	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 	@${ECHO} CC $@
-	@[ -d bin ] || mkdir bin
 	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
 lib/potion/readline.o:
@@ -274,13 +305,11 @@ lib/potion/readline.o:
 
 bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${EXTLIBDEPS} lib/aio.o lib/potion/readline.o
 	@${ECHO} LINK $@
-	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_POTION} -o $@ \
 	  lib/readline/*.o lib/*.o lib/libpotion.a ${LIBPTH} ${LIBS} ${EXTLIBS}
 
 bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${EXTLIBDEPS}
 	@${ECHO} LINK $@
-	@[ -d bin ] || mkdir bin
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS} ${EXTLIBS}
 
 lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
