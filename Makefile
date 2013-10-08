@@ -326,19 +326,30 @@ lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2 lib/libp2${DLL}
 	  $< ${LIBPTH} -lp2 $(LIBS)
 
 # 3rdparty EXTLIBS statically linked
+3rd/libuv/Makefile.am: .gitmodules .git/modules/3rd/libuv/HEAD
+	git submodule update --init
+
+3rd/libuv/Makefile: 3rd/libuv/Makefile.am
+	cd 3rd/libuv && ./autogen.sh && \
+	  ./configure --enable-shared
+
 lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
 	@${ECHO} MAKE $@
-	@${MAKE} -s -C 3rd/libuv libuv${DLL}
+	@${MAKE} -s -C 3rd/libuv libuv.a
 	@cp 3rd/libuv/libuv.a lib/
 
 # default: shared
 lib/libuv$(DLL): core/config.h core/potion.h \
   3rd/libuv/Makefile
 	@${ECHO} MAKE $@
-	@${MAKE} -s -C 3rd/libuv libuv${DLL}
-	@cp 3rd/libuv/libuv${DLL} lib/
-	@-if [ x${DLL} = x.so ]; then cd lib; ln -s libuv.so libuv.so.0.11; cd ..; fi
+	@if test -f 3rd/libuv/Makefile.am; then \
+	  ${MAKE} -s -C 3rd/libuv libuv.la && \
+	  cp 3rd/libuv/.libs/libuv${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
+	else \
+	  ${MAKE} -s -C 3rd/libuv libuv${DLL} && \
+	  cp 3rd/libuv/libuv${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
+        fi
 
 lib/libsregex.a: core/config.h core/potion.h \
   3rd/sregex/Makefile
@@ -364,7 +375,9 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h
 	@${ECHO} MAKE $@
+	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${MAKE} -s -C lib/readline
+	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 	@[ -d lib/potion ] || mkdir lib/potion
 	@cp lib/readline/readline${LOADEXT} $@
 
@@ -372,8 +385,10 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC}2 lib/buffile.c
 	@${ECHO} LD $@
 	@[ -d lib/potion ] || mkdir lib/potion
+	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
 	  lib/buffile.${OPIC}2 ${LIBPTH} ${LIBS} > /dev/null
+	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 
 ifeq ($(HAVE_LIBUV),1)
 AIO_DEPS =
@@ -387,8 +402,10 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	@${ECHO} CC lib/aio.${OPIC}2
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
 	@${ECHO} LD $@
+	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
 	  lib/aio.${OPIC}2 ${LIBPTH} ${LIBS} -luv > /dev/null
+	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 
 ifeq ($(HAVE_PCRE),1)
 PCRE_DEPS =
