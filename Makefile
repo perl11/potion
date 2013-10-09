@@ -87,17 +87,16 @@ RUNPRE = bin/
 # perl11.org only
 WEBSITE = ../perl11.org
 
-default: pn p2
+default: pn p2 libs
 	+${MAKE} -s usage
 
-all: default libs static doc test
+all: default libs static docall test
+pn: bin/potion${EXE} ${PLIBS}
+p2: bin/p2${EXE} ${PLIBS}
 bins: ${BINS}
 libs: ${PLIBS} ${DYNLIBS}
-pn: bin/potion${EXE} libs
-p2: bin/p2${EXE} libs
 static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
-
-rebuild: clean pn p2 test
+rebuild: clean default test
 
 usage:
 	@${ECHO} " "
@@ -157,18 +156,6 @@ syn/greg.c: syn/greg.y
 	  ${MV} syn/greg-new syn/greg; \
 	fi
 
-core/gc.o: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/gc.o2: core/gc.c core/config.h core/p2.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c -DP2 ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/internal.o: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/internal.o2: core/internal.c core/config.h core/p2.h core/potion.h core/internal.h core/table.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c -DP2 ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/callcc.o: core/callcc.c core/config.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
@@ -176,18 +163,6 @@ core/callcc.o2: core/callcc.c core/config.h core/p2.h core/potion.h core/interna
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c -DP2 ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
 ifneq (${FPIC},)
-core/gc.${OPIC}: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/gc.${OPIC}2: core/gc.c core/config.h core/p2.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c -DP2 ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/internal.${OPIC}: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/internal.${OPIC}2: core/internal.c core/config.h core/p2.h core/potion.h core/internal.h core/table.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c -DP2 ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/callcc.${OPIC}: core/callcc.c core/config.h core/p2.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} ${FPIC} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
@@ -198,17 +173,17 @@ endif
 
 front/potion.o: front/potion.c core/config.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
-	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c ${CFLAGS} -O0 ${INCS} -o $@ $<
 front/p2.o2: front/p2.c core/config.h core/p2.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
-	@${CC} -c -DP2 ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c -DP2 ${CFLAGS} -O0 ${INCS} -o $@ $<
 ifneq (${FPIC},)
 front/potion.${OPIC}: front/potion.c core/config.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
-	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c ${CFLAGS} -O0 ${FPIC} ${INCS} -o $@ $<
 front/p2.${OPIC}2: front/p2.c core/config.h core/p2.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
-	@${CC} -c -DP2 ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c -DP2 ${CFLAGS} -O0 ${FPIC} ${INCS} -o $@ $<
 endif
 
 core/potion.h: core/config.h
@@ -356,7 +331,7 @@ lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2 lib/libp2${DLL}
 
 3rd/libuv/Makefile: 3rd/libuv/Makefile.am
 	cd 3rd/libuv && ./autogen.sh && \
-	  ./configure --enable-shared
+	  ./configure --enable-shared CC="${CC}"
 
 lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
@@ -608,7 +583,11 @@ bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2_TEST} -o $@ lib/libp2.a ${LIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2_TEST} -o $@ ${OBJ2} ${OBJ_P2_SYN} ${LIBS}; fi
 
-dist: bins libs static doc ${SRC_SYN} ${SRC_P2_SYN}
+examples: pn p2
+	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
+	for e in example/*.pl; do echo $$e; time bin/p2 $$e; done
+
+dist: bins libs static docall ${SRC_SYN} ${SRC_P2_SYN}
 	@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PLIBS}; \
 	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \

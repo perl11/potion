@@ -29,7 +29,7 @@
   extern char **environ;
 #endif
 
-typedef vPN(File) pn_file;
+typedef struct PNFile * volatile pn_file;
 
 PN potion_io_error(Potion *P, const char *msg) {
   return potion_error(P, potion_str_format(P, "Error %s: %s", msg, strerror(errno)),

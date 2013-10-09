@@ -1,7 +1,7 @@
 #!/bin/sh
 case `uname -s` in
 *Linux) # native to x86_64, cross to i686 via -m32, i686-w64-mingw32-gcc and x86_64-w64-mingw32-gcc
-        CC="clang-3.3"
+        CC="gcc-4.8" #clang-3.3"
         CROSS="i686-w64-mingw32-gcc x86_64-w64-mingw32-gcc" ;;
 Darwin) # native clang not stable enough (16byte %esp alignment), use ports gcc
         CC="gcc-mp-4.8"
