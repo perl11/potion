@@ -161,7 +161,7 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 
 core/potion.h: core/config.h
 core/table.h: core/potion.h core/internal.h core/khash.h
-# for c in core/*.c; do gcc -MM -D_GNU_SOURCE  -Icore $c; done
+# for c in core/*.c; do gcc -MM -D_GNU_SOURCE  -Icore $c; done |perl -lpe's/^(.+)o:/\$(foreach o,\${OBJS},core\/$1\${o} ):/'
 $(foreach o,${OBJS},core/asm${o} ): core/asm.c core/potion.h core/config.h core/internal.h \
  core/opcodes.h core/asm.h
 $(foreach o,${OBJS},core/ast${o} ): core/ast.c core/potion.h core/config.h core/internal.h core/ast.h
