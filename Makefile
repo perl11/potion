@@ -42,7 +42,12 @@ OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
 PNLIB = lib/libpotion${DLL}
 EXTLIBS = -Llib -luv
-EXTLIBDEPS = lib/libuv${DLL}
+ifeq (${WIN32},1)
+LIBUV = lib/libuv-11.dll lib/libuv.dll.a
+else
+LIBUV = lib/libuv${DLL}
+endif
+EXTLIBDEPS = ${LIBUV}
 DYNLIBS = $(foreach m,${PLIBS},lib/potion/$m${LOADEXT})
 DOC = doc/start.textile doc/glossary.textile
 DOCHTML = ${DOC:.textile=.html}
@@ -75,7 +80,7 @@ all: default libs static docall test
 pn: bin/potion${EXE} ${PNLIB}
 bins: bin/potion${EXE}
 libs: ${PNLIB} ${DYNLIBS}
-static: lib/libpotion.a bin/potion-s${EXE}
+static: bin/potion-s${EXE}
 rebuild: clean default test
 
 usage:
@@ -225,9 +230,9 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	  ${STRIP} $@; \
 	fi
 
-bin/potion-s${EXE}: core/potion.o lib/libpotion.a
+bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/libuv.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} core/potion.o -o $@ lib/libpotion.a ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} core/potion.o -o $@ lib/libpotion.a lib/libuv.a ${LIBPTH} ${LIBS}
 
 lib/libpotion.a: ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
@@ -245,23 +250,38 @@ lib/libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 3rd/libuv/Makefile.am: .gitmodules
 	git submodule update --init
 
+ifeq (${WIN32},1)
+PATCH_PHLPAPI2 = sed -i -e"s,-lphlpapi2,-liphlpapi," 3rd/libuv/Makefile.am
+CROSSHOST = --host=$(subst -gcc,,${CC})
+else
+PATCH_PHLPAPI2 = echo
+CROSSHOST =
+endif
+
 3rd/libuv/Makefile: 3rd/libuv/Makefile.am
-	cd 3rd/libuv && ./autogen.sh && \
-	  ./configure --enable-shared CC="${CC}"
+	@${ECHO} AUTOGEN $@
+	@${PATCH_PHLPAPI2}
+	cd 3rd/libuv && ./autogen.sh
+	cd 3rd/libuv && ./configure --enable-shared CC="${CC}" "${CROSSHOST}"
 
 lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
 	@${ECHO} MAKE $@
-	@${MAKE} -s -C 3rd/libuv libuv.a
-	@cp 3rd/libuv/libuv.a lib/
+	@if test -f 3rd/libuv/Makefile.am; then \
+	  ${MAKE} -s -C 3rd/libuv libuv.la  && \
+	  cp 3rd/libuv/.libs/libuv.a lib/; \
+	else \
+	  ${MAKE} -s -C 3rd/libuv libuv.a && \
+	  cp 3rd/libuv/libuv.a lib/; \
+	fi
 
 # default: shared
-lib/libuv$(DLL): core/config.h core/potion.h \
+${LIBUV}: core/config.h core/potion.h \
   3rd/libuv/Makefile
 	@${ECHO} MAKE $@
 	@if test -f 3rd/libuv/Makefile.am; then \
 	  ${MAKE} -s -C 3rd/libuv libuv.la && \
-	  cp 3rd/libuv/.libs/libuv${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
+	  cp 3rd/libuv/.libs/libuv*${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
 	else \
 	  ${MAKE} -s -C 3rd/libuv libuv${DLL} && \
 	  cp 3rd/libuv/libuv${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
@@ -286,7 +306,7 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
 ifeq ($(HAVE_LIBUV),1)
 AIO_DEPS =
 else
-AIO_DEPS = lib/libuv$(DLL)
+AIO_DEPS = ${LIBUV}
 endif
 
 lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
@@ -373,7 +393,7 @@ test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libpotion.a
 examples: pn
 	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
 
-dist: bins libs static docall
+dist: bins libs $(AIO_DEPS) static docall ${GREG}
 	@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PNLIB}; \
 	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
@@ -469,7 +489,8 @@ realclean: clean
 	@rm -f config.inc ${GREG} ${GREGCROSS} core/syntax.c
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf doc/ref
-	@${MAKE} clean -C 3rd/libuv
+	@${MAKE} -s clean -C 3rd/libuv
+	@if test -f 3rd/libuv/Makefile.am; then rm 3rd/libuv/Makefile; fi
 	@find . -name \*.gcov -delete
 
 .PHONY: all config clean doc docall rebuild check test bench tarball dist \
