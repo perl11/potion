@@ -160,14 +160,14 @@ endif
 endif
 
 ifeq (${DEBUG},0)
-	DEBUGFLAGS += -fstack-protector-all
+	DEBUGFLAGS += -fno-stack-protector
 else
 	DEFINES += -DDEBUG
 	STRIP = echo
   ifneq (${CLANG},1)
-	DEBUGFLAGS += -g3 -fstack-protector-all
+	DEBUGFLAGS += -g3 -fno-stack-protector
   else
-	DEBUGFLAGS += -g -fstack-protector-all
+	DEBUGFLAGS += -g -fno-stack-protector
   endif
 endif
 ifeq (${ASAN},1)
