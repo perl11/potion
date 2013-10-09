@@ -31,14 +31,14 @@ install: bin-dist
 
 bin-dist: ${BINDIST}
 
-pkg/${PKGBIN}.tar.gz: core/config.h core/version.h core/syntax.c bin/potion${EXE} \
+pkg/${PKGBIN}.tar.gz: core/config.h core/version.h bin/potion${EXE} \
                       lib/libpotion${DLL} lib/potion/readline${LOADEXT}
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc dist/share/potion/example
 	cp bin/potion${EXE}            dist/bin/
 	cp lib/libpotion${DLL}         dist/lib/
-	cp lib/potion/*${LOADEXT} dist/lib/potion/
+	cp -r lib/potion/              dist/lib/potion/
 	if [ ${WIN32} = 1 ]; then mv dist/lib/*.dll dist/bin/; fi
 	cp core/potion.h               dist/include/potion/
 	cp core/config.h               dist/include/potion/
@@ -72,7 +72,8 @@ pkg/${PKGBIN}.zip: core/config.h core/version.h core/syntax.c bin/potion${EXE} \
 	(cd dist && zip ../pkg/${PKGBIN}.zip -rm * && cd ..)
 	rm -rf dist
 
-pkg/${PKGBIN}-devel.tar.gz: ${GREG} bin/potion-s${EXE} lib/libpotion.a GTAGS
+pkg/${PKGBIN}-devel.tar.gz: ${GREG} bin/potion-s${EXE} lib/libpotion.a
+	+${MAKE} doxygen GTAGS
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc/ref dist/share/potion/test
