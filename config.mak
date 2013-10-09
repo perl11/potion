@@ -297,6 +297,7 @@ config.h.echo:
 config.inc: tools/config.sh config.mak
 	@${ECHO} MAKE $@
 	-test -d bin || mkdir bin
+	-test -d lib/p2 || mkdir lib/p2
 	@${ECHO} "# -*- makefile -*-" > config.inc
 	@${ECHO} "# created by ${MAKE} -f config.mak" >> config.inc
 	@${MAKE} -s -f config.mak config.inc.echo >> $@

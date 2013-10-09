@@ -1,6 +1,6 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .i2 .o .opic .o2 .opic2 .textile .html
-.PHONY: all bins libs pn p2 static default config clean doc rebuild check test test.pn test.p2 \
+.PHONY: all bins libs pn p2 static usage default config clean doc rebuild check test test.pn test.p2 \
 	bench tarball dist release install grammar doxygen website \
 	testable spectest_checkout spectest_init spectest_update
 .NOTPARALLEL: test test.pn test.p2
@@ -15,7 +15,6 @@ include config.inc
 ifneq (${DISABLE_CALLCC},1)
 SRC += core/callcc.c
 endif
-
 ifeq (${JIT_X86},1)
 SRC += core/vm-x86.c
 else
@@ -57,21 +56,26 @@ OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_P2_TEST = test/api/p2-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
-DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/design-decisions.textile \
-  doc/concurrency.textile
-DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
 PNLIB = $(foreach l,potion p2,lib/lib$l${DLL})
 PNLIB += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
-#EXTLIBS = $(foreach m,uv pcre,lib/lib$m.a)
+#EXTLIBS = $(foreach m,uv pcre,lib/p2/lib$m${LOADEXT})
 #EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv -L3rd/libtommath -llibtommath
 EXTLIBS = -Llib -luv
-EXTLIBDEPS = lib/libuv${DLL}
-DYNLIBS = $(foreach m,${PLIBS},lib/potion/$m${LOADEXT})
-OBJS = .o .o2
+ifeq (${WIN32},1)
+LIBUV = lib/libuv-11.dll lib/libuv.dll.a
+else
+LIBUV = lib/libuv${DLL}
+endif
+EXTLIBDEPS = ${LIBUV}
+DYNLIBS = $(foreach m,${PLIBS},lib/potion/$m${LOADEXT}) lib/p2/aio${LOADEXT}
+OBJS = o o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
 endif
+DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/design-decisions.textile \
+  doc/concurrency.textile
+DOCHTML = ${DOC:.textile=.html}
 
 GREGCFLAGS = -O3 -DNDEBUG
 CAT  = /bin/cat
@@ -80,7 +84,6 @@ MV   = /bin/mv
 SED  = sed
 EXPR = expr
 GREG = syn/greg${EXE}
-RANLIB ?= ranlib
 RANLIB ?= ranlib
 ifeq (${CROSS},1)
   GREGCROSS = syn/greg
@@ -100,7 +103,7 @@ pn: bin/potion${EXE} ${PNLIB}
 p2: bin/p2${EXE} ${PNLIB}
 bins: ${BINS}
 libs: ${PNLIB} ${DYNLIBS}
-static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
+static: bin/potion-s${EXE} bin/p2-s${EXE}
 rebuild: clean default test
 
 usage:
@@ -148,11 +151,11 @@ core/config.h: config.inc core/version.h tools/config.sh config.mak
 core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${MAKE} -s -f config.mak $@
 
-# bootstrap syn/greg.c, syn/compile.c not yet
 grammar: syn/greg.y
 	touch syn/greg.y
 	${MAKE} syn/greg.c
 
+# bootstrap syn/greg.c, syn/compile.c not yet
 syn/greg.c: syn/greg.y
 	@${ECHO} GREG $<
 	@if test -f ${GREG}; then ${GREG} syn/greg.y > syn/greg-new.c && \
@@ -161,14 +164,14 @@ syn/greg.c: syn/greg.y
 	  ${MV} syn/greg-new syn/greg; \
 	fi
 
-core/callcc.o: core/callcc.c core/config.h core/potion.h core/internal.h
+core/callcc.o: core/callcc.c core/p2.h core/potion.h core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/callcc.o2: core/callcc.c core/config.h core/p2.h core/potion.h core/internal.h
+core/callcc.o2: core/callcc.c core/p2.h core/potion.h core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c -DP2 ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
 ifneq (${FPIC},)
-core/callcc.${OPIC}: core/callcc.c core/config.h core/p2.h core/internal.h
+core/callcc.${OPIC}: core/callcc.c core/p2.h core/potion.h core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} ${FPIC} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/callcc.${OPIC}2: core/callcc.c core/config.h core/p2.h core/potion.h core/internal.h
@@ -176,17 +179,21 @@ core/callcc.${OPIC}2: core/callcc.c core/config.h core/p2.h core/potion.h core/i
 	@${CC} -c -DP2 ${CFLAGS} ${FPIC} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
 endif
 
-front/potion.o: front/potion.c core/config.h core/potion.h core/internal.h
+front/potion.o: front/potion.c core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/khash.h core/table.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${INCS} -o $@ $<
-front/p2.o2: front/p2.c core/config.h core/p2.h core/potion.h core/internal.h
+front/p2.o2: front/p2.c core/p2.h core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/khash.h core/table.h core/internal.h core/khash.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c -DP2 ${CFLAGS} -O0 ${INCS} -o $@ $<
 ifneq (${FPIC},)
-front/potion.${OPIC}: front/potion.c core/config.h core/potion.h core/internal.h
+front/potion.${OPIC}: front/potion.c core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/khash.h core/table.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${FPIC} ${INCS} -o $@ $<
-front/p2.${OPIC}2: front/p2.c core/config.h core/p2.h core/potion.h core/internal.h
+front/p2.${OPIC}2: front/p2.c core/p2.h core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/khash.h core/table.h core/internal.h core/khash.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c -DP2 ${CFLAGS} -O0 ${FPIC} ${INCS} -o $@ $<
 endif
@@ -194,28 +201,40 @@ endif
 core/potion.h: core/config.h
 core/p2.h: core/potion.h
 core/table.h: core/potion.h core/internal.h core/khash.h
-$(foreach o,${OBJS},core/asm${o} ): core/asm.c core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h core/asm.h
-$(foreach o,${OBJS},core/ast${o} ): core/ast.c core/p2.h core/config.h core/potion.h core/internal.h core/ast.h
-$(foreach o,${OBJS},core/compile${o} ): core/compile.c core/p2.h core/config.h core/potion.h core/internal.h core/ast.h core/opcodes.h core/asm.h
-$(foreach o,${OBJS},core/contrib${o} ): core/contrib.c core/config.h
-$(foreach o,${OBJS},core/file${o} ): core/file.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h
-$(foreach o,${OBJS},core/lick${o} ): core/lick.c core/p2.h core/config.h core/potion.h core/internal.h
-$(foreach o,${OBJS},core/load${o} ): core/load.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h
-$(foreach o,${OBJS},core/mt19937ar${o} ): core/mt19937ar.c core/p2.h
-$(foreach o,${OBJS},core/number${o} ): core/number.c core/p2.h core/config.h core/potion.h core/internal.h
-$(foreach o,${OBJS},core/objmodel${o} ): core/objmodel.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/asm.h
-$(foreach o,${OBJS},core/primitive${o} ): core/primitive.c core/p2.h core/config.h core/potion.h core/internal.h
-$(foreach o,${OBJS},core/string${o} ): core/string.c core/p2.h core/config.h core/potion.h core/internal.h core/table.h core/khash.h
-$(foreach o,${OBJS},core/table${o} ): core/table.c core/p2.h core/config.h core/potion.h core/internal.h core/khash.h core/table.h
-$(foreach o,${OBJS},core/vm${o} ): core/vm.c core/vm-dis.c core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
-$(foreach o,${OBJS},core/vm-ppc${o} ): core/vm-ppc.c core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h
-$(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/p2.h core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
-
-
-# no optimizations
-#core/vm-x86.${OPIC}: core/vm-x86.c
-#	@${ECHO} CC ${FPIC} $< +frame-pointer
-#	@${CC} -c -g3 -fstack-protector -fno-omit-frame-pointer -Wall -fno-strict-aliasing -Wno-return-type# -D_GNU_SOURCE ${FPIC} ${INCS} -o $@ $<
+# for c in core/*.c; do gcc -MM -D_GNU_SOURCE  -Icore $c; done |perl -lpe's/^(.+)o:/\$(foreach o,\${OBJS},core\/$1.\${o} ):/'
+$(foreach o,${OBJS},core/asm.${o} ): core/asm.c core/p2.h core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/ast.${o} ): core/ast.c core/p2.h core/potion.h core/config.h core/internal.h \
+ core/ast.h
+$(foreach o,${OBJS},core/compile.${o} ): core/compile.c core/p2.h core/potion.h core/config.h \
+ core/internal.h core/ast.h core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/contrib.${o} ): core/contrib.c core/config.h
+$(foreach o,${OBJS},core/file.${o} ): core/file.c core/p2.h core/potion.h core/config.h core/internal.h \
+ core/table.h core/khash.h
+$(foreach o,${OBJS},core/gc.${o} ): core/gc.c core/p2.h core/potion.h core/config.h core/internal.h \
+ core/gc.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/internal.${o} ): core/internal.c core/p2.h core/potion.h core/config.h \
+ core/internal.h core/table.h core/khash.h core/gc.h
+$(foreach o,${OBJS},core/lick.${o} ): core/lick.c core/p2.h core/potion.h core/config.h core/internal.h
+$(foreach o,${OBJS},core/load.${o} ): core/load.c core/p2.h core/potion.h core/config.h core/internal.h \
+ core/table.h core/khash.h
+$(foreach o,${OBJS},core/mt19937ar.${o} ): core/mt19937ar.c core/p2.h core/potion.h core/config.h
+$(foreach o,${OBJS},core/number.${o} ): core/number.c core/p2.h core/potion.h core/config.h \
+ core/internal.h
+$(foreach o,${OBJS},core/objmodel.${o} ): core/objmodel.c core/p2.h core/potion.h core/config.h \
+ core/internal.h core/khash.h core/table.h core/asm.h
+$(foreach o,${OBJS},core/primitive.${o} ): core/primitive.c core/p2.h core/potion.h core/config.h \
+ core/internal.h
+$(foreach o,${OBJS},core/string.${o} ): core/string.c core/p2.h core/potion.h core/config.h \
+ core/internal.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/table.${o} ): core/table.c core/p2.h core/potion.h core/config.h \
+ core/internal.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/vm.${o} ): core/vm.c core/p2.h core/potion.h core/config.h \
+ core/internal.h core/opcodes.h core/asm.h core/khash.h core/table.h core/vm-dis.c
+$(foreach o,${OBJS},core/vm-ppc.${o} ): core/vm-ppc.c core/p2.h core/potion.h core/config.h \
+ core/internal.h core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/vm-x86.${o} ): core/vm-x86.c core/p2.h core/potion.h core/config.h \
+ core/internal.h core/opcodes.h core/asm.h core/khash.h core/table.h
 
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
@@ -223,6 +242,14 @@ $(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/p2.h core/config.h cor
 %.i2: %.c core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
+%.in: %.c core/config.h
+	@${ECHO} CPP ASTYLE $@
+	@${CC} -c ${CFLAGS} ${INCS} -E -c $< | perl -pe's,^# (\d+) ",//# \1 ",' > $@.tmp && \
+	  astyle -s2 < $@.tmp > $@
+%.in2: %.c core/config.h
+	@${ECHO} CPP ASTYLE $@
+	@${CC} -c -DP2 ${CFLAGS} ${INCS} -E -c $< | perl -pe's,^# (\d+) ",//# \1 ",' > $@.tmp && \
+	  astyle -s2 < $@.tmp > $@
 %.o: %.c core/config.h
 	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
@@ -244,6 +271,14 @@ endif
 .c.i2: core/config.h
 	@${ECHO} CPP $@
 	@${CC} -c -DP2 ${CFLAGS} ${INCS} -o $@ -E -c $<
+.c.in: core/config.h
+	@${ECHO} CPP ASTYLE $@
+	@${CC} -c ${CFLAGS} ${INCS} -E -c $< | perl -pe's,^# (\d+) ",//# \1 ",' > $@.tmp && \
+	  astyle -s2 < $@.tmp > $@
+.c.in2: core/config.h
+	@${ECHO} CPP ASTYLE $@
+	@${CC} -c -DP2 ${CFLAGS} ${INCS} -E -c $< | perl -pe's,^# (\d+) ",//# \1 ",' > $@.tmp && \
+	  astyle -s2 < $@.tmp > $@
 .c.o: core/config.h
 	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
@@ -258,12 +293,17 @@ ifneq (${FPIC},)
 	@${ECHO} CC $<
 	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
+
 %.c: %.y ${GREGCROSS}
 	@${ECHO} GREG $@
 	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
 .y.c: ${GREGCROSS}
 	@${ECHO} GREG $@
 	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
+
+${GREG}: syn/greg.c syn/compile.c syn/tree.c
+	@${ECHO} CC $@
+	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
 
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
@@ -275,22 +315,19 @@ bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
-${GREG}: syn/greg.c syn/compile.c syn/tree.c
-	@${ECHO} CC $@
-	@${CC} ${GREGCFLAGS} -o $@ syn/greg.c syn/compile.c syn/tree.c -Isyn
+bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a lib/libuv.a lib/aio.o lib/potion/readline.o
+	@${ECHO} LINK $@
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_POTION} -o $@ lib/readline/*.o lib/aio.o \
+          lib/libpotion.a lib/libuv.a ${LIBPTH} ${LIBS}
+
+bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a lib/libuv.a lib/aio.o2 lib/potion/readline.o
+	@${ECHO} LINK $@
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ lib/readline/*.o lib/aio.o2 \
+          lib/libp2.a lib/libuv.a ${LIBPTH} ${LIBS}
 
 lib/potion/readline.o:
 	@${ECHO} CC $@
 	@${MAKE} -s -C lib/readline static
-
-bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a ${EXTLIBDEPS} lib/aio.o lib/potion/readline.o
-	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_POTION} -o $@ \
-	  lib/readline/*.o lib/*.o lib/libpotion.a ${LIBPTH} ${LIBS} ${EXTLIBS}
-
-bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a ${EXTLIBDEPS}
-	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} lib/libp2.a ${LIBS} ${EXTLIBS}
 
 lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
@@ -310,14 +347,14 @@ lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} ${RPATH} \
-	  ${PIC_OBJ} ${PIC_OBJ_SYN} ${LIBS} > /dev/null
+	  ${PIC_OBJ} ${PIC_OBJ_SYN} ${LIBPTH} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
 	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} $(subst libpotion,libp2,${RDLLFLAGS}) ${RPATH} \
-	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBS} > /dev/null
+	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBPTH} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 lib/potion/libsyntax${DLL}: syn/syntax.${OPIC} lib/libpotion${DLL}
@@ -334,23 +371,39 @@ lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2 lib/libp2${DLL}
 3rd/libuv/Makefile.am: .gitmodules
 	git submodule update --init
 
+ifeq (${WIN32},1)
+PATCH_PHLPAPI2 = sed -i -e"s,-lphlpapi2,-liphlpapi," 3rd/libuv/Makefile.am
+CROSSHOST = --host=$(subst -gcc,,${CC})
+else
+PATCH_PHLPAPI2 = echo
+CROSSHOST =
+endif
+
 3rd/libuv/Makefile: 3rd/libuv/Makefile.am
-	cd 3rd/libuv && ./autogen.sh && \
-	  ./configure --enable-shared CC="${CC}"
+	@${ECHO} AUTOGEN $@
+	@${PATCH_PHLPAPI2}
+	cd 3rd/libuv && ./autogen.sh
+	-grep "libuv 0." 3rd/libuv/configure && sed -i -e's,libuv 0.,libuv-0.,' 3rd/libuv/configure
+	cd 3rd/libuv && ./configure --enable-shared CC="${CC}" "${CROSSHOST}"
 
 lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
 	@${ECHO} MAKE $@
-	@${MAKE} -s -C 3rd/libuv libuv.a
-	@cp 3rd/libuv/libuv.a lib/
+	@if test -f 3rd/libuv/Makefile.am; then \
+	  ${MAKE} -s -C 3rd/libuv libuv.la  && \
+	  cp 3rd/libuv/.libs/libuv.a lib/; \
+	else \
+	  ${MAKE} -s -C 3rd/libuv libuv.a && \
+	  cp 3rd/libuv/libuv.a lib/; \
+	fi
 
 # default: shared
-lib/libuv$(DLL): core/config.h core/potion.h \
+${LIBUV}: core/config.h core/potion.h \
   3rd/libuv/Makefile
 	@${ECHO} MAKE $@
 	@if test -f 3rd/libuv/Makefile.am; then \
 	  ${MAKE} -s -C 3rd/libuv libuv.la && \
-	  cp 3rd/libuv/.libs/libuv${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
+	  cp 3rd/libuv/.libs/libuv*${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
 	else \
 	  ${MAKE} -s -C 3rd/libuv libuv${DLL} && \
 	  cp 3rd/libuv/libuv${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
@@ -386,28 +439,44 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
 	@cp lib/readline/readline${LOADEXT} $@
 
 lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
-  lib/buffile.${OPIC}2 lib/buffile.c lib/libpotion${DLL}
+  lib/buffile.${OPIC} lib/buffile.c lib/libpotion${DLL}
 	@${ECHO} LD $@
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
-	  lib/buffile.${OPIC}2 ${LIBPTH} -lpotion ${LIBS} > /dev/null
+	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
 	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
+
+lib/p2/buffile${LOADEXT}: lib/potion/buffile${LOADEXT}
+	cp $< $@
 
 ifeq ($(HAVE_LIBUV),1)
 AIO_DEPS =
+#TODO: libtool?
+AIO_DEPLIBS =
 else
-AIO_DEPS = lib/libuv$(DLL)
+AIO_DEPS = ${LIBUV}
+AIO_DEPLIBS := `perl -ane'/dependency_libs=(.*)/ && print substr($$1,2,-1)' 3rd/libuv/libuv.la`
 endif
 
 lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
   lib/aio.c $(AIO_DEPS) lib/libpotion${DLL}
-	@${ECHO} CC lib/aio.${OPIC}2
-	@${CC} -c -DP2 ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
+	@${ECHO} CC lib/aio.${OPIC}
+	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC} lib/aio.c > /dev/null
 	@${ECHO} LD $@
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
-	  lib/aio.${OPIC}2 ${LIBPTH} -lpotion -luv ${LIBS} > /dev/null
+	  lib/aio.${OPIC} ${LIBPTH} -lpotion ${EXTLIBS} ${LIBS} ${AIO_DEPLIBS} > /dev/null
 	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
+
+lib/p2/aio${LOADEXT}: core/config.h core/potion.h \
+  lib/aio.c $(AIO_DEPS) lib/libp2${DLL}
+	@${ECHO} CC lib/aio.${OPIC}2
+	@${CC} -c ${FPIC} -DP2 ${CFLAGS} ${INCS} -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
+	@${ECHO} LD $@
+	@if [ -f lib/libp2.a ]; then mv lib/libp2.a lib/libp2.a.tmp; fi
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libp2,aio,${LDDLLFLAGS}) ${RPATH} \
+	  lib/aio.${OPIC}2 ${LIBPTH} -lp2 ${EXTLIBS} ${LIBS} ${AIO_DEPLIBS} > /dev/null
+	@if [ -f lib/libp2.a.tmp ]; then mv lib/libp2.a.tmp lib/libp2.a; fi
 
 ifeq ($(HAVE_PCRE),1)
 PCRE_DEPS =
@@ -415,19 +484,19 @@ else
 PCRE_DEPS = lib/libpcre.a
 endif
 
-lib/potion/pcre${LOADEXT}: core/config.h core/potion.h \
+lib/p2/pcre${LOADEXT}: core/config.h core/potion.h \
   lib/pcre/Makefile lib/pcre/pcre.c $(PCRE_DEPS) lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/pcre
 	@cp lib/pcre/pcre${LOADEXT} $@
 
-lib/potion/m_apm${LOADEXT}: core/config.h core/potion.h \
+lib/p2/m_apm${LOADEXT}: core/config.h core/potion.h \
   lib/m_apm/Makefile lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${MAKE} -s -C lib/m_apm
 	@cp lib/m_apm/m_apm${LOADEXT} $@
 
-lib/potion/libtommath${LOADEXT}: core/config.h core/potion.h \
+lib/p2/libtommath${LOADEXT}: core/config.h core/potion.h \
   3rd/libtommath/makefile.shared lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	cd 3rd/libtommath; ${CC} -c -I. ${FPIC} ${CFLAGS} *.c; \
@@ -592,12 +661,12 @@ examples: pn p2
 	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
 	for e in example/*.pl; do echo $$e; time bin/p2 $$e; done
 
-dist: bins libs static docall ${SRC_SYN} ${SRC_P2_SYN}
+dist: bins libs $(AIO_DEPS) static docall ${SRC_SYN} ${SRC_P2_SYN} ${GREG}
 	@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PNLIB}; \
 	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
 	fi
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
+	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: dist
 	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
@@ -619,6 +688,9 @@ release: dist
 	@${ECHO} "<div id='central'>" >> $@
 	@redcloth $< >> $@
 	@${ECHO} "</div></body></html>" >> $@
+
+MANIFEST:
+	git ls-tree -r --name-only HEAD > $@
 
 doc: ${DOCHTML} doc/html/files.html
 docall: doc GTAGS
@@ -649,9 +721,6 @@ website:
 	cd ${WEBSITE}/p2/ && git add *.html html ref && git ci -m'doc: automatic update'
 	@${ECHO} "need to cd ${WEBSITE}; git push"
 
-MANIFEST:
-	git ls-tree -r --name-only HEAD > $@
-
 # in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
@@ -661,36 +730,48 @@ TAGS: ${SRC} core/*.h
 	/usr/bin/find core syn front \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
-	@mv syn/greg.c syn/greg-c.tmp
-	-@rm core/syntax*.c
-	@sloccount core lib syn front
-	@mv syn/greg-c.tmp syn/greg.c
+	@rm -rf dist
+	@git checkout-index --prefix=dist/ -a
+	@cd dist && \
+	  rm syn/greg.c && \
+	  sloccount core syn front lib && \
+	  cd ..  && \
+	rm -rf dist
 
 todo:
-	@grep -rInso 'TODO: \(.\+\)' core syn front
+	@grep -rInso 'TODO: \(.\+\)' core syn front lib
 
 clean:
 	@${ECHO} cleaning
 	@rm -f $(foreach ext,o o2 opic opic2 i gcda gcno,$(foreach dir,core syn front lib test/api lib/*,${dir}/*.${ext}))
-	@rm -f bin/* lib/*.a lib/*${DLL} lib/*${LOADEXT} lib/potion/*${DLL}lib/potion/*${LOADEXT}
+	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f tools/*.o core/config.h core/version.h
 	@rm -f tools/*~ doc/*~ example/*~ core/*~ config.inc~ tools/config.c
-	@rm -f lib/*/*${LOADEXT} lib/*/*.o
-	@rm -rf doc/html doc/latex
+	@rm -rf doc/latex
 
 # also config.inc and files needed for cross-compilation
 realclean: clean
-	@rm -f config.inc ${SRC_SYN} ${SRC_P2_SYN} ${GREG}
+	@rm -f config.inc ${GREG} ${GREGCROSS} ${SRC_SYN} ${SRC_P2_SYN}
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf doc/ref doc/html
-	@${MAKE} clean -C 3rd/libuv
+	@rm -rf lib/*${DLL} lib/*${LOADEXT} lib/*.a
+	@${MAKE} -s clean -C 3rd/libuv
+	@if test -f 3rd/libuv/Makefile.am; then rm 3rd/libuv/Makefile; fi
 	@find . -name \*.gcov -delete
 
 test.c: bin/potion${EXE}
-	f=test/classes/creature.pn; \
-	look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
-	for=`bin/potion -I -B $$f | ${SED} "s/\n$$//"`; \
+	f=test/classes/creature.pn && \
+	look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"` && \
+	for=`bin/potion -I -B $$f | ${SED} "s/\n$$//"` && \
+	if [ "$$look" != "$$for" ]; then \
+	  ${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
+	fi
+
+test.u: bin/p2${EXE}
+	f=test/closures/upvals.pl && \
+	look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"` && \
+	for=`bin/p2 -I -X $$f | ${SED} "s/\n$$//"` && \
 	if [ "$$look" != "$$for" ]; then \
 	  ${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
 	fi
