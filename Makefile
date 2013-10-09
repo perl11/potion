@@ -698,7 +698,8 @@ clean:
 realclean: clean
 	@rm -f config.inc ${SRC_SYN} ${SRC_P2_SYN} ${GREG}
 	@rm -f GPATH GTAGS GRTAGS
-	@rm -rf HTML
+	@rm -rf doc/ref doc/html
+	@${MAKE} clean -C 3rd/libuv
 	@find . -name \*.gcov -delete
 
 test.c: bin/potion${EXE}
