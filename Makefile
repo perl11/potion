@@ -471,6 +471,7 @@ realclean: clean
 	@rm -f config.inc ${GREG} ${GREGCROSS} core/syntax.c
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf doc/ref
+	@${MAKE} clean -C 3rd/libuv
 	@find . -name \*.gcov -delete
 
 .PHONY: all config clean doc docall rebuild check test bench tarball dist \
