@@ -1,7 +1,7 @@
 language: c
 compiler:
   - clang
-# - gcc
+  - gcc
 
 env:
   - DEBUG=0
