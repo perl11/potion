@@ -6,6 +6,7 @@
 
 SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
 PLIBS = readline buffile aio
+GREGCFLAGS = -O3 -DNDEBUG
 
 # bootstrap config.inc with make -f config.mak
 include config.inc
@@ -56,7 +57,6 @@ endif
 DOC = doc/start.textile doc/glossary.textile
 DOCHTML = ${DOC:.textile=.html}
 
-GREGCFLAGS = -O3 -DNDEBUG
 CAT  = /bin/cat
 ECHO ?= /bin/echo
 MV   = /bin/mv
@@ -241,11 +241,12 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${CC} ${CFLAGS} ${LDFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion  ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
-bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/libuv.a
+bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/potion/aio${LOADEXT} lib/readline/readline.o
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.o -o $@ lib/libpotion.a lib/libuv.a ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.o -o $@ lib/potion/aio${LOADEXT} lib/readline/*.o \
+	  lib/libpotion.a ${LIBPTH} ${EXTLIBS} ${LIBS}
 
-lib/potion/readline.o:
+lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
 	@${MAKE} -s -C lib/readline static
 
@@ -325,8 +326,10 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
 
 ifeq ($(HAVE_LIBUV),1)
 AIO_DEPS =
+AIO_DEPLIBS =
 else
 AIO_DEPS = ${LIBUV}
+AIO_DEPLIBS := `perl -ane'/dependency_libs=(.*)/ && print substr($$1,2,-1)' 3rd/libuv/libuv.la`
 endif
 
 lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
@@ -336,7 +339,7 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	@${ECHO} LD $@
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
-	  lib/aio.${OPIC} ${LIBPTH} -lpotion -luv ${LIBS} > /dev/null
+	  lib/aio.${OPIC} ${LIBPTH} -lpotion -luv ${LIBS} ${AIO_DEPLIBS} > /dev/null
 	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 
 bench: test/api/gc-bench${EXE} bin/potion${EXE}

@@ -9,11 +9,12 @@ Cygwin) CCS="clang gcc gcc-3" ;;
 esac
 fi
 
+cp config.inc config.inc.test
 testdebug() {
     make -s realclean >/dev/null 2>/dev/null
     echo make CC="$1" DEBUG=$2
     make -s CC="$1" DEBUG=$2 >/dev/null 2>/dev/null
-    make -s potion test/api/potion-test >/dev/null 2>/dev/null
+    make -s pn test/api/potion-test >/dev/null 2>/dev/null
     make test
     echo make CC="$1" DEBUG=$2
     echo ---------------------
@@ -47,4 +48,5 @@ if test -f /opt/intel/bin/icc; then
 fi
 
 rm 3rd/libuv/Makefile
-testdebug clang 1
+mv config.inc.test config.inc
+make

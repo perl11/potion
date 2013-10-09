@@ -27,6 +27,7 @@ else
 fi
 
 dorelease() {
+    echo
     echo RELEASE $1
     make realclean
     echo make CC="$1"
