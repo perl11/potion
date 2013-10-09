@@ -95,3 +95,4 @@ You'll need
     doxygen (1.8 or 1.9), and
     GNU global for gtags and htags
 
+On windows: gem install RedCloth
