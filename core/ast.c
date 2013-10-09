@@ -29,6 +29,8 @@ const int potion_ast_sizes[] = {
 /// PNSource constructor
 ///\param p AST type
 ///\param a,b,c AST operands
+///\param lineno linenumber in src file
+///\param line associated line PNString in src file
 ///\returns a new three-address op AST leaf
 PN potion_source(Potion *P, u8 p, PN a, PN b, PN c, int lineno, PN line) {
   int size = potion_ast_sizes[p];

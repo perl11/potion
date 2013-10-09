@@ -64,14 +64,14 @@ RUNPRE = bin/
 # perl11.org only
 WEBSITE = ../perl11.org
 
-all: pn
+all: pn libs
 	+${MAKE} -s usage
 
-pn: bin/potion${EXE} libs
+pn: bin/potion${EXE} ${PLIBS}
 bins: bin/potion${EXE}
 libs: ${PLIBS} ${DYNLIBS}
 static: lib/libpotion.a bin/potion-s${EXE}
-rebuild: clean pn test
+rebuild: clean all test
 
 usage:
 	@${ECHO} " "
@@ -132,31 +132,31 @@ tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	fi
 
 # objects observing POTION_STACK_DIR must use -fno-omit-frame-pointer
-core/gc.o: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/internal.o: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
+#core/gc.o: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+#	@${ECHO} CC $@ +frame-pointer
+#	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
+#core/internal.o: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
+#	@${ECHO} CC $@ +frame-pointer
+#	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/callcc.o: core/callcc.c core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/potion.o: core/potion.c core/config.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
-	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c ${CFLAGS} -O0 ${INCS} -o $@ $<
 ifneq (${FPIC},)
-core/gc.${OPIC}: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/internal.${OPIC}: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
-	@${ECHO} CC $@ +frame-pointer
-	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+#core/gc.${OPIC}: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
+#	@${ECHO} CC $@ +frame-pointer
+#	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+#core/internal.${OPIC}: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
+#	@${ECHO} CC $@ +frame-pointer
+#	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/callcc.${OPIC}: core/callcc.c core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/potion.${OPIC}: core/potion.c core/config.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
-	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
+	@${CC} -c ${CFLAGS} -O0 ${FPIC} ${INCS} -o $@ $<
 endif
 core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 
@@ -250,12 +250,12 @@ lib/libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
 # 3rdparty EXTLIBS statically linked
-3rd/libuv/Makefile.am: .gitmodules .git/modules/3rd/libuv/HEAD
+3rd/libuv/Makefile.am: .gitmodules
 	git submodule update --init
 
 3rd/libuv/Makefile: 3rd/libuv/Makefile.am
 	cd 3rd/libuv && ./autogen.sh && \
-	  ./configure --enable-shared
+	  ./configure --enable-shared CC="${CC}"
 
 lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
@@ -311,7 +311,7 @@ bench: test/api/gc-bench${EXE} bin/potion${EXE}
 	  time test/api/gc-bench
 
 check: test
-test: pn test/api/potion-test${EXE} test/api/gc-test${EXE}
+test: pn libs test/api/potion-test${EXE} test/api/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
 	test/api/potion-test; \
@@ -375,6 +375,9 @@ test/api/gc-test${EXE}: ${OBJ_GC_TEST} lib/libpotion.a
 test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libpotion.a
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libpotion.a ${LIBS}
+
+examples: pn
+	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
 
 dist: bins libs static docall
 	@if [ -n "${RPATH}" ]; then \

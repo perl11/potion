@@ -148,8 +148,14 @@ else
       DOUBLE=`echo "#include <stdio.h>int main() { printf(\\"%d\\", (int)sizeof(double)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
       LILEND=`echo "#include <stdio.h>int main() { short int word = 0x0001; char *byte = (char *) &word; printf(\\"%d\\", (int)byte[0]); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
       PAGESIZE=`echo "#include <stdio.h>#include <unistd.h>int main() { printf(\\"%d\\", (int)sysconf(_SC_PAGE_SIZE)); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-      STACKDIR=`echo "#include <stdlib.h>#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)((&b - a) / abs(&b - a))); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
-      ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      #This depends on CFLAGS: -O3 => 1 vs -O0 => -1
+      if [ "$JIT_X86$MINGW_GCC" != "" -o "$JIT_I686" != "" -o "$JIT_AMD64" != "" ]; then
+        # override icc optimization
+        STACKDIR="-1"
+      else
+        STACKDIR=`echo "#include <stdlib.h>#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)((&b - a) / abs(&b - a))); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
+      fi
+      #ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
       HAVE_ASAN=`echo "#include <stdio.h>__attribute__((no_address_safety_analysis)) int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX -Werror $3 2>&1 && $AOUT && rm -f $AOUT`
     if [ "$HAVE_ASAN" = "1" ]; then HAVE_ASAN=1; else HAVE_ASAN=0; fi
   else
@@ -167,10 +173,10 @@ else
       LILEND="1"
       if [ "$LONG" = "8" ]; then
         PAGESIZE="65536"
-        ARGDIR="1"
+        #ARGDIR="1"
       else
         PAGESIZE="4096"
-        ARGDIR="1"
+        #ARGDIR="1"
       fi
       STACKDIR="-1"
       HAVE_ASAN="0"
@@ -189,6 +195,6 @@ else
   echo "#define PN_LITTLE_ENDIAN  $LILEND"
   echo "#define POTION_PAGESIZE   $PAGESIZE"
   echo "#define POTION_STACK_DIR  $STACKDIR"
-  echo "#define POTION_ARGS_DIR   $ARGDIR"
+  #echo "#define POTION_ARGS_DIR   $ARGDIR"
   echo "#define HAVE_ASAN_ATTR    $HAVE_ASAN"
 fi
