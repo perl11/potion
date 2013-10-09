@@ -61,14 +61,13 @@ DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/desig
   doc/concurrency.textile
 DOCHTML = ${DOC:.textile=.html}
 BINS = bin/potion${EXE} bin/p2${EXE}
-PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
-PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
+PNLIB = $(foreach l,potion p2,lib/lib$l${DLL})
+PNLIB += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 #EXTLIBS = $(foreach m,uv pcre,lib/lib$m.a)
 #EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv -L3rd/libtommath -llibtommath
-PLIBS = lib/libpotion${DLL}
 EXTLIBS = -Llib -luv
 EXTLIBDEPS = lib/libuv${DLL}
-DYNLIBS = $(foreach m,readline buffile aio,lib/potion/$m${LOADEXT})
+DYNLIBS = $(foreach m,${PLIBS},lib/potion/$m${LOADEXT})
 OBJS = .o .o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
@@ -97,10 +96,10 @@ default: pn p2 libs
 	+${MAKE} -s usage
 
 all: default libs static docall test
-pn: bin/potion${EXE} ${PLIBS}
-p2: bin/p2${EXE} ${PLIBS}
+pn: bin/potion${EXE} ${PNLIB}
+p2: bin/p2${EXE} ${PNLIB}
 bins: ${BINS}
-libs: ${PLIBS} ${DYNLIBS}
+libs: ${PNLIB} ${DYNLIBS}
 static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
 rebuild: clean default test
 
@@ -443,7 +442,7 @@ bench: bin/gc-bench${EXE} bin/potion${EXE}
 check: test.pn test.p2
 test:  test.pn test.p2
 
-test.pn: pn bin/potion-test${EXE}
+test.pn: pn libs bin/potion-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
 	${RUNPRE}potion-test; \
@@ -496,7 +495,7 @@ test.pn: pn bin/potion-test${EXE}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test.p2: p2 bin/p2-test${EXE} bin/gc-test${EXE}
+test.p2: p2 libs bin/p2-test${EXE} bin/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running p2 API tests; \
 	${RUNPRE}p2-test; \
