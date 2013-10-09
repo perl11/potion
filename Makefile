@@ -662,7 +662,8 @@ TAGS: ${SRC} core/*.h
 
 sloc: clean
 	@mv syn/greg.c syn/greg-c.tmp
-	@sloccount core syn front
+	-@rm core/syntax*.c
+	@sloccount core lib syn front
 	@mv syn/greg-c.tmp syn/greg.c
 
 todo:
