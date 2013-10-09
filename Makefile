@@ -279,6 +279,7 @@ endif
 	@${ECHO} AUTOGEN $@
 	@${PATCH_PHLPAPI2}
 	cd 3rd/libuv && ./autogen.sh
+	-grep "libuv 0." 3rd/libuv/configure && sed -i -e's,libuv 0.,libuv-0.,' 3rd/libuv/configure
 	cd 3rd/libuv && ./configure --enable-shared CC="${CC}" "${CROSSHOST}"
 
 lib/libuv.a: core/config.h core/potion.h \
@@ -515,7 +516,7 @@ realclean: clean
 	@rm -f config.inc ${GREG} ${GREGCROSS} core/syntax.c
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf doc/ref doc/html
-	@rm -rf lib/*${DLL} lib/*${LOADEXT}
+	@rm -rf lib/*${DLL} lib/*${LOADEXT} lib/*.a
 	@${MAKE} -s clean -C 3rd/libuv
 	@if test -f 3rd/libuv/Makefile.am; then rm 3rd/libuv/Makefile; fi
 	@find . -name \*.gcov -delete

@@ -63,6 +63,7 @@ fi
 
 if [ -z "$OPTS" ]; then
     case `uname -s` in
-        *Linux) dorelease "gcc -m32" ;;
+        *Linux) rm 3rd/libuv/Makefile
+                dorelease "gcc -m32" ;;
     esac
 fi
