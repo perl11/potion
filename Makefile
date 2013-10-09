@@ -1,6 +1,7 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .o .opic .textile .html
 .PHONY: all pn static usage config clean doc rebuild test bench tarball dist release install grammar
+.NOTPARALLEL: test
 
 SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
 PLIBS = readline buffile aio
@@ -67,14 +68,15 @@ RUNPRE = bin/
 # perl11.org only
 WEBSITE = ../perl11.org
 
-all: pn libs
+default: pn libs
 	+${MAKE} -s usage
 
+all: default libs static docall test
 pn: bin/potion${EXE} ${PNLIB}
 bins: bin/potion${EXE}
 libs: ${PNLIB} ${DYNLIBS}
 static: lib/libpotion.a bin/potion-s${EXE}
-rebuild: clean all test
+rebuild: clean default test
 
 usage:
 	@${ECHO} " "
@@ -134,13 +136,6 @@ tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	  ${MV} tools/greg-new ${GREG}; \
 	fi
 
-# objects observing POTION_STACK_DIR must use -fno-omit-frame-pointer
-#core/gc.o: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-#	@${ECHO} CC $@ +frame-pointer
-#	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
-#core/internal.o: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
-#	@${ECHO} CC $@ +frame-pointer
-#	@${CC} -c ${CFLAGS} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/callcc.o: core/callcc.c core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
@@ -148,12 +143,6 @@ core/potion.o: core/potion.c core/config.h core/potion.h core/internal.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${INCS} -o $@ $<
 ifneq (${FPIC},)
-#core/gc.${OPIC}: core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-#	@${ECHO} CC $@ +frame-pointer
-#	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
-#core/internal.${OPIC}: core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
-#	@${ECHO} CC $@ +frame-pointer
-#	@${CC} -c ${CFLAGS} ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
 core/callcc.${OPIC}: core/callcc.c core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
@@ -366,6 +355,8 @@ test: pn libs test/api/potion-test${EXE} test/api/gc-test${EXE}
 	else \
 		${ECHO} "OK ($$count tests)"; \
 	fi
+
+testable : bin/potion${EXE} libs test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 
 test/api/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
