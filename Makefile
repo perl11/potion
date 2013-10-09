@@ -445,7 +445,8 @@ TAGS: ${SRC} core/*.h
 	/usr/bin/find  \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
-	@sloccount core
+	-@rm core/syntax.c
+	@sloccount core lib
 
 todo:
 	@grep -rInso 'TODO: \(.\+\)' core tools
