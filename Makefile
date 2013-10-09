@@ -141,17 +141,19 @@ tools/greg.c: tools/greg.y tools/greg.h tools/compile.c tools/tree.c
 	  ${MV} tools/greg-new ${GREG}; \
 	fi
 
-core/callcc.o: core/callcc.c core/config.h core/internal.h
+core/callcc.o: core/callcc.c core/potion.h core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/potion.o: core/potion.c core/config.h core/potion.h core/internal.h
+core/potion.o: core/potion.c core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/khash.h core/table.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${INCS} -o $@ $<
 ifneq (${FPIC},)
-core/callcc.${OPIC}: core/callcc.c core/config.h core/internal.h
+core/callcc.${OPIC}: core/callcc.c core/potion.h core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
 	@${CC} -c ${CFLAGS} -O0 ${FPIC} -fno-omit-frame-pointer ${INCS} -o $@ $<
-core/potion.${OPIC}: core/potion.c core/config.h core/potion.h core/internal.h
+core/potion.${OPIC}: core/potion.c core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/khash.h core/table.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${FPIC} ${INCS} -o $@ $<
 endif
@@ -159,24 +161,36 @@ core/vm.o core/vm.opic: core/vm-dis.c core/config.h
 
 core/potion.h: core/config.h
 core/table.h: core/potion.h core/internal.h core/khash.h
-$(foreach o,${OBJS},core/asm${o} ): core/asm.c core/config.h core/potion.h core/internal.h core/opcodes.h core/asm.h
-$(foreach o,${OBJS},core/ast${o} ): core/ast.c core/config.h core/potion.h core/internal.h core/ast.h
-$(foreach o,${OBJS},core/compile${o} ): core/compile.c core/config.h core/potion.h core/internal.h core/ast.h core/opcodes.h core/asm.h
+# for c in core/*.c; do gcc -MM -D_GNU_SOURCE  -Icore $c; done
+$(foreach o,${OBJS},core/asm${o} ): core/asm.c core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/asm.h
+$(foreach o,${OBJS},core/ast${o} ): core/ast.c core/potion.h core/config.h core/internal.h core/ast.h
+$(foreach o,${OBJS},core/compile${o} ): core/compile.c core/potion.h core/config.h core/internal.h \
+ core/ast.h core/opcodes.h core/asm.h
 $(foreach o,${OBJS},core/contrib${o} ): core/contrib.c core/config.h
-$(foreach o,${OBJS},core/file${o} ): core/file.c core/config.h core/potion.h core/internal.h core/table.h
-# $(foreach o,${OBJS},core/gc${o} ): core/gc.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/gc.h
-# $(foreach o,${OBJS},core/internal${o} ): core/internal.c core/config.h core/potion.h core/internal.h core/table.h core/gc.h
-$(foreach o,${OBJS},core/lick${o} ): core/lick.c core/config.h core/potion.h core/internal.h
-$(foreach o,${OBJS},core/load${o} ): core/load.c core/config.h core/potion.h core/internal.h core/table.h
-$(foreach o,${OBJS},core/mt19937ar${o} ): core/mt19937ar.c
-$(foreach o,${OBJS},core/number${o} ): core/number.c core/config.h core/potion.h core/internal.h
-$(foreach o,${OBJS},core/objmodel${o} ): core/objmodel.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h core/asm.h
-$(foreach o,${OBJS},core/primitive${o} ): core/primitive.c core/config.h core/potion.h core/internal.h
-$(foreach o,${OBJS},core/string${o} ): core/string.c core/config.h core/potion.h core/internal.h core/table.h core/khash.h
-$(foreach o,${OBJS},core/table${o} ): core/table.c core/config.h core/potion.h core/internal.h core/khash.h core/table.h
-$(foreach o,${OBJS},core/vm${o} ): core/vm.c core/vm-dis.c core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/file${o} ): core/file.c core/potion.h core/config.h core/internal.h \
+ core/table.h core/khash.h
+$(foreach o,${OBJS},core/gc${o} ): core/gc.c core/potion.h core/config.h core/internal.h core/gc.h \
+ core/khash.h core/table.h
+$(foreach o,${OBJS},core/internal${o} ): core/internal.c core/potion.h core/config.h core/internal.h \
+ core/table.h core/khash.h core/gc.h
+$(foreach o,${OBJS},core/lick${o} ): core/lick.c core/potion.h core/config.h core/internal.h
+$(foreach o,${OBJS},core/load${o} ): core/load.c core/potion.h core/config.h core/internal.h \
+ core/table.h core/khash.h
+$(foreach o,${OBJS},core/mt19937ar${o} ): core/mt19937ar.c core/potion.h core/config.h
+$(foreach o,${OBJS},core/number${o} ): core/number.c core/potion.h core/config.h core/internal.h
+$(foreach o,${OBJS},core/objmodel${o} ): core/objmodel.c core/potion.h core/config.h core/internal.h \
+ core/khash.h core/table.h core/asm.h
+$(foreach o,${OBJS},core/primitive${o} ): core/primitive.c core/potion.h core/config.h core/internal.h
+$(foreach o,${OBJS},core/string${o} ): core/string.c core/potion.h core/config.h core/internal.h \
+ core/khash.h core/table.h
+$(foreach o,${OBJS},core/table${o} ): core/table.c core/potion.h core/config.h core/internal.h \
+ core/khash.h core/table.h
+$(foreach o,${OBJS},core/vm${o} ): core/vm.c core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/asm.h core/khash.h core/table.h core/vm-dis.c
 $(foreach o,${OBJS},core/vm-ppc${o} ): core/vm-ppc.c core/config.h core/potion.h core/internal.h core/opcodes.h
-$(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/config.h core/potion.h core/internal.h core/opcodes.h core/khash.h core/table.h
+$(foreach o,${OBJS},core/vm-x86${o} ): core/vm-x86.c core/potion.h core/config.h core/internal.h \
+ core/opcodes.h core/asm.h core/khash.h core/table.h
 
 %.i: %.c core/config.h
 	@${ECHO} CPP $@
