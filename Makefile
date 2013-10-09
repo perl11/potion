@@ -3,6 +3,7 @@
 .PHONY: all pn static usage config clean doc rebuild test bench tarball dist release install grammar
 
 SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
+PLIBS = readline buffile aio
 GREGCFLAGS = -O3 -DNDEBUG
 
 # bootstrap config.inc with make -f config.mak
@@ -28,6 +29,8 @@ ifneq (${WIN32},1)
   ifneq (${CYGWIN},1)
     FPIC = -fPIC
     OPIC = opic
+  else
+    PLIBS = readline buffile
   endif
 endif
 OBJ = ${SRC:.c=.o}
@@ -36,10 +39,10 @@ PIC_OBJ_POTION = core/potion.${OPIC}
 OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
-PLIBS = lib/libpotion${DLL}
+PNLIB = lib/libpotion${DLL}
 EXTLIBS = -Llib -luv
 EXTLIBDEPS = lib/libuv${DLL}
-DYNLIBS = $(foreach m,readline buffile aio,lib/potion/$m${LOADEXT})
+DYNLIBS = $(foreach m,${PLIBS},lib/potion/$m${LOADEXT})
 DOC = doc/start.textile doc/glossary.textile
 DOCHTML = ${DOC:.textile=.html}
 OBJS = .o
@@ -67,9 +70,9 @@ WEBSITE = ../perl11.org
 all: pn libs
 	+${MAKE} -s usage
 
-pn: bin/potion${EXE} ${PLIBS}
+pn: bin/potion${EXE} ${PNLIB}
 bins: bin/potion${EXE}
-libs: ${PLIBS} ${DYNLIBS}
+libs: ${PNLIB} ${DYNLIBS}
 static: lib/libpotion.a bin/potion-s${EXE}
 rebuild: clean all test
 
@@ -381,7 +384,7 @@ examples: pn
 
 dist: bins libs static docall
 	@if [ -n "${RPATH}" ]; then \
-	  rm -f ${BINS} ${PLIBS}; \
+	  rm -f ${BINS} ${PNLIB}; \
 	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
 	fi
 	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
