@@ -506,7 +506,7 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o core/*.opic core/*.i test/api/*.o
-	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o
+	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o lib/*.o lib/*.opic
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f bin/potion${EXE} bin/potion-s${EXE} \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
