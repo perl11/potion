@@ -3,8 +3,11 @@
 .PHONY: all bins libs pn p2 static default config clean doc rebuild check test test.pn test.p2 \
 	bench tarball dist release install grammar doxygen website \
 	testable spectest_checkout spectest_init spectest_update
+.NOTPARALLEL: test test.pn test.p2
 
 SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
+PLIBS = readline buffile aio
+GREGCFLAGS = -O3 -DNDEBUG
 
 # bootstrap config.inc with make -f config.mak
 include config.inc
@@ -35,6 +38,8 @@ ifneq (${WIN32},1)
   ifneq (${CYGWIN},1)
     FPIC = -fPIC
     OPIC = opic
+  else
+    PLIBS = readline buffile
   endif
 endif
 OBJ = ${SRC:.c=.o}
@@ -60,6 +65,7 @@ PLIBS = $(foreach l,potion p2,lib/lib$l${DLL})
 PLIBS += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 #EXTLIBS = $(foreach m,uv pcre,lib/lib$m.a)
 #EXTLIBS = -L3rd/pcre -lpcre -L3rd/libuv -luv -L3rd/libtommath -llibtommath
+PLIBS = lib/libpotion${DLL}
 EXTLIBS = -Llib -luv
 EXTLIBDEPS = lib/libuv${DLL}
 DYNLIBS = $(foreach m,readline buffile aio,lib/potion/$m${LOADEXT})
@@ -589,7 +595,7 @@ examples: pn p2
 
 dist: bins libs static docall ${SRC_SYN} ${SRC_P2_SYN}
 	@if [ -n "${RPATH}" ]; then \
-	  rm -f ${BINS} ${PLIBS}; \
+	  rm -f ${BINS} ${PNLIB}; \
 	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
 	fi
 	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX} EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
