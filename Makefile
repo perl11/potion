@@ -434,10 +434,10 @@ bench: bin/gc-bench${EXE} bin/potion${EXE}
 	  ${ECHO} running GC benchmark; \
 	  time bin/gc-bench
 
-check: libs test.pn test.p2
-test:  libs test.pn test.p2
+check: test.pn test.p2
+test:  test.pn test.p2
 
-test.pn: bin/potion${EXE} libs bin/potion-test${EXE}
+test.pn: pn bin/potion-test${EXE}
 	@${ECHO}; \
 	${ECHO} running potion API tests; \
 	${RUNPRE}potion-test; \
@@ -490,7 +490,7 @@ test.pn: bin/potion${EXE} libs bin/potion-test${EXE}
 		${ECHO} "OK ($$count tests)"; \
 	fi
 
-test.p2: bin/p2${EXE} libs bin/p2-test${EXE} bin/gc-test${EXE}
+test.p2: p2 bin/p2-test${EXE} bin/gc-test${EXE}
 	@${ECHO}; \
 	${ECHO} running p2 API tests; \
 	${RUNPRE}p2-test; \
