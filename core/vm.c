@@ -71,6 +71,7 @@ or http://www.lua.org/doc/jucs05.pdf
 #include "asm.h"
 #include "khash.h"
 #include "table.h"
+//#include <assert.h>
 
 #if defined(POTION_JIT_TARGET) && defined(JIT_DEBUG)
 #  if defined(HAVE_LIBDISASM)
@@ -227,6 +228,14 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   regs = PN_INT(f->stack);
   lregs = regs + PN_TUPLE_LEN(f->locals);
   need = lregs + upc + 3;
+  /* single-byte indirect -(regn)%ebp addressing only works
+     up to 14 (64bit) or 29 (32bit) words */
+#ifdef DEBUG
+  if (((need + 1) * sizeof(PN)) >= 0x7f)
+    DBG_c("Warning: %ld registers too many, used %ld, max %d.\n",
+	  need-30/(PN_SIZE_T/4)+1, need, 30/(PN_SIZE_T/4)-1);
+#endif
+  //assert((((need + 1) * sizeof(PN)) < 0x7f));
   rsp = (need + protoargs) * sizeof(PN);
 
   target->stack(P, f, &asmb, rsp);

@@ -14,39 +14,44 @@ the x86 and x86_64 jit.
 #include "asm.h"
 #include "khash.h"
 #include "table.h"
+//#include <assert.h>
 
-#define RBP(x)  (0x100 - ((x + 1) * sizeof(PN)))
-#define RBPI(x) (0x100 - ((x + 1) * sizeof(int)))
+#define RBP(x)   (0x100 - ((x + 1) * sizeof(PN)))
+#define RBPN(x)  (- ((x + 1) * sizeof(PN)))
+//#define RBPI(x) (0x100 - ((x + 1) * sizeof(int)))
 
 #if PN_SIZE_T != 8
 #define X86_PRE_T 0
 #define X86_PRE()
 #define X86_POST()
 #define X86C(op32, op64) op32
+#define ASM_MOVEBP(op, reg)				\
+  if (reg > 30) { ASM(op+0x40); ASMN(RBPN(reg)); }	\
+  else { ASM(op); ASM(RBP(reg)); }
 #else
 #define X86_PRE_T 1
 #define X86_PRE()  ASM(0x48)
 #define X86_POST() ASM(0x48); ASM(0x98)
 #define X86C(op32, op64) op64
+#define ASM_MOVEBP(op, reg)				\
+  if (reg > 15) { ASM(op+0x40); ASMN(RBPN(reg)); }	\
+  else { ASM(op); ASM(RBP(reg)); }
 #endif
 
-#define X86_MOV_RBP(reg, x) \
-        X86_PRE(); ASM(reg); ASM(0x45); ASM(RBP(x))
+#define X86_MOV_RBP(reg, x) X86_PRE(); ASM(reg); ASM_MOVEBP(0x45,x)
 #if PN_SIZE_T != 8
 # define X86_MOVQ(reg, x) \
-        ASM(0xC7); 			/* movl */ \
-        ASM(0x45); ASM(RBP(reg)); 	/* -A(%rbp) */ \
+        ASM(0xC7); ASM_MOVEBP(0x45,x)	/* movl -A(%rbp) */*/ \
         ASMI((PN)(x))
 #else
 # define X86_MOVQ(reg, x) \
         X86_PRE(); ASM(0xb8); ASMN((PN)(x)); 			/* movq x, %rax */ \
-        X86_PRE(); ASM(0x89); 					/* movq */ \
-        ASM(0x45); ASM(RBP(reg)); 				/* %rax, -A(%rbp) */
+        X86_PRE(); ASM(0x89); ASM_MOVEBP(0x45,reg)	       	/* movq %rax, -A(%rbp) */
 #endif
 #define X86_MATH(two, func, ops) ({ \
         int asmpos = 0; \
         X86_MOV_RBP(0x8B, op.a); 					/* mov -A(%rbp) %eax */ \
-        if (two) { X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.b)); } 	/* mov -B(%rbp) %edx */ \
+        if (two) { X86_PRE(); ASM(0x8B); ASM_MOVEBP(0x55,op.b) }	/* mov -B(%rbp) %edx */	\
         ASM(0xF6); ASM(0xC0); ASM(0x01); 				/* test 0x1 %al */ \
         asmpos = (*asmp)->len; \
         ASM(0x74); ASM(0); 						/* je [a] */ \
@@ -63,10 +68,10 @@ the x86 and x86_64 jit.
         X86_PRE(); ASM(0xB8); ASMN(func); 				/* mov &func %rax */ \
         ASM(0xFF); ASM(0xD0); 						/* callq %rax */ \
         (*asmp)->ptr[asmpos + 1] = ((*asmp)->len - asmpos) - 2; \
-        X86_MOV_RBP(0x89, op.a); 					/* mov -B(%rbp) %eax */ \
+        X86_MOV_RBP(0x89, op.a) 					/* mov -B(%rbp) %eax */ \
 })
 #define X86_CMP(ops) \
-        X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(op.a));/* mov -A(%rbp) %edx */ \
+        X86_PRE(); ASM(0x8B); ASM_MOVEBP(0x55,op.a)	/* mov -A(%rbp) %edx */ \
         X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %eax */ \
         X86_PRE(); ASM(0x39); ASM(0xC2); 		/* cmp %rax %rdx */ \
         ASM(ops); ASM(X86C(9, 16)); 			/* jle +10 */ \
@@ -141,8 +146,11 @@ again:
   \param regn: value (usually indirect stack ptr, relative to ebp)
   \param argn: argument index (0-5 in regs on 64bit) */
 static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int regn, int argn) {
+    // need to address -(x)%ebp: max regn=29/14
+    // assert(((regn + 1) * sizeof(PN)) < 0x7f);
 #if PN_SIZE_T != 8
     // IA-32 cdecl ABI, non-microsoft only. TODO: win32 stdcall for the w32api ffi
+    assert(regn < 30);
     if (argn == 0) {
       // OPT: the first argument is always (Potion *)
       if (!out) {
@@ -154,7 +162,7 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
       if (out == 2) {
 	ASM(0xc7); ASM(0x44); ASM(0x24); ASM(argn * sizeof(PN)); ASMI(regn); //mov $regn, argn(%esp)
       } else if (out) {
-	ASM(0x8b); ASM(0x55); ASM(RBP(regn)); //mov -0x8(%ebp), %edx
+	ASM(0x8b); ASM_MOVEPB(0x55,regn) //mov -0x8(%ebp), %edx
       }
       if (!out) argn += 2;
       if (out == 1) {
@@ -163,7 +171,7 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
 	ASM(0x8b); ASM(0x55); ASM(argn * sizeof(PN));
       }
       if (!out) {
-	ASM(0x89); ASM(0x55); ASM(RBP(regn));
+	ASM(0x89); ASM_MOVEPB(0x55,regn)
       }
     }
 #else
@@ -173,48 +181,48 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
   case 0: //rdi Potion *P
     if (out == 2) { // unused - mov $regn, %rdi
       X86_PRE(); ASM(0xc7); ASM(0xc7); ASMI(regn);
-    } else { // mov -regn(%rbp), %rdi
-      X86_PRE(); ASM(out ? 0x8b : 0x89); ASM(0x7d); ASM(RBP(regn));
+    } else {
+      X86_PRE(); ASM(out ? 0x8b : 0x89); ASM_MOVEBP(0x7d,regn) // mov -regn(%rbp), %rdi
     }
     break;
   case 1: //rsi PN cl
     if (out == 2) { // unused - mov $regn, %rsi
       X86_PRE(); ASM(0xc7); ASM(0xc6); ASMI(regn);
     } else { // mov -regn(%rbp), %rsi
-      X86_PRE(); ASM(out ? 0x8b : 0x89); ASM(0x75); ASM(RBP(regn));
+      X86_PRE(); ASM(out ? 0x8b : 0x89); ASM_MOVEBP(0x75,regn)
     }
     break;
   case 2: //rdx self
     if (out == 2) { // unused - mov $regn, %rdx
       X86_PRE(); ASM(0xc7); ASM(0xc2); ASMI(regn);
     } else { // mov -regn(%rbp), %rdx
-      X86_PRE(); ASM(out ? 0x8b : 0x89); ASM(0x55); ASM(RBP(regn));
+      X86_PRE(); ASM(out ? 0x8b : 0x89); ASM_MOVEBP(0x55,regn)
     }
     break;
   case 3: //rcx
     if (out == 2) { // 1st default arg - mov $regn, %rcx
       X86_PRE(); ASM(0xc7); ASM(0xc1); ASMI(regn);
     } else { // mov -regn(%rbp), %rcx
-      X86_PRE(); ASM(out ? 0x8b : 0x89); ASM(0x4d); ASM(RBP(regn));
+      X86_PRE(); ASM(out ? 0x8b : 0x89); ASM_MOVEBP(0x4d,regn)
     }
     break;
   case 4: //r8
     if (out == 2) { // 2nd default arg - mov $regn, %r8
       ASM(0x49); ASM(0xc7); ASM(0xc0); ASMI(regn);
     } else { // mov -regn(%rbp), %r8
-      ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM(0x45); ASM(RBP(regn));
+      ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM_MOVEBP(0x45,regn)
     }
     break;
   case 5: //r9
     if (out == 2) { // 3rd default arg - mov $regn, %r9
       ASM(0x49); ASM(0xc7); ASM(0xc1); ASMI(regn);
     } else { // mov -regn(%rbp), %r9
-      ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM(0x4d); ASM(RBP(regn));
+      ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM_MOVEBP(0x4d,regn)
     }
     break;
     default: // can only pass max 6 arg via regs, rest on stack
       if (out) {
-	X86_PRE(); ASM(0x8B); ASM(0x5d); ASM(RBP(regn)); // mov %rbp(A) %rbx
+	X86_PRE(); ASM(0x8B); ASM_MOVEBP(0x5d,regn) // mov %rbp(A) %rbx
 	if (argn == 6) {
 	  X86_PRE(); ASM(0x89); ASM(0x1c); ASM(0x24);    // mov %rbx (%rsp)
 	} else {
@@ -222,7 +230,7 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
 	}
       } else {
 	X86_PRE(); ASM(0x8b); ASM(0x5d); ASM((argn - 4) * sizeof(PN));
-	X86_PRE(); ASM(0x89); ASM(0x5d); ASM(RBP(regn)); // mov %rbp(A) %rbx
+	X86_PRE(); ASM(0x89); ASM_MOVEBP(0x5d,regn) // mov %rbp(A) %rbx
       }
     break;
   }
@@ -249,7 +257,8 @@ void potion_x86_stack(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 
 void potion_x86_registers(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long start) {
   PN_HAS_UPVALS(up);
-  // (Potion *, self) in the first argument slot, self in the first register 
+  // (Potion *, self) in the first argument slot, self in the first register
+  // DBG_v(";regs start %ld\n", start);
   X86_ARGI(start - 3, 0);
   X86_ARGI(start - 2, 1);
   X86_ARGI(start - 1, 2);
@@ -348,7 +357,7 @@ void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatil
     X86_PRE(); ASM(0x89); ASM(0x50);
                ASM(sizeof(struct PNObject)); 		// mov N(%rax) %rax
   }
-  X86_PRE(); ASM(0x89); ASM(0x55); ASM(RBP(regs + op.b)); // mov %rdx %rsp(B)
+  X86_PRE(); ASM(0x89); ASM_MOVEBP(0x55, regs + op.b)   // mov %rdx %rsp(B)
 }
 
 void potion_x86_getupval(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long lregs) {

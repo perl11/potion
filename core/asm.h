@@ -92,7 +92,7 @@ typedef struct {
       } \
     }); \
   }
-  
+
 #define ASM(ins) *asmp = potion_asm_put(P, *asmp, (PN)(ins), sizeof(u8))
 #define ASM2(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), 2)
 #define ASMI(pn) *asmp = potion_asm_put(P, *asmp, (PN)(pn), sizeof(int))
