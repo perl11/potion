@@ -281,7 +281,7 @@ endif
 	@${PATCH_PHLPAPI2}
 	cd 3rd/libuv && ./autogen.sh
 	-grep "libuv 0." 3rd/libuv/configure && sed -i -e's,libuv 0.,libuv-0.,' 3rd/libuv/configure
-	cd 3rd/libuv && ./configure --enable-shared CC="${CC}" "${CROSSHOST}"
+	cd 3rd/libuv && ./configure --disable-dtrace --enable-shared CC="${CC}" "${CROSSHOST}"
 
 lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
@@ -528,6 +528,14 @@ test.c: bin/potion${EXE}
 	f=test/classes/creature.pn && \
 	look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"` && \
 	for=`bin/potion -I -B $$f | ${SED} "s/\n$$//"` && \
+	if [ "$$look" != "$$for" ]; then \
+	  ${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
+	fi
+
+test.u: bin/potion${EXE}
+	f=test/closures/upvals.pn && \
+	look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"` && \
+	for=`bin/potion -I -X $$f | ${SED} "s/\n$$//"` && \
 	if [ "$$look" != "$$for" ]; then \
 	  ${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
 	fi
