@@ -18,6 +18,7 @@ z1 = true
 z2 = 16
 z3 = list(2)
 z4 = (a=1)
+"" print
 
 z = ():
   z4 = (b=2)
