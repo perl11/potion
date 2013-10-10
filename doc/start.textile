@@ -21,7 +21,8 @@ h2. Special Things?
 So is there anything unusual about Potion? Anything of particular interest?
 
 * Potion compiles programs down to machine code.
-* It includes a small generational near-exact garbage collector.
+* It includes a small generational near-exact garbage collector,
+  spending on avg 4ms on medium sized heaps.
 * It is two languages: one for code, one for data.
 * It's written in under 10,000 lines of C.
 
@@ -341,7 +342,7 @@ Potion has three keywords for these built-in types.
 
 @true@ and @false@ are boolean values belonging to the @Boolean@ class.
 
-Anything which is not @nil@ or @false@ is considered a positive value. (Which means that the number zero is considered true in if statements.)
+Anything which is not @nil@ or @false@ is considered a positive value. (Which means that the number zero and empty strings are considered @true@ in if statements.)
 
 h3. Numbers
 
@@ -367,7 +368,7 @@ Decimal numbers use a boxed double-precision floating point number.
 </code>
 </pre>
 
-Arbitrary-precision math is planned for 1.0 release.
+Seemless arbitrary-precision math is planned for the 1.0 release.
 
 h3. Strings
 
@@ -454,6 +455,10 @@ Potion has no @for@ keyword. One alternative is the @to@ keyword.
 <code>
   1 to 5 (a):
     a string print.
+
+  num = argv(1) number
+  1 to (num, (a):
+    a print.)
 </code>
 </pre>
 
@@ -591,6 +596,8 @@ This are already in, but documented elsewhere[5]:
 * Continuations, for saving and resuming the stack, @here@ and @yield@.
 * Exceptions for graceful error handling.
 * Asynchronous non-blocking IO in the @aio@ module.
+* Buffered stream FILE* IO in the @buffile@ module.
+* @readline@ module providing a little repl if called without script
 * Optional, named and default signature arguments.
 
 Thankyou for reading along. I hope this was only a brief interruption to an otherwise lush and exotic life. I'm sorry to disappoint with so little. Perhaps one day I can make things right?
