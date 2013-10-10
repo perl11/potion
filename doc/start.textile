@@ -569,21 +569,43 @@ As with methods, you can query an object to see if it has a given path.
 
 h2. And That's It?
 
-Yes, that's the important stuff for now. But a number of new features are coming to Potion soon.
+Yes, that's the important stuff for now. But a number of new features are coming to Potion soon[3].
+
+* Pattern matching, for expressing conditions on object layout.
+* FFI (@extern@), debuggers (-d), external compilers (-c) (_to c and native executable for the start_).
+* Types and symbol tables. Types to be faster, and symtabs to be slower and more like a LISP and perl/ruby.
+* Compiler macros and compiler optimizations, like tailcall, constant folding, strength reduction.
+* Bignums, marshalling.
+* More libraries for os, ui, db, ...
+* And also: Native threading. This is a biggie. It requires lock-free bags and some new native
+  atomic insns and parallelizing loops. The work-stealing sister language sol[4] looks good,
+  it can yield to other threads.
+* Channels and blocking recv for typed task communications al la Go. On top of @aio@.
+* Eventually lists, implemented via licks, but with a LISPy feeling.
+
+This are already in, but documented elsewhere[5]:
 
 * Mixins, a syntax for blending methods into classes.
+* MOP, changing metaclasses, the behavior of classes.
 * Coroutines, a technique for inprocess threading.
-* Continuations, for saving and resuming the stack.
-* Pattern matching, for expressing conditions on object layout.
-* And also: bignums, marshalling.
+* Continuations, for saving and resuming the stack, @here@ and @yield@.
+* Exceptions for graceful error handling.
+* Asynchronous non-blocking IO in the @aio@ module.
+* Optional, named and default signature arguments.
 
 Thankyou for reading along. I hope this was only a brief interruption to an otherwise lush and exotic life. I'm sorry to disappoint with so little. Perhaps one day I can make things right?
 
 h2. Footnotes
 
-fn1. The "programming language":http://github.com/why/potion. Not the drink of fables.
+fn1. Potion the "programming language":http://github.com/perl11/potion. Not the drink of fables.
 
 fn2. "ECMAScript for XML":http://en.wikipedia.org/wiki/ECMAScript_for_XML. (See also: "s-expression":http://en.wikipedia.org/wiki/S-Expression.)
+
+fn3. "Potion wiki":https://github.com/perl11/potion/wiki/_pages.
+
+fn4. "sol":http://github.com/rsms/sol.
+
+fn5. "Potion Documentation":http://perl11.org/potion/html/.
 
 h2. Potion's License
 
