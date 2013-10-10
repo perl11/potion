@@ -427,7 +427,7 @@ dist: bins libs $(AIO_DEPS) static docall ${GREG}
 	fi
 	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
-install: dist
+install: bins libs $(AIO_DEPS) ${GREG}
 	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
 tarball:
