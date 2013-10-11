@@ -297,10 +297,12 @@ void potion_x86_local(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
 void potion_x86_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, long lregs, long start, int upc) {
   int upi;
   for (upi = 0; upi < upc; upi++) {
-    X86_MOV_RBP(0x8B, start - 2);
-    X86_PRE(); ASM(0x8B); ASM(0x40); //XXX upc overflow?
-      ASM(sizeof(struct PNClosure) + ((upi + 1) * sizeof(PN))); // 0x30(%rax)
-    X86_MOV_RBP(0x89, lregs + upi);
+    int n = sizeof(struct PNClosure) + ((upi + 1) * sizeof(PN));
+    X86_MOV_RBP(0x8B, start - 2); 	// mov -0x8(%ebp), %eax
+    X86_PRE(); ASM(0x8B);  		// mov n(%eax), %eax
+    if (n>0x80) { ASM(0x80); ASMI(n); }
+    else { ASM(0x40); ASM(n); }
+    X86_MOV_RBP(0x89, lregs + upi);     // mov %eax, -0x8(%ebp)
   }
 }
 
@@ -901,7 +903,7 @@ void potion_x86_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
       ASM(0x81); ASM(X86C(0xFA, 0xFF, 0,0));
       ASMI(PN_UNIQ(v));			// cmp UNIQ %edi
       ASM(0x75); ASM(X86C(7, 6,0,0));	// jne +7
-    ASM(0xB8); ASMI(i);			// mov i %rax     XXX: overflow i>15
+    ASM(0xB8); ASMI(i);			// mov i %rax
     ASM(0x5D);                          // pop %rbp
     ASM(0xC3);				// retq
   });
