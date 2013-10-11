@@ -16,11 +16,14 @@ Lastly, to verify your build
 
     $ make test
 
+On a typical GNU make < 4.0 sometimes the `test/classes/creatures/` fails.
+Try `make -j1 test` or gmake-4.0 then.
+
 ## ~ the latest potion ~
 
 To build the bleeding edge, you will need
 GNU make, binutils and clang or gcc.
-Favor clang over gcc, most gcc's are broken, esp. unoptimized with DEBUG=1
+clang produces better code than gcc, but is harder to debug.
 
     $ git clone git://github.com/perl11/potion.git
     $ cd potion
@@ -58,9 +61,9 @@ See tools/mk-release.sh.
 make test will not work, you need to copy a make dist tarball
 to the machine and test it there.
 
-Building for win64 does not work yet.
+win64 is not supported yet. It uses a slighlty different ABI,
 cygwin64 misses pthread\_barrier\_t.
-x86_64-w64-mingw32-gcc fails by creating a wrong config.h
+and x86_64-w64-mingw32-gcc fails by creating a wrong `config.h`
 
 ## ~ building on bsd ~
 
@@ -69,7 +72,7 @@ You can either install gnu make (gmake)
 
     $ sudo port install gmake
 
-or try ./configure which creates a special BSD config.mk
+or try `./configure` which creates a special BSD `config.mk`
 
 or try to merge 'master' with the branch 'bsd'
 
@@ -88,11 +91,11 @@ or try to merge with the branch 'p2-c++'.
 
 ## ~ creating documentation ~
 
-This is required for make install and release admins.
-You'll need
+This is required for `make dist` and release admins.
+You'll need:
 
     redcloth to convert .textile to html,
     doxygen (1.8 or 1.9), and
     GNU global for gtags and htags
 
-On windows: gem install RedCloth
+On windows et al.: `gem install RedCloth`
