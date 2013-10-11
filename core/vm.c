@@ -71,7 +71,6 @@ or http://www.lua.org/doc/jucs05.pdf
 #include "asm.h"
 #include "khash.h"
 #include "table.h"
-//#include <assert.h>
 
 #if defined(POTION_JIT_TARGET) && defined(JIT_DEBUG)
 #  if defined(HAVE_LIBDISASM)
@@ -121,7 +120,7 @@ void potion_vm_init(Potion *P) {
  \param self PN - sets self (ignored for most user defined functions).
                   if self is a int < 10 it defines the number of args provided
  \param ... - arguments to the cl
-x
+
  \verbatim
    add = potion_eval(P, potion_str(P, "(x=N|y=N): x + y."));
    addfn = PN_CLOSURE_F(add); // i.e. potion_vm_proto
@@ -272,7 +271,6 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       }
     }
 
-    // TODO: cgoto (does not check boundaries, est. ~10-20% faster)
     switch (PN_OP_AT(f->asmb, pos).code) {
       CASE_OP(MOVE, (P, f, &asmb, pos))		// copy value between registers
       CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
