@@ -5,7 +5,7 @@ CC     = $(shell tools/config.sh compiler)
 PWD    = $(shell pwd)
 # -pedantic not yet
 WARNINGS = -Wall -Werror -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
-CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing -D_FORTIFY_SOURCE=2
+CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing
 INCS   = -I${PWD}/core
 LIBPTH = -L${PWD}/lib
 RPATH         = -Wl,-rpath=${PWD}/lib
@@ -113,12 +113,10 @@ endif
 endif
 endif
 
-# JIT with -O still fails some tests
-#ifneq (${JIT},1)
-  ifeq (${DEBUG},0)
+ifeq (${DEBUG},0)
        DEBUGFLAGS += -O3
-  endif
-#endif
+       CFLAGS += -D_FORTIFY_SOURCE=2
+endif
 
 ifneq (,$(findstring ccache,${CC}))
 	WARNINGS = -Wall -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
