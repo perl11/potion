@@ -63,7 +63,7 @@
     distorm_decode64(offset,
       (const unsigned char*)asmb->ptr,
       asmb->len,
-      PN_SIZE_T == 8 ? 2 : 1,
+      PN_SIZE_T == 8 ? Decode64Bits : Decode32Bits,
       disassembled,
       MAX_INSTRUCTIONS,
       &decodedInstructionsCount);
