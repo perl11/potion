@@ -75,7 +75,7 @@ static PN potion_load_dylib(Potion *P, const char *filename) {
   err = (char *)dlerror();
   free(init_func_name);
   if (err != NULL) {
-    fprintf(stderr, "** error loading %s: %s\n", filename, err);
+    fprintf(stderr, "** error loading %s in %s: %s\n", init_func_name, filename, err);
     dlclose(handle);
     return PN_NIL;
   }
