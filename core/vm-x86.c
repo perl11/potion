@@ -300,7 +300,7 @@ void potion_x86_upvals(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
     int n = sizeof(struct PNClosure) + ((upi + 1) * sizeof(PN));
     X86_MOV_RBP(0x8B, start - 2); 	// mov -0x8(%ebp), %eax
     X86_PRE(); ASM(0x8B);  		// mov n(%eax), %eax
-    if (n>0x80) { ASM(0x80); ASMI(n); }
+    if (n >= 0x80) { ASM(0x80); ASMI(n); } // if more than ~15 upvals
     else { ASM(0x40); ASM(n); }
     X86_MOV_RBP(0x89, lregs + upi);     // mov %eax, -0x8(%ebp)
   }
@@ -849,10 +849,11 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   X86_MOV_RBP(0x89, op.a);
   X86_MOVQ(start - 3, P);
   PN_TUPLE_COUNT(PN_PROTO(proto)->upvals, i, {
+    int n;
     (*pos)++;
     PN_OP opp = PN_OP_AT(f->asmb, *pos);
     if (opp.code == OP_GETUPVAL) {
-      X86_PRE(); ASM(0x8B); ASM(0x55); ASM(RBP(lregs + opp.b)); // mov upval %rdx  XXX: overflow
+      X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55, lregs + opp.b) // mov upval %rdx
     } else if (opp.code == OP_GETLOCAL) {
       X86_ARGO(start - 3, 0);
       X86_ARGO(regs + opp.b, 1);
@@ -864,8 +865,10 @@ void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
       fprintf(stderr, "** missing an upval to proto %p\n", (void *)proto);
     }
     X86_MOV_RBP(0x8B, opp.a);			// mov cl %rax
-    X86_PRE(); ASM(0x89); ASM(0x50);		// mov %rdx N(%rax) XXX: overflow
-      ASM(sizeof(struct PNClosure) + (sizeof(PN) * (i + 1)));
+    X86_PRE(); ASM(0x89);			// mov %rdx N(%rax)
+    n = sizeof(struct PNClosure) + (sizeof(PN) * (i + 1));
+    if (n >= 0x80) { ASM(0x90); ASMI(n); }
+    else { ASM(0x50); ASM(n); }
   });
 }
 
