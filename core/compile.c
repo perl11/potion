@@ -253,8 +253,8 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
 
 /// insert DEBUG ops for every new line
 u8 potion_source_debug(Potion *P, struct PNProto * volatile f, struct PNSource * volatile t, u8 reg) {
-  static int lineno = 0;
-  if ((P->flags & EXEC_DEBUG) && t && t->loc.lineno != lineno && (int)t->loc.lineno >= 0) {
+  static PNType lineno = 0;
+  if ((P->flags & EXEC_DEBUG) && t && t->loc.lineno != lineno && t->loc.lineno > 0) {
     PN_SIZE num = PN_PUT(f->debugs, (PN)t);
     PN_ASM2(OP_DBG, reg, num);
     lineno = t->loc.lineno;
