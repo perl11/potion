@@ -24,8 +24,8 @@ APPLE  = 0
 CYGWIN = 0
 RUNPRE = ./
 
-CAT  = /bin/cat
-ECHO = /bin/echo
+CAT  = cat
+ECHO = echo
 RANLIB = ranlib
 SED  = sed
 EXPR = expr
@@ -175,9 +175,6 @@ endif
 
 # CFLAGS += \${DEFINES} \${DEBUGFLAGS}
 
-ifneq ($(shell tools/config.sh "${CC}" bsd),1)
-	LIBS += -ldl
-endif
 CROSS = $(shell tools/config.sh "${CC}" cross)
 # cygwin is not WIN32. detect mingw target on cross
 ifeq ($(shell tools/config.sh "${CC}" mingw),1)
@@ -188,14 +185,30 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 	LOADEXT = .dll
 	INCS += -I${PWD}/tools/dlfcn-win32/include
 	LIBPTH += -L${PWD}/tools/dlfcn-win32/lib
+    ifneq (,$(findstring i386-mingw32-gcc,${CC}))
+	LIBS += -lws2_32 -lpsapi
+    else
 	LIBS += -lpthread -lws2_32 -lpsapi
+    endif
 	RPATH =
 	RPATH_INSTALL =
     ifneq (${CROSS},1)
+# mingw32 shell, not cmd.exe
 	ECHO = echo
-	CAT = type
+	CAT = cat
 	RUNPRE =
     else
+# mingw32 cross needs native echo -n
+	ECHO = /bin/echo
+	CAT = /bin/cat
+	W := $(WARNINGS)
+	override WARNINGS = $(subst -Werror,,$(W))
+	W := $(WARNINGS)
+	override WARNINGS = $(subst -Wno-variadic-macros,,$(W))
+	D := $(DEBUGFLAGS)
+	override DEBUGFLAGS = $(subst --param ssp-buffer-size=1,,$(D))
+	D := $(DEBUGFLAGS)
+	override DEBUGFLAGS = $(subst -fno-stack-protector,,$(D))
         RANLIB = $(shell echo "${CC}" | sed -e "s,-gcc,-ranlib,")
     endif
 else
@@ -222,6 +235,9 @@ else
     endif
 endif
 endif
+endif
+ifneq ($(shell tools/config.sh "${CC}" bsd),1)
+	LIBS += -ldl
 endif
 
 ifneq ($(APPLE),1)

@@ -171,6 +171,7 @@ int replace_rename(const char *src, const char *dst) {
     return -1;
 }
 
+#if 0
 /* Proxy structure to pass func and arg to thread */
 typedef struct thread_params
 {
@@ -199,6 +200,9 @@ int pthread_create(pthread_t *thread, const void *unused,
 
     params->func = start_routine;
     params->arg  = arg;
+#ifndef STACK_SIZE_PARAM_IS_A_RESERVATION
+# define STACK_SIZE_PARAM_IS_A_RESERVATION 4096
+#endif
 
     h =(HANDLE) _beginthreadex(NULL,  /* Security not used */
                                THREAD_STACK_SIZE, /* Set custom stack size */
@@ -348,7 +352,7 @@ int pthread_cond_signal(pthread_cond_t *cond) {
         else
                 return 0;
 }
-
+#endif
 
 /* Redis forks to perform background writing */
 /* fork() on unix will split process in two */
@@ -451,7 +455,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 
   return 0;
 }
-#endif
+//#endif
 
 static _locale_t clocale = NULL;
 double wstrtod(const char *nptr, char **eptr) {
@@ -539,5 +543,6 @@ char *wsa_strerror(int err) {
     }
     return wsa_strerror_buf;
 }
+#endif //0
 
-#endif
+#endif //_WIN32
