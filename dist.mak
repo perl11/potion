@@ -63,7 +63,11 @@ pkg/${PKGBIN}.zip: core/config.h core/version.h core/syntax.c bin/potion${EXE} \
 	cp core/potion.h               dist/include/potion/
 	cp core/config.h               dist/include/potion/
 	-cp doc/*.html doc/*.png       dist/doc/
-	-cp -r doc/html doc/ref        dist/doc/
+	if [ -f doc/html/potion.chm ]; then \
+               mv doc/html/potion.chm  dist/doc/potion.chm; \
+	  else cp -r doc/html          dist/doc/; \
+          fi
+	-cp -r doc/ref                  dist/doc/
 	-cp doc/core-files.txt         dist/doc/
 	-cp README COPYING LICENSE     dist/doc/
 	cp example/*                   dist/example/

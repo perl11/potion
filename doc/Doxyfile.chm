@@ -30,13 +30,15 @@ INPUT                  = "core" \
                          doc/start.html \
                          doc/glossary.html
 SOURCE_BROWSER         = YES
-#INLINE_SOURCES         = YES
+INLINE_SOURCES         = NO
+GENERATE_TREEVIEW      = NO
+GENERATE_LATEX         = NO
+SEARCHENGINE           = NO
 
 HTML_COLORSTYLE_HUE    = 157
 HTML_COLORSTYLE_SAT    = 35
 HTML_COLORSTYLE_GAMMA  = 59
 HTML_DYNAMIC_SECTIONS  = YES
-GENERATE_TREEVIEW      = YES
 
 DOCSET_FEEDNAME        = "Doxygen docs"
 #TAGFILES               = TAGS
@@ -45,11 +47,13 @@ HAVE_DOT               = YES
 DOT_NUM_THREADS        = 4
 #?
 DOT_IMAGE_FORMAT       = png
-DOT_PATH               = "/cygdrive/c/Program Files/Graphviz2.34/bin/dot.exe"
-#DOT_PATH               = /usr/bin/dot
+#DOT_PATH               = "/cygdrive/c/Program Files/Graphviz2.34/bin/dot.exe"
+DOT_PATH               = /usr/bin/dot
 DOT_MULTI_TARGETS      = YES
 HTML_FOOTER            = doc/footer.inc
 
+GENERATE_TODOLIST      = NO
+GENERATE_HTMLHELP      = YES
 CHM_FILE               = potion.chm
 HHC_LOCATION           = "/cygdrive/c/Program Files/HTML Help Workshop/hhc.exe"
 GENERATE_CHI           = NO

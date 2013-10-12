@@ -452,37 +452,42 @@ MANIFEST:
 	git ls-tree -r --name-only HEAD > $@
 
 doc: ${DOCHTML} doc/html/files.html
-docall: doc GTAGS
+ifeq (${CYGWIN},1)
+CHM = doc/html/potion.chm
+else
+CHM =
+endif
+
+docall: doc GTAGS ${CHM}
+chm: ${CHM}
+DOXY_PRE = doc/footer.sh > doc/footer.inc; \
+	test -f core/syntax.c && mv core/syntax.c core/syntax-c.tmp
+DOXY_POST = test -f core/syntax-c.tmp && mv core/syntax-c.tmp core/syntax.c; \
+	rm README.md
 
 doxygen: ${DOCHTML} doc/html/files.html
 	@${ECHO} DOXYGEN -f core lib
-	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
-	@doc/footer.sh > doc/footer.inc
-	-mv core/syntax.c core/syntax-c.tmp
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md;
+	@${DOXY_PRE}
 	@doxygen doc/Doxyfile
-	-mv core/syntax-c.tmp core/syntax.c
-	@rm README.md
-
-doc/html/index.hhp: doc/html/files.html
+	-@${DOXY_POST}
+doc/html/index.hhp: doc/html/files.html doc/Doxyfile.chm
 	@${ECHO} DOXYGEN doc/html/index.hhp
-	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
-	@doc/footer.sh > doc/footer.inc
-	-mv core/syntax.c core/syntax-c.tmp
-	PATH=/cygdrive/c/Program\ Files/Graphvix2.34/bin doxygen doc/Doxyfile.chm
-	-mv core/syntax-c.tmp core/syntax.c
-
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md;
+	@${DOXY_PRE}
+	-rm -rf doc/html/*
+	@doxygen doc/Doxyfile.chm
+	-@${DOXY_POST}
 doc/html/potion.chm: doc/html/index.hhp
 	@${ECHO} HHC $@
 	-cd doc/html; PATH=/cygdrive/c/Program\ Files/HTML\ Help\ Workshop:$PATH hhc index.hhp
-
-doc/html/files.html: core/*.c core/*.h doc/Doxyfile doc/footer.sh Makefile
+doc/html/files.html: ${SRC} doc/Doxyfile doc/footer.sh Makefile
 	@${ECHO} DOXYGEN core
-	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
-	doc/footer.sh > doc/footer.inc
-	-mv core/syntax.c core/syntax-c.tmp
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md;
+	@${DOXY_PRE}
+	-rm -rf doc/html/*
 	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
-	-mv core/syntax-c.tmp core/syntax.c
-	@rm README.md
+	-@${DOXY_POST}
 
 # perl11.org admins only. requires: doxygen redcloth global
 website:
