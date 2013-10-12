@@ -37,9 +37,9 @@
 #include <sys/types.h>
 
 // mingw32 only
-#if !defined(__MINGW_SCANF_FORMAT)
-#include "fmacros.h"
-#endif
+//#if !defined(__MINGW_SCANF_FORMAT)
+//#include "fmacros.h"
+//#endif
 
 #define fseeko fseeko64
 #define ftello ftello64
@@ -84,9 +84,9 @@ RtlGenRandomFunc RtlGenRandom;
 #define rand() replace_random()
 int replace_random();
 
-#if !defined(ssize_t)
-typedef int ssize_t;
-#endif
+//#if !defined(ssize_t)
+//typedef int ssize_t;
+//#endif
 
 #if !defined(mode_t)
 #define mode_t long
