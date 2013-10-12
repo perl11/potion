@@ -454,22 +454,34 @@ MANIFEST:
 doc: ${DOCHTML} doc/html/files.html
 docall: doc GTAGS
 
-doxygen: doc/html/files.html
+doxygen: ${DOCHTML} doc/html/files.html
 	@${ECHO} DOXYGEN -f core lib
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	@doc/footer.sh > doc/footer.inc
-	mv core/syntax.c core/syntax-c.tmp
+	-mv core/syntax.c core/syntax-c.tmp
 	@doxygen doc/Doxyfile
-	mv core/syntax-c.tmp core/syntax.c
+	-mv core/syntax-c.tmp core/syntax.c
 	@rm README.md
+
+doc/html/index.hhp: doc/html/files.html
+	@${ECHO} DOXYGEN doc/html/index.hhp
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
+	@doc/footer.sh > doc/footer.inc
+	-mv core/syntax.c core/syntax-c.tmp
+	PATH=/cygdrive/c/Program\ Files/Graphvix2.34/bin doxygen doc/Doxyfile.chm
+	-mv core/syntax-c.tmp core/syntax.c
+
+doc/html/potion.chm: doc/html/index.hhp
+	@${ECHO} HHC $@
+	-cd doc/html; PATH=/cygdrive/c/Program\ Files/HTML\ Help\ Workshop:$PATH hhc index.hhp
 
 doc/html/files.html: core/*.c core/*.h doc/Doxyfile doc/footer.sh Makefile
 	@${ECHO} DOXYGEN core
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	doc/footer.sh > doc/footer.inc
-	mv core/syntax.c core/syntax-c.tmp
+	-mv core/syntax.c core/syntax-c.tmp
 	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
-	mv core/syntax-c.tmp core/syntax.c
+	-mv core/syntax-c.tmp core/syntax.c
 	@rm README.md
 
 # perl11.org admins only. requires: doxygen redcloth global
