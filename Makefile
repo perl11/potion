@@ -86,7 +86,7 @@ ECHO ?= /bin/echo
 MV   = /bin/mv
 SED  = sed
 EXPR = expr
-GREG = syn/greg${EXE}
+GREG = bin/greg${EXE}
 AR     ?= ar
 RANLIB ?= ranlib
 ifeq (${CROSS},1)
