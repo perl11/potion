@@ -13,7 +13,6 @@ RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib
 LIBS   = -lm
 LDFLAGS ?=
 LDDLLFLAGS = -shared -fpic
-AR    ?= ar
 DEBUG ?= 0
 WIN32  = 0
 CLANG  = 0
@@ -25,7 +24,8 @@ RUNPRE = ./
 
 CAT  = cat
 ECHO = echo
-RANLIB = ranlib
+RANLIB ?= ranlib
+AR    ?= ar
 SED  = sed
 EXPR = expr
 
@@ -238,7 +238,10 @@ ifneq ($(WIN32),1)
 endif
 endif
 endif
-
+ifeq (1,$(CROSS))
+	RANLIB = $(subst -gcc,-ranlib,${CC})
+	AR = $(subst -gcc,-ar,${CC})
+endif
 
 # let an existing config.inc overwrite everything
 include config.inc
@@ -264,6 +267,8 @@ config.inc.echo:
 	@${ECHO} "LDFLAGS = ${LDFLAGS}"
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
 	@${ECHO} "STRIP   = ${STRIP}"
+	@${ECHO} "AR      = ${AR}"
+	@${ECHO} "RANLIB  = ${RANLIB}"
 	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "CROSS   = ${CROSS}"
 	@${ECHO} "APPLE   = ${APPLE}"

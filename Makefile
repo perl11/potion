@@ -63,6 +63,7 @@ MV   = /bin/mv
 SED  = sed
 EXPR = expr
 GREG = bin/greg${EXE}
+AR     ?= ar
 RANLIB ?= ranlib
 ifeq (${CROSS},1)
   GREGCROSS = bin/greg
