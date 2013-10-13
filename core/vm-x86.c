@@ -683,6 +683,7 @@ void potion_x86_notjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 }
 
 void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  int tag;
   PN_OP op = PN_OP_AT(f->asmb, pos);
   DBG_t("; named %d %d\n", op.a, op.b);
   X86_ARGO(start - 3, 0); 				//P
@@ -691,6 +692,7 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   X86_PRE(); ASM(0xB8); ASMN(potion_sig_find); 		// mov &potion_sig_find %rax
   ASM(0xFF); ASM(0xD0);					// callq %eax
   ASM(0x85); ASM(0xC0);					// test %eax %eax
+  TAG_PREP(tag);
   ASM(0x78);						// js +12
 #if PN_SIZE_T != 8
   ASM(9 + (op.a+2>15?3:0) + op.b>15?3:0);
@@ -703,11 +705,12 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   ASM(0x89); ASM(0x54); ASM_MOV_EBP(0x85, op.a + 2)	// mov %edx -A(%ebp,%eax,4)
 #else
   if (op.a + 2 > 15) {
-    DBG_v("named: mov %%rdx -A=%d(%%rbp,%%rax,8)\n", op.a + 2); //!! +2 only
+    DBG_v("named: mov %%rdx -A=%d(%%rbp,%%rax,8)\n", op.a + 2); //!! +2 only XXX
     X86_PRE(); ASM(0x89); ASM(0x94); ASM(0xC5); ASM(RBP(op.a + 2)); ASM(0xff); ASM(0xff);
   } else {
     X86_PRE(); ASM(0x89); ASM(0x54); ASM(0xC5); ASM(RBP(op.a + 2)); // mov %rdx -A(%rbp,%rax,8)
   }
+  TAG_LABEL(tag);
 #endif
 }
 
@@ -801,7 +804,7 @@ void potion_x86_callset(Potion *P, struct PNProto * volatile f, PNAsm * volatile
   X86_ARGO(start - 3, 0);
   X86_ARGO(op.b, 1);
   X86_PRE(); ASM(0xB8); ASMN(potion_obj_get_callset); // mov &potion_obj_get %rax
-  ASM(0xFF); ASM(0xD0); // callq %rax
+  ASM(0xFF); ASM(0xD0);    // callq %rax
   X86_MOV_RBP(0x89, op.a); // mov %rax local
 }
 
