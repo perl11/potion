@@ -23,8 +23,8 @@ APPLE  = 0
 CYGWIN = 0
 RUNPRE = ./
 
-CAT  = cat
-ECHO = echo
+CAT  = /bin/cat
+ECHO = /bin/echo
 RANLIB ?= ranlib
 AR    ?= ar
 SED  = sed
