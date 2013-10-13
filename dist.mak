@@ -73,7 +73,7 @@ pkg/${PKGBIN}.zip: core/config.h core/version.h core/syntax.c bin/potion${EXE} \
 	cp example/*                   dist/example/
 	cp -r test/*                   dist/test/
 	-mkdir -p pkg
-	(cd dist && zip ../pkg/${PKGBIN}.zip -rm * && cd ..)
+	(cd dist && zip -q ../pkg/${PKGBIN}.zip -rm * && cd ..)
 	rm -rf dist
 
 pkg/${PKGBIN}-devel.tar.gz: ${GREG} bin/potion-s${EXE} lib/libpotion.a
