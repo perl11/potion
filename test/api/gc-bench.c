@@ -31,7 +31,7 @@ static PNType tree_type;
 //#define ALLOC_NODE() PN_ALLOC_N(tree_type, struct PNObject, 2 * sizeof(PN))
 #define ALLOC_NODE() (PN)potion_gc_alloc(P, tree_type, sizeof(struct PNObject)+ (2*sizeof(PN)))
 
-unsigned
+unsigned long
 current_time(void)
 {
   struct timeval t;
@@ -126,8 +126,8 @@ int main(void) {
       gc_populate_tree(temp, i, PN_left, PN_right);
     }
     finish = current_time();
-    printf("\tTop down construction took %d msec\n",
-      finish - start);
+    printf("\tTop down construction took %lu msec\n",
+	   finish - start);
 
     start = current_time();
     for (j = 0; j < iter; ++j) {
@@ -135,8 +135,8 @@ int main(void) {
       temp = 0;
     }
     finish = current_time();
-    printf("\tBottom up construction took %d msec\n",
-      finish - start);
+    printf("\tBottom up construction took %lu msec\n",
+	   finish - start);
   }
   
   if (long_lived == 0 || PN_TUPLE_AT(ary, 1000) != PN_NUM(1.0 / 1000))

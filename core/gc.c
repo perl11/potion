@@ -542,7 +542,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((Potion *)ptr)->callset);
       GC_MAJOR_UPDATE(((Potion *)ptr)->input);
       GC_MAJOR_UPDATE(((Potion *)ptr)->source);
-      GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
+      //GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
       GC_MAJOR_UPDATE(((Potion *)ptr)->line);
       GC_MAJOR_UPDATE(((Potion *)ptr)->unclosed);
     break;
