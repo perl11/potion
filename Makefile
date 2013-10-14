@@ -318,18 +318,22 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 
 bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${ECHO} LINK $@
+	@${LIBPNA_AWAY}
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
+	@${LIBPNA_BACK}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a lib/potion/aio${LOADEXT} lib/readline/readline.o
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_POTION} -o $@ lib/readline/*.o lib/potion/aio${LOADEXT} \
           lib/libpotion.a ${LIBPTH} ${EXTLIBS} ${LIBS}
+	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a lib/p2/aio${LOADEXT} lib/readline/readline.o
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ lib/readline/*.o lib/p2/aio${LOADEXT} \
           lib/libp2.a ${LIBPTH} ${EXTLIBS} ${LIBS}
+	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@

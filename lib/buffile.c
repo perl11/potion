@@ -290,6 +290,7 @@ PN potion_buffile_string(Potion *P, PN cl, pn_ffile self) {
   return str;
 }
 
+DLLEXPORT
 void Potion_Init_buffile(Potion *P) {
   PN ffile_vt = potion_type_new2(P, PN_TUSER, PN_VTABLE(PN_TFILE), PN_STR("BufFile"));
   potion_type_constructor_is(ffile_vt, PN_FUNC(potion_buffile_fopen, "path=S,mode=S"));

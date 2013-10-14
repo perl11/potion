@@ -16,16 +16,12 @@ http://starynkevitch.net/Basile/qishintro.html
 #include "table.h"
 
 #if defined(DEBUG)
-#ifdef WIN32
-# include <time.h>
-#else
-# include <sys/time.h>
-#endif
-#ifdef WIN32
-# include <time.h>
-#else
-# include <sys/time.h>
-#endif
+//mingw32 has struct timeval in sys/time.h
+//#ifdef WIN32
+//# include <time.h>
+//#else
+#include <sys/time.h>
+//#endif
 static double mytime() {
     struct timeval Tp;
     struct timezone Tz;

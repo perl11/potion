@@ -1754,6 +1754,7 @@ static PN aio_fs_fdatasync(Potion *P, PN cl, PN self, PN fd, PN cb, PN loop) {
 #undef DEF_AIO_NEW_LOOP
 #undef AIO_CB_SET
 
+DLLEXPORT
 void Potion_Init_aio(Potion *P) {
   PN aio_vt = potion_class(P, 0, 0, 0);
   aio_type = potion_class_type(P, aio_vt);
