@@ -655,16 +655,16 @@ fulltest: testable test/spectest.data
 # for LTO gold -O4
 bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
-	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBPTH} ${LIBS}; then true; else \
+	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${LIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBPTH} ${LIBS}; fi
 
 bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${RPATH} ${LIBPTH} ${LIBS}
 
 bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${RPATH} ${LIBPTH} ${LIBS}
 
 bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK $@
