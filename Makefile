@@ -407,16 +407,16 @@ testable : bin/potion${EXE} libs test/api/potion-test${EXE} test/api/gc-test${EX
 # for LTO gold -O4
 test/api/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
-	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${LIBPTH} ${LIBS}; then true; else \
+	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${LIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBPTH} ${LIBS}; fi
 
 test/api/gc-test${EXE}: ${OBJ_GC_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_TEST} -o $@ lib/libpotion.a ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_TEST} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${LIBS}
 
 test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libpotion.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libpotion.a ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${LIBS}
 
 examples: pn
 	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
