@@ -321,7 +321,7 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC} lib/buffile.c lib/libpotion${DLL}
 	@${ECHO} LD $@
 	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
-	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,buffile,${LDDLLFLAGS}) \
 	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
 	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 

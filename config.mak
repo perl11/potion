@@ -17,6 +17,8 @@ DEBUG ?= 0
 WIN32  = 0
 CLANG  = 0
 JIT    = 0
+ICC    = 0
+GCC    = 0
 EXE    =
 APPLE  = 0
 CYGWIN = 0
@@ -132,6 +134,7 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
   endif
 else
 ifneq ($(shell ./tools/config.sh "${CC}" gcc),0)
+	GCC = 1
 	WARNINGS += -Wno-switch -Wno-unused-label
 	DEBUGFLAGS += --param ssp-buffer-size=1
   ifeq (${DEBUG},0)
@@ -162,8 +165,10 @@ endif
 
 CROSS = $(shell tools/config.sh "${CC}" cross)
 # cygwin is not WIN32. detect mingw target on cross
+# maybe parse versions from core/potion.h
 ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 	WIN32 = 1
+	LDFLAGS += -Wl,--major-image-version,0,--minor-image-version,1
 	LDDLLFLAGS = -shared
 	EXE  = .exe
 	DLL  = .dll
@@ -199,6 +204,7 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 else
 ifeq ($(shell tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
+	LDFLAGS += -Wl,--major-image-version,0,--minor-image-version,1
 	LDDLLFLAGS = -shared
 	LOADEXT = .dll
 	EXE  = .exe
@@ -209,7 +215,7 @@ ifeq ($(shell tools/config.sh "${CC}" apple),1)
 	DLL      = .dylib
 	LOADEXT  = .bundle
 	LDDLLFLAGS = -dynamiclib -undefined dynamic_lookup -fpic -Wl,-flat_namespace
-	RDLLFLAGS  = -install_name "@executable_path/../lib/libpotion${DLL}"
+	LDDLLFLAGS += -install_name "@executable_path/../lib/libpotion${DLL}"
 	RPATH =
 	RPATH_INSTALL =
 else
@@ -314,7 +320,7 @@ core/config.h: config.inc core/version.h tools/config.sh config.mak
 	@${CAT} core/version.h > core/config.h
 	@${MAKE} -s -f config.mak config.h.echo >> core/config.h
 
-#TODO: fix when git is not available
+# TODO: fix when git is not available
 core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${ECHO} MAKE $@
 	@${ECHO} "/* created by ${MAKE} -f config.mak */" > core/version.h
