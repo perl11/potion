@@ -56,6 +56,8 @@ ifneq (${FPIC},)
 endif
 DOC = doc/start.textile doc/glossary.textile
 DOCHTML = ${DOC:.textile=.html}
+LIBPNA_AWAY = if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
+LIBPNA_BACK = if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
 
 CAT  = /bin/cat
 ECHO ?= /bin/echo
@@ -239,16 +241,20 @@ ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
+	@${LIBPNA_AWAY}
 	@${CC} ${CFLAGS} ${LDFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion  ${LIBS}
+	@${LIBPNA_BACK}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/potion/aio${LOADEXT} lib/readline/readline.o
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.o -o $@ lib/potion/aio${LOADEXT} lib/readline/*.o \
 	  lib/libpotion.a ${LIBPTH} ${EXTLIBS} ${LIBS}
+	@${LIBPNA_BACK}
 
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
+	@${LIBPNA_AWAY}
 	@${MAKE} -s -C lib/readline static
 
 lib/libpotion.a: ${OBJ} core/config.h core/potion.h
@@ -312,18 +318,18 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h lib/libpotion${DLL}
 	@${ECHO} MAKE $@
-	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
+	@${LIBPNA_AWAY}
 	@${MAKE} -s -C lib/readline
-	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
+	@${LIBPNA_BACK}
 	@cp lib/readline/readline${LOADEXT} $@
 
 lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC} lib/buffile.c lib/libpotion${DLL}
 	@${ECHO} LD $@
-	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
+	@${LIBPNA_AWAY}
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,buffile,${LDDLLFLAGS}) \
 	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
-	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
+	@${LIBPNA_BACK}
 
 ifeq ($(HAVE_LIBUV),1)
 AIO_DEPS =
@@ -338,10 +344,10 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	@${ECHO} CC lib/aio.${OPIC}
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC} lib/aio.c > /dev/null
 	@${ECHO} LD $@
-	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
+	@${LIBPNA_AWAY}
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
 	  lib/aio.${OPIC} ${LIBPTH} -lpotion -luv ${LIBS} ${AIO_DEPLIBS} > /dev/null
-	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
+	@${LIBPNA_BACK}
 
 bench: test/api/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \

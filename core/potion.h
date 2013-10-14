@@ -56,6 +56,9 @@ and optionally args, statically typed via signature strings.
 #include "config.h"
 #if POTION_WIN32
 # include <sys/stat.h>
+# define DLLEXPORT __declspec(dllexport)
+#else
+# define DLLEXPORT
 #endif
 
 #define _XSTR(s) _STR(s)
