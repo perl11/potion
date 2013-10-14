@@ -53,7 +53,7 @@ void *potion_mmap(size_t length, const char exec)
   void *mem = VirtualAlloc(NULL, length, MEM_COMMIT,
     exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
   if (mem == NULL)
-    fprintf(stderr, "** potion_mmap failed");
+    fprintf(stderr, "** potion_mmap %ld failed", length);
   return mem;
 }
 

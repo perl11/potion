@@ -190,6 +190,7 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 	LOADEXT = .dll
 	INCS += -I${PWD}/tools/dlfcn-win32/include
 	LIBPTH += -L${PWD}/tools/dlfcn-win32/lib
+	LIBS += -Llib -luv
     ifneq (,$(findstring i386-mingw32-gcc,${CC}))
 	LIBS += -lws2_32 -lpsapi
     else
@@ -221,6 +222,7 @@ ifeq ($(shell tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
 	LDFLAGS += -Wl,--major-image-version,0,--minor-image-version,1
 	LDDLLFLAGS = -shared
+	LIBS += -Llib -luv
 	LOADEXT = .dll
 	EXE  = .exe
 	DLL  = .dll
