@@ -7,6 +7,7 @@ ECHO=/bin/echo
 SED=sed
 EXPR=expr
 
+make -s $cmd
 count=0; failed=0; pass=0
 EXT=pn;
 cmdi="$cmd -I"; cmdx="$cmdi -X"; 
