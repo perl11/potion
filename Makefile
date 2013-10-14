@@ -346,7 +346,7 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	@${ECHO} LD $@
 	@${LIBPNA_AWAY}
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
-	  lib/aio.${OPIC} ${LIBPTH} -lpotion -luv ${LIBS} ${AIO_DEPLIBS} > /dev/null
+	  lib/aio.${OPIC} ${LIBPTH} -lpotion ${EXTLIBS} ${LIBS} ${AIO_DEPLIBS} > /dev/null
 	@${LIBPNA_BACK}
 
 bench: test/api/gc-bench${EXE} bin/potion${EXE}
