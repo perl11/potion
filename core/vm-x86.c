@@ -710,12 +710,7 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   ASM(0xFF); ASM(0xD0);					// callq %eax
   ASM(0x85); ASM(0xC0);					// test %eax %eax
   TAG_PREP(tag);
-  ASM(0x78);						// js +12
-#if PN_SIZE_T != 8
-  ASM(9 + (op.a+2>15?3:0) + op.b>15?3:0);
-#else
-  ASM(12 + (op.a+2>15?5:0) + op.b>15?0:0);
-#endif
+  ASM(0x78); ASM(0);					// js +12
   X86_PRE(); ASM(0xF7); ASM(0xD8);			// neg %rax
   X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55, op.b)		// mov -B(%rbp) %rdx
 #if PN_SIZE_T != 8
@@ -727,8 +722,8 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   } else {
     X86_PRE(); ASM(0x89); ASM(0x54); ASM(0xC5); ASM(RBP(op.a + 2)); // mov %rdx -A(%rbp,%rax,8)
   }
-  TAG_LABEL(tag);
 #endif
+  TAG_LABEL(tag);
 }
 
 // TODO: check for bytecode nodes and jit them as well?
