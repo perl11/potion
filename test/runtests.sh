@@ -8,6 +8,7 @@ SED=sed
 EXPR=expr
 test -f $cmd || make -s static
 
+make -s $cmd
 count=0; failed=0; pass=0
 EXT=pn
 cmdi="$cmd -I"; cmdx="$cmdi -X"
