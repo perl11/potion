@@ -450,7 +450,7 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC} lib/buffile.c lib/libpotion${DLL}
 	@${ECHO} LD $@
 	@${LIBPNA_AWAY}
-	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS}  ${RPATH} \
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,buffile,${LDDLLFLAGS}) ${RPATH} \
 	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
 	@${LIBPNA_BACK}
 
