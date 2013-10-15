@@ -288,7 +288,7 @@ config.inc.echo:
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
-	@${ECHO} "#TODO get rid of git here, read from POTION_REV in core/version.h"
+#TODO get rid of git here, read from POTION_REV in core/version.h
 	@${ECHO} "REVISION  = " $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
 
 config.h.echo:
