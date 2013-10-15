@@ -3,8 +3,8 @@
 # http://shootout.alioth.debian.org/
 #
 # contributed by Reini Urban
-#debug = true
-debug = false
+debug = true
+#debug = false
 
 pi            = 3.141592653589793
 solar_mass    = 4 * pi * pi
@@ -53,7 +53,7 @@ advance = (dt):
     bimass = bi/mass
     j = i+1
     while (j < nbodies):
-      #if (debug): ("i", i, "j", j) say.
+      if (debug): ("i", i, "j", j) say.
       bj = bodies(j)
       dx = bix - bj/x
       dy = biy - bj/y
@@ -61,7 +61,7 @@ advance = (dt):
       dist = dx*dx + dy*dy + dz*dz
       dist = dist sqrt
       mag = dt / (dist * dist * dist)
-      #if (debug): ("mag", mag) say.
+      if (debug): ("mag", mag) say.
       bim = bimass * mag
       bjm = bj/mass * mag
       #("bim", bim, "bjm", bjm) say
@@ -115,8 +115,8 @@ energy = ():
     i++.
   e.
 
-n = argv at(1) number
-if (!n): n=50000.
+n = argv(1) number
+if (n<1): n=50000.
 debug1 = false
 if (debug):
   ("n", n) say
@@ -124,11 +124,9 @@ if (debug):
   .
 
 energy() say
-k=0
-while (k<n):
+times (n):
   advance(0.01)
-  #if (debug1): ("advance", k, energy()) say.
-  #debug = false
-  k++
+  if (debug1): ("advance", energy()) say.
+  debug = false
 .
 energy() say

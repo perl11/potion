@@ -366,7 +366,6 @@ int main(int argc, char *argv[]) {
       potion_cmd_exec(P, buf, NULL, compile, PN_NIL);
     } else {
       potion_cmd_exec(P, buf, fn, compile, addmodules);
-      //potion_cmd_compile(P, fn, compile);
     }
   } else {
     if (!exec || P->flags & DEBUG_INSPECT) potion_fatal("no filename given");
