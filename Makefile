@@ -327,7 +327,7 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC} lib/buffile.c lib/libpotion${DLL}
 	@${ECHO} LD $@
 	@${LIBPNA_AWAY}
-	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,buffile,${LDDLLFLAGS}) \
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,buffile,${LDDLLFLAGS}) ${RPATH} \
 	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
 	@${LIBPNA_BACK}
 
@@ -336,7 +336,10 @@ AIO_DEPS =
 AIO_DEPLIBS =
 else
 AIO_DEPS = ${LIBUV}
+#AIO_DEPLIBS =
+#ifeq ($(WIN32),1)
 AIO_DEPLIBS := `perl -ane'/dependency_libs=(.*)/ && print substr($$1,2,-1)' 3rd/libuv/libuv.la`
+#endif
 endif
 
 lib/potion/aio${LOADEXT}: core/config.h core/potion.h \

@@ -571,21 +571,29 @@ static PN aio_sem_new(Potion *P, PN cl, PN self, PN value) {
   return (PN)data;
 }
 /**\class Aio_fs_event \memberof Aio
+   create and init a \c Aio_fs_event */
+static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN loop) {
+  DEF_AIO_NEW_LOOP_INIT(fs_event);
+}
+/**\class Aio_fs_event \memberof Aio
    create and init a \c Aio_fs_event
-   \param filename PNString
    \param cb PNClosure or FFI function
+   \param filename PNString
    \param flags INT */
-static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN filename, PN cb, PN flags, PN loop) {
-  int r;
-  DEF_AIO_NEW_LOOP(fs_event);
+static PN aio_fs_event_start(Potion *P, PN cl, PN self, PN cb, PN filename, PN flags) {
+  aio_fs_event_t *handle = AIO_DATA(fs_event,self);
+  AIO_CB_SET(fs_event,handle);
   PN_CHECK_STR(filename);
   PN_CHECK_INT(flags);
-  uv_fs_event_cb fs_event_cb = aio_fs_event_cb;
-  if (PN_IS_CLOSURE(cb)) handle->cb = (uv_fs_event_cb)cb;
-  else if (PN_IS_FFIPTR(cb)) fs_event_cb = NULL;
-  r = uv_fs_event_init(l, handle, PN_STR_PTR(filename), fs_event_cb, PN_NUM(flags));
-  if (r) aio_error(P, "Aio_fs_event", r);
-  return (PN)data;
+  int r = uv_fs_event_start(&handle->r, fs_event_cb, PN_STR_PTR(filename), PN_NUM(flags));
+  return r ? aio_error(P, "fs_event start", r) : self;
+}
+///\memberof Aio_prepare
+static PN
+aio_fs_event_stop(Potion *P, PN cl, PN self) {
+  aio_fs_event_t *handle = AIO_DATA(fs_event,self);
+  int r = uv_fs_event_stop(&handle->r);
+  return r ? aio_error(P, "fs_event stop", r) : self;
 }
 static void
 aio_async_cb(uv_async_t* req, int status) {
@@ -1873,7 +1881,7 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_GLOBAL_VT(signal,aio,"|loop=o");
   //DEF_AIO_GLOBAL_VT(poll,aio,"fd=N|loop=o");
   DEF_AIO_GLOBAL_VT(async,aio,"cb=o|loop=o");
-  DEF_AIO_GLOBAL_VT(fs_event,aio,"filename=S,cb=o,flags=N|loop=o");
+  DEF_AIO_GLOBAL_VT(fs_event,aio,"|loop=o"); //"filename=S,cb=o,flags=N");
   DEF_AIO_GLOBAL_VT(mutex,aio,0);
   DEF_AIO_GLOBAL_VT(rwlock,aio,0);
   DEF_AIO_GLOBAL_VT(cond,aio,0);
@@ -1948,6 +1956,8 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_pipe_vt, "write", aio_write2, "req=o,buf=b,bufcnt=N|write_cb=&");
   potion_method(aio_pipe_vt, "pending_instances", aio_pipe_pending_instances, "count=N");
 
+  potion_method(aio_fs_event_vt, "start", aio_fs_event_start, "cb=&,filename=S,flags=N");
+  potion_method(aio_fs_event_vt, "stop", aio_fs_event_stop, 0);
   potion_method(aio_prepare_vt, "start", aio_prepare_start, "cb=&");
   potion_method(aio_prepare_vt, "stop", aio_prepare_stop, 0);
   potion_method(aio_check_vt, "start", aio_check_start, "cb=&");

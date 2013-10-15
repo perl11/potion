@@ -4,7 +4,7 @@ if [ -z "$1" ]; then
     case `uname -s` in
         *Linux) # native to x86_64, cross to i686 via -m32 and win32 via i686-w64-mingw32-gcc
             CC="gcc-4.8" #clang-3.3"
-            CROSS="i686-w64-mingw32-gcc" ;; # x86_64-w64-mingw32-gcc win64 not yet
+            CROSS="i686-w64-mingw32-gcc" ;; # x86_64-w64-mingw32-gcc win64 not yet, w64 not used for dist
         Darwin)
             CC="clang-mp-3.3" #gcc-mp-4.8"
             CROSS="i386-mingw32-gcc" ;;
