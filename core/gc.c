@@ -123,6 +123,8 @@ void pngc_page_delete(void *mem, int sz) {
 static inline int NEW_BIRTH_REGION(struct PNMemory *M, void **wb, int sz) {
   int keeps = wb - (void **)M->birth_storeptr;
   void *newad = pngc_page_new(&sz, 0);
+  if (newad == NULL)
+    potion_fatal("Out of memory");
   wb = (void *)(((void **)(newad + sz)) - (keeps + 4));
   PN_MEMCPY_N(wb + 1, M->birth_storeptr + 1, void *, keeps);
   DEL_BIRTH_REGION();
@@ -198,8 +200,10 @@ static int potion_gc_major(Potion *P, int siz) {
 
   if (siz < 0)
     siz = 0;
-  else if (siz >= POTION_MAX_BIRTH_SIZE)
+  else if (siz >= POTION_MAX_BIRTH_SIZE) {
+    fprintf(stderr, "** Requesting too much memory: 0x%x > 0x%x\n", siz, POTION_MAX_BIRTH_SIZE);
     return POTION_NO_MEM;
+  }
 
   prevoldlo = (void *)M->old_lo;
   prevoldhi = (void *)M->old_hi;
@@ -214,6 +218,11 @@ static int potion_gc_major(Potion *P, int siz) {
   newoldsiz = (((char *)prevoldcur - (char *)prevoldlo) + siz + birthest +
     POTION_GC_THRESHOLD + 16 * POTION_PAGESIZE) + ((char *)M->birth_cur - (char *)M->birth_lo);
   newold = pngc_page_new(&newoldsiz, 0);
+  if (newold == NULL) {
+    fprintf(stderr, "** Out of memory\n");
+    return POTION_NO_MEM;
+  }
+
   M->old_cur = scanptr = newold + (sizeof(PN) * 2);
   DBG_G(P,"(new old: %p -> %p = %d)\n", newold, (char *)newold + newoldsiz, newoldsiz);
 
@@ -268,6 +277,10 @@ void potion_garbagecollect(Potion *P, int sz, int full) {
     if (gensz < sz * 4)
       gensz = min(POTION_MAX_BIRTH_SIZE, PN_ALIGN(sz * 4, POTION_PAGESIZE));
     void *page = pngc_page_new(&gensz, 0);
+    if (page == NULL) {
+      fprintf(stderr, "** Out of memory\n");
+      return;
+    }
     SET_GEN(old, page, gensz);
     full = 0;
   } else if ((char *) M->old_cur + sz + potion_birth_suggest(sz, M->old_lo, M->old_cur) +
@@ -624,6 +637,8 @@ Potion *potion_gc_boot(void *sp) {
   Potion *P;
   int bootsz = POTION_MIN_BIRTH_SIZE;
   void *page1 = pngc_page_new(&bootsz, 0);
+  if (page1 == NULL)
+    potion_fatal("Not enough memory");
   struct PNMemory *M = (struct PNMemory *)page1;
   PN_MEMZERO(M, struct PNMemory);
 #ifdef DEBUG

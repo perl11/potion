@@ -173,6 +173,7 @@ else
       DOUBLE="8"
       LLONG="8"
       LILEND="1"
+      # in fact the AllocationGranularity=65536, and PageSize=4096
       if [ "$LONG" = "8" ]; then
         PAGESIZE="65536"
         #ARGDIR="1"

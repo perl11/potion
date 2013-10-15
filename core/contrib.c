@@ -47,13 +47,30 @@ done:
 #ifdef __MINGW32__
 #include <windows.h>
 #include <sys/unistd.h>
+#define PN_ALIGN(o, x)   (((((o) - 1) / (x)) + 1) * (x))
 
 void *potion_mmap(size_t length, const char exec)
 { 
   void *mem = VirtualAlloc(NULL, length, MEM_COMMIT,
     exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
-  if (mem == NULL)
-    fprintf(stderr, "** potion_mmap %ld failed", length);
+  if (mem == NULL) {
+    /* One last attempt at the highest page.
+       On Windows VirtualAlloc(NULL) sometimes fails due to Illegal System DLL Relocation at a reserved address. */
+    SYSTEM_INFO SystemInfo;
+    size_t high;
+    int psz;
+    GetSystemInfo(&SystemInfo);
+    psz = SystemInfo.dwAllocationGranularity;
+    high = (size_t)SystemInfo.lpMaximumApplicationAddress - PN_ALIGN(length, psz) + 1;
+#ifdef DEBUG
+    fprintf(stderr, "** potion_mmap(%ld%s) failed, try last page at 0x%x\n", length, exec ? ",exec" : "", high);
+#endif
+    mem = VirtualAlloc((void*)high, length, MEM_COMMIT,
+                       exec ? PAGE_EXECUTE_READWRITE : PAGE_READWRITE);
+    if (mem == NULL) {
+      fprintf(stderr, "** potion_mmap(%ld%s) failed\n", length, exec ? ",exec" : "");
+    }
+  }
   return mem;
 }
 
@@ -70,7 +87,10 @@ void *potion_mmap(size_t length, const char exec)
   int prot = exec ? PROT_EXEC : 0;
   void *mem = mmap(NULL, length, prot|PROT_READ|PROT_WRITE,
     (MAP_PRIVATE|MAP_ANON), -1, 0);
-  if (mem == MAP_FAILED) return NULL;
+  if (mem == MAP_FAILED) {
+    fprintf(stderr, "** potion_mmap(%ld%s) failed\n", length, exec ? ",exec" : "");
+    return NULL;
+  }
   return mem;
 }
 

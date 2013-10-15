@@ -119,6 +119,8 @@ int main(int argc, char **argv) {
     struct PNMemory *M = P->mem;
     int gensz = POTION_BIRTH_SIZE * 2;
     void *page = pngc_page_new(&gensz, 0);
+    if (page == NULL)
+      potion_fatal("Not enough memory");
     SET_GEN(old, page, gensz);
   }
   CuString *out = CuStringNew();
