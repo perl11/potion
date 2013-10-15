@@ -508,7 +508,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
 PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   vPN(Proto) f = (struct PNProto *)proto;
 
-  // these variables persist as we jump around
+  // these variables persist as we jump around. TODO: static PN (auto-zeroed)
   PN stack[STACK_MAX];
   PN val = PN_NIL;
 
@@ -660,13 +660,13 @@ reentry:
 #endif
       CASE(CMP, reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a])))
       CASE(NEQ,
-        DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+           DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
 	   reg[op.a] = PN_BOOL(reg[op.a] != reg[op.b]))
       CASE(EQ,
-        DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+           DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
 	   reg[op.a] = PN_BOOL(reg[op.a] == reg[op.b]))
       CASE(LT,
-        DBG_t("\t; %s<%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+           DBG_t("\t; %s<%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
 	   reg[op.a] = PN_BOOL((long)(reg[op.a]) < (long)(reg[op.b])))
       CASE(LTE,
 	   DBG_t("\t; %s<=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));

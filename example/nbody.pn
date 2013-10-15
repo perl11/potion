@@ -55,17 +55,17 @@ advance = (dt):
       dx = bix - bj/x
       dy = biy - bj/y
       dz = biz - bj/z
-      dist = dx*dx + dy*dy + dz*dz
-      dist = dist sqrt
-      mag = dt / (dist * dist * dist)
-      bim = bimass * mag
-      bjm = bj/mass * mag
-      bivx -= dx * bjm
-      bivy -= dy * bjm
-      bivz -= dz * bjm
-      bj/vx += dx * bim
-      bj/vy += dy * bim
-      bj/vz += dz * bim
+      dist2 = dx*dx + dy*dy + dz*dz
+      mag = dist2 sqrt
+      mag = dt / (mag * dist2)
+      bm = bj/mass * mag
+      bivx -= dx * bm
+      bivy -= dy * bm
+      bivz -= dz * bm
+      bm = bimass * mag
+      bj/vx += dx * bm
+      bj/vy += dy * bm
+      bj/vz += dz * bm
       j++.
     bi/x = bix + dt * bivx
     bi/y = biy + dt * bivy
@@ -75,11 +75,21 @@ advance = (dt):
     bi/vz = bivz
     ..
 
-offsetmomentum = (b, px, py, pz):
+offsetmomentum = ():
+  px = 0.0
+  py = 0.0
+  pz = 0.0
+  nbodies times(i):
+    bi = bodies(i)
+    bimass = bi/mass
+    px += (bi/vx * bimass)
+    py += (bi/vy * bimass)
+    pz += (bi/vz * bimass)
+    .
   b/vx = -px / solar_mass
   b/vy = -py / solar_mass
   b/vz = -pz / solar_mass
-  b.
+  .
 
 energy = ():
   e = 0.0
@@ -109,8 +119,9 @@ energy = ():
   e.
 
 n = argv(1) number
-if (n<1): n=50000.
+if (n<1): n=1000.
 
+offsetmomentum()
 energy() say
 n times: advance(0.01).
 energy() say
