@@ -88,7 +88,7 @@ void *potion_mmap(size_t length, const char exec)
   void *mem = mmap(NULL, length, prot|PROT_READ|PROT_WRITE,
     (MAP_PRIVATE|MAP_ANON), -1, 0);
   if (mem == MAP_FAILED) {
-    fprintf(stderr, "** potion_mmap(%ld%s) failed\n", length, exec ? ",exec" : "");
+    fprintf(stderr, "** potion_mmap(%ld%s) failed\n", (long)length, exec ? ",exec" : "");
     return NULL;
   }
   return mem;
