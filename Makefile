@@ -84,7 +84,7 @@ all: default libs static docall test
 pn: bin/potion${EXE} ${PNLIB}
 bins: bin/potion${EXE}
 libs: ${PNLIB} ${DYNLIBS}
-static: bin/potion-s${EXE}
+static: lib/libpotion.a bin/potion-s${EXE}
 rebuild: clean default test
 
 usage:
