@@ -1,7 +1,7 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .o .opic .textile .html
-.PHONY: all pn static usage config clean doc rebuild test bench tarball dist release install grammar \
-        doxygen website testable
+.PHONY: all default bins libs pn static usage config clean doc rebuild check test bench tarball dist \
+        examples release install grammar doxygen website testable
 .NOTPARALLEL: test
 
 SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/file.c core/gc.c core/internal.c core/lick.c core/load.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
@@ -250,12 +250,12 @@ bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/potion/aio${LOADEXT} lib/r
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.o -o $@ lib/potion/aio${LOADEXT} lib/readline/*.o \
 	  lib/libpotion.a ${LIBPTH} ${EXTLIBS} ${LIBS}
-	@${LIBPNA_BACK}
 
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
 	@${LIBPNA_AWAY}
 	@${MAKE} -s -C lib/readline static
+	@${LIBPNA_BACK}
 
 lib/libpotion.a: ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
@@ -333,6 +333,7 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
 
 ifeq ($(HAVE_LIBUV),1)
 AIO_DEPS =
+#TODO: libtool?
 AIO_DEPLIBS =
 else
 AIO_DEPS = ${LIBUV}
