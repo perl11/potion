@@ -168,28 +168,27 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
     // need to address -(x)%ebp: max regn=29/14
     // assert(((regn + 1) * sizeof(PN)) < 0x7f);
     // IA-32 cdecl ABI, non-microsoft only. TODO: win32 stdcall for the w32api ffi
-    //assert(regn < 30);
     if (argn == 0) {
       // OPT: the first argument is always (Potion *)
       if (!out) {
-	ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));
-	ASM(0x89); ASM(0x14); ASM(0x24);
+	ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));		//mov argn(%ebp), %edx
+	ASM(0x89); ASM(0x14); ASM(0x24);			//mov %edx, (%esp)
       }
     }
     else {
       if (out == 2) {
 	ASM(0xc7); ASM(0x44); ASM(0x24); ASM(argn * sizeof(PN)); ASMI(regn); //mov $regn, argn(%esp)
       } else if (out) {
-	ASM(0x8b); ASM_MOV_EBP(0x55,regn) //mov -0x8(%ebp), %edx
+	ASM(0x8b); ASM_MOV_EBP(0x55,regn) 			//mov -0x8(%ebp), %edx
       }
       if (!out) argn += 2;
       if (out == 1) {
-	ASM(0x89); ASM(0x54); ASM(0x24); ASM(argn * sizeof(PN)); //mov %edx, argn(%esp)
+	ASM(0x89); ASM(0x54); ASM(0x24); ASM(argn * sizeof(PN));//mov %edx, argn(%esp)
       } else if (!out) {
-	ASM(0x8b); ASM(0x55); ASM(argn * sizeof(PN));
+	ASM(0x8b); ASM(0x55); ASM(argn * sizeof(PN));		//mov argn(%ebp), %edx
       }
       if (!out) {
-	ASM(0x89); ASM_MOV_EBP(0x55,regn)
+	ASM(0x89); ASM_MOV_EBP(0x55,regn)			//mov %edx, regn(%ebp)
       }
     }
 #else
@@ -334,52 +333,55 @@ void potion_x86_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   X86_PRE(); ASM(0x05); ASMI(sizeof(struct PNTuple)
 			     + (op.b * sizeof(PN)));	// add N,%rax
   X86_PRE(); ASM(0x8B); ASM(0); 			// mov (%rax) %rax
-  X86_MOV_RBP(0x89, op.a);
+  X86_MOV_RBP(0x89, op.a);				// mov %eax,-A(%ebp)
 }
 
 void potion_x86_self(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  // TODO: optimize so that if this is followed by a BIND or MSG, it'll just
-  // use the self register directly.
-  X86_MOV_RBP(0x8B, start - 1);
-  X86_MOV_RBP(0x89, op.a);
+  X86_MOV_RBP(0x8B, start - 1);			// mov %rsp(self), %rax
+  X86_MOV_RBP(0x89, op.a);			// mov %eax,-A(%ebp)
 }
 
+
+// reg[op.a] = PN_IS_REF(locals[op.b]) ? PN_DEREF(locals[op.b]) : locals[op.b];
 void potion_x86_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PN_HAS_UPVALS(up);
-  X86_MOV_RBP(0x8B, regs + op.b); 		// mov %rsp(B) %rax
-  if (up) {
+  X86_MOV_RBP(0x8B, regs + op.b); 		// mov %ebp(B) %eax
+  if (up) { // upvals need to be deref'd
     ASM(0xF6); ASM(0xC0); ASM(0x01); 		// test 0x1 %al
-    ASM(0x75); ASM(X86C(19,20, 1,op.a)); 	// jnz [b]
+    ASM(0x75); ASM(X86C(19,20, 0,0)); 		// jnz a
     ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); 	// test REFMASK %eax
-    ASM(0x74); ASM(X86C(11,12, 1,op.a)); 	// jz [b]
-    ASM(0x81); ASM(0x38); ASMI(PN_TWEAK); 	// cmpq WEAK (%rax)   # 0x250004
-    ASM(0x75); ASM(X86C(3,4, 0,0)); 		// jnz [a]
+    ASM(0x74); ASM(X86C(11,12, 0,0)); 		// jz a
+    ASM(0x81); ASM(0x38); ASMI(PN_TWEAK); 	// cmpq WEAK (%eax)   # 0x250004
+    ASM(0x75); ASM(X86C(3,4, 0,0)); 		// jnz a
     X86_PRE(); ASM(0x8B); ASM(0x40);
-               ASM(sizeof(struct PNObject)); 	// mov N(%rax) %rax
+               ASM(sizeof(struct PNObject)); 	// mov N(%eax) %eax;  #WeakRef->data (Obj+PN)
   }
-  X86_MOV_RBP(0x89, op.a); 		   // [a]: mov %rax %rsp(A)
-}					   // [b]:
+  X86_MOV_RBP(0x89, op.a); 		     // a: mov %eax %esp(A)
+}
 
+// if (PN_IS_REF(locals[op.b])) PN_DEREF(locals[op.b])  = reg[op.a];
+// else locals[op.b] = reg[op.a];
 void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PN_HAS_UPVALS(up);
   X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55, op.a) 	// mov %rsp(A) %rdx
-  if (up) {
+  if (up) { // upvals need to be deref'd
     X86_MOV_RBP(0x8B, regs + op.b); 			// mov %rsp(B) %rax
     ASM(0xF6); ASM(0xC0); ASM(0x01); 			// test 0x1 %al
-    ASM(0x75); ASM(X86C(19,20, 1,regs + op.b)); 	// jnz [b]
+    ASM(0x75); ASM(X86C(19,20, 0,0)); 			// jnz a
     ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); 		// test REFMASK %eax
-    ASM(0x74); ASM(X86C(11,12, 1,regs + op.b)); 	// jz [b]
+    ASM(0x74); ASM(X86C(11,12, 0,0)); 			// jz a
     ASM(0x81); ASM(0x38); ASMI(PN_TWEAK); 		// cmpq WEAK (%rax) # 0x250004
-    ASM(0x75); ASM(X86C(3,4, 0,0)); 			// jnz [a]
+    ASM(0x75); ASM(X86C(3,4, 0,0)); 			// jnz a
     X86_PRE(); ASM(0x89); ASM(0x50);
                ASM(sizeof(struct PNObject)); 		// mov N(%rax) %rax
   }
-  X86_PRE(); ASM(0x89); ASM_MOV_EBP(0x55, regs + op.b)// [a]: mov %rdx %rsp(B)
-}					   	      // [b]:
+  X86_PRE(); ASM(0x89); ASM_MOV_EBP(0x55, regs + op.b)// a: mov %rdx %rsp(B)
+}
 
+// reg[op.a] = PN_DEREF(upvals[op.b])
 void potion_x86_getupval(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long lregs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MOV_RBP(0x8B, lregs + op.b);
@@ -387,6 +389,7 @@ void potion_x86_getupval(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_MOV_RBP(0x89, op.a);
 }
 
+// PN_DEREF(upvals[op.b]) = reg[op.a]
 // TODO: place the upval in the write barrier (or have stack scanning handle weak refs)
 void potion_x86_setupval(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long lregs) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
