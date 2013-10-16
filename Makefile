@@ -430,7 +430,7 @@ test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libpotion.a
 examples: pn
 	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
 
-dist: bins libs $(AIO_DEPS) static docall ${GREG}
+dist: bins libs $(AIO_DEPS) static ${GREG}
 	@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PNLIB}; \
 	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \

@@ -33,7 +33,8 @@ dorelease() {
     echo make CC="$1"
     make CC="$1" DEBUG=0
     make test
-    make dist
+    make static
+    make docall dist
 }
 
 docross() {
@@ -45,6 +46,7 @@ docross() {
     make -s -f config.mak CC="$1" DEBUG=0 CROSS=1
     touch bin/greg core/syntax.c
     make CC="$1" DEBUG=0 CROSS=1
+    make static
     make dist
 }
 
