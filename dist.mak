@@ -67,13 +67,17 @@ pkg/${PKGBIN}.zip: core/config.h core/version.h core/syntax.c bin/potion${EXE} \
 	cp core/potion.h               dist/include/potion/
 	cp core/config.h               dist/include/potion/
 	-cp doc/*.html doc/*.png       dist/doc/
-	-cp -r doc/html doc/ref        dist/doc/
+	if [ -f doc/html/p2.chm ]; then \
+               cp doc/html/p2.chm      dist/doc/p2.chm; \
+	  else cp -r doc/html          dist/doc/; \
+          fi
+	-cp -r doc/ref                 dist/doc/
 	-cp doc/core-files.txt         dist/doc/
 	-cp README COPYING LICENSE     dist/doc/
 	cp example/*                   dist/example/
 	cp -r test/*                   dist/test/
 	-mkdir -p pkg
-	(cd dist && zip ../pkg/${PKGBIN}.zip -rm * && cd ..)
+	(cd dist && zip -q ../pkg/${PKGBIN}.zip -rm * && cd ..)
 	rm -rf dist
 
 pkg/${PKGBIN}-devel.tar.gz: ${GREG} lib/libpotion.a lib/libp2.a bin/p2-s${EXE} bin/potion-s${EXE}

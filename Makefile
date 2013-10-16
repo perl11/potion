@@ -1,6 +1,6 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .i2 .o .opic .o2 .opic2 .textile .html
-.PHONY: all bins libs pn p2 static usage default config clean doc rebuild check test test.pn test.p2 \
+.PHONY: all default bins libs pn p2 static usage config clean doc rebuild check test test.pn test.p2 \
 	bench tarball dist release install grammar doxygen website \
 	testable spectest_checkout spectest_init spectest_update
 .NOTPARALLEL: test test.pn test.p2
@@ -693,6 +693,11 @@ MANIFEST:
 	git ls-tree -r --name-only HEAD > $@
 
 doc: ${DOCHTML} doc/html/files.html
+ifeq (${CYGWIN},1)
+CHM = doc/html/p2.chm
+else
+CHM =
+endif
 docall: doc GTAGS
 
 doxygen: doc/html/files.html
@@ -700,14 +705,24 @@ doxygen: doc/html/files.html
 	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
 	@doc/footer.sh > doc/footer.inc
 	@doxygen doc/Doxyfile
-	@rm README.md
-
-doc/html/files.html: core/*.c core/*.h doc/Doxyfile doc/footer.sh Makefile
+	-@${DOXY_POST}
+doc/html/index.hhp: doc/html/files.html doc/Doxyfile.chm
+	@${ECHO} DOXYGEN doc/html/index.hhp
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md;
+	@${DOXY_PRE}
+	-rm -rf doc/html/*
+	@doxygen doc/Doxyfile.chm
+	-@${DOXY_POST}
+doc/html/p2.chm: doc/html/index.hhp
+	@${ECHO} HHC $@
+	-cd doc/html; PATH=/cygdrive/c/Program\ Files/HTML\ Help\ Workshop:$PATH hhc index.hhp
+doc/html/files.html: ${SRC} doc/Doxyfile doc/footer.sh Makefile
 	@${ECHO} DOXYGEN core
-	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
-	doc/footer.sh > doc/footer.inc
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md;
+	@${DOXY_PRE}
+	-rm -rf doc/html/*
 	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
-	@rm README.md
+	-@${DOXY_POST}
 
 # perl11.org admins only. requires: doxygen redcloth global
 website:
@@ -727,7 +742,7 @@ GTAGS: ${SRC} core/*.h
 
 TAGS: ${SRC} core/*.h
 	@rm -f TAGS
-	/usr/bin/find core syn front \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
+	/usr/bin/find core lib syn front \( -name \*.c -o -name \*.h \) -exec etags -a --language=c \{\} \;
 
 sloc: clean
 	@rm -rf dist
@@ -739,7 +754,7 @@ sloc: clean
 	rm -rf dist
 
 todo:
-	@grep -rInso 'TODO: \(.\+\)' core syn front lib
+	@grep -rInso 'TODO: \(.\+\)' core syn front lib tools
 
 clean:
 	@${ECHO} cleaning
