@@ -33,18 +33,20 @@ dorelease() {
     echo make CC="$1"
     make CC="$1" DEBUG=0
     make test
-    make dist
+    make static
+    make docall dist
 }
 
 docross() {
     echo CROSS $1
     make clean
     make clean -C 3rd/libuv
-    rm config.inc lib/libpotion* 3rd/libuv/Makefile
+    rm config.inc lib/lib* 3rd/libuv/Makefile
     echo make CC="$1" DEBUG=0 CROSS=1
     make -s -f config.mak CC="$1" DEBUG=0 CROSS=1
     touch syn/greg syn/syntax.c syn/syntax-p5.c
     make CC="$1" DEBUG=0 CROSS=1
+    make static
     make dist
 }
 
@@ -64,7 +66,7 @@ fi
 
 if [ -z "$OPTS" ]; then
     case `uname -s` in
-        *Linux) rm 3rd/libuv/Makefile
+        *Linux) rm 3rd/libuv/Makefile lib/lib*
                 dorelease "gcc -m32" ;;
     esac
 fi

@@ -1,7 +1,7 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .i2 .o .opic .o2 .opic2 .textile .html
 .PHONY: all default bins libs pn p2 static usage config clean doc rebuild check test test.pn test.p2 \
-	bench tarball dist release install grammar doxygen website \
+	examples bench tarball dist release install grammar doxygen website \
 	testable spectest_checkout spectest_init spectest_update
 .NOTPARALLEL: test test.pn test.p2
 
@@ -76,14 +76,18 @@ endif
 DOC = doc/start.textile doc/p2-extensions.textile doc/glossary.textile doc/design-decisions.textile \
   doc/concurrency.textile
 DOCHTML = ${DOC:.textile=.html}
+LIBPNA_AWAY = if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
+LIBPNA_BACK = if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
+LIBP2A_AWAY = if [ -f lib/libp2.a ]; then mv lib/libp2.a lib/libp2.a.tmp; fi
+LIBP2A_BACK = if [ -f lib/libp2.a.tmp ]; then mv lib/libp2.a.tmp lib/libp2.a; fi
 
-GREGCFLAGS = -O3 -DNDEBUG
 CAT  = /bin/cat
 ECHO ?= /bin/echo
 MV   = /bin/mv
 SED  = sed
 EXPR = expr
 GREG = syn/greg${EXE}
+AR     ?= ar
 RANLIB ?= ranlib
 ifeq (${CROSS},1)
   GREGCROSS = syn/greg
@@ -103,7 +107,7 @@ pn: bin/potion${EXE} ${PNLIB}
 p2: bin/p2${EXE} ${PNLIB}
 bins: ${BINS}
 libs: ${PNLIB} ${DYNLIBS}
-static: bin/potion-s${EXE} bin/p2-s${EXE}
+static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
 rebuild: clean default test
 
 usage:
@@ -180,20 +184,20 @@ core/callcc.${OPIC}2: core/callcc.c core/config.h core/p2.h core/potion.h core/i
 endif
 
 front/potion.o: front/potion.c core/potion.h core/config.h core/internal.h \
- core/opcodes.h core/khash.h core/table.h core/potion.h core/internal.h
+ core/opcodes.h core/khash.h core/table.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${INCS} -o $@ $<
 front/p2.o2: front/p2.c core/p2.h core/potion.h core/config.h core/internal.h \
- core/opcodes.h core/khash.h core/table.h core/internal.h core/khash.h
+ core/opcodes.h core/khash.h core/table.h core/khash.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c -DP2 ${CFLAGS} -O0 ${INCS} -o $@ $<
 ifneq (${FPIC},)
 front/potion.${OPIC}: front/potion.c core/potion.h core/config.h core/internal.h \
- core/opcodes.h core/khash.h core/table.h core/potion.h core/internal.h
+ core/opcodes.h core/khash.h core/table.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${FPIC} ${INCS} -o $@ $<
 front/p2.${OPIC}2: front/p2.c core/p2.h core/potion.h core/config.h core/internal.h \
- core/opcodes.h core/khash.h core/table.h core/internal.h core/khash.h
+ core/opcodes.h core/khash.h core/table.h core/khash.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c -DP2 ${CFLAGS} -O0 ${FPIC} ${INCS} -o $@ $<
 endif
@@ -307,7 +311,9 @@ ${GREG}: syn/greg.c syn/compile.c syn/tree.c
 
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion ${LIBS}
+	@${LIBPNA_AWAY}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${PIC_OBJ_POTION} -o $@ ${LIBPTH} ${RPATH} -lpotion  ${LIBS}
+	@${LIBPNA_BACK}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
@@ -327,7 +333,9 @@ bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a lib/p2/aio${LOADEXT} lib/readline/readline
 
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
+	@${LIBPNA_AWAY}
 	@${MAKE} -s -C lib/readline static
+	@${LIBPNA_BACK}
 
 lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
@@ -384,7 +392,7 @@ endif
 	@${PATCH_PHLPAPI2}
 	cd 3rd/libuv && ./autogen.sh
 	-grep "libuv 0." 3rd/libuv/configure && sed -i -e's,libuv 0.,libuv-0.,' 3rd/libuv/configure
-	cd 3rd/libuv && ./configure --enable-shared CC="${CC}" "${CROSSHOST}"
+	cd 3rd/libuv && ./configure --disable-dtrace --enable-shared CC="${CC}" "${CROSSHOST}"
 
 lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
@@ -433,18 +441,18 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/Makefile lib/readline/linenoise.c \
   lib/readline/linenoise.h lib/libpotion${DLL}
 	@${ECHO} MAKE $@
-	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
+	@${LIBPNA_AWAY}
 	@${MAKE} -s -C lib/readline
-	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
+	@${LIBPNA_BACK}
 	@cp lib/readline/readline${LOADEXT} $@
 
 lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC} lib/buffile.c lib/libpotion${DLL}
 	@${ECHO} LD $@
-	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
-	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS} \
+	@${LIBPNA_AWAY}
+	@${CC} $(DEBUGFLAGS) -o $@ ${LDDLLFLAGS}  ${RPATH} \
 	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
-	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
+	@${LIBPNA_BACK}
 
 lib/p2/buffile${LOADEXT}: lib/potion/buffile${LOADEXT}
 	cp $< $@
@@ -463,20 +471,20 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	@${ECHO} CC lib/aio.${OPIC}
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC} lib/aio.c > /dev/null
 	@${ECHO} LD $@
-	@if [ -f lib/libpotion.a ]; then mv lib/libpotion.a lib/libpotion.a.tmp; fi
+	@${LIBPNA_AWAY}
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
 	  lib/aio.${OPIC} ${LIBPTH} -lpotion ${EXTLIBS} ${LIBS} ${AIO_DEPLIBS} > /dev/null
-	@if [ -f lib/libpotion.a.tmp ]; then mv lib/libpotion.a.tmp lib/libpotion.a; fi
+	@${LIBPNA_BACK}
 
 lib/p2/aio${LOADEXT}: core/config.h core/potion.h \
   lib/aio.c $(AIO_DEPS) lib/libp2${DLL}
 	@${ECHO} CC lib/aio.${OPIC}2
 	@${CC} -c ${FPIC} -DP2 ${CFLAGS} ${INCS} -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
 	@${ECHO} LD $@
-	@if [ -f lib/libp2.a ]; then mv lib/libp2.a lib/libp2.a.tmp; fi
+	@${LIBP2A_AWAY}
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libp2,aio,${LDDLLFLAGS}) ${RPATH} \
 	  lib/aio.${OPIC}2 ${LIBPTH} -lp2 ${EXTLIBS} ${LIBS} ${AIO_DEPLIBS} > /dev/null
-	@if [ -f lib/libp2.a.tmp ]; then mv lib/libp2.a.tmp lib/libp2.a; fi
+	@${LIBP2A_BACK}
 
 ifeq ($(HAVE_PCRE),1)
 PCRE_DEPS =
@@ -487,21 +495,27 @@ endif
 lib/p2/pcre${LOADEXT}: core/config.h core/potion.h \
   lib/pcre/Makefile lib/pcre/pcre.c $(PCRE_DEPS) lib/libpotion${DLL}
 	@${ECHO} MAKE $@
+	@${LIBP2A_AWAY}
 	@${MAKE} -s -C lib/pcre
+	@${LIBP2A_BACK}
 	@cp lib/pcre/pcre${LOADEXT} $@
 
 lib/p2/m_apm${LOADEXT}: core/config.h core/potion.h \
   lib/m_apm/Makefile lib/libpotion${DLL}
 	@${ECHO} MAKE $@
+	@${LIBP2A_AWAY}
 	@${MAKE} -s -C lib/m_apm
+	@${LIBP2A_BACK}
 	@cp lib/m_apm/m_apm${LOADEXT} $@
 
 lib/p2/libtommath${LOADEXT}: core/config.h core/potion.h \
   3rd/libtommath/makefile.shared lib/libpotion${DLL}
 	@${ECHO} MAKE $@
+	@${LIBP2A_AWAY}
 	cd 3rd/libtommath; ${CC} -c -I. ${FPIC} ${CFLAGS} *.c; \
 	  ${CC} ${DEBUGFLAGS} -o ../../$@ ${LDDLLFLAGS} \
 	  *.o ${LIBPTH} -lpotion ${LIBS}; cd ../..
+	@${LIBP2A_BACK}
 
 bench: bin/gc-bench${EXE} bin/potion${EXE}
 	@${ECHO}; \
@@ -661,14 +675,14 @@ examples: pn p2
 	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
 	for e in example/*.pl; do echo $$e; time bin/p2 $$e; done
 
-dist: bins libs $(AIO_DEPS) static docall ${SRC_SYN} ${SRC_P2_SYN} ${GREG}
+dist: bins libs $(AIO_DEPS) static ${SRC_SYN} ${SRC_P2_SYN} ${GREG}
 	@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PNLIB}; \
 	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
 	fi
 	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
-install: dist
+install: bins libs $(AIO_DEPS) ${GREG}
 	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
 
 tarball:
@@ -698,12 +712,17 @@ CHM = doc/html/p2.chm
 else
 CHM =
 endif
-docall: doc GTAGS
+docall: doc GTAGS ${CHM}
 
-doxygen: doc/html/files.html
+docall: doc GTAGS ${CHM}
+chm: ${CHM}
+DOXY_PRE = doc/footer.sh > doc/footer.inc
+DOXY_POST = rm README.md
+
+doxygen: ${DOCHTML} doc/html/files.html
 	@${ECHO} DOXYGEN -f core lib
-	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md
-	@doc/footer.sh > doc/footer.inc
+	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md;
+	@${DOXY_PRE}
 	@doxygen doc/Doxyfile
 	-@${DOXY_POST}
 doc/html/index.hhp: doc/html/files.html doc/Doxyfile.chm

@@ -31,12 +31,14 @@ do
     dotest "$c"
 done
 
+rm 3rd/libuv/Makefile
 testdebug "gcc -m32" 0
 if [ `uname -o` = Darwin ]; then
     DYLD_LIBRARY_PATH=/usr/local/lib32 testdebug "gcc -m32" 1
 fi
 
 if test -f /opt/intel/bin/icc; then
+    rm 3rd/libuv/Makefile
     case `uname -m` in
         x86_64) /opt/intel/bin/compilervars.sh intel64
             ;;
@@ -46,5 +48,6 @@ if test -f /opt/intel/bin/icc; then
     dotest icc
 fi
 
+rm 3rd/libuv/Makefile
 mv config.inc.test config.inc
 make
