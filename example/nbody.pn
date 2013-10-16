@@ -41,8 +41,7 @@ bodies(4) = neptune
 nbodies = bodies length
 
 advance = (dt):
-  i = 0
-  while (i < nbodies):
+  nbodies times(i):
     bi = bodies(i)
     bix = bi/x
     biy = bi/y
@@ -51,8 +50,7 @@ advance = (dt):
     bivy = bi/vy
     bivz = bi/vz
     bimass = bi/mass
-    j = i+1
-    while (j < nbodies):
+    i+1 to (nbodies, (j):
       if (debug): ("i", i, "j", j) say.
       bj = bodies(j)
       dx = bix - bj/x
@@ -71,15 +69,14 @@ advance = (dt):
       bj/vx += dx * bim
       bj/vy += dy * bim
       bj/vz += dz * bim
-      j++
-      .
+      .)
     bi/x = bix + dt * bivx
     bi/y = biy + dt * bivy
     bi/z = biz + dt * bivz
     bi/vx = bivx
     bi/vy = bivy
     bi/vz = bivz
-    i++..
+    ..
 
 offsetmomentum = (b, px, py, pz):
   b/vx = -px / solar_mass
@@ -89,8 +86,7 @@ offsetmomentum = (b, px, py, pz):
 
 energy = ():
   e = 0.0
-  i = 0
-  while (i < nbodies):
+  nbodies times(i):
     bi = bodies(i)
     bix = bi/x
     biy = bi/y
@@ -101,8 +97,7 @@ energy = ():
     bimass = bi/mass
     f = bivx * bivx + bivy * bivy + bivz * bivz
     e += 0.5 * bimass * f
-    j = i+1
-    while (j < nbodies):
+    i+1 to (nbodies, (j):
       bj = bodies(j)
       dx = bix - bj/x
       dy = biy - bj/y
@@ -110,9 +105,8 @@ energy = ():
       dist = dx*dx + dy*dy + dz*dz
       dist = dist sqrt
       f = bimass * bj/mass
-      e -= f / dist
-      j++.
-    i++.
+      e -= f / dist .)
+    .
   e.
 
 n = argv(1) number
@@ -124,9 +118,9 @@ if (debug):
   .
 
 energy() say
-times (n):
+n times:
   advance(0.01)
   if (debug1): ("advance", energy()) say.
   debug = false
-.
+  .
 energy() say
