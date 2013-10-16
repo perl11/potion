@@ -3,8 +3,6 @@
 # http://shootout.alioth.debian.org/
 #
 # contributed by Reini Urban
-#debug = true
-debug = false
 
 pi            = 3.141592653589793
 solar_mass    = 4 * pi * pi
@@ -39,10 +37,10 @@ bodies(2) = saturn
 bodies(3) = uranus
 bodies(4) = neptune
 nbodies = bodies length
+lbodies = nbodies - 1
 
 advance = (dt):
-  i = 0
-  while (i < nbodies):
+  nbodies times(i):
     bi = bodies(i)
     bix = bi/x
     biy = bi/y
@@ -53,7 +51,6 @@ advance = (dt):
     bimass = bi/mass
     j = i+1
     while (j < nbodies):
-      #if (debug): ("i", i, "j", j) say.
       bj = bodies(j)
       dx = bix - bj/x
       dy = biy - bj/y
@@ -61,25 +58,22 @@ advance = (dt):
       dist = dx*dx + dy*dy + dz*dz
       dist = dist sqrt
       mag = dt / (dist * dist * dist)
-      #if (debug): ("mag", mag) say.
       bim = bimass * mag
       bjm = bj/mass * mag
-      #("bim", bim, "bjm", bjm) say
       bivx -= dx * bjm
       bivy -= dy * bjm
       bivz -= dz * bjm
       bj/vx += dx * bim
       bj/vy += dy * bim
       bj/vz += dz * bim
-      j++
-      .
+      j++.
     bi/x = bix + dt * bivx
     bi/y = biy + dt * bivy
     bi/z = biz + dt * bivz
     bi/vx = bivx
     bi/vy = bivy
     bi/vz = bivz
-    i++..
+    ..
 
 offsetmomentum = (b, px, py, pz):
   b/vx = -px / solar_mass
@@ -89,8 +83,7 @@ offsetmomentum = (b, px, py, pz):
 
 energy = ():
   e = 0.0
-  i = 0
-  while (i < nbodies):
+  nbodies times(i):
     bi = bodies(i)
     bix = bi/x
     biy = bi/y
@@ -112,23 +105,12 @@ energy = ():
       f = bimass * bj/mass
       e -= f / dist
       j++.
-    i++.
+    .
   e.
 
-n = argv at(1) number
-if (!n): n=50000.
-debug1 = false
-if (debug):
-  ("n", n) say
-  debug1 = true
-  .
+n = argv(1) number
+if (n<1): n=50000.
 
 energy() say
-k=0
-while (k<n):
-  advance(0.01)
-  #if (debug1): ("advance", k, energy()) say.
-  #debug = false
-  k++
-.
+n times: advance(0.01).
 energy() say
