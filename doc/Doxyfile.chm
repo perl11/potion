@@ -54,7 +54,7 @@ HTML_FOOTER            = doc/footer.inc
 
 GENERATE_TODOLIST      = NO
 GENERATE_HTMLHELP      = YES
-CHM_FILE               = potion.chm
+CHM_FILE               = p2.chm
 HHC_LOCATION           = "/cygdrive/c/Program Files/HTML Help Workshop/hhc.exe"
 GENERATE_CHI           = NO
 CHM_INDEX_ENCODING     = UTF-8
