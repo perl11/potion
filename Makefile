@@ -288,7 +288,8 @@ endif
 	@${PATCH_PHLPAPI2}
 	cd 3rd/libuv && ./autogen.sh
 	-grep "libuv 0." 3rd/libuv/configure && sed -i -e's,libuv 0.,libuv-0.,' 3rd/libuv/configure
-	cd 3rd/libuv && ./configure --disable-dtrace --enable-shared CC="${CC}" "${CROSSHOST}"
+	cd 3rd/libuv && CC="${CC}" ./configure --disable-dtrace --enable-shared --prefix="$(shell pwd)" \
+	  "${CROSSHOST}"
 
 lib/libuv.a: core/config.h core/potion.h \
   3rd/libuv/Makefile
