@@ -25,6 +25,9 @@
 /test/api/*.o
 /config.inc
 /.gdbinit
+/.bash_history
+/.kdev4
+/.lldbinit
 *.pnb
 ._*
 .DS_Store
@@ -59,3 +62,20 @@
 /tools/bisect*.sh
 /MANIFEST
 /config.inc-*
+/asm*.S
+/*.p
+/*.patch
+/lib32
+/web
+/mcc.sh
+/p2.kdev4
+/p2.prof
+# test grammars
+/syn/C.*
+/syn/Java.*
+/syn/markdown
+/syn/pegc
+/syn/perly.y
+/syn/keywords.pl
+/syn/sql-*
+
