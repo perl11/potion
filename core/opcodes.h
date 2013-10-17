@@ -12,6 +12,7 @@
 #endif
 
 /// PN_OP - a compressed three-address op (as 32bit int bitfield)
+/// TODO: expand to 64bit, check jit then
 typedef struct {
   u8 code:8; ///< the op. See vm.c http://www.lua.org/doc/jucs05.pdf
   int a:12;  ///< the data (i.e the register)
