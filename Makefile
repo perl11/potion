@@ -784,6 +784,8 @@ clean:
 	@${ECHO} cleaning
 	@rm -f $(foreach ext,o o2 opic opic2 i gcda gcno,$(foreach dir,core syn front lib test/api lib/*,${dir}/*.${ext}))
 	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o
+	@rm -rf lib/*/*.bundle.dSYM
+	@rm -f lib/libp2.* lib/p2/*${DLL}
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f tools/*.o core/config.h core/version.h
 	@rm -f tools/*~ doc/*~ example/*~ core/*~ config.inc~ tools/config.c
