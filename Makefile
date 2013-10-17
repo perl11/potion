@@ -318,9 +318,9 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 
 bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${ECHO} LINK $@
-	@${LIBPNA_AWAY}
+	@${LIBP2A_AWAY}
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ ${LIBPTH} ${RPATH} -lp2 ${LIBS}
-	@${LIBPNA_BACK}
+	@${LIBP2A_BACK}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
 bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a lib/potion/aio${LOADEXT} lib/readline/readline.o
@@ -365,7 +365,7 @@ lib/libpotion${DLL}: ${PIC_OBJ} ${PIC_OBJ_SYN} core/config.h core/potion.h
 lib/libp2${DLL}: $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} core/config.h core/potion.h
 	@${ECHO} LD $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${CC} ${DEBUGFLAGS} -o $@ ${LDDLLFLAGS} $(subst libpotion,libp2,${RDLLFLAGS}) ${RPATH} \
+	@${CC} ${DEBUGFLAGS} -o $@ $(subst libpotion,libp2,${LDDLLFLAGS}) ${RPATH} \
 	  $(subst .${OPIC},.${OPIC}2,${PIC_OBJ}) ${PIC_OBJ_P2_SYN} ${LIBPTH} ${LIBS} > /dev/null
 	@if [ x${DLL} = x.dll ]; then cp $@ bin/; fi
 
@@ -376,7 +376,7 @@ lib/potion/libsyntax${DLL}: syn/syntax.${OPIC} lib/libpotion${DLL}
 
 lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2 lib/libp2${DLL}
 	@${ECHO} LD $@
-	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) ${LDDLLFLAGS} ${RPATH} \
+	@${CC} ${DEBUGFLAGS} -o $@ $(INCS) $(subst libpotion,potion/libsyntax-p5,${LDDLLFLAGS}) \
 	  $< ${LIBPTH} -lp2 $(LIBS)
 
 # 3rdparty EXTLIBS statically linked
@@ -455,12 +455,17 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC} lib/buffile.c lib/libpotion${DLL}
 	@${ECHO} LD $@
 	@${LIBPNA_AWAY}
-	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,buffile,${LDDLLFLAGS}) ${RPATH} \
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,potion/buffile,${LDDLLFLAGS}) ${RPATH} \
 	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
 	@${LIBPNA_BACK}
 
-lib/p2/buffile${LOADEXT}: lib/potion/buffile${LOADEXT}
-	cp $< $@
+lib/p2/buffile${LOADEXT}: core/config.h core/potion.h core/p2.h \
+  lib/buffile.${OPIC}2 lib/buffile.c lib/libp2${DLL}
+	@${ECHO} LD $@
+	@${LIBP2A_AWAY}
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,p2/buffile,${LDDLLFLAGS}) ${RPATH} \
+	  lib/buffile.${OPIC}2 ${LIBPTH} -lp2 ${LIBS} > /dev/null
+	@${LIBP2A_BACK}
 
 ifeq ($(HAVE_LIBUV),1)
 AIO_DEPS =
@@ -477,7 +482,7 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC} lib/aio.c > /dev/null
 	@${ECHO} LD $@
 	@${LIBPNA_AWAY}
-	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,potion/aio,${LDDLLFLAGS}) ${RPATH} \
 	  lib/aio.${OPIC} ${LIBPTH} -lpotion ${EXTLIBS} ${LIBS} ${AIO_DEPLIBS} > /dev/null
 	@${LIBPNA_BACK}
 
@@ -487,7 +492,7 @@ lib/p2/aio${LOADEXT}: core/config.h core/potion.h \
 	@${CC} -c ${FPIC} -DP2 ${CFLAGS} ${INCS} -o lib/aio.${OPIC}2 lib/aio.c > /dev/null
 	@${ECHO} LD $@
 	@${LIBP2A_AWAY}
-	@${CC} $(DEBUGFLAGS) -o $@ $(subst libp2,aio,${LDDLLFLAGS}) ${RPATH} \
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libp2,p2/aio,${LDDLLFLAGS}) ${RPATH} \
 	  lib/aio.${OPIC}2 ${LIBPTH} -lp2 ${EXTLIBS} ${LIBS} ${AIO_DEPLIBS} > /dev/null
 	@${LIBP2A_BACK}
 
@@ -518,7 +523,7 @@ lib/p2/libtommath${LOADEXT}: core/config.h core/potion.h \
 	@${ECHO} MAKE $@
 	@${LIBP2A_AWAY}
 	cd 3rd/libtommath; ${CC} -c -I. ${FPIC} ${CFLAGS} *.c; \
-	  ${CC} ${DEBUGFLAGS} -o ../../$@ ${LDDLLFLAGS} \
+	  ${CC} ${DEBUGFLAGS} -o ../../$@ $(subst libpotion,p2/libtommath,${LDDLLFLAGS}) \
 	  *.o ${LIBPTH} -lpotion ${LIBS}; cd ../..
 	@${LIBP2A_BACK}
 
