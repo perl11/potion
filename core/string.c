@@ -144,7 +144,7 @@ static PN potion_str_clone(Potion *P, PN cl, PN self) {
 ///\returns nil
 static PN potion_str_print(Potion *P, PN cl, PN self) {
   fwrite(PN_STR_PTR(self), 1, PN_STR_LEN(self), stdout);
-  return PN_NIL;
+  return PN_STR0;
 }
 
 static size_t potion_utf8char_offset(const char *s, size_t index) {
@@ -401,7 +401,7 @@ PN potion_bytes_string(Potion *P, PN cl, PN self) {
 static PN potion_bytes_print(Potion *P, PN cl, PN self) {
   self = potion_fwd(self);
   fwrite(PN_STR_PTR(self), 1, PN_STR_LEN(self), stdout);
-  return PN_NIL;
+  return PN_STR0;
 }
 
 ///\memberof PNBytes
