@@ -404,7 +404,7 @@ PN potion_tuple_first(Potion *P, PN cl, PN self) {
 ///\memberof PNTuple
 /// "join" method.
 ///\param sep PNString
-///\return PNString
+///\return PNBytes
 PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
   DBG_CHECK_TYPE(self,PN_TTUPLE);
   PN out = potion_byte_str(P, "");
@@ -522,7 +522,7 @@ PN potion_tuple_print(Potion *P, PN cl, PN self) {
   PN_TUPLE_EACH(self, i, v, {
     potion_send(v, PN_print);
   });
-  return PN_NIL;
+  return PN_STR0;
 }
 
 ///\memberof PNTuple
