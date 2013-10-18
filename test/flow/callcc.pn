@@ -6,4 +6,4 @@ if (name != "Ron"): goto ().
 #=> Ringo
 #=> Max
 #=> Ron
-#=> nil
+
