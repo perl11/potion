@@ -1,0 +1,42 @@
+v0.2	planned: Dec 21 2013 rurban
+
+        * print and say methods return "" instead of nil.
+        * Added methods for table: clone, slice, keys, values. For tuple: slice
+
+v0.1	Wed Oct 16 13:08:38 2013 rurban
+
+        * Asynchronous non-blocking IO in the aio module via libuv. So like
+        node, but potion is a bit faster then node.
+        * Buffered stream FILE* IO in the buffile module.
+        * Optional and default signature arguments.
+        * Added argv tuple
+        * Added cmdline args: -e,-D?,-L,-d,-c,--check
+        * More examples and documentation
+        * Fixed various jit-x86 limitations on max number of stack variables,
+        eg. max 15 on amd64
+        * Fixed GC errors when running out of memory
+        * Added support for 3 -DJ disassemblers
+        * Changed dir layout, seperate bin and lib/potion, use .y for syntax
+        * Improved build system (PIC and static, faster auto-configure, ...)
+        * Use Travis testing
+        * khash.h updated to 0.2.6
+        * greg updated to 0.4.5 with error blocks, lineno, -DPp support
+        * Various minor fixes and new methods (sort, cmp, remove, delete,
+        nreverse, say, ...)
+
+vFogus	Thu Oct 25 14:01:58 2012 fogus
+
+        * Fixed Object() constructor (adrian.bloomer)
+        * Added class method (adrian.bloomer)
+        * Added lots of file methods, and more (adrian.bloomer)
+        * Added vasprintf/asprintf, 'dlfcn-win32' for windows (adrian.bloomer)
+        * Added 'readline' module and repl (adrian.bloomer)
+
+vWhy+	Mon Jun 14 11:08:54 2010 fogus
+
+        * Fixed segv in String slice (citizen428)
+        * Add missing __WORDSIZE definition (joeatework)
+
+vWhy	Tue Aug 11 22:52:29 2009 _why
+
+        * That was _why's last commit
