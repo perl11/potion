@@ -575,7 +575,7 @@ PN potion_lobby_print(Potion *P, PN cl, PN self) {
 PN potion_lobby_say(Potion *P, PN cl, PN self) {
   potion_send(potion_send(self, PN_string), PN_print);
   printf("\n");
-  return PN_NIL;
+  return PN_STR0;
 }
 
 static void potion_init_class_reference(Potion *P, PN name, PN vt) {

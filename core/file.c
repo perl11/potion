@@ -100,7 +100,7 @@ PN potion_file_close(Potion *P, PN cl, pn_file self) {
 /**\memberof PNFile
  \c "read" n PNBytes from the file
  \param n PNNumber
- \return n PNBytes */
+ \return n PNBytes or nil or PNError */
 PN potion_file_read(Potion *P, PN cl, pn_file self, PN n) {
   n = PN_INT(n);
   char buf[n];
@@ -156,9 +156,10 @@ PN potion_file_write(Potion *P, PN cl, pn_file self, PN obj) {
   \c "print" a stringification of any object to the filehandle.
   Note that \c write prints the binary value of the object.
   \param obj any
-  \return PN_NIL */
+  \return "" or PNError */
 PN potion_file_print(Potion *P, PN cl, pn_file self, PN obj) {
-  return potion_file_write(P, cl, self, potion_send(obj, PN_string));
+  PN r = potion_file_write(P, cl, self, potion_send(obj, PN_string));
+  return PN_IS_NUM(r) ? PN_STR0 : r;
 }
 
 /**\memberof PNFile
