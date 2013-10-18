@@ -38,8 +38,9 @@ pkg/${PKGBIN}.tar.gz: core/config.h core/version.h bin/potion${EXE} \
                  dist/share/potion/doc dist/share/potion/example
 	cp bin/potion${EXE}            dist/bin/
 	cp lib/libpotion${DLL}         dist/lib/
-	cp -r lib/potion/              dist/lib/potion/
+	cp -r lib/potion               dist/lib/
 	if [ ${WIN32} = 1 ]; then mv dist/lib/*.dll dist/bin/; fi
+	-if [ $(APPLE) = 1 ]; then rsync -a lib/libuv*.dylib dist/lib/; fi
 	cp core/potion.h               dist/include/potion/
 	cp core/config.h               dist/include/potion/
 	-cp doc/*.html doc/*.png       dist/share/potion/doc/
