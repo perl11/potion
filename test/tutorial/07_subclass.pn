@@ -4,4 +4,4 @@ Policeman print = ():
   ("My name is ", /name, " and I'm a ", /rank, ".") join print.
 
 Policeman ("Constable") print
-#=> My name is nil and I'm a Constable.nil
+#=> My name is nil and I'm a Constable.

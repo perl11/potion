@@ -1,2 +1,2 @@
 ("cheese", "bread", "mayo") at (1) print
-#=> breadnil
+#=> bread
