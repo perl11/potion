@@ -175,14 +175,16 @@ PN potion_table_slice(Potion *P, PN cl, PN self, PN keys) {
     DBG_CHECK_TYPE(keys,PN_TTUPLE);
   }
   vPN(Table) t2 = (vPN(Table))PN_ALLOC_N(PN_TTABLE, struct PNTable, 0);
-  t2 = kh_resize_PN(P, t2, PN_TUPLE_LEN(keys));
-  int ret;
+  t2 = kh_resize_PN(P, t2, PN_TUPLE_LEN(keys)); //ca, could overshoot for dupl and outliers
   PN_TUPLE_EACH(keys, i, v, {
-    if (kh_exist(PN, t, v)) {
-      unsigned key = kh_put(PN, t2, kh_key(PN, t, v), &ret);
+    DBG_vt("%d:%ld ", i, PN_INT(v));
+    unsigned k = kh_get(PN, t, v);
+    if (k != kh_end(t)) {
+      int ret;
+      unsigned k2 = kh_put(PN, t2, v, &ret);
       PN_QUICK_FWD(struct PNTable *, t);
       PN_QUICK_FWD(struct PNTable *, t2);
-      kh_val(PN, t2, key) = kh_val(PN, t, v);
+      kh_val(PN, t2, k2) = kh_val(PN, t, k);
     }
   });
   PN_TOUCH(t2);
@@ -327,42 +329,45 @@ PN potion_tuple_clone(Potion *P, PN cl, PN self) {
 }
 
 /**\memberof PNTuple
- Extract slice copy of a tuple
+ Extract slice copy of a tuple, similar to strings. Supports negative indices and end<start.
  \code
        (0,1,2) slice        #=> (0,1,2)
        (0,1,2) slice(1)     #=> (1,2)
-       (0,1,2) slice(0,2)   #=> (0,1)
+       (0,1,2) slice(0,1)   #=> (0,1)
        (0,1,2) slice(-1)    #=> (2)
        (0,1,2) slice(1,1)   #=> (1)
-       (0,1,2) slice(1,-1)  #=> (0)
-       (0,1,2) slice(2,-1)  #=> (1)
-       (0,1,2) slice(-1,-1) #=> (1)
+       (0,1,2) slice(1,-1)  #=> (0,1)
+       (0,1,2) slice(2,-1)  #=> (2)
+       (0,1,2) slice(-1,-2) #=> (0,1)
  \endcode
- \param index PNNumber. Optional offset, default 0. If negative, count from end. If too large, return nil.
- \param length PNNumber. Optional, default to the end. If negative, count reverse. If too large, return nil.
+ \param start PNNumber. Default 0. If negative, count from end. If too large, return nil.
+ \param end   PNNumber. Optional, default last index. If negative, count from end. If too large, return nil.
  \return new PNTuple */
 static
-PN potion_tuple_slice(Potion *P, PN cl, PN self, PN index, PN length) {
+PN potion_tuple_slice(Potion *P, PN cl, PN self, PN start, PN end) {
   vPN(Tuple) t1 = PN_GET_TUPLE(self);
   long i, l;
   DBG_CHECK_TYPE(t1,PN_TTUPLE);
-  if (!index)
+  if (!start)
     return potion_tuple_clone(P, cl, self);
   else {
-    DBG_CHECK_TYPE(index,PN_TNUMBER);
-    i = PN_INT(index);
+    DBG_CHECK_INT(start);
+    i = PN_INT(start);
     if (i < 0) i = t1->len + i;
   }
-  if (!length || length == PN_NUM(0)) {
+  if (!end)
     l = t1->len - i;
-  }
   else {
-    DBG_CHECK_TYPE(length,PN_TNUMBER);
-    l = PN_INT(length);
-    if (l < 0) { i += l; l = abs(l); }
+    long e = PN_INT(end);
+    DBG_CHECK_INT(end);
+    if (e < 0) e = t1->len + e;
+    l = e - i;
+    if (l < 0) { i = e; l = abs(l) + 1; }
+    else l++;
+    if (l > t1->len) l = t1->len; // permit overshoots
   }
-  DBG_v("; splice(%ld,%ld)\n", i, l);
-  if (l > t1->len || i > t1->len) return PN_NIL;
+  DBG_vt("; splice(i=%ld,len=%ld)\n", i, l);
+  if (!l || i >= t1->len) return PN_NIL;
   NEW_TUPLE(t2, l);
   PN_MEMCPY_N(&t2->set[0], &t1->set[i], PN, l);
   t2->alloc = l;
@@ -849,7 +854,7 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "nreverse", potion_tuple_nreverse, 0);
   potion_method(tpl_vt, "remove", potion_tuple_remove, "index=N");
   potion_method(tpl_vt, "delete", potion_tuple_delete, "index=N");
-  potion_method(tpl_vt, "slice", potion_tuple_slice, "|from=N,to=N");
+  potion_method(tpl_vt, "slice", potion_tuple_slice, "start:=0,end:=nil");
   potion_method(tpl_vt, "unshift", potion_tuple_unshift, "value=o");
   potion_method(tpl_vt, "shift", potion_tuple_shift, 0);
   potion_method(tpl_vt, "bsearch", potion_tuple_bsearch, "value=o");

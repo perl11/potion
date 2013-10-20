@@ -1,7 +1,10 @@
 v0.2	planned: Dec 21 2013 rurban
 
         * print and say methods return "" instead of nil.
-        * Added methods for table: clone, slice, keys, values. For tuple: slice
+        * Added methods for table: clone, slice, keys, values.
+	For tuple: slice. For bytes and string: clone
+	* Added support for negative arguments for string.slice
+	* Changed API's for potion_type_error_want
 
 v0.1	Wed Oct 16 13:08:38 2013 rurban
 

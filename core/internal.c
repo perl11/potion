@@ -261,9 +261,9 @@ PN potion_type_error(Potion *P, PN obj) {
   return potion_error(P, potion_str_format(P, "Invalid type %s", potion_type_name(P, obj)),
                       0, 0, 0);
 }
-PN potion_type_error_want(Potion *P, PN obj, const char *name) {
-  return potion_error(P, potion_str_format(P, "Invalid type %s, expected %s",
-                                           potion_type_name(P, obj), name),
+PN potion_type_error_want(Potion *P, const char *param, PN obj, const char *type) {
+  return potion_error(P, potion_str_format(P, "Invalid type %s for %s, expected %s",
+                                           potion_type_name(P, obj), param, type),
                       0, 0, 0);
 }
 
