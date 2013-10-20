@@ -241,6 +241,7 @@ done:
   return code;
 }
 
+//XXX load is disabled and ignored in a SANDBOX
 char * addmodule(Potion *P, char *result, char *prefix, char *name) {
   char *args = strchr(name, '=');
   PN out = potion_bytes(P, 0);
@@ -272,6 +273,9 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-I") || !strcmp(argv[i], "--inspect")) {
       P->flags |= DEBUG_INSPECT; continue; }
     if (!strcmp(argv[i], "-L")) {
+#ifdef SANDBOX
+    potion_fatal("-L disabled in SANDBOX");
+#else
       char *extra_path = &argv[i][2]; // todo: flexible
       if (*extra_path)
 	potion_loader_add(P, potion_str(P, extra_path));
@@ -284,6 +288,7 @@ int main(int argc, char *argv[]) {
 	i++;
       }
       continue;
+#endif /* SANDBOX */
     }
     if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--verbose")) {
       P->flags |= DEBUG_VERBOSE; continue; }

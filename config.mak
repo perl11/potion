@@ -14,6 +14,7 @@ LIBS   = -lm
 LDFLAGS ?=
 LDDLLFLAGS = -shared -fpic
 DEBUG ?= 0
+SANDBOX ?= 0
 WIN32  = 0
 CLANG  = 0
 JIT    = 0
@@ -97,13 +98,13 @@ else
 	INCS += -I${PWD}/3rd/libuv/include
 endif
 
-# JIT with -O still fails some tests
-#ifneq (${JIT},1)
 ifeq (${DEBUG},0)
        DEBUGFLAGS += -O3
        CFLAGS += -D_FORTIFY_SOURCE=2
 endif
-#endif
+ifneq (${SANDBOX},0)
+	DEFINES += -DSANDBOX
+endif
 
 ifneq (,$(findstring ccache,${CC}))
 	WARNINGS = -Wall -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
@@ -285,6 +286,7 @@ config.inc.echo:
 	@${ECHO} "CLANG   = ${CLANG}"
 	@${ECHO} "ICC     = ${ICC}"
 	@${ECHO} "GCC     = ${GCC}"
+	@${ECHO} "SANDBOX = ${SANDBOX}"
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
