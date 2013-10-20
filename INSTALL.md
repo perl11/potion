@@ -30,6 +30,17 @@ clang produces better code than gcc, but is harder to debug.
     $ git submodule update --init
     $ make
 
+## ~ sandboxing ~
+
+With `gmake SANDBOX=1` a static sandboxed `bin/potion-s` is built, which
+excludes all local filesystem and process accesses and includes all external
+modules in one executable. `load` is also disabled, so modules must include
+all dependent libraries.
+
+Network access is enabled via Aio. If you want to disable
+networking also, remove `lib/aio.c` from the SANDBOX SRC in `Makefile`,
+and `Potion_Init_aio(P)` from `core/internal.c`
+
 ## ~ installing ~
 
     $ sudo make install
