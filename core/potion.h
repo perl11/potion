@@ -879,14 +879,19 @@ void potion_source_init(Potion *);
 void potion_lick_init(Potion *);
 void potion_compiler_init(Potion *);
 void potion_vm_init(Potion *);
+void potion_cont_init(Potion *);
 #ifndef SANDBOX
 void potion_file_init(Potion *);
 void potion_loader_init(Potion *);
 void potion_loader_add(Potion *, PN path);
+PN potion_load(Potion *, PN, PN, PN);
+char *potion_find_file(Potion *, char *str, PN_SIZE str_len);
+#else
+void Potion_Init_readline(Potion *);
+void Potion_Init_aio(Potion *);
 #endif
-void potion_cont_init(Potion *);
-void potion_dump_stack(Potion *);
 
+void potion_dump_stack(Potion *);
 PN potion_num_string(Potion *, PN, PN);
 PN potion_gc_reserved(Potion *, PN, PN);
 PN potion_gc_actual(Potion *, PN, PN);
@@ -900,8 +905,6 @@ PN potion_eval(Potion *, PN);
 PN potion_run(Potion *, PN, int);
 PN_F potion_jit_proto(Potion *, PN);
 
-PN potion_load(Potion *, PN, PN, PN);
-char *potion_find_file(Potion *, char *str, PN_SIZE str_len);
 PN potion_class_find(Potion *, PN);
 PNType potion_class_type(Potion *, PN);
 

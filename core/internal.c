@@ -103,6 +103,9 @@ static void potion_init(Potion *P) {
 #ifndef SANDBOX
   potion_file_init(P);
   potion_loader_init(P);
+#else
+  Potion_Init_readline(P);
+  Potion_Init_aio(P);
 #endif
 
   pn_filenames = PN_TUP0();

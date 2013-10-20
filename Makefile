@@ -16,6 +16,11 @@ SRC += core/callcc.c
 endif
 ifneq (${SANDBOX},1)
 SRC += core/file.c core/load.c
+else
+SRC += lib/aio.c lib/readline/readline.c lib/readline/linenoise.c
+ifeq ($(WIN32),1)
+SRC += lib/readline/win32fixes.c
+endif
 endif
 
 ifeq (${JIT_X86},1)
@@ -49,6 +54,7 @@ PNLIB = lib/libpotion${DLL}
 EXTLIBS = -Llib -luv
 ifeq (${WIN32},1)
 LIBUV = lib/libuv-11.dll lib/libuv.dll.a
+EXTLIBS += -lw32_32
 else
 LIBUV = lib/libuv${DLL}
 endif
@@ -85,8 +91,13 @@ default: pn libs
 	+${MAKE} -s usage
 
 all: default libs static docall test
+ifneq (${SANDBOX},1)
 pn: bin/potion${EXE} ${PNLIB}
 bins: bin/potion${EXE}
+else
+pn: static
+bins: bin/potion-s${EXE}
+endif
 libs: ${PNLIB} ${DYNLIBS}
 static: lib/libpotion.a bin/potion-s${EXE}
 rebuild: clean default test
@@ -254,6 +265,7 @@ bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/aio.o lib/readline/readlin
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.o -o $@ lib/aio.o lib/readline/*.o \
 	  lib/libpotion.a ${LIBPTH} ${EXTLIBS} ${LIBS}
+	@if [ "${SANDBOX}" = "1" ]; then rm bin/potion${EXE}; cd bin; ln -s potion-s${EXE} potion${EXE}; cd ..; fi
 
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
@@ -264,7 +276,7 @@ lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 lib/libpotion.a: ${OBJ} core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${AR} rcs $@ core/*.o > /dev/null
+	@${AR} rcs $@ ${OBJ} > /dev/null
 	@${ECHO} RANLIB $@
 	@-${RANLIB} $@
 
@@ -422,16 +434,16 @@ testable : bin/potion${EXE} libs test/api/potion-test${EXE} test/api/gc-test${EX
 # for LTO gold -O4
 test/api/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
-	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${LIBS}; then true; else \
+	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${EXTLIBS} ${LIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBPTH} ${LIBS}; fi
 
 test/api/gc-test${EXE}: ${OBJ_GC_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_TEST} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_TEST} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${EXTLIBS} ${LIBS}
 
 test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libpotion.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${EXTLIBS} ${LIBS}
 
 examples: pn
 	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
