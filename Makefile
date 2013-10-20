@@ -323,15 +323,15 @@ bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${LIBP2A_BACK}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
-bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a lib/potion/aio${LOADEXT} lib/readline/readline.o
+bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a lib/aio.o lib/readline/readline.o
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_POTION} -o $@ lib/readline/*.o lib/potion/aio${LOADEXT} \
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_POTION} -o $@ lib/readline/*.o lib/aio.o \
           lib/libpotion.a ${LIBPTH} ${EXTLIBS} ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
-bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a lib/p2/aio${LOADEXT} lib/readline/readline.o
+bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a lib/aio.o2 lib/readline/readline.o
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ lib/readline/*.o lib/p2/aio${LOADEXT} \
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ lib/readline/*.o lib/aio.o2 \
           lib/libp2.a ${LIBPTH} ${EXTLIBS} ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
