@@ -14,7 +14,7 @@ install:
   - sudo apt-get update -qq
 #  - sudo apt-get install -qq libdisasm-dev
 
-script: make config CC=$CC DEBUG=$DEBUG; make && make test
+script: make config CC=$CC DEBUG=$DEBUG; make && make -j1 test
 
 notifications:
   irc: "irc.perl.org#perl11"
