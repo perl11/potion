@@ -134,6 +134,12 @@ static PN potion_str_string(Potion *P, PN cl, PN self) {
 }
 
 ///\memberof PNString
+/// "clone" method. Returns self, strings are immutable.
+static PN potion_str_clone(Potion *P, PN cl, PN self) {
+  return self;
+}
+
+///\memberof PNString
 /// "print" method. fwrite to stdout
 ///\returns nil
 static PN potion_str_print(Potion *P, PN cl, PN self) {
@@ -221,8 +227,18 @@ inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
 static PN potion_str_slice(Potion *P, PN cl, PN self, PN start, PN end) {
   char *str = PN_STR_PTR(self);
   size_t len = potion_cp_strlen_utf8(str);
-  size_t startoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(start, len, 0)));
   size_t endoffset;
+  if (!start)
+    return self;
+  else {
+    DBG_CHECK_TYPE(start, PN_TNUMBER);
+  }
+  size_t startoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(start, len, 0)));
+  if (!end)
+    end = PN_NUM(len);
+  else {
+    DBG_CHECK_INT(end);
+  }
   if (end < start) {
     endoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(start+end, len, len)));
   } else {
@@ -294,6 +310,17 @@ PN potion_bytes(Potion *P, size_t len) {
   vPN(Bytes) s = PN_ALLOC_N(PN_TBYTES, struct PNBytes, siz);
   s->siz = (PN_SIZE)siz;
   s->len = (PN_SIZE)len;
+  return (PN)s;
+}
+
+///\memberof PNBytes
+/// "clone" returns a copy of the byte buffer
+///\return PNBytes
+PN potion_bytes_clone(Potion *P, PN cl, PN self) {
+  vPN(Bytes) b = (struct PNBytes *)potion_fwd(self);
+  vPN(Bytes) s = PN_ALLOC_N(PN_TBYTES, struct PNBytes, b->siz);
+  s->siz = b->siz;
+  s->len = b->len;
   return (PN)s;
 }
 
@@ -434,7 +461,8 @@ void potion_str_init(Potion *P) {
   potion_method(str_vt, "number", potion_str_number, 0);
   potion_method(str_vt, "print", potion_str_print, 0);
   potion_method(str_vt, "string", potion_str_string, 0);
-  potion_method(str_vt, "slice", potion_str_slice, "start=N,end=N");
+  potion_method(str_vt, "clone", potion_str_clone, 0);
+  potion_method(str_vt, "slice", potion_str_slice, "start=N|end=N");
   potion_method(str_vt, "bytes", potion_str_bytes, 0);
   potion_method(str_vt, "+", potion_str_add, "str=S");
   potion_method(str_vt, "ord", potion_str_ord, "|index=N");
@@ -445,6 +473,7 @@ void potion_str_init(Potion *P) {
   potion_method(byt_vt, "length", potion_bytes_length, 0);
   potion_method(byt_vt, "print", potion_bytes_print, 0);
   potion_method(byt_vt, "string", potion_bytes_string, 0);
+  potion_method(byt_vt, "clone", potion_bytes_clone, 0);
   potion_method(byt_vt, "ord", potion_str_ord, 0);
   potion_method(byt_vt, "each", potion_bytes_each, "block=&");
 }
