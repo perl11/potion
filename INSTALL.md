@@ -32,11 +32,11 @@ clang produces better code than gcc, but is harder to debug.
 ## ~ external dependencies ~
 
     build-time: gnu make, perl, sed, gcc or clang, echo, cat, expr, git
-    (perl is only needed because of BSD/darwin sed problems)
+    perl is only needed because of BSD/darwin sed problems
 
     run-time:
-    libuv, sregex, libtommath are included, but external packagers
-    should choose to use existing packages. see dist.mak
+    libuv (later: pcre, libtomath) is included, but external
+    packagers should choose to use existing packages. see dist.mak
 
     optional:
 
@@ -66,6 +66,17 @@ clang produces better code than gcc, but is harder to debug.
     GNU global (for make docall install)
       apt-get install global, or
       port install global
+
+## ~ sandboxing ~
+
+With `gmake SANDBOX=1` a static sandboxed `bin/potion-s` is built, which
+excludes all local filesystem and process accesses and includes all external
+modules in one executable. `load` is also disabled, so modules must include
+all dependent libraries.
+
+Network access is enabled via Aio. If you want to disable
+networking also, remove `lib/aio.c` from the SANDBOX SRC in `Makefile`,
+and `Potion_Init_aio(P)` from `core/internal.c`
 
 ## ~ installing ~
 
