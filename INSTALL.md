@@ -30,6 +30,44 @@ clang produces better code than gcc, but is harder to debug.
     $ git submodule update --init
     $ make
 
+## ~ external dependencies ~
+
+    build-time: gnu make, perl, sed, gcc or clang, echo, cat, expr, git
+    perl is only needed because of BSD/darwin sed problems)
+
+    run-time:
+    libuv is included, but external packagers
+    should choose to use existing packages. see dist.mak
+
+    optional:
+
+    libudis on x86 (debugging only)
+      http://udis86.sourceforge.net/ x86 16,32,64 bit
+      port install udis86
+
+    libdistorm64 on x86 (debugging only)
+      http://ragestorm.net/distorm/ x86 16,32,64 bit with all intel/amd extensions
+      apt-get install libdistorm64-dev
+
+    libdisasm on i386 (debugging only)
+      http://bastard.sourceforge.net/libdisasm.html 386 32bit only
+      apt-get install libdisasm-dev
+
+    sloccount (for make sloc)
+      apt-get install sloccount
+
+    redcloth (for make doc install)
+      apt-get install ruby-redcloth, or
+      port install rb-redcloth
+
+    doxygen 1.8 or 1.9 (for make doc install)
+      apt-get install doxygen, or
+      port install doxygen
+
+    GNU global (for make docall install)
+      apt-get install global, or
+      port install global
+
 ## ~ sandboxing ~
 
 With `gmake SANDBOX=1` a static sandboxed `bin/potion-s` is built, which
