@@ -17,6 +17,11 @@ SRC += core/callcc.c
 endif
 ifneq (${SANDBOX},1)
 SRC += core/file.c core/load.c
+else
+SRC += lib/aio.c lib/readline/readline.c lib/readline/linenoise.c
+ifeq ($(WIN32),1)
+SRC += lib/readline/win32fixes.c
+endif
 endif
 
 ifeq (${JIT_X86},1)
@@ -68,6 +73,7 @@ PNLIB += $(foreach s,syntax syntax-p5,lib/potion/lib$s${DLL})
 EXTLIBS = -Llib -luv
 ifeq (${WIN32},1)
 LIBUV = lib/libuv-11.dll lib/libuv.dll.a
+EXTLIBS += -lw32_32
 else
 LIBUV = lib/libuv${DLL}
 endif
@@ -107,8 +113,13 @@ default: pn p2 libs
 	+${MAKE} -s usage
 
 all: default libs static docall test
+ifneq (${SANDBOX},1)
 pn: bin/potion${EXE} ${PNLIB}
 p2: bin/p2${EXE} ${PNLIB}
+else
+pn: static
+p2: static
+endif
 bins: ${BINS}
 libs: ${PNLIB} ${DYNLIBS}
 static: lib/libpotion.a bin/potion-s${EXE} lib/libp2.a bin/p2-s${EXE}
@@ -332,12 +343,14 @@ bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a lib/aio.o lib/readline/readlin
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_POTION} -o $@ lib/readline/*.o lib/aio.o \
           lib/libpotion.a ${LIBPTH} ${EXTLIBS} ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
+	@if [ "${SANDBOX}" = "1" ]; then rm bin/potion${EXE}; cd bin; ln -s potion-s${EXE} potion${EXE}; cd ..; fi
 
 bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a lib/aio.o2 lib/readline/readline.o
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ lib/readline/*.o lib/aio.o2 \
           lib/libp2.a ${LIBPTH} ${EXTLIBS} ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
+	@if [ "${SANDBOX}" = "1" ]; then rm bin/p2${EXE}; cd bin; ln -s p2-s${EXE} p2${EXE}; cd ..; fi
 
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
@@ -669,16 +682,16 @@ fulltest: testable test/spectest.data
 # for LTO gold -O4
 bin/potion-test${EXE}: ${OBJ_TEST} lib/libpotion.a
 	@${ECHO} LINK $@
-	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${LIBS}; then true; else \
+	@if ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ lib/libpotion.a ${RPATH} ${LIBPTH} ${EXTLIBS} ${LIBS}; then true; else \
 	  ${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_TEST} -o $@ ${OBJ} ${OBJ_SYN} ${LIBPTH} ${LIBS}; fi
 
 bin/gc-test${EXE}: ${OBJ_GC_TEST} lib/libp2.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${RPATH} ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_TEST} -o $@ lib/libp2.a ${RPATH} ${LIBPTH} ${EXTLIBS} ${LIBS}
 
 bin/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libp2.a
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${RPATH} ${LIBPTH} ${LIBS}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_GC_BENCH} -o $@ lib/libp2.a ${RPATH} ${LIBPTH} ${EXTLIBS} ${LIBS}
 
 bin/p2-test${EXE}: ${OBJ_P2_TEST} lib/libp2.a
 	@${ECHO} LINK $@
