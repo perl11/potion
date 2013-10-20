@@ -246,9 +246,9 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${LIBPNA_BACK}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
-bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/potion/aio${LOADEXT} lib/readline/readline.o
+bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/aio.o lib/readline/readline.o
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.o -o $@ lib/potion/aio${LOADEXT} lib/readline/*.o \
+	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.o -o $@ lib/aio.o lib/readline/*.o \
 	  lib/libpotion.a ${LIBPTH} ${EXTLIBS} ${LIBS}
 
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
@@ -328,7 +328,7 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
   lib/buffile.${OPIC} lib/buffile.c lib/libpotion${DLL}
 	@${ECHO} LD $@
 	@${LIBPNA_AWAY}
-	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,buffile,${LDDLLFLAGS}) ${RPATH} \
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,potion/buffile,${LDDLLFLAGS}) ${RPATH} \
 	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
 	@${LIBPNA_BACK}
 
@@ -350,7 +350,7 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o lib/aio.${OPIC} lib/aio.c > /dev/null
 	@${ECHO} LD $@
 	@${LIBPNA_AWAY}
-	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,aio,${LDDLLFLAGS}) ${RPATH} \
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,potion/aio,${LDDLLFLAGS}) ${RPATH} \
 	  lib/aio.${OPIC} ${LIBPTH} -lpotion ${EXTLIBS} ${LIBS} ${AIO_DEPLIBS} > /dev/null
 	@${LIBPNA_BACK}
 
