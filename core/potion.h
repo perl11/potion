@@ -175,17 +175,19 @@ struct PNVtable;
 #define PN_IS_FFIPTR(p)  ((PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->birth_hi)) \
 			  || (!PN_IS_PTR(p) && p > (_PN)P->mem->birth_hi))
 
-#define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, obj, "String")
-#define PN_CHECK_INT(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, obj, "Integer")
-#define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, obj, "Bool")
-#define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, obj, "Tuple")
-#define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, obj, "Closure")
+#define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "String")
+#define PN_CHECK_INT(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Integer")
+#define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Bool")
+#define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Tuple")
+#define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Closure")
 //TODO: check parents and mixins via bind
-#define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, obj)
+#define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, (PN)obj)
 #ifdef DEBUG
-#define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE((PN)obj,type)
+#define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE(obj,type)
+#define DBG_CHECK_INT(obj) PN_CHECK_INT(obj)
 #else
 #define DBG_CHECK_TYPE(obj,type)
+#define DBG_CHECK_INT(obj)
 #endif
 
 ///\class PNNumber
@@ -772,7 +774,7 @@ void potion_fatal(char *);
 void potion_allocation_error(void);
 PN potion_io_error(Potion *, const char *);
 PN potion_type_error(Potion *, PN);
-PN potion_type_error_want(Potion *, PN, const char *);
+PN potion_type_error_want(Potion *, const char *, PN, const char *);
 void potion_syntax_error(Potion *, const char *, ...)
   __attribute__ ((format (printf, 2, 3)));
 PNType potion_kind_of(PN);

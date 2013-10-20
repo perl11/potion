@@ -146,7 +146,7 @@ static PN aio_error(Potion *P, char *name, int status) {
 
 //checks inheritence
 #define CHECK_AIO_TYPE(self, T) \
-  if (!potion_bind(P, self, PN_STR("Aio_"_XSTR(T)))) return potion_type_error_want(P, self, ""_XSTR(T))
+  if (!potion_bind(P, self, PN_STR("Aio_"_XSTR(T)))) return potion_type_error_want(P, "self", self, ""_XSTR(T))
 #define CHECK_AIO_STREAM(stream)                             \
   {                                                          \
     PNType _t = PN_VTYPE(stream);                            \
@@ -156,7 +156,7 @@ static PN aio_error(Potion *P, char *name, int status) {
         _t != aio_pipe_type &&                               \
         _t != aio_tty_type &&                                \
         !potion_bind(P, stream, PN_STR("listen")))           \
-      return potion_type_error_want(P, stream, "Aio_stream");\
+      return potion_type_error_want(P, "stream", stream, "Aio_stream");	\
   }
 //if (PN_VTYPE(self) != aio_##T##_type) {
 #define FATAL_AIO_TYPE(self, T) \
@@ -187,10 +187,10 @@ static PN aio_error(Potion *P, char *name, int status) {
 
 #define AIO_DATA(T,ARG) \
   (aio_##T##_t*)PN_DATA(potion_fwd(ARG)); \
-  CHECK_AIO_TYPE(potion_fwd(ARG),T)
+  CHECK_AIO_TYPE(ARG,T)
 #define AIO_STREAM(ARG) \
   (aio_stream_t*)PN_DATA(potion_fwd(ARG)); \
-  CHECK_AIO_STREAM(potion_fwd(ARG))
+  CHECK_AIO_STREAM(ARG)
 
 //cb wrappers
 #define DEF_AIO_CB(T)				       \
@@ -267,7 +267,7 @@ static PN aio_udp_new(Potion *P, PN cl, PN self, PN loop) {
    \param key PNString, One of "broadcast", "multicast_loop", "multicast_ttl", "ttl"
    \see http://nikhilm.github.io/uvbook/networking.html#udp */
 static PN aio_udp_get(Potion *P, PN cl, PN self, PN key, PN value) {
-  CHECK_AIO_TYPE(potion_fwd(self),udp);
+  CHECK_AIO_TYPE(self,udp);
   PN_CHECK_STR(key);
   PN v = potion_obj_get(P, 0, self, key);
   return v ? v :  potion_error(P, potion_str_format(P, "Invalid key %s",
@@ -282,7 +282,7 @@ static PN aio_udp_get(Potion *P, PN cl, PN self, PN key, PN value) {
 static PN aio_udp_set(Potion *P, PN cl, PN self, PN key, PN value) {
   uv_udp_t *udp;
   udp = (uv_udp_t*)PN_DATA(potion_fwd(self));
-  CHECK_AIO_TYPE(potion_fwd(self),udp);
+  CHECK_AIO_TYPE(self,udp);
   PN_CHECK_STR(key);
   char *k = PN_STR_PTR(key);
   if (!strcmp(k, "broadcast")) {
@@ -499,7 +499,7 @@ static PN aio_getaddrinfo_new(Potion *P, PN cl, PN self,
   const char *service_c = PN_IS_STR(service) ? PN_STR_PTR(service) : NULL;
   struct addrinfo* hints_c = (struct addrinfo*)PN_DATA(hints);
   if (!node_c && !service_c) {
-    return potion_type_error_want(P, !node_c ? node : service, "String");
+    return potion_type_error_want(P, "node or service", !node_c ? node : service, "String");
   }
   int r = uv_getaddrinfo(l, handle, getaddrinfo_cb, node_c, service_c, (const struct addrinfo*)hints_c);
   if (r) return aio_error(P, "Aio_getaddrinfo", r);
@@ -1476,7 +1476,7 @@ aio_signal_stop(Potion *P, PN cl, PN self) {
       "gid", "stdio_count", "stdio", "uid"
    \see http://nikhilm.github.io/uvbook/networking.html#process_options */
 static PN aio_process_options_get(Potion *P, PN cl, PN self, PN key) {
-  CHECK_AIO_TYPE(potion_fwd(self),process_options);
+  CHECK_AIO_TYPE(self,process_options);
   PN_CHECK_STR(key);
   PN v = potion_obj_get(P, 0, self, key);
   return v ? v :  potion_error(P, potion_str_format(P, "Invalid key %s",
@@ -1490,7 +1490,7 @@ static PN aio_process_options_get(Potion *P, PN cl, PN self, PN key) {
    \param value
    \see http://nikhilm.github.io/uvbook/processes.html#spawning-child-processes */
 static PN aio_process_options_set(Potion *P, PN cl, PN self, PN key, PN value) {
-  CHECK_AIO_TYPE(potion_fwd(self),process_options);
+  CHECK_AIO_TYPE(self,process_options);
   PN_CHECK_STR(key);
   char *k = PN_STR_PTR(key);
   if (!strcmp(k, "file")) { PN_CHECK_STR(value); }
@@ -1499,17 +1499,17 @@ static PN aio_process_options_set(Potion *P, PN cl, PN self, PN key, PN value) {
   else if (!strcmp(k, "uid")) { PN_CHECK_INT(value); } //fails on windows!
   else if (!strcmp(k, "flags")) { PN_CHECK_INT(value); }
   else if (!strcmp(k, "args")) {
-    if (!value || !PN_IS_TUPLE(value)) return potion_type_error_want(P, value, "Tuple");
+    if (!value || !PN_IS_TUPLE(value)) return potion_type_error_want(P, "value", value, "Tuple");
     vPN(Tuple) t = PN_GET_TUPLE(value);
     PN_TUPLE_EACH(t, i, v, { PN_CHECK_STR(v); });
   }
   else if (!strcmp(k, "env")) {
-    if (!value || !PN_IS_TUPLE(value)) return potion_type_error_want(P, value, "Tuple");
+    if (!value || !PN_IS_TUPLE(value)) return potion_type_error_want(P, "value", value, "Tuple");
     vPN(Tuple) t = PN_GET_TUPLE(value);
     PN_TUPLE_EACH(t, i, v, { PN_CHECK_STR(v); });
   }
   else if (!strcmp(k, "stdio")) {
-    if (!value || !PN_IS_TUPLE(value)) return potion_type_error_want(P, value, "Tuple");
+    if (!value || !PN_IS_TUPLE(value)) return potion_type_error_want(P, "value", value, "Tuple");
     vPN(Tuple) t = PN_GET_TUPLE(value); //all must be numbers
     PN_TUPLE_EACH(t, i, v, { PN_CHECK_INT(v); });
   }
