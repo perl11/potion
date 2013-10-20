@@ -1251,9 +1251,10 @@ PN potion_source_dumpbc(Potion *P, PN cl, PN proto, PN options) {
 ///\param options optional PNString
 /// TODO: serializable ascii, c, exe, jvm, .net
 PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
-  char *cb = PN_STR_PTR(backend);
   if (backend == PN_STRN("bc", 2))
     return potion_source_dumpbc(P, cl, self, options);
+#ifndef SANDBOX
+  char *cb = PN_STR_PTR(backend);
   if (potion_load(P, P->lobby, self, potion_strcat(P, "compile/", cb))) {
     DBG_c("loaded compile/%s\n", cb);
     DBG_c("Source dump%s(%s)\n", cb, PN_IS_STR(options) ? PN_STR_PTR(options) : "");
@@ -1262,6 +1263,9 @@ PN potion_source_dump(Potion *P, PN cl, PN self, PN backend, PN options) {
     fprintf(stderr, "** failed loading the compile/%s module\n", cb);
     return PN_NIL;
   }
+#else
+  potion_fatal("external compilers disabled with SANDBOX");
+#endif
 }
 
 PN potion_run(Potion *P, PN code, int jit) {

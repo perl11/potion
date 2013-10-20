@@ -58,17 +58,19 @@ DEF_AIO_CB_WRAP(check);
 DEF_AIO_CB_WRAP(idle);
 DEF_AIO_CB_WRAP1(exit,process,exit);
 DEF_AIO_CB_WRAP1(walk,handle,walk);
+#ifndef SANDBOX
 DEF_AIO_CB_WRAP(fs);
+DEF_AIO_CB_WRAP(fs_poll);
+DEF_AIO_CB_WRAP(fs_event);
+DEF_AIO_HANDLE_WRAP(process);
+#endif
 DEF_AIO_CB_WRAP(work);
 DEF_AIO_CB_WRAP1(after_work,work,after_work);
 DEF_AIO_CB_WRAP(getaddrinfo);
-DEF_AIO_CB_WRAP(fs_poll);
 DEF_AIO_CB_WRAP(signal);
 DEF_AIO_HANDLE_WRAP(handle);
 DEF_AIO_HANDLE_WRAP(loop);
-DEF_AIO_CB_WRAP(fs_event);
 DEF_AIO_CB_WRAP(pipe);
-DEF_AIO_HANDLE_WRAP(process);
 DEF_AIO_HANDLE_WRAP(stdio_container);
 DEF_AIO_HANDLE_WRAP(process_options);
 DEF_AIO_CB_WRAP1(stream,stream,read);
@@ -88,6 +90,7 @@ DEF_AIO_HANDLE_WRAP(rwlock);
 #undef DEF_AIO_HANDLE_WRAP
 #undef DEF_AIO_CB_WRAP1
 
+#ifndef SANDBOX
 /**\memberof Aio_fs_event
   The aio_fs_event callback will receive the following arguments:
   \param filename
@@ -102,6 +105,7 @@ aio_fs_event_cb(uv_fs_event_t* handle, const char* filename, int events, int sta
   if (cb) cb->method(wrap->P, (PN)cb, (PN)data, potion_str(wrap->P, filename),
 		     PN_NUM(events), PN_NUM(status));
 }
+#endif
 
 static PN aio_error(Potion *P, char *name, int status) {
   return potion_error(P, potion_str_format(P, "Error %s: %s", name,
@@ -351,12 +355,6 @@ static PN aio_idle_new(Potion *P, PN cl, PN self, PN loop) {
 static PN aio_timer_new(Potion *P, PN cl, PN self, PN loop) {
   DEF_AIO_NEW_LOOP_INIT(timer);
 }
-/**\class Aio_fs_poll \memberof Lobby
-   create and init a \c Aio_fs_poll object
-   \param loop Aio_loop, defaults to uv_default_loop() */
-static PN aio_fs_poll_new(Potion *P, PN cl, PN self, PN loop) {
-  DEF_AIO_NEW_LOOP_INIT(fs_poll);
-}
 /**\class Aio_signal \memberof Lobby
 
 create and init a \c Aio_signal object
@@ -454,6 +452,16 @@ static PN aio_udp_send_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(udp_send);
   return (PN)data;
 }
+
+#ifndef SANDBOX
+/**\class Aio_fs_poll \memberof Lobby
+   create and init a \c Aio_fs_poll object
+   \param loop Aio_loop, defaults to uv_default_loop()
+
+  This class is disabled in a SANDBOX. */
+static PN aio_fs_poll_new(Potion *P, PN cl, PN self, PN loop) {
+  DEF_AIO_NEW_LOOP_INIT(fs_poll);
+}
 /**\class Aio_fs \memberof Aio_req \memberof Lobby
  * Create an empty unitialized \c Aio_fs filesystem request.
  *
@@ -465,11 +473,46 @@ static PN aio_udp_send_new(Potion *P, PN cl, PN self) {
  *
  * aio_fs_req_cleanup() must be called after completion of the fs
  * method to free any internal memory allocations associated with the
- * request. */
+ * request.
+ *
+ * This class is disabled in a SANDBOX.*/
 static PN aio_fs_new(Potion *P, PN cl, PN self) {
   DEF_AIO_NEW(fs);
   return (PN)data;
 }
+/**\class Aio_fs_event \memberof Aio
+   create and init a \c Aio_fs_event */
+static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN loop) {
+  DEF_AIO_NEW_LOOP_INIT(fs_event);
+}
+/**\memberof Aio_fs_event
+   start a \c Aio_fs_event
+   \param cb PNClosure or FFI function
+   \param filename PNString
+   \param flags INT */
+static PN aio_fs_event_start(Potion *P, PN cl, PN self, PN cb, PN filename, PN flags) {
+  aio_fs_event_t *handle = AIO_DATA(fs_event,self);
+  AIO_CB_SET(fs_event,handle);
+  PN_CHECK_STR(filename);
+  PN_CHECK_INT(flags);
+  int r = uv_fs_event_start(&handle->r, fs_event_cb, PN_STR_PTR(filename), PN_NUM(flags));
+  return r ? aio_error(P, "fs_event start", r) : self;
+}
+///\memberof Aio_fs_event
+static PN
+aio_fs_event_stop(Potion *P, PN cl, PN self) {
+  aio_fs_event_t *handle = AIO_DATA(fs_event,self);
+  int r = uv_fs_event_stop(&handle->r);
+  return r ? aio_error(P, "fs_event stop", r) : self;
+}
+
+static PN aio_process_options(Potion *P, PN cl, PN self)
+{
+  DEF_AIO_NEW(process_options);
+  return (PN)data;
+}
+#endif /* SANDBOX */
+
 /**\class Aio_work \memberof Aio
    create a \c Aio_work request */
 static PN aio_work_new(Potion *P, PN cl, PN self) {
@@ -503,11 +546,6 @@ static PN aio_getaddrinfo_new(Potion *P, PN cl, PN self,
   }
   int r = uv_getaddrinfo(l, handle, getaddrinfo_cb, node_c, service_c, (const struct addrinfo*)hints_c);
   if (r) return aio_error(P, "Aio_getaddrinfo", r);
-  return (PN)data;
-}
-static PN aio_process_options(Potion *P, PN cl, PN self)
-{
-  DEF_AIO_NEW(process_options);
   return (PN)data;
 }
 static PN aio_cpu_info_new(Potion *P, PN cl, PN self) {
@@ -569,31 +607,6 @@ static PN aio_sem_new(Potion *P, PN cl, PN self, PN value) {
   if (uv_sem_init(handle, PN_NUM(value)))
     return potion_io_error(P, "Aio_sem");
   return (PN)data;
-}
-/**\class Aio_fs_event \memberof Aio
-   create and init a \c Aio_fs_event */
-static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN loop) {
-  DEF_AIO_NEW_LOOP_INIT(fs_event);
-}
-/**\class Aio_fs_event \memberof Aio
-   create and init a \c Aio_fs_event
-   \param cb PNClosure or FFI function
-   \param filename PNString
-   \param flags INT */
-static PN aio_fs_event_start(Potion *P, PN cl, PN self, PN cb, PN filename, PN flags) {
-  aio_fs_event_t *handle = AIO_DATA(fs_event,self);
-  AIO_CB_SET(fs_event,handle);
-  PN_CHECK_STR(filename);
-  PN_CHECK_INT(flags);
-  int r = uv_fs_event_start(&handle->r, fs_event_cb, PN_STR_PTR(filename), PN_NUM(flags));
-  return r ? aio_error(P, "fs_event start", r) : self;
-}
-///\memberof Aio_prepare
-static PN
-aio_fs_event_stop(Potion *P, PN cl, PN self) {
-  aio_fs_event_t *handle = AIO_DATA(fs_event,self);
-  int r = uv_fs_event_stop(&handle->r);
-  return r ? aio_error(P, "fs_event stop", r) : self;
 }
 static void
 aio_async_cb(uv_async_t* req, int status) {
@@ -681,6 +694,8 @@ static void
 aio_signal_cb(uv_signal_t* req, int status) { //signum really
   DEF_AIO_CB(signal);
 }
+
+#ifndef SANDBOX
 #if 0 //yet unused
 static void
 aio_fs_poll_cb(uv_fs_poll_t* handle, int status, const uv_stat_t* prev, const uv_stat_t* curr) {
@@ -696,6 +711,17 @@ aio_fs_poll_cb(uv_fs_poll_t* handle, int status, const uv_stat_t* prev, const uv
 		     potion_ref(wrap->P, (PN)prev), potion_ref(wrap->P, (PN)curr));
 }
 #endif
+static void
+aio_fs_cb(uv_fs_t* req) {
+  aio_fs_t* wrap = (aio_fs_t*)req;
+  vPN(Closure) cb = PN_CLOSURE(wrap->cb);
+  PN data = (PN)((char*)wrap - sizeof(struct PNData));
+  Potion *P = wrap->P;
+  FATAL_AIO_TYPE(data,fs);
+  if (cb) cb->method(P, (PN)cb, (PN)data);
+}
+#endif
+
 static void
 aio_read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   aio_stream_t* wrap = (aio_stream_t*)stream;
@@ -736,16 +762,6 @@ aio_close_cb(uv_handle_t* handle) {
   FATAL_AIO_TYPE(data,handle);
   if (cb) cb->method(P, (PN)cb, (PN)data);
 }
-static void
-aio_fs_cb(uv_fs_t* req) {
-  aio_fs_t* wrap = (aio_fs_t*)req;
-  vPN(Closure) cb = PN_CLOSURE(wrap->cb);
-  PN data = (PN)((char*)wrap - sizeof(struct PNData));
-  Potion *P = wrap->P;
-  FATAL_AIO_TYPE(data,fs);
-  if (cb) cb->method(P, (PN)cb, (PN)data);
-}
-
 /** \memberof Aio
  * Returns the libuv version packed into a single integer. 8 bits are used for
  * each component, with the patch number stored in the 8 least significant
@@ -1470,6 +1486,7 @@ aio_signal_stop(Potion *P, PN cl, PN self) {
   int r = uv_signal_stop(&handle->r);
   return r ? aio_error(P, "signal stop", r) : self;
 }
+#ifndef SANDBOX
 /**\memberof Aio_process_options
    get \c Aio_process_options properties
    \param key PNString. One of "args", "cwd", "env", "exit_cb", "flags",
@@ -1522,7 +1539,9 @@ static PN aio_process_options_set(Potion *P, PN cl, PN self, PN key, PN value) {
   return (PN)self;
 }
 /**\class Aio_process \memberof Lobby
-   Initializes uv_process_t and starts the process.
+   Initializes uv_process_t and starts a new process.
+
+   This class is disabled in a SANDBOX.
    \param options Aio_process_options (mandatory)
    \param loop (optional)
    \see http://nikhilm.github.io/uvbook/processes.html#spawning-child-processes */
@@ -1749,6 +1768,7 @@ static PN aio_fs_fdatasync(Potion *P, PN cl, PN self, PN fd, PN cb, PN loop) {
   int r = uv_fs_fdatasync(l, &req->r, PN_INT(fd), fs_cb);
   return r ? aio_error(P, "fs fdatasync", r) : self;
 }
+#endif /* SANDBOX */
 
 #undef DEF_AIO_NEW
 #undef DEF_AIO_NEW_LOOP
@@ -1853,6 +1873,7 @@ void Potion_Init_aio(Potion *P) {
   potion_type_constructor_is(aio_udp_vt, PN_FUNC(aio_udp_new, "|loop=o"));
   potion_method(P->lobby, "Aio_udp", aio_udp_new, "|loop=o");
 
+#ifndef SANDBOX
   PN po_ivars = potion_tuple_with_size(P, 5); //sorted list of path names
   t = PN_GET_TUPLE(po_ivars); i = 0;
   t->set[i++] = PN_STR("args");
@@ -1871,17 +1892,24 @@ void Potion_Init_aio(Potion *P) {
   potion_type_constructor_is(aio_po_vt, PN_FUNC(aio_process_options, 0));
   potion_method(P->lobby, "Aio_process_options", aio_process_options, 0);
 
+  PN aio_process_vt = potion_class(P, 0, aio_vt, 0); // with spawn as ctor
+  aio_process_type = potion_class_type(P, aio_process_vt);
+  potion_define_global(P, PN_STR("Aio_process"), aio_process_vt);
+  potion_type_constructor_is(aio_process_vt, PN_FUNC(aio_spawn, "options=o|loop=o"));
+  potion_method(P->lobby, "aio_spawn", aio_spawn, "options=o|loop=o");
+  DEF_AIO_GLOBAL_VT(fs_event,aio,"|loop=o"); //"filename=S,cb=o,flags=N");
+  DEF_AIO_GLOBAL_VT(fs_poll,aio,"|loop=o");
+  DEF_AIO_GLOBAL_VT(fs,aio_req,0);
+#endif
   DEF_AIO_GLOBAL_VT(tty,aio_stream,"file=o,readable=N|loop=o");
   DEF_AIO_GLOBAL_VT(pipe,aio_stream,"ipc=N|loop=o");
   DEF_AIO_GLOBAL_VT(prepare,aio,"|loop=o");
   DEF_AIO_GLOBAL_VT(check,aio,"|loop=o");
   DEF_AIO_GLOBAL_VT(idle,aio,"|loop=o");
   DEF_AIO_GLOBAL_VT(timer,aio,"|loop=o");
-  DEF_AIO_GLOBAL_VT(fs_poll,aio,"|loop=o");
   DEF_AIO_GLOBAL_VT(signal,aio,"|loop=o");
   //DEF_AIO_GLOBAL_VT(poll,aio,"fd=N|loop=o");
   DEF_AIO_GLOBAL_VT(async,aio,"cb=o|loop=o");
-  DEF_AIO_GLOBAL_VT(fs_event,aio,"|loop=o"); //"filename=S,cb=o,flags=N");
   DEF_AIO_GLOBAL_VT(mutex,aio,0);
   DEF_AIO_GLOBAL_VT(rwlock,aio,0);
   DEF_AIO_GLOBAL_VT(cond,aio,0);
@@ -1895,17 +1923,10 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_VT(write,aio);
   DEF_AIO_VT(shutdown,aio);
   DEF_AIO_VT(udp_send,aio_udp);
-  DEF_AIO_GLOBAL_VT(fs,aio_req,0);
   DEF_AIO_VT(work,aio);
   DEF_AIO_GLOBAL_VT(getaddrinfo,aio,"cb=&,node=S,service=S,hints=o|loop=o");
   DEF_AIO_VT(cpu_info,aio);
   DEF_AIO_VT(interface_address,aio);
-
-  PN aio_process_vt = potion_class(P, 0, aio_vt, 0); // with spawn as ctor
-  aio_process_type = potion_class_type(P, aio_process_vt);
-  potion_define_global(P, PN_STR("Aio_process"), aio_process_vt);
-  potion_type_constructor_is(aio_process_vt, PN_FUNC(aio_spawn, "options=o|loop=o"));
-  potion_method(P->lobby, "aio_spawn", aio_spawn, "options=o|loop=o");
 
 #undef DEF_AIO_VT_1
 #undef DEF_AIO_CTOR
@@ -1956,8 +1977,26 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_pipe_vt, "write", aio_write2, "req=o,buf=b,bufcnt=N|write_cb=&");
   potion_method(aio_pipe_vt, "pending_instances", aio_pipe_pending_instances, "count=N");
 
+#ifndef SANDBOX
   potion_method(aio_fs_event_vt, "start", aio_fs_event_start, "cb=&,filename=S,flags=N");
   potion_method(aio_fs_event_vt, "stop", aio_fs_event_stop, 0);
+  potion_method(aio_fs_vt, "close", aio_fs_close, "fd=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "open", aio_fs_open, "path=S,flags=N,mode=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "read", aio_fs_read, "fd=N,buf=o,length=N,offset=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "unlink", aio_fs_unlink, "path=S,cb=&|loop=o");
+  potion_method(aio_fs_vt, "write", aio_fs_write, "fd=N,buf=o,length=N,offset=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "mkdir", aio_fs_mkdir, "path=S,mode=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "rmdir", aio_fs_rmdir, "path=S,cb=&|loop=o");
+  potion_method(aio_fs_vt, "readdir", aio_fs_readdir, "path=S,flags=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "stat", aio_fs_stat, "path=S,cb=&|loop=o");
+  potion_method(aio_fs_vt, "fstat", aio_fs_fstat, "fd=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "rename", aio_fs_rename, "path=S,newpath=S,cb=&|loop=o");
+  potion_method(aio_fs_vt, "fsync", aio_fs_fsync, "fd=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "fdatasync", aio_fs_fdatasync, "fd=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "cleanup", aio_fs_cleanup, 0);
+  potion_method(aio_process_vt, "kill", aio_process_kill, "signum=N");
+  potion_method(P->lobby, "aio_kill", aio_kill, "pid=N,signum=N");
+#endif
   potion_method(aio_prepare_vt, "start", aio_prepare_start, "cb=&");
   potion_method(aio_prepare_vt, "stop", aio_prepare_stop, 0);
   potion_method(aio_check_vt, "start", aio_check_start, "cb=&");
@@ -1987,20 +2026,4 @@ void Potion_Init_aio(Potion *P) {
 #endif
   potion_method(aio_signal_vt, "start", aio_signal_start, "cb=&");
   potion_method(aio_signal_vt, "stop", aio_signal_stop, 0);
-  potion_method(aio_process_vt, "kill", aio_process_kill, "signum=N");
-  potion_method(P->lobby, "aio_kill", aio_kill, "pid=N,signum=N");
-  potion_method(aio_fs_vt, "close", aio_fs_close, "fd=N,cb=&|loop=o");
-  potion_method(aio_fs_vt, "open", aio_fs_open, "path=S,flags=N,mode=N,cb=&|loop=o");
-  potion_method(aio_fs_vt, "read", aio_fs_read, "fd=N,buf=o,length=N,offset=N,cb=&|loop=o");
-  potion_method(aio_fs_vt, "unlink", aio_fs_unlink, "path=S,cb=&|loop=o");
-  potion_method(aio_fs_vt, "write", aio_fs_write, "fd=N,buf=o,length=N,offset=N,cb=&|loop=o");
-  potion_method(aio_fs_vt, "mkdir", aio_fs_mkdir, "path=S,mode=N,cb=&|loop=o");
-  potion_method(aio_fs_vt, "rmdir", aio_fs_rmdir, "path=S,cb=&|loop=o");
-  potion_method(aio_fs_vt, "readdir", aio_fs_readdir, "path=S,flags=N,cb=&|loop=o");
-  potion_method(aio_fs_vt, "stat", aio_fs_stat, "path=S,cb=&|loop=o");
-  potion_method(aio_fs_vt, "fstat", aio_fs_fstat, "fd=N,cb=&|loop=o");
-  potion_method(aio_fs_vt, "rename", aio_fs_rename, "path=S,newpath=S,cb=&|loop=o");
-  potion_method(aio_fs_vt, "fsync", aio_fs_fsync, "fd=N,cb=&|loop=o");
-  potion_method(aio_fs_vt, "fdatasync", aio_fs_fdatasync, "fd=N,cb=&|loop=o");
-  potion_method(aio_fs_vt, "cleanup", aio_fs_cleanup, 0);
 }

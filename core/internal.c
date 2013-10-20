@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <errno.h>
 #include "p2.h"
 #include "internal.h"
 #include "table.h"
@@ -248,6 +249,11 @@ PN potion_error_string(Potion *P, PN cl, PN self) {
 void potion_error_init(Potion *P) {
   PN err_vt = PN_VTABLE(PN_TERROR);
   potion_method(err_vt, "string", potion_error_string, 0);
+}
+
+PN potion_io_error(Potion *P, const char *msg) {
+  return potion_error(P, potion_str_format(P, "Error %s: %s", msg, strerror(errno)),
+                      0, 0, 0);
 }
 
 static inline char *potion_type_name(Potion *P, PN obj) {

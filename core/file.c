@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <assert.h>
 #include "p2.h"
 #include "internal.h"
@@ -30,12 +29,6 @@
 #endif
 
 typedef struct PNFile * volatile pn_file;
-
-PN potion_io_error(Potion *P, const char *msg) {
-  return potion_error(P, potion_str_format(P, "Error %s: %s", msg, strerror(errno)),
-                      0, 0, 0);
-}
-
 
 /**\memberof PNFile
   constructor method. opens a file with 0755 and returns the created PNFile

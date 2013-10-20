@@ -256,6 +256,9 @@ int main(int argc, char *argv[]) {
   for (i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--")) { i++; break; }
     if (!strcmp(argv[i], "-I")) {
+#ifdef SANDBOX
+      potion_fatal("-I disabled in SANDBOX");
+#else
       char *extra_path = &argv[i][2]; // todo: flexible
       if (*extra_path)
 	potion_loader_add(P, potion_str(P, extra_path));
@@ -268,6 +271,7 @@ int main(int argc, char *argv[]) {
 	i++;
       }
       continue;
+#endif
     }
     if (!strcmp(argv[i], "--inspect")) {
       P->flags |= DEBUG_INSPECT; continue; }
@@ -380,6 +384,8 @@ int main(int argc, char *argv[]) {
       "  }\n"
       "}"));
 #else
+#ifndef SANDBOX
+    // Dynamic loading of libsyntax disabled in SANDBOX
     // dynamically parse potion code from p2
     #include <dlfcn.h>
     {
@@ -402,6 +408,7 @@ int main(int argc, char *argv[]) {
       code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
       return potion_run(P, code, P->flags & EXEC_JIT);
     }
+#endif /* SANDBOX */
 #endif
   }
 END:

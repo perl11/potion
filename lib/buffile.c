@@ -12,6 +12,8 @@
 //#include <errno.h>
 #include "p2.h"
 
+#ifndef SANDBOX
+
 // i686-w64-mingw32 /include/stdio.h has asprintf defined
 // i386-mingw32 not
 #if POTION_WIN32 && !defined(__MINGW_SCANF_FORMAT)
@@ -323,3 +325,5 @@ void Potion_Init_buffile(Potion *P) {
   potion_method(ffile_vt, "string", potion_buffile_string, 0);
   potion_method(P->lobby, "tmpfile", potion_buffile_tmpfile, 0);
 }
+
+#endif /*SANDBOX */
