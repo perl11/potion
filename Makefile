@@ -15,7 +15,7 @@ include config.inc
 ifneq (${DISABLE_CALLCC},1)
 SRC += core/callcc.c
 endif
-ifneq (${ENABLE_SANDBOX},1)
+ifneq (${SANDBOX},1)
 SRC += core/file.c core/load.c
 endif
 
