@@ -12,4 +12,3 @@ t = (0="a", 1="b", 2="c")
 t slice say          #=> (0=a, 2=c, 1=b)
 t slice((1,2,3)) keys sort(true) say #=> (1, 2)
 t slice(()) say      #=> ()
-#=> nil
