@@ -14,10 +14,11 @@ cmdi="$cmd -I"; cmdx="$cmdi -X";
 cmdc="$cmd -c"; extc=b
 
 if test -z $1; then
+    make -s test/api/potion-test test/api/gc-test
     ${ECHO} running potion API tests; 
     test/api/potion-test; 
     ${ECHO} running GC tests; 
-    test/api/gc-test; 
+    test/api/gc-test;
 fi
 
 while [ $pass -lt 3 ]; do 
@@ -45,7 +46,11 @@ while [ $pass -lt 3 ]; do
 	    break
 	fi
     else
-	what=test/**/*.$EXT
+        if $(grep "SANDBOX = 1" config.inc >/dev/null); then
+	    what=`ls test/**/*.$EXT|grep -Ev "test/misc/(buffile|load)\.$EXT"`
+        else
+	    what=test/**/*.$EXT
+        fi
     fi
 
     ${ECHO} running $whattests
