@@ -388,6 +388,11 @@ test: pn libs test/api/potion-test${EXE} test/api/gc-test${EXE}
 	${ECHO} running potion API tests; \
 	test/api/potion-test; \
 	count=0; failed=0; pass=0; \
+	if $$(grep "SANDBOX = 1" config.inc >/dev/null); then \
+	    what=`ls test/**/*.pn|grep -Ev "test/misc/(buffile|load)\.pn"`; \
+	else \
+	    what=test/**/*.pn; \
+	fi; \
 	while [ $$pass -lt 3 ]; do \
 	  ${ECHO}; \
 	  if [ $$pass -eq 0 ]; then \
@@ -405,7 +410,7 @@ test: pn libs test/api/potion-test${EXE} test/api/gc-test${EXE}
 		    break; \
 		fi; \
 	  fi; \
-	  for f in test/**/*.pn; do \
+	  for f in $$what; do \
 		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
 		if [ $$t -eq 0 ]; then \
 			for=`${RUNPRE}potion -I -B $$f | ${SED} "s/\n$$//"`; \
