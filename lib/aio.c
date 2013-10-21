@@ -1799,13 +1799,14 @@ void Potion_Init_aio(Potion *P) {
 #define DEF_AIO_NUM_GLOBAL(name) \
   potion_define_global(P, PN_STR("AIO_"_XSTR(name)), PN_NUM(UV_##name))
 
-  DEF_AIO_NUM_GLOBAL(RUN_DEFAULT);
-  DEF_AIO_NUM_GLOBAL(RUN_ONCE);
-  DEF_AIO_NUM_GLOBAL(RUN_NOWAIT);
   DEF_AIO_NUM_GLOBAL(UDP_IPV6ONLY);
   DEF_AIO_NUM_GLOBAL(UDP_PARTIAL);
   DEF_AIO_NUM_GLOBAL(LEAVE_GROUP);    //udp /membership
   DEF_AIO_NUM_GLOBAL(JOIN_GROUP);     //udp /membership
+#ifndef SANDBOX
+  DEF_AIO_NUM_GLOBAL(RUN_DEFAULT);
+  DEF_AIO_NUM_GLOBAL(RUN_ONCE);
+  DEF_AIO_NUM_GLOBAL(RUN_NOWAIT);
   DEF_AIO_NUM_GLOBAL(IGNORE);         //spawn stdio_flags
   DEF_AIO_NUM_GLOBAL(CREATE_PIPE);    //spawn
   DEF_AIO_NUM_GLOBAL(INHERIT_FD);     //spawn
@@ -1846,6 +1847,7 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_NUM_GLOBAL(FS_READLINK);
   DEF_AIO_NUM_GLOBAL(FS_CHOWN);
   DEF_AIO_NUM_GLOBAL(FS_FCHOWN);
+#endif /* SANDBOX */
 
   potion_method(P->lobby, "Aio_version", aio_version, 0);
   potion_method(P->lobby, "Aio_version_string", aio_version_string, 0);
@@ -1853,6 +1855,7 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_vt, "version_string", aio_version_string, 0);
 
   DEF_AIO_VT(handle,aio);
+  DEF_AIO_VT(req,aio);
   DEF_AIO_VT(stream,aio);
   DEF_AIO_GLOBAL_VT(tcp,aio_stream,"|loop=o");
   //DEF_AIO_GLOBAL_VT(udp,aio_stream,"|loop=o");
@@ -1901,6 +1904,7 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_GLOBAL_VT(fs_poll,aio,"|loop=o");
   DEF_AIO_GLOBAL_VT(fs,aio_req,0);
 #endif
+
   DEF_AIO_GLOBAL_VT(tty,aio_stream,"file=o,readable=N|loop=o");
   DEF_AIO_GLOBAL_VT(pipe,aio_stream,"ipc=N|loop=o");
   DEF_AIO_GLOBAL_VT(prepare,aio,"|loop=o");
@@ -1919,7 +1923,6 @@ void Potion_Init_aio(Potion *P) {
   //DEF_AIO_GLOBAL_VT(process,aio,0);
   //tcp,udp have connect so we need a global Aio_connect method
   DEF_AIO_GLOBAL_VT(connect,aio_stream,0);
-  DEF_AIO_VT(req,aio);
   DEF_AIO_VT(write,aio);
   DEF_AIO_VT(shutdown,aio);
   DEF_AIO_VT(udp_send,aio_udp);

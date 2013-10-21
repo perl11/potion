@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <assert.h>
 #include "p2.h"
 #include "internal.h"
