@@ -1,22 +1,41 @@
 #!/bin/sh
-# usage: test/runtests.sh [testfile]
+# usage: test/runtests.sh [-q] [testfile]
 #        cmd="valgrind ./potion" test/runtests.sh
 
-cmd=${cmd:-bin/potion-s}
+cmd=${cmd:-bin/potion}
+cmd2=${cmd2:-bin/p2}
 ECHO=/bin/echo
 SED=sed
 EXPR=expr
-test -f $cmd || make -s static
-
-make -s $cmd
-count=0; failed=0; pass=0
 EXT=pn
+maxpass=6
+count=0; failed=0; pass=0
 cmdi="$cmd -I"; cmdx="$cmdi -X"
 cmdc="$cmd -c"; extc=b
+
+QUIET=
+if [ "x$1" = "x-q" ]; then QUIET=1; shift; fi
+
+if [ "x$1" = "x-pn" ]; then shift; maxpass=3; fi
+if [ "x$1" = "x-p2" ]; then 
+    shift
+    maxpass=3
+    cmd=${cmd2}; EXT=pl
+    cmdi="$cmd --inspect"; cmdx="$cmdi -J"
+    cmdc="$cmd --compile"; extc=c
+fi
+
+test -f $cmd || make -s $cmd
+test -f $cmd2 || make -s $cmd2
 old_LIBRARY_PATH="$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH="lib:$LD_LIBRARY_PATH"
 
+verbose() {
+  if [ "x$QUIET" = "x" ]; then ${ECHO} $@; else ${ECHO} -n .; fi
+}
+
 if test -z $1; then
+    make -s bin/potion-test bin/p2-test bin/gc-test
     ${ECHO} running potion API tests
     bin/potion-test
     ${ECHO} running p2 API tests
@@ -25,7 +44,7 @@ if test -z $1; then
     bin/gc-test
 fi
 
-while [ $pass -lt 6 ]; do 
+while [ $pass -lt $maxpass ]; do 
     ${ECHO}; 
     if [ $pass -eq 0 ]; then 
 	t=0; 
@@ -39,13 +58,13 @@ while [ $pass -lt 6 ]; do
 	jit=`$cmd -v | sed "/jit=1/!d"`; 
 	if [ "$jit" = "" ]; then 
 	    pass=`expr $pass + 1`
-            cmd=bin/p2; t=0; EXT=pl
+            cmd=${cmd2}; t=0; EXT=pl
 	    cmdi="$cmd --inspect"; cmdx="$cmdi -J";
 	    cmdc="$cmd --compile"; extc=c
 	    whattests="$cmd VM tests"
 	fi;
     elif [ $pass -eq 3 ]; then 
-        cmd=bin/p2; t=0; EXT=pl
+        cmd=${cmd2}; t=0; EXT=pl
 	cmdi="$cmd --inspect"; cmdx="$cmdi -J";
 	cmdc="$cmd --compile"; extc=c
 	whattests="$cmd VM tests"
@@ -72,13 +91,17 @@ while [ $pass -lt 6 ]; do
 	if [ ${what%.pn} = $what -a $EXT = pn -a $pass -le 3 ]; then
 	    ${ECHO} skipping potion
 	    pass=3
-            cmd=bin/p2; t=0; EXT=pl
+            cmd=${cmd2}; t=0; EXT=pl
 	    cmdi="$cmd --inspect"; cmdx="$cmdi -J";
 	    cmdc="$cmd --compile"; extc=c
 	    whattests="$cmd VM tests"
 	fi
     else
-	what=test/**/*.$EXT
+        if $(grep "SANDBOX = 1" config.inc >/dev/null); then
+	    what=`ls test/**/*.$EXT|grep -Ev "test/misc/(buffile|load)\.$EXT"`
+        else
+	    what=test/**/*.$EXT
+        fi
     fi
 
     ${ECHO} running $whattests
@@ -87,17 +110,17 @@ while [ $pass -lt 6 ]; do
 	look=`cat $f | sed "/\#=>/!d; s/.*\#=> //"`
 	#echo look=$look
 	if [ $t -eq 0 ]; then
-	    echo $cmdi -B $f
+	    verbose $cmdi -B $f
 	    for=`$cmdi -B $f | sed "s/\n$//"`
 	elif [ $t -eq 1 ]; then
-	    echo $cmdc $f
+	    verbose $cmdc $f
 	    $cmdc $f > /dev/null
 	    fb=$f$extc
-	    echo $cmdi -B $fb
+	    verbose $cmdi -B $fb
 	    for=`$cmdi -B $fb | sed "s/\n$//"`
 	    rm -rf $fb
 	else
-	    echo $cmdx $f
+	    verbose $cmdx $f
 	    for=`$cmdx $f | sed "s/\n$//"`
 	fi;
 	if [ "$look" != "$for" ]; then
@@ -124,18 +147,18 @@ else
     ${ECHO} "OK ($count tests)"
 fi
 
-if [ -z "`grep DDEBUG config.inc`" ]; then
-    ${ECHO} run examples
-    log=log.example
-    git log -1 >> $log
-    for f in example/*.pn; do
-        ${ECHO} time bin/potion $f | tee -a $log
-        time bin/potion $f 2>&1 | tee -a $log
-    done
-    for f in example/*.p[2l]; do
-        ${ECHO} time bin/p2 $f | tee -a $log
-        time bin/p2 $f 2>&1 | tee -a $log
-    done
-fi
+#if [ -z "`grep DDEBUG config.inc`" ]; then
+#    ${ECHO} run examples
+#    log=log.example
+#    git log -1 >> $log
+#    for f in example/*.pn; do
+#        ${ECHO} time bin/potion $f | tee -a $log
+#        time bin/potion $f 2>&1 | tee -a $log
+#    done
+#    for f in example/*.p[2l]; do
+#        ${ECHO} time bin/p2 $f | tee -a $log
+#        time bin/p2 $f 2>&1 | tee -a $log
+#    done
+#fi
 
 export LD_LIBRARY_PATH="$old_LIBRARY_PATH"

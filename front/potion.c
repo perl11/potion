@@ -3,6 +3,7 @@
 // the Potion!
 //
 // (c) 2008 why the lucky stiff, the freelance professor
+// (c) 2013 by perl11 org
 //
 #include <stdio.h>
 #include <sys/stat.h>
@@ -261,13 +262,21 @@ char * addmodule(Potion *P, char *result, char *prefix, char *name) {
 
 int main(int argc, char *argv[]) {
   POTION_INIT_STACK(sp);
+  Potion *P = potion_create(sp);
   int i;
   exec_mode_t exec = POTION_JIT ? EXEC_JIT : EXEC_VM;
-  Potion *P = potion_create(sp);
   PN buf = PN_NIL;
   char *compile = NULL;
   char *fn = NULL;
   char *addmodules = NULL;
+
+#if defined(STATIC) || defined(SANDBOX)
+  Potion_Init_readline(P);
+  Potion_Init_aio(P);
+#ifndef SANDBOX
+  Potion_Init_buffile(P);
+#endif
+#endif
 
   for (i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--")) { i++; break; }

@@ -7,6 +7,7 @@
 
 SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/table.c core/vm.c
 PLIBS = readline buffile aio
+PLIBS_SRC = lib/aio.c lib/buffile.c lib/readline/readline.c lib/readline/linenoise.c
 GREGCFLAGS = -O3 -DNDEBUG
 
 # bootstrap config.inc with make -f config.mak
@@ -18,9 +19,10 @@ endif
 ifneq (${SANDBOX},1)
 SRC += core/file.c core/load.c
 else
-SRC += lib/aio.c lib/readline/readline.c lib/readline/linenoise.c
+PLIBS := $(subst buffile,,${PLIBS})
+PLIBS_SRC := $(subst lib/buffile.c,,${PLIBS_SRC})
 ifeq ($(WIN32),1)
-SRC += lib/readline/win32fixes.c
+PLIBS_SRC += lib/readline/win32fixes.c
 endif
 endif
 
@@ -47,7 +49,7 @@ ifneq (${WIN32},1)
     FPIC = -fPIC
     OPIC = opic
   else
-    PLIBS = readline buffile
+    PLIBS = $(subst aio,,${PLIBS})
   endif
 endif
 OBJ = ${SRC:.c=.o}
@@ -79,6 +81,9 @@ LIBUV = lib/libuv${DLL}
 endif
 EXTLIBDEPS = ${LIBUV}
 DYNLIBS = $(foreach m,${PLIBS},lib/potion/$m${LOADEXT}) lib/p2/aio${LOADEXT}
+PLIBS_OBJ = ${PLIBS_SRC:.c=.${OPIC}}
+PLIBS_OBJS = ${PLIBS_SRC:.c=.o}
+PLIBS_OBJS2 = ${PLIBS_SRC:.c=.o2}
 OBJS = o o2
 ifneq (${FPIC},)
   OBJS += ${OPIC} ${OPIC}2
@@ -110,7 +115,7 @@ RUNPRE = bin/
 WEBSITE = ../perl11.org
 
 default: pn p2 libs
-	+${MAKE} -s usage
+	+$(MAKE) -s usage
 
 all: default libs static docall test
 ifneq (${SANDBOX},1)
@@ -158,21 +163,21 @@ usage:
 
 config:
 	@${ECHO} MAKE -f config.mak $@
-	@${MAKE} -s -f config.mak config.inc core/config.h
+	@+$(MAKE) -s -f config.mak config.inc core/config.h
 
 # bootstrap config.inc
 config.inc: tools/config.sh config.mak
-	@${MAKE} -s -f config.mak $@
+	@+$(MAKE) -s -f config.mak $@
 
 core/config.h: config.inc core/version.h tools/config.sh config.mak
-	@${MAKE} -s -f config.mak $@
+	@+$(MAKE) -s -f config.mak $@
 
 core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
-	@${MAKE} -s -f config.mak $@
+	@+$(MAKE) -s -f config.mak $@
 
 grammar: syn/greg.y
 	touch syn/greg.y
-	${MAKE} syn/greg.c
+	+$(MAKE) syn/greg.c
 
 # bootstrap syn/greg.c, syn/compile.c not yet
 syn/greg.c: syn/greg.y
@@ -338,24 +343,27 @@ bin/p2${EXE}: ${OBJ_P2} lib/libp2${DLL}
 	@${LIBP2A_BACK}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
-bin/potion-s${EXE}: ${OBJ_POTION} lib/libpotion.a lib/aio.o lib/readline/readline.o
+bin/potion-s${EXE}: lib/libpotion.a ${PLIBS_OBJS}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_POTION} -o $@ lib/readline/*.o lib/aio.o \
+	@${CC} -c ${CFLAGS} ${INCS} -DSTATIC -o front/potion.os front/potion.c
+	@${CC} ${CFLAGS} ${LDFLAGS} front/potion.os -o $@ ${PLIBS_OBJS} \
           lib/libpotion.a ${LIBPTH} ${RPATH} ${EXTLIBS} ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 	@if [ "${SANDBOX}" = "1" ]; then rm bin/potion${EXE}; cd bin; ln -s potion-s${EXE} potion${EXE}; cd ..; fi
 
-bin/p2-s${EXE}: ${OBJ_P2} lib/libp2.a lib/aio.o2 lib/readline/readline.o
+bin/p2-s${EXE}: lib/libp2.a ${PLIBS_OBJS2}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} ${OBJ_P2} -o $@ lib/readline/*.o lib/aio.o2 \
+	@${CC} -c ${CFLAGS} ${INCS} -DSTATIC -DP2 -o front/p2.os front/p2.c
+	@${CC} ${CFLAGS} ${LDFLAGS} front/p2.os -o $@ ${PLIBS_OBJS2} \
           lib/libp2.a ${LIBPTH} ${RPATH} ${EXTLIBS} ${LIBS}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 	@if [ "${SANDBOX}" = "1" ]; then rm bin/p2${EXE}; cd bin; ln -s p2-s${EXE} p2${EXE}; cd ..; fi
 
-lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
+lib/readline/readline.o lib/readline/readline.o2: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
 	@${LIBPNA_AWAY}
-	@${MAKE} -s -C lib/readline static
+	@+$(MAKE) -s -C lib/readline static
+	@ln -sf readline.o lib/readline/readline.o2
 	@${LIBPNA_BACK}
 
 lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
@@ -368,7 +376,7 @@ lib/libpotion.a: ${OBJ_SYN} ${OBJ} core/config.h core/potion.h
 lib/libp2.a: ${OBJ_P2_SYN} ${OBJ2} core/config.h core/potion.h
 	@${ECHO} AR $@
 	@if [ -e $@ ]; then rm -f $@; fi
-	@${AR} rcs $@ ${OBJ_P2_SYN} $(subst .o,.o2,${OBJ}) > /dev/null
+	@${AR} rcs $@ ${OBJ_P2_SYN} ${OBJ2} > /dev/null
 	@${ECHO} RANLIB $@
 	@-${RANLIB} $@
 
@@ -420,10 +428,10 @@ endif
 lib/libuv.a: config.inc 3rd/libuv/Makefile
 	@${ECHO} MAKE $@
 	@if test -f 3rd/libuv/Makefile.am; then \
-	  ${MAKE} -s -C 3rd/libuv libuv.la  && \
+	  +$(MAKE) -s -C 3rd/libuv libuv.la  && \
 	  cp 3rd/libuv/.libs/libuv.a lib/; \
 	else \
-	  ${MAKE} -s -C 3rd/libuv libuv.a && \
+	  +$(MAKE) -s -C 3rd/libuv libuv.a && \
 	  cp 3rd/libuv/libuv.a lib/; \
 	fi
 	@touch $@
@@ -432,10 +440,10 @@ lib/libuv.a: config.inc 3rd/libuv/Makefile
 ${LIBUV}: config.inc 3rd/libuv/Makefile
 	@${ECHO} MAKE $@
 	@if test -f 3rd/libuv/Makefile.am; then \
-	  ${MAKE} -s -C 3rd/libuv libuv.la && \
+	  +$(MAKE) -s -C 3rd/libuv libuv.la && \
 	  rsync -a 3rd/libuv/.libs/libuv*${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
 	else \
-	  ${MAKE} -s -C 3rd/libuv libuv${DLL} && \
+	  +$(MAKE) -s -C 3rd/libuv libuv${DLL} && \
 	  rsync -a 3rd/libuv/libuv*${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
         fi
 	@touch $@
@@ -443,20 +451,20 @@ ${LIBUV}: config.inc 3rd/libuv/Makefile
 lib/libsregex.a: core/config.h core/potion.h \
   3rd/sregex/Makefile
 	@${ECHO} MAKE $@
-	@${MAKE} -s -C 3rd/sregex CC="${CC}"
+	@+$(MAKE) -s -C 3rd/sregex CC="${CC}"
 	@cp 3rd/sregex/libsregex.a lib/
 
 # default: static
 lib/libpcre.a: core/config.h core/potion.h \
   3rd/pcre/Makefile
 	@${ECHO} MAKE $@
-	@${MAKE} -s -C 3rd/pcre CC="${CC}"
+	@+$(MAKE) -s -C 3rd/pcre CC="${CC}"
 	@cp 3rd/pcre/.libs/libpcre.a lib/
 
 lib/libpcre$(DLL): core/config.h core/potion.h \
   3rd/pcre/Makefile
 	@${ECHO} MAKE $@
-	@${MAKE} -s -C 3rd/pcre CC="${CC}"
+	@+$(MAKE) -s -C 3rd/pcre CC="${CC}"
 	@cp 3rd/pcre/.libs/libpcre${DLL}* lib/
 
 # DYNLIBS
@@ -465,7 +473,7 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/linenoise.h lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${LIBPNA_AWAY}
-	@${MAKE} -s -C lib/readline
+	@+$(MAKE) -s -C lib/readline
 	@${LIBPNA_BACK}
 	@cp lib/readline/readline${LOADEXT} $@
 
@@ -524,7 +532,7 @@ lib/p2/pcre${LOADEXT}: core/config.h core/potion.h \
   lib/pcre/Makefile lib/pcre/pcre.c $(PCRE_DEPS) lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${LIBP2A_AWAY}
-	@${MAKE} -s -C lib/pcre
+	@+$(MAKE) -s -C lib/pcre
 	@${LIBP2A_BACK}
 	@cp lib/pcre/pcre${LOADEXT} $@
 
@@ -532,7 +540,7 @@ lib/p2/m_apm${LOADEXT}: core/config.h core/potion.h \
   lib/m_apm/Makefile lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${LIBP2A_AWAY}
-	@${MAKE} -s -C lib/m_apm
+	@+$(MAKE) -s -C lib/m_apm
 	@${LIBP2A_BACK}
 	@cp lib/m_apm/m_apm${LOADEXT} $@
 
@@ -554,112 +562,10 @@ check: test.pn test.p2
 test:  test.pn test.p2
 
 test.pn: pn libs bin/potion-test${EXE}
-	@${ECHO}; \
-	${ECHO} running potion API tests; \
-	${RUNPRE}potion-test; \
-	count=0; failed=0; pass=0; \
-	while [ $$pass -lt 3 ]; do \
-	  ${ECHO}; \
-	  if [ $$pass -eq 0 ]; then \
-		t=0; \
-		${ECHO} running potion VM tests; \
-	  elif [ $$pass -eq 1 ]; then \
-                t=1; \
-		${ECHO} running potion compiler tests; \
-	  elif [ $$pass -eq 2 ]; then \
-                t=2; \
-		${ECHO} running potion JIT tests; \
-		jit=`${RUNPRE}potion -v | ${SED} "/jit=1/!d"`; \
-		if [ "$$jit" = "" ]; then \
-		    ${ECHO} skipping; \
-		    break; \
-		fi; \
-	  fi; \
-	  for f in test/**/*.pn; do \
-		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
-		if [ $$t -eq 0 ]; then \
-			for=`${RUNPRE}potion -I -B $$f | ${SED} "s/\n$$//"`; \
-		elif [ $$t -eq 1 ]; then \
-			${RUNPRE}potion -c $$f > /dev/null; \
-			fb="$$f"b; \
-			for=`${RUNPRE}potion -I -B $$fb | ${SED} "s/\n$$//"`; \
-			rm -rf $$fb; \
-		else \
-			for=`${RUNPRE}potion -I -X $$f | ${SED} "s/\n$$//"`; \
-		fi; \
-		if [ "$$look" != "$$for" ]; then \
-			${ECHO}; \
-			${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
-			failed=`${EXPR} $$failed + 1`; \
-		else \
-		   ${ECHO} -n .; \
-		fi; \
-		count=`${EXPR} $$count + 1`; \
-	  done; \
-	  pass=`${EXPR} $$pass + 1`; \
-	done; \
-	${ECHO}; \
-	if [ $$failed -gt 0 ]; then \
-		${ECHO} "$$failed FAILS ($$count tests)"; \
-		false; \
-	else \
-		${ECHO} "OK ($$count tests)"; \
-	fi
+	@+test/runtests.sh -q -pn
 
 test.p2: p2 libs bin/p2-test${EXE} bin/gc-test${EXE}
-	@${ECHO}; \
-	${ECHO} running p2 API tests; \
-	${RUNPRE}p2-test; \
-	${ECHO} running GC tests; \
-	${RUNPRE}gc-test; \
-	count=0; failed=0; pass=0; \
-	while [ $$pass -lt 3 ]; do \
-	  ${ECHO}; \
-	  if [ $$pass -eq 0 ]; then \
-		t=0; \
-		${ECHO} running p2 VM tests; \
-	  elif [ $$pass -eq 1 ]; then \
-                t=1; \
-		${ECHO} running p2 compiler tests; \
-	  elif [ $$pass -eq 2 ]; then \
-                t=2; \
-		${ECHO} running p2 JIT tests; \
-		jit=`${RUNPRE}p2 -v | ${SED} "/jit=1/!d"`; \
-		if [ "$$jit" = "" ]; then \
-		    ${ECHO} skipping; \
-		    break; \
-		fi; \
-	  fi; \
-	  for f in test/**/*.pl; do \
-		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
-		if [ $$t -eq 0 ]; then \
-			for=`${RUNPRE}p2 --inspect -B $$f | ${SED} "s/\n$$//"`; \
-		elif [ $$t -eq 1 ]; then \
-			${RUNPRE}p2 --compile $$f > /dev/null; \
-			fb="$$f"c; \
-			for=`${RUNPRE}p2 --inspect -B $$fb | ${SED} "s/\n$$//"`; \
-			rm -rf $$fb; \
-		else \
-			for=`${RUNPRE}p2 --inspect -J $$f | ${SED} "s/\n$$//"`; \
-		fi; \
-		if [ "$$look" != "$$for" ]; then \
-			${ECHO}; \
-			${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
-			failed=`${EXPR} $$failed + 1`; \
-		else \
-		   ${ECHO} -n .; \
-		fi; \
-		count=`${EXPR} $$count + 1`; \
-	  done; \
-	  pass=`${EXPR} $$pass + 1`; \
-	done; \
-	${ECHO}; \
-	if [ $$failed -gt 0 ]; then \
-		${ECHO} "$$failed FAILS ($$count tests)"; \
-		false; \
-	else \
-		${ECHO} "OK ($$count tests)"; \
-	fi
+	@+test/runtests.sh -q -p2
 
 testable : bin/potion${EXE} bin/p2${EXE} libs bin/potion-test${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 
@@ -706,18 +612,18 @@ examples: pn p2
 dist: bins libs $(AIO_DEPS) static ${SRC_SYN} ${SRC_P2_SYN} ${GREG}
 	@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PNLIB}; \
-	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
+	  +$(MAKE) bins libs RPATH="${RPATH_INSTALL}"; \
 	fi
-	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
+	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: bins libs $(AIO_DEPS) ${GREG}
-	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
+	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
 
 tarball:
-	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
+	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
 
 release: dist
-	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
+	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
 
 %.html: %.textile doc/logo
 	@${ECHO} DOC $@
@@ -740,7 +646,6 @@ CHM = doc/html/p2.chm
 else
 CHM =
 endif
-docall: doc GTAGS ${CHM}
 
 docall: doc GTAGS ${CHM}
 chm: ${CHM}
@@ -774,18 +679,18 @@ doc/html/files.html: ${SRC} doc/Doxyfile doc/footer.sh Makefile
 # perl11.org admins only. requires: doxygen redcloth global
 website:
 	test -d ${WEBSITE} || exit
-	@${MAKE} doxygen
+	@+$(MAKE) doxygen
 	cp -r doc/html/* ${WEBSITE}/p2/html/
-	@${MAKE} doc
+	@+$(MAKE) doc
 	cp doc/*.html ${WEBSITE}/p2/
-	@${MAKE} GTAGS
+	@+$(MAKE) GTAGS
 	cp -r HTML/* ${WEBSITE}/p2/ref/
 	cd ${WEBSITE}/p2/ && git add *.html html ref && git ci -m'doc: automatic update'
 	@${ECHO} "need to cd ${WEBSITE}; git push"
 
 # in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+$(MAKE) -f dist.mak $@ PREFIX=${PREFIX}
 
 TAGS: ${SRC} core/*.h
 	@rm -f TAGS
@@ -806,7 +711,7 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f $(foreach ext,o o2 opic opic2 i gcda gcno,$(foreach dir,core syn front lib test/api lib/*,${dir}/*.${ext}))
-	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o
+	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o front/*.os
 	@rm -rf lib/*/*.bundle.dSYM
 	@rm -f lib/libp2.* lib/p2/*${DLL}
 	@rm -f ${DOCHTML} README.md doc/footer.inc
@@ -820,7 +725,7 @@ realclean: clean
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf doc/ref doc/html
 	@rm -rf lib/*${DLL} lib/*${LOADEXT} lib/*.a
-	@${MAKE} -s clean -C 3rd/libuv
+	@+$(MAKE) -s clean -C 3rd/libuv
 	@if test -f 3rd/libuv/Makefile.am; then rm 3rd/libuv/Makefile; fi
 	@find . -name \*.gcov -delete
 

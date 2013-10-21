@@ -253,6 +253,14 @@ int main(int argc, char *argv[]) {
   char *compile = NULL;
   char *fn = NULL;
 
+#if defined(STATIC) || defined(SANDBOX)
+  Potion_Init_readline(P);
+  Potion_Init_aio(P);
+#ifndef SANDBOX
+  Potion_Init_buffile(P);
+#endif
+#endif
+
   for (i = 1; i < argc; i++) {
     if (!strcmp(argv[i], "--")) { i++; break; }
     if (!strcmp(argv[i], "-I")) {
