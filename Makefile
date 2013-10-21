@@ -23,7 +23,6 @@ PLIBS_SRC := $(subst lib/buffile.c,,${PLIBS_SRC})
 ifeq ($(WIN32),1)
 PLIBS_SRC += lib/readline/win32fixes.c
 endif
-SRC += ${PLIBS_SRC}
 endif
 
 ifeq (${JIT_X86},1)
@@ -266,11 +265,12 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${LIBPNA_BACK}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
-bin/potion-s${EXE}: core/potion.o lib/libpotion.a ${PLIBS_OBJS}
+bin/potion-s${EXE}: lib/libpotion.a ${PLIBS_OBJS}
 	@${ECHO} LINK $@
 	@${CC} -c ${CFLAGS} ${INCS} -DSTATIC -o core/potion.os core/potion.c
 	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.os -o $@ ${PLIBS_OBJS} \
 	  lib/libpotion.a ${LIBPTH} ${RPATH} ${EXTLIBS} ${LIBS}
+	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 	@if [ "${SANDBOX}" = "1" ]; then rm bin/potion${EXE}; cd bin; ln -s potion-s${EXE} potion${EXE}; cd ..; fi
 
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
