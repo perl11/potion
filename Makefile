@@ -264,7 +264,7 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/aio.o lib/readline/readline.o
 	@${ECHO} LINK $@
 	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.o -o $@ lib/aio.o lib/readline/*.o \
-	  lib/libpotion.a ${LIBPTH} ${EXTLIBS} ${LIBS}
+	  lib/libpotion.a ${LIBPTH} ${RPATH} ${EXTLIBS} ${LIBS}
 	@if [ "${SANDBOX}" = "1" ]; then rm bin/potion${EXE}; cd bin; ln -s potion-s${EXE} potion${EXE}; cd ..; fi
 
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
