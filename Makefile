@@ -6,6 +6,7 @@
 
 SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
 PLIBS = readline buffile aio
+PLIBS_SRC = lib/aio.c lib/buffile.c lib/readline/readline.c lib/readline/linenoise.c
 GREGCFLAGS = -O3 -DNDEBUG
 
 # bootstrap config.inc with make -f config.mak
@@ -17,10 +18,12 @@ endif
 ifneq (${SANDBOX},1)
 SRC += core/file.c core/load.c
 else
-SRC += lib/aio.c lib/readline/readline.c lib/readline/linenoise.c
+PLIBS := $(subst buffile,,${PLIBS})
+PLIBS_SRC := $(subst lib/buffile.c,,${PLIBS_SRC})
 ifeq ($(WIN32),1)
-SRC += lib/readline/win32fixes.c
+PLIBS_SRC += lib/readline/win32fixes.c
 endif
+SRC += ${PLIBS_SRC}
 endif
 
 ifeq (${JIT_X86},1)
@@ -41,7 +44,7 @@ ifneq (${WIN32},1)
     FPIC = -fPIC
     OPIC = opic
   else
-    PLIBS = readline buffile
+    PLIBS = $(subst aio,,${PLIBS})
   endif
 endif
 OBJ = ${SRC:.c=.o}
@@ -60,6 +63,8 @@ LIBUV = lib/libuv${DLL}
 endif
 EXTLIBDEPS = ${LIBUV}
 DYNLIBS = $(foreach m,${PLIBS},lib/potion/$m${LOADEXT})
+PLIBS_OBJ = ${PLIBS_SRC:.c=.${OPIC}}
+PLIBS_OBJS = ${PLIBS_SRC:.c=.o}
 OBJS = o
 ifneq (${FPIC},)
   OBJS += ${OPIC}
@@ -261,9 +266,10 @@ bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${LIBPNA_BACK}
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 
-bin/potion-s${EXE}: core/potion.o lib/libpotion.a lib/aio.o lib/readline/readline.o
+bin/potion-s${EXE}: core/potion.o lib/libpotion.a ${PLIBS_OBJS}
 	@${ECHO} LINK $@
-	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.o -o $@ lib/aio.o lib/readline/*.o \
+	@${CC} -c ${CFLAGS} ${INCS} -DSTATIC -o core/potion.os core/potion.c
+	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.os -o $@ ${PLIBS_OBJS} \
 	  lib/libpotion.a ${LIBPTH} ${RPATH} ${EXTLIBS} ${LIBS}
 	@if [ "${SANDBOX}" = "1" ]; then rm bin/potion${EXE}; cd bin; ln -s potion-s${EXE} potion${EXE}; cd ..; fi
 
@@ -551,7 +557,7 @@ todo:
 
 clean:
 	@${ECHO} cleaning
-	@rm -f core/*.o core/*.opic core/*.i test/api/*.o
+	@rm -f core/*.o core/*.opic core/*.i test/api/*.o core/potion.os
 	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o lib/*.o lib/*.opic
 	@rm -rf lib/*/*.bundle.dSYM
 	@rm -f ${DOCHTML} README.md doc/footer.inc
