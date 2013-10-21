@@ -399,6 +399,7 @@ lib/potion/libsyntax-p5${DLL}: syn/syntax-p5.${OPIC}2 lib/libp2${DLL}
 # 3rdparty EXTLIBS statically linked
 3rd/libuv/Makefile.am: .gitmodules
 	git submodule update --init
+	@touch $@
 
 ifeq (${WIN32},1)
 PATCH_PHLPAPI2 = sed -i -e"s,-lphlpapi2,-liphlpapi," 3rd/libuv/Makefile.am
@@ -416,8 +417,7 @@ endif
 	cd 3rd/libuv && CC="${CC}" ./configure --disable-dtrace --enable-shared --prefix="$(shell pwd)" \
 	  "${CROSSHOST}"
 
-lib/libuv.a: core/config.h core/potion.h \
-  3rd/libuv/Makefile
+lib/libuv.a: config.inc 3rd/libuv/Makefile
 	@${ECHO} MAKE $@
 	@if test -f 3rd/libuv/Makefile.am; then \
 	  ${MAKE} -s -C 3rd/libuv libuv.la  && \
@@ -426,10 +426,10 @@ lib/libuv.a: core/config.h core/potion.h \
 	  ${MAKE} -s -C 3rd/libuv libuv.a && \
 	  cp 3rd/libuv/libuv.a lib/; \
 	fi
+	@touch $@
 
 # default: shared
-${LIBUV}: core/config.h core/potion.h \
-  3rd/libuv/Makefile
+${LIBUV}: config.inc 3rd/libuv/Makefile
 	@${ECHO} MAKE $@
 	@if test -f 3rd/libuv/Makefile.am; then \
 	  ${MAKE} -s -C 3rd/libuv libuv.la && \
@@ -438,6 +438,7 @@ ${LIBUV}: core/config.h core/potion.h \
 	  ${MAKE} -s -C 3rd/libuv libuv${DLL} && \
 	  rsync -a 3rd/libuv/libuv*${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
         fi
+	@touch $@
 
 lib/libsregex.a: core/config.h core/potion.h \
   3rd/sregex/Makefile
