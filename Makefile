@@ -316,25 +316,15 @@ endif
 
 lib/libuv.a: config.inc 3rd/libuv/Makefile
 	@${ECHO} MAKE $@
-	@if test -f 3rd/libuv/Makefile.am; then \
-	  ${MAKE} -s -C 3rd/libuv libuv.la  && \
-	  cp 3rd/libuv/.libs/libuv.a lib/; \
-	else \
-	  ${MAKE} -s -C 3rd/libuv libuv.a && \
-	  cp 3rd/libuv/libuv.a lib/; \
-	fi
+	+${MAKE} -s -C 3rd/libuv libuv.la
+	cp 3rd/libuv/.libs/libuv.a lib/
 	@touch $@
 
 # default: shared
 ${LIBUV}: config.inc 3rd/libuv/Makefile
 	@${ECHO} MAKE $@
-	@if test -f 3rd/libuv/Makefile.am; then \
-	  ${MAKE} -s -C 3rd/libuv libuv.la && \
-	  rsync -a 3rd/libuv/.libs/libuv*${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
-	else \
-	  ${MAKE} -s -C 3rd/libuv libuv${DLL} && \
-	  rsync -a 3rd/libuv/libuv*${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/; \
-        fi
+	+${MAKE} -s -C 3rd/libuv libuv.la
+	rsync -a 3rd/libuv/.libs/libuv*${DLL}* lib/ || cp 3rd/libuv/.libs/libuv.a lib/
 	@touch $@
 
 # DYNLIBS
