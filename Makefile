@@ -163,17 +163,17 @@ usage:
 
 config:
 	@${ECHO} MAKE -f config.mak $@
-	@+$(MAKE) -s -f config.mak config.inc core/config.h
+	@$(MAKE) -s -f config.mak config.inc core/config.h
 
 # bootstrap config.inc
 config.inc: tools/config.sh config.mak
-	@+$(MAKE) -s -f config.mak $@
+	@$(MAKE) -s -f config.mak $@
 
 core/config.h: config.inc core/version.h tools/config.sh config.mak
-	@+$(MAKE) -s -f config.mak $@
+	@$(MAKE) -s -f config.mak $@
 
 core/version.h: config.mak $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
-	@+$(MAKE) -s -f config.mak $@
+	@$(MAKE) -s -f config.mak $@
 
 grammar: syn/greg.y
 	touch syn/greg.y
@@ -362,7 +362,7 @@ bin/p2-s${EXE}: lib/libp2.a ${PLIBS_OBJS2}
 lib/readline/readline.o lib/readline/readline.o2: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
 	@${LIBPNA_AWAY}
-	@+$(MAKE) -s -C lib/readline static
+	@$(MAKE) -s -C lib/readline static
 	@ln -sf readline.o lib/readline/readline.o2
 	@${LIBPNA_BACK}
 
@@ -451,20 +451,20 @@ ${LIBUV}: config.inc 3rd/libuv/Makefile
 lib/libsregex.a: core/config.h core/potion.h \
   3rd/sregex/Makefile
 	@${ECHO} MAKE $@
-	@+$(MAKE) -s -C 3rd/sregex CC="${CC}"
+	@$(MAKE) -s -C 3rd/sregex CC="${CC}"
 	@cp 3rd/sregex/libsregex.a lib/
 
 # default: static
 lib/libpcre.a: core/config.h core/potion.h \
   3rd/pcre/Makefile
 	@${ECHO} MAKE $@
-	@+$(MAKE) -s -C 3rd/pcre CC="${CC}"
+	@$(MAKE) -s -C 3rd/pcre CC="${CC}"
 	@cp 3rd/pcre/.libs/libpcre.a lib/
 
 lib/libpcre$(DLL): core/config.h core/potion.h \
   3rd/pcre/Makefile
 	@${ECHO} MAKE $@
-	@+$(MAKE) -s -C 3rd/pcre CC="${CC}"
+	@$(MAKE) -s -C 3rd/pcre CC="${CC}"
 	@cp 3rd/pcre/.libs/libpcre${DLL}* lib/
 
 # DYNLIBS
@@ -473,7 +473,7 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/linenoise.h lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${LIBPNA_AWAY}
-	@+$(MAKE) -s -C lib/readline
+	@$(MAKE) -s -C lib/readline
 	@${LIBPNA_BACK}
 	@cp lib/readline/readline${LOADEXT} $@
 
@@ -532,7 +532,7 @@ lib/p2/pcre${LOADEXT}: core/config.h core/potion.h \
   lib/pcre/Makefile lib/pcre/pcre.c $(PCRE_DEPS) lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${LIBP2A_AWAY}
-	@+$(MAKE) -s -C lib/pcre
+	@$(MAKE) -s -C lib/pcre
 	@${LIBP2A_BACK}
 	@cp lib/pcre/pcre${LOADEXT} $@
 
@@ -540,7 +540,7 @@ lib/p2/m_apm${LOADEXT}: core/config.h core/potion.h \
   lib/m_apm/Makefile lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${LIBP2A_AWAY}
-	@+$(MAKE) -s -C lib/m_apm
+	@$(MAKE) -s -C lib/m_apm
 	@${LIBP2A_BACK}
 	@cp lib/m_apm/m_apm${LOADEXT} $@
 
@@ -679,11 +679,11 @@ doc/html/files.html: ${SRC} doc/Doxyfile doc/footer.sh Makefile
 # perl11.org admins only. requires: doxygen redcloth global
 website:
 	test -d ${WEBSITE} || exit
-	@+$(MAKE) doxygen
+	@$(MAKE) doxygen
 	cp -r doc/html/* ${WEBSITE}/p2/html/
-	@+$(MAKE) doc
+	@$(MAKE) doc
 	cp doc/*.html ${WEBSITE}/p2/
-	@+$(MAKE) GTAGS
+	@$(MAKE) GTAGS
 	cp -r HTML/* ${WEBSITE}/p2/ref/
 	cd ${WEBSITE}/p2/ && git add *.html html ref && git ci -m'doc: automatic update'
 	@${ECHO} "need to cd ${WEBSITE}; git push"
@@ -725,7 +725,7 @@ realclean: clean
 	@rm -f GPATH GTAGS GRTAGS
 	@rm -rf doc/ref doc/html
 	@rm -rf lib/*${DLL} lib/*${LOADEXT} lib/*.a
-	@+$(MAKE) -s clean -C 3rd/libuv
+	@$(MAKE) -s clean -C 3rd/libuv
 	@if test -f 3rd/libuv/Makefile.am; then rm 3rd/libuv/Makefile; fi
 	@find . -name \*.gcov -delete
 
