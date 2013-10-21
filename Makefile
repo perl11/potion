@@ -276,7 +276,7 @@ bin/potion-s${EXE}: lib/libpotion.a ${PLIBS_OBJS}
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
 	@${LIBPNA_AWAY}
-	@+$(MAKE) -s -C lib/readline static
+	@$(MAKE) -s -C lib/readline static
 	@${LIBPNA_BACK}
 
 lib/libpotion.a: ${OBJ} core/config.h core/potion.h
@@ -477,11 +477,11 @@ doc/html/files.html: ${SRC} doc/Doxyfile doc/footer.sh Makefile
 # perl11.org admins only. requires: doxygen redcloth global
 website:
 	test -d ${WEBSITE} || exit
-	@+$(MAKE) doxygen
+	@$(MAKE) doxygen
 	cp -r doc/html/* ${WEBSITE}/potion/html/
-	@+$(MAKE) doc
+	@$(MAKE) doc
 	cp doc/*.html ${WEBSITE}/potion/
-	@+$(MAKE) GTAGS
+	@$(MAKE) GTAGS
 	cp -r doc/ref/* ${WEBSITE}/potion/ref/
 	cd ${WEBSITE}/potion/ && git add *.html html ref && git ci -m'doc: automatic update'
 	@${ECHO} "need to cd ${WEBSITE}; git push"
