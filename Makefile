@@ -92,7 +92,7 @@ RUNPRE = bin/
 WEBSITE = ../perl11.org
 
 default: pn libs
-	+${MAKE} -s usage
+	+$(MAKE) -s usage
 
 all: default libs static docall test
 ifneq (${SANDBOX},1)
@@ -276,7 +276,7 @@ bin/potion-s${EXE}: lib/libpotion.a ${PLIBS_OBJS}
 lib/readline/readline.o: lib/readline/readline.c lib/readline/linenoise.c
 	@${ECHO} CC $@
 	@${LIBPNA_AWAY}
-	@${MAKE} -s -C lib/readline static
+	@+$(MAKE) -s -C lib/readline static
 	@${LIBPNA_BACK}
 
 lib/libpotion.a: ${OBJ} core/config.h core/potion.h
@@ -343,7 +343,7 @@ lib/potion/readline${LOADEXT}: core/config.h core/potion.h \
   lib/readline/linenoise.h lib/libpotion${DLL}
 	@${ECHO} MAKE $@
 	@${LIBPNA_AWAY}
-	@${MAKE} -s -C lib/readline
+	+$(MAKE) -s -C lib/readline
 	@${LIBPNA_BACK}
 	@cp lib/readline/readline${LOADEXT} $@
 
@@ -377,69 +377,15 @@ lib/potion/aio${LOADEXT}: core/config.h core/potion.h \
 	  lib/aio.${OPIC} ${LIBPTH} -lpotion ${EXTLIBS} ${LIBS} ${AIO_DEPLIBS} > /dev/null
 	@${LIBPNA_BACK}
 
-bench: test/api/gc-bench${EXE} bin/potion${EXE}
+bench: test/api/gc-bench${EXE} pn
 	@${ECHO}; \
 	  ${ECHO} running GC benchmark; \
 	  time test/api/gc-bench
+	+$(MAKE) -s examples
 
 check: test
 test: pn libs test/api/potion-test${EXE} test/api/gc-test${EXE}
-	@${ECHO}; \
-	${ECHO} running potion API tests; \
-	test/api/potion-test; \
-	count=0; failed=0; pass=0; \
-	if $$(grep "SANDBOX = 1" config.inc >/dev/null); then \
-	    what=`ls test/**/*.pn|grep -Ev "test/misc/(buffile|load)\.pn"`; \
-	else \
-	    what=test/**/*.pn; \
-	fi; \
-	while [ $$pass -lt 3 ]; do \
-	  ${ECHO}; \
-	  if [ $$pass -eq 0 ]; then \
-		t=0; \
-		${ECHO} running potion VM tests; \
-	  elif [ $$pass -eq 1 ]; then \
-                t=1; \
-		${ECHO} running potion compiler tests; \
-	  elif [ $$pass -eq 2 ]; then \
-                t=2; \
-		${ECHO} running potion JIT tests; \
-		jit=`${RUNPRE}potion -v | ${SED} "/jit=1/!d"`; \
-		if [ "$$jit" = "" ]; then \
-		    ${ECHO} skipping; \
-		    break; \
-		fi; \
-	  fi; \
-	  for f in $$what; do \
-		look=`${CAT} $$f | ${SED} "/\#=>/!d; s/.*\#=> //"`; \
-		if [ $$t -eq 0 ]; then \
-			for=`${RUNPRE}potion -I -B $$f | ${SED} "s/\n$$//"`; \
-		elif [ $$t -eq 1 ]; then \
-			${RUNPRE}potion -c $$f > /dev/null; \
-			fb="$$f"b; \
-			for=`${RUNPRE}potion -I -B $$fb | ${SED} "s/\n$$//"`; \
-			rm -rf $$fb; \
-		else \
-			for=`${RUNPRE}potion -I -X $$f | ${SED} "s/\n$$//"`; \
-		fi; \
-		if [ "$$look" != "$$for" ]; then \
-			${ECHO}; \
-			${ECHO} "$$f: expected <$$look>, but got <$$for>"; \
-			failed=`${EXPR} $$failed + 1`; \
-		else \
-		   ${ECHO} -n .; \
-		fi; \
-		count=`${EXPR} $$count + 1`; \
-	  done; \
-	  pass=`${EXPR} $$pass + 1`; \
-	done; \
-	${ECHO}; \
-	if [ $$failed -gt 0 ]; then \
-		${ECHO} "$$failed FAILS ($$count tests)"; \
-		false; \
-	else \
-		${ECHO} "OK ($$count tests)"; \
-	fi
+	@+test/runtests.sh -q
 
 testable : bin/potion${EXE} libs test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 
@@ -463,18 +409,18 @@ examples: pn
 dist: bins libs $(AIO_DEPS) static ${GREG}
 	@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PNLIB}; \
-	  ${MAKE} bins libs RPATH="${RPATH_INSTALL}"; \
+	  +$(MAKE) bins libs RPATH="${RPATH_INSTALL}"; \
 	fi
-	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
+	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
 install: bins libs $(AIO_DEPS) ${GREG}
-	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
+	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
 
 tarball:
-	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
+	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
 
 release: dist
-	+${MAKE} -f dist.mak $@ PREFIX="${PREFIX}"
+	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
 
 %.html: %.textile
 	@${ECHO} DOC $@
@@ -531,18 +477,18 @@ doc/html/files.html: ${SRC} doc/Doxyfile doc/footer.sh Makefile
 # perl11.org admins only. requires: doxygen redcloth global
 website:
 	test -d ${WEBSITE} || exit
-	@${MAKE} doxygen
+	@+$(MAKE) doxygen
 	cp -r doc/html/* ${WEBSITE}/potion/html/
-	@${MAKE} doc
+	@+$(MAKE) doc
 	cp doc/*.html ${WEBSITE}/potion/
-	@${MAKE} GTAGS
+	@+$(MAKE) GTAGS
 	cp -r doc/ref/* ${WEBSITE}/potion/ref/
 	cd ${WEBSITE}/potion/ && git add *.html html ref && git ci -m'doc: automatic update'
 	@${ECHO} "need to cd ${WEBSITE}; git push"
 
 # in seperate clean subdir. do not index work files
 GTAGS: ${SRC} core/*.h
-	+${MAKE} -f dist.mak $@ PREFIX=${PREFIX}
+	+$(MAKE) -f dist.mak $@ PREFIX=${PREFIX}
 
 TAGS: ${SRC} core/*.h
 	@rm -f TAGS

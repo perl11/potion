@@ -1,8 +1,8 @@
 #!/bin/sh
-# usage: test/runtests.sh [testfile]
+# usage: test/runtests.sh [-q] [testfile]
 #        cmd="valgrind -q bin/potion" test/runtests.sh
 
-cmd=${cmd:-bin/potion-s}
+cmd=${cmd:-bin/potion}
 ECHO=/bin/echo
 SED=sed
 EXPR=expr
@@ -12,6 +12,12 @@ count=0; failed=0; pass=0
 EXT=pn;
 cmdi="$cmd -I"; cmdx="$cmdi -X"; 
 cmdc="$cmd -c"; extc=b
+QUIET=
+if [ "x$1" = "x-q" ]; then QUIET=1; shift; fi
+
+verbose() {
+  if [ "x$QUIET" = "x" ]; then ${ECHO} $@; else ${ECHO} -n .; fi
+}
 
 if test -z $1; then
     make -s test/api/potion-test test/api/gc-test
@@ -59,17 +65,17 @@ while [ $pass -lt 3 ]; do
 	look=`cat $f | sed "/\#=>/!d; s/.*\#=> //"`
 	#echo look=$look
 	if [ $t -eq 0 ]; then
-	    echo $cmdi -B $f
+	    verbose $cmdi -B $f
 	    for=`$cmdi -B $f | sed "s/\n$//"`
 	elif [ $t -eq 1 ]; then
-	    echo $cmdc $f
+	    verbose $cmdc $f
 	    $cmdc $f > /dev/null
 	    fb=$f$extc
-	    echo $cmdi -B $fb
+	    verbose $cmdi -B $fb
 	    for=`$cmdi -B $fb | sed "s/\n$//"`
 	    rm -rf $fb
 	else
-	    echo $cmdx $f
+	    verbose $cmdx $f
 	    for=`$cmdx $f | sed "s/\n$//"`
 	fi;
 	if [ "$look" != "$for" ]; then
