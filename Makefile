@@ -110,7 +110,6 @@ else
   GREGCROSS = ${GREG}
 endif
 
-RUNPRE = bin/
 # perl11.org only
 WEBSITE = ../perl11.org
 
