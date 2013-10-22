@@ -12,7 +12,6 @@ RPATH         = -Wl,-rpath=${PWD}/lib
 RPATH_INSTALL = -Wl,-rpath=\$${PREFIX}/lib
 LIBS   = -lm
 LDFLAGS ?=
-RDLLFLAGS  =
 LDDLLFLAGS = -shared -fpic
 DEBUG ?= 0
 SANDBOX ?= 0
@@ -285,7 +284,6 @@ config.inc.echo:
 	@${ECHO} "LIBS    = ${LIBS}"
 	@${ECHO} "LDFLAGS = ${LDFLAGS}"
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
-	@${ECHO} "RDLLFLAGS  = ${RDLLFLAGS}"
 	@${ECHO} "HAVE_LIBUV = ${HAVE_LIBUV}"
 	@${ECHO} "HAVE_PCRE  = ${HAVE_PCRE}"
 	@${ECHO} "STRIP   = ${STRIP}"
