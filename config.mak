@@ -23,7 +23,6 @@ GCC    = 0
 EXE    =
 APPLE  = 0
 CYGWIN = 0
-RUNPRE = ./
 
 CAT  = /bin/cat
 ECHO = /bin/echo
@@ -188,7 +187,6 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 # mingw32 shell, not cmd.exe
 	ECHO = echo
 	CAT = cat
-	RUNPRE =
     else
 # mingw32 cross needs native echo -n
 	ECHO = /bin/echo
@@ -278,7 +276,6 @@ config.inc.echo:
 	@${ECHO} "STRIP   = ${STRIP}"
 	@${ECHO} "AR      = ${AR}"
 	@${ECHO} "RANLIB  = ${RANLIB}"
-	@${ECHO} "RUNPRE  = ${RUNPRE}"
 	@${ECHO} "CROSS   = ${CROSS}"
 	@${ECHO} "APPLE   = ${APPLE}"
 	@${ECHO} "WIN32   = ${WIN32}"

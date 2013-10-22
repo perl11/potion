@@ -690,8 +690,9 @@ void potion_sort_internal(Potion *P, PN cl, PN self, ///< sort data
          or true for ascending or false for descending order by value.
          true or false will fail on most complex data types,
 	 works only with num (ints).
- \returns a sorted copy of the tuple
-*/
+ \returns a sorted copy of the tuple */
+/// TODO: bitonic __m128 sort (SSE accelerated) for typed tuples
+/// E.g. alike https://github.com/zerovm/zerovm-samples/blob/master/bitonic_sort/src/sort_uint_proper_with_args.c
 static PN potion_tuple_sort(Potion *P, PN cl,
 			    PN self, ///< sort tuple
 			    PN cmp)  ///< cmp method for 2 values, returning -1,0,1
