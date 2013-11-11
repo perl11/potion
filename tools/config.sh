@@ -115,6 +115,8 @@ elif [ "$2" = "jit" ]; then
     echo "PPC"
   elif [ "$JIT_ARM" != "" ]; then
     echo "ARM"
+  else
+    echo "UNKNOWN"
   fi
 elif [ "$2" = "strip" ]; then
   if [ $MINGW -eq 0 ]; then
