@@ -25,7 +25,7 @@ WARN_NO_PARAMDOC       = NO
 INPUT                  = "core" \
                          "lib" \
                          README.md \
-                         INTERNALS.md \
+                         doc/INTERNALS.md \
                          INSTALL.md \
                          doc/start.html \
                          doc/glossary.html

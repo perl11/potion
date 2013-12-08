@@ -23,7 +23,7 @@ WARNINGS               = NO
 WARN_IF_UNDOCUMENTED   = NO
 WARN_NO_PARAMDOC       = NO
 INPUT                  = core
-INPUT                  += README.md INTERNALS.md INSTALL.md
+INPUT                  += README.md doc/INTERNALS.md INSTALL.md
 SOURCE_BROWSER         = YES
 #INLINE_SOURCES         = YES
 

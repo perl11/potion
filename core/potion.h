@@ -5,7 +5,7 @@
 /**
 \mainpage potion
 
-\see INTERNALS.md
+\see doc/INTERNALS.md
 
 Everything is an object.
 Every object is a closure (lambda), even values, variables, classes, types, metaclasses, ...

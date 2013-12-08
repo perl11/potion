@@ -1,6 +1,6 @@
 /**\file vm-ppc.c
 the powerpc jit (32-bit only)
-\see core/vm.c and INTERNALS.md
+\see core/vm.c and doc/INTERNALS.md
 
 (c) 2008 why the lucky stiff, the freelance professor
 */
