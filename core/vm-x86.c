@@ -1,6 +1,6 @@
 /**\file vm-x86.c
 the x86 and x86_64 jit.
-\see core/vm.c and INTERNALS.md
+\see core/vm.c and doc/INTERNALS.md
 
 (c) 2008 why the lucky stiff, the freelance professor
 (c) 2013 perl11 org

@@ -87,15 +87,15 @@ pkg/${PKGBIN}-devel.tar.gz: ${GREG} lib/libpotion.a lib/libp2.a bin/p2-s${EXE} b
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc/ref dist/share/potion/test
-	cp syn/greg${EXE}               dist/bin/
-	cp bin/p*-s${EXE}               dist/bin/
-	cp lib/libp2.a lib/libpotion.a  dist/lib/
-	cp core/*.h                     dist/include/potion/
+	cp syn/greg${EXE}              dist/bin/
+	cp bin/p*-s${EXE}              dist/bin/
+	cp lib/libp2.a lib/libpotion.a    dist/lib/
+	cp core/*.h                        dist/include/potion/
 	rm dist/include/potion/potion.h dist/include/potion/config.h
-	-cp -r doc/*.textile doc/html   dist/share/potion/doc/
-	-cp -r doc/latex I*.md          dist/share/potion/doc/
-	-cp -r doc/ref/*                dist/share/potion/doc/ref/
-	cp -r test/*                    dist/share/potion/test/
+	-cp -r doc/*.textile doc/html	dist/share/potion/doc/
+	-cp -r doc/latex I*.md doc/I*.md dist/share/potion/doc/
+	-cp -r doc/ref/*			dist/share/potion/doc/ref/
+	cp -r test/*			dist/share/potion/test/
 	-mkdir -p pkg
 	(cd dist && tar czf ../pkg/${PKGBIN}-devel.tar.gz * && cd ..)
 	rm -rf dist

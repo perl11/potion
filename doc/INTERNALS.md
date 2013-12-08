@@ -471,18 +471,24 @@ struct itself.
       PN a, b, c;
     };
 
-Lastly, in any structs which are wrapped by
+In any structs which are wrapped by
 a Potion object, you need to be sure that any
 object handles are marked volatile as well.
 In the above case, the PN typedef handles that.
 
+Also be sure to not nest function calls which return PN
+objects. With an overly aggressive and incorrect compiler
+(gcc -O3) such intermediate results might be stored
+in a register, and the GC will not see this PN and move
+references to it away.
+Use temp. PN variables instead.
+
 This is a bit tedious to keep in mind, but
 is compensated for by Potion's automatic stack
 scanning (a technique which has brought easy
-C extensions to Ruby) and object convention
-(if your object pointers are all 8-byte aligned,
-you won't need to write a GC marking function.)
-
+C extensions to Ruby) and object convention.
+If your object pointers are all 8-byte aligned,
+you won't need to write a GC marking function.
 
 ## ~ the fixed memory section ~
 
@@ -504,7 +510,8 @@ the Potion interpreter is destroyed.
 ## ~ object overhead ~
 
 Primitives (such as numbers, booleans and nil) are
-immediate values in Potion, kept in registers.
+immediate values in Potion, kept in a single-word stack
+slot.
 
 Everything else is given a spot in memory. Every
 allocated object has a single word header specifying
