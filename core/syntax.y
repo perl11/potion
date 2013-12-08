@@ -332,7 +332,7 @@ sep = (end-of-line | comma) (space | comment | end-of-line | comma)*
 comment	= '#' (!end-of-line utf8)*
 space = ' ' | '\f' | '\v' | '\t'
 end-of-line = ( '\r\n' | '\n' | '\r' )
-  { ++G->lineno; if (P->flags & EXEC_DEBUG) { P->line = yylastline(G, thunk->begin); }}
+  { ++G->lineno; P->line = yylastline(G, thunk->begin); }
 end-of-file = !.
 
 sig = args+ end-of-file
