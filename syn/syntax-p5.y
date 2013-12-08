@@ -476,7 +476,7 @@ comment	= '#' (!end-of-line utf8)*
 # \205 U+85 NEL
 space = ' ' | '\f' | '\v' | '\t' | '\205' | '\240' | end-of-line
 end-of-line = ( '\r\n' | '\n' | '\r' )
-  { ++G->lineno; if (P->flags & EXEC_DEBUG) { P->line = yylastline(G, thunk->begin); }}
+  { ++G->lineno; P->line = yylastline(G, thunk->begin); }
 end-of-file = !'\0'
 id = < IDFIRST utfw* > { $$ = PN_STRN(yytext, yyleng) }
 # isWORDCHAR && IDFIRST, no numbers
