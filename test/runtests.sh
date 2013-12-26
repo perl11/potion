@@ -68,7 +68,6 @@ while [ $pass -lt 3 ]; do
 	    verbose $cmdi -B $f
 	    for=`$cmdi -B $f | sed "s/\n$//"`
 	elif [ $t -eq 1 ]; then
-	    verbose $cmdc $f
 	    $cmdc $f > /dev/null
 	    fb=$f$extc
 	    verbose $cmdi -B $fb
