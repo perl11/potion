@@ -547,18 +547,17 @@ lib/p2/libtommath${LOADEXT}: core/config.h core/potion.h \
 	@${LIBP2A_BACK}
 
 bench: bin/gc-bench${EXE} bin/potion${EXE}
-	@${ECHO}; \
-	  ${ECHO} running GC benchmark; \
-	  time bin/gc-bench
+	@${ECHO} running GC benchmark; time bin/gc-bench
+	$(MAKE) -s examples
 
-check: test.pn test.p2
+check: test
 test:  test.pn test.p2
 
-test.pn: pn libs bin/potion-test${EXE}
-	@+test/runtests.sh -q -pn
+test.pn: pn libs testable
+	test/runtests.sh -q -pn
 
-test.p2: p2 libs bin/p2-test${EXE} bin/gc-test${EXE}
-	@+test/runtests.sh -q -p2
+test.p2: p2 libs testable
+	test/runtests.sh -q -p2
 
 testable : bin/potion${EXE} bin/p2${EXE} libs bin/potion-test${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 

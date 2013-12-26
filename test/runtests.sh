@@ -9,6 +9,8 @@ SED=sed
 EXPR=expr
 EXT=pn
 maxpass=6
+
+# make -s $cmd
 count=0; failed=0; pass=0
 cmdi="$cmd -I"; cmdx="$cmdi -X"
 cmdc="$cmd -c"; extc=b
@@ -25,8 +27,8 @@ if [ "x$1" = "x-p2" ]; then
     cmdc="$cmd --compile"; extc=c
 fi
 
-test -f $cmd || make -s $cmd
-test -f $cmd2 || make -s $cmd2
+test -f $cmd || make -s $cmd $MAKEFLAGS
+test -f $cmd2 || make -s $cmd2 $MAKEFLAGS
 old_LIBRARY_PATH="$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH="lib:$LD_LIBRARY_PATH"
 
@@ -35,11 +37,13 @@ verbose() {
 }
 
 if test -z $1; then
-    make -s bin/potion-test bin/p2-test bin/gc-test
+    make -s bin/potion-test bin/p2-test bin/gc-test $MAKEFLAGS
     ${ECHO} running potion API tests
     bin/potion-test
-    ${ECHO} running p2 API tests
-    bin/p2-test
+    if [ $EXT = pl ]; then
+      ${ECHO} running p2 API tests
+      bin/p2-test
+    fi
     ${ECHO} running GC tests
     bin/gc-test
 fi
