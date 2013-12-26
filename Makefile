@@ -374,7 +374,7 @@ bench: test/api/gc-bench${EXE} pn
 
 check: test
 test: pn libs test/api/potion-test${EXE} test/api/gc-test${EXE}
-	@+test/runtests.sh -q
+	test/runtests.sh -q
 
 testable : bin/potion${EXE} libs test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 

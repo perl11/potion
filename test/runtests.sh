@@ -7,7 +7,7 @@ ECHO=/bin/echo
 SED=sed
 EXPR=expr
 
-make -s $cmd
+# make -s $cmd
 count=0; failed=0; pass=0
 EXT=pn;
 cmdi="$cmd -I"; cmdx="$cmdi -X"; 
@@ -20,7 +20,7 @@ verbose() {
 }
 
 if test -z $1; then
-    make -s test/api/potion-test test/api/gc-test
+    # make -s test/api/potion-test test/api/gc-test
     ${ECHO} running potion API tests; 
     test/api/potion-test; 
     ${ECHO} running GC tests; 
