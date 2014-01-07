@@ -22,6 +22,7 @@
 ._*
 .DS_Store
 /lib/*/*.so
+/lib/*/*.dylib
 /lib/*/*.dll
 /lib/*/*.bundle
 /lib/*/*.bundle.dSYM
@@ -32,6 +33,7 @@
 /lib/*.o
 /lib/*.opic
 /lib/*.so
+/lib/*.dylib
 /lib/*.dll
 /lib/*.bundle
 /lib/*.bundle.dSYM
