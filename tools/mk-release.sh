@@ -41,7 +41,7 @@ docross() {
     echo CROSS $1
     make clean
     make clean -C 3rd/libuv
-    rm config.inc lib/lib* 3rd/libuv/Makefile
+    rm config.inc 3rd/libuv/Makefile
     echo make CC="$1" DEBUG=0 CROSS=1
     make -s -f config.mak CC="$1" DEBUG=0 CROSS=1
     touch bin/greg core/syntax.c

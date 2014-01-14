@@ -56,7 +56,7 @@ PNLIB = lib/libpotion${DLL}
 EXTLIBS = -Llib -luv
 ifeq (${WIN32},1)
 LIBUV = lib/libuv-11.dll lib/libuv.dll.a
-EXTLIBS += -lw32_32
+EXTLIBS += /usr/i686-w64-mingw32/lib/libws2_32.a
 else
 LIBUV = lib/libuv${DLL}
 endif
@@ -395,7 +395,7 @@ test/api/gc-bench${EXE}: ${OBJ_GC_BENCH} lib/libpotion.a
 examples: pn
 	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
 
-dist: bins libs $(AIO_DEPS) static ${GREG}
+dist: $(AIO_DEPS) bins libs static ${GREG}
 	@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PNLIB}; \
 	  +$(MAKE) bins libs RPATH="${RPATH_INSTALL}"; \

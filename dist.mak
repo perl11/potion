@@ -78,7 +78,7 @@ pkg/${PKGBIN}.zip: core/config.h core/version.h core/syntax.c bin/potion${EXE} \
 	rm -rf dist
 
 pkg/${PKGBIN}-devel.tar.gz: ${GREG} bin/potion-s${EXE} lib/libpotion.a
-	+${MAKE} doxygen GTAGS
+	${MAKE} doxygen GTAGS
 	rm -rf dist
 	mkdir -p dist dist/bin dist/include/potion dist/lib/potion \
                  dist/share/potion/doc/ref dist/share/potion/test
@@ -105,7 +105,7 @@ tarball: core/version.h core/syntax.c
 	rm -rf ${PKG}
 	git checkout-index --prefix=${PKG}/ -a
 	rm -f ${PKG}/.gitignore
-	+${MAKE} MANIFEST
+	${MAKE} MANIFEST
 	cp MANIFEST ${PKG}/
 	cp core/version.h ${PKG}/core/
 	cp core/syntax.c ${PKG}/core/
