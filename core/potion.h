@@ -41,8 +41,8 @@ and optionally args, statically typed via signature strings.
 #define POTION_H
 
 #define POTION_MAJOR    0
-#define POTION_MINOR    1
-#define POTION_VERSION  "0.1"
+#define POTION_MINOR    2
+#define POTION_VERSION  "0.2"
 #define POTION_SIG      "p\07\10n"
 #define POTION_VMID     0x79
 
