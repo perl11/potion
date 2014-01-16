@@ -17,6 +17,9 @@
 #include "ast.h"
 #include "opcodes.h"
 #include "asm.h"
+#ifdef WITH_EXTERN
+#include <dlfcn.h>
+#endif
 
 #define PN_ASM1(ins, _a)     f->asmb = (PN)potion_asm_op(P, (PNAsm *)f->asmb, (u8)ins, (int)_a, 0)
 #define PN_ASM2(ins, _a, _b) f->asmb = (PN)potion_asm_op(P, (PNAsm *)f->asmb, (u8)ins, (int)_a, (int)_b)
@@ -579,9 +582,8 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           PN_BLOCK(breg, (PN)blk, PN_S(t,1));
         }
         PN_ASM2(OP_CLASS, reg, breg);
-#if 1
+#ifdef WITH_EXTERN
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_extern) { // ffi
-        #include <dlfcn.h>
         //u8 breg = reg;
 	int i, arity;
         PN msg = PN_S(t,1);
@@ -611,19 +613,16 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           cl->upvalsize = PN_TUPLE_LEN(cl->upvals);
           cl->pathsize = PN_TUPLE_LEN(cl->paths);
           cl->jit = (PN_F)sym;
-	  PN sig = PN_TUPLE_AT(msg, 1);
+	  PN sig = PN_TUPLE_LEN(msg) ? PN_TUPLE_AT(msg, 1) : PN_TUP0();
+	  cl->sig = sig;
 	  arity = cl->arity = potion_sig_arity(P, sig);
           for (i=0; i < arity; i++) {
 	    if (PN_TUPLE_LEN(msg) > 1) {
-	      cl->sig = sig;
 	      // TODO set argtype translators
 	      //PN_ASM2(OP_LOADPN, breg++, sig);
 	    }
 	    // TODO fill in defaults
 	  }
-	  if (!arity) {
-	    cl->sig = PN_TUP0();
-          }
           PN_ASM2(OP_PROTO, reg, PN_PUT(f->protos, (PN)cl));
           //PN_ASM2(OP_EXTERN, reg, breg);
         }

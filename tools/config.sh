@@ -203,4 +203,7 @@ else
   echo "#define POTION_STACK_DIR  $STACKDIR"
   #echo "#define POTION_ARGS_DIR   $ARGDIR"
   echo "#define HAVE_ASAN_ATTR    $HAVE_ASAN"
+  echo "#ifndef SANDBOX"
+  echo "#define WITH_EXTERN	1"
+  echo "#endif"
 fi

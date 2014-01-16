@@ -590,7 +590,7 @@ reentry:
 		int arity = cl->arity;
 		PN err = potion_sig_check(P, cl, arity, numargs);
 		if (err) return err;
-                for (i=numargs; i < arity; i++) { // fill in defaults
+                for (i=numargs; i < arity; i++) { // fill in defaults. TODO compile-time
                   PN s = potion_sig_at(P, sig, i);
                   if (s) // default or zero: && !filled by NAMED (?)
                     reg[op.a + i + 2] = PN_TUPLE_LEN(s) == 3

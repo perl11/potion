@@ -126,7 +126,7 @@ struct PNVtable;
 #define PN_TSTRINGS     (18+PN_TNIL) //12
 #define PN_TERROR       (19+PN_TNIL) //13
 #define PN_TCONT        (20+PN_TNIL) //14
-#define PN_TDECIMAL     (21+PN_TNIL) //15 Num. for p2 class definitions only, unused within potion (yet)
+#define PN_TDECIMAL     (21+PN_TNIL) //15 Num, i.e. double. no arbitrary prec. num yet
 #define PN_TUSER        (22+PN_TNIL) //16
 
 #define vPN(t)          struct PN##t * volatile
@@ -179,7 +179,7 @@ struct PNVtable;
 #define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Bool")
 #define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Tuple")
 #define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Closure")
-//TODO: check parents and mixins via bind
+//exact only. TODO check derived types, parents and mixins via bind
 #define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, (PN)obj)
 #ifdef DEBUG
 #define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE(obj,type)
