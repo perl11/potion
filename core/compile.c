@@ -583,11 +583,13 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_extern) { // ffi
         #include <dlfcn.h>
         //u8 breg = reg;
+	int i, arity;
         PN msg = PN_S(t,1);
 	char *name = PN_STR_PTR(PN_S(PN_TUPLE_AT(msg,0),0));
 	//defer dlsym to run-time to see load, or require load at BEGIN time?
 	//PN_ASM2(OP_LOADPN, breg++, name);
 	PN_F sym = (PN_F)dlsym(RTLD_DEFAULT, name);
+	DBG_c("extern %s => %p\n", name, sym);
 	if (!sym) {
 	  fprintf(stderr, "* extern %s not found. You may need load a library first\n",
 	          name);
@@ -609,14 +611,18 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           cl->upvalsize = PN_TUPLE_LEN(cl->upvals);
           cl->pathsize = PN_TUPLE_LEN(cl->paths);
           cl->jit = (PN_F)sym;
-          if (PN_TUPLE_LEN(msg) > 1) {
-            PN sig = PN_TUPLE_AT(msg, 1);
-            cl->sig = sig;
-            cl->arity = potion_sig_arity(P, sig);
-            //PN_ASM2(OP_LOADPN, breg++, sig);
-          } else {
-            cl->sig = PN_TUP0();
-            cl->arity = 0;
+	  PN sig = PN_TUPLE_AT(msg, 1);
+	  arity = cl->arity = potion_sig_arity(P, sig);
+          for (i=0; i < arity; i++) {
+	    if (PN_TUPLE_LEN(msg) > 1) {
+	      cl->sig = sig;
+	      // TODO set argtype translators
+	      //PN_ASM2(OP_LOADPN, breg++, sig);
+	    }
+	    // TODO fill in defaults
+	  }
+	  if (!arity) {
+	    cl->sig = PN_TUP0();
           }
           PN_ASM2(OP_PROTO, reg, PN_PUT(f->protos, (PN)cl));
           //PN_ASM2(OP_EXTERN, reg, breg);
@@ -631,7 +637,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           jmp1 = PN_OP_LEN(f->asmb);
           PN_ASM2(OP_NOTJMP, breg, 0);
         } else if (PN_S(t,1) || !t->a[2]) {
-	  //warn or skip to allow a method named loop?
+	  //warn or skip to allow a method named loop? for aio we want loop methods
 	  //fprintf(stderr, "* loop takes no args, just a block");
 	  goto loopfunc;
 	}

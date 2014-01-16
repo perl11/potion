@@ -1,0 +1,3 @@
+# ffi
+sleep = extern sleep(N)
+5 sleep
