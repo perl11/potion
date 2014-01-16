@@ -1,8 +1,9 @@
 /bin
 /tools/config.c
 /config.inc
-/config.inc.bak
+/config.inc.*
 /core/config.h
+/core/config.h.bak
 /core/version.h
 /core/vm-arm.c
 /core/pn-scan.c
@@ -17,8 +18,8 @@
 /test/api/gc-test
 /test/api/gc-test.exe
 /test/api/*.o
-/config.inc
 /.gdbinit
+/.lldbinit
 *.pnb
 ._*
 .DS_Store
