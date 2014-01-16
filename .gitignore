@@ -1,6 +1,7 @@
 /bin
 /tools/config.c
 /config.inc
+/config.inc.bak
 /core/config.h
 /core/version.h
 /core/vm-arm.c
