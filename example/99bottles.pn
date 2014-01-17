@@ -1,18 +1,18 @@
 count = 99
 99 times:
-  "\n" print
+  "" say
   if (count == 1):
-    (count, " bottle of beer on the wall\n") join print
-    (count, " bottle of beer\n") join print.
+    (count, " bottle of beer on the wall") join say
+    (count, " bottle of beer") join say.
   else:
-    (count, " bottles of beer on the wall\n") join print
-    (count, " bottles of beer\n") join print.
+    (count, " bottles of beer on the wall") join say
+    (count, " bottles of beer") join say.
 
-  "Take one down, pass it around\n" print
+  "Take one down, pass it around" say
   count = count - 1
   if (count == 1):
-    (count, " bottle of beer on the wall\n") join print.
+    (count, " bottle of beer on the wall") join say.
   else:
-    (count, " bottles of beer on the wall\n") join print.
-  "\n" print.
-"No more bottles of beer on the wall\n" print
+    (count, " bottles of beer on the wall") join say.
+  "" say.
+"No more bottles of beer on the wall" say
