@@ -952,6 +952,8 @@ PN potion_proto_clone(Potion *P, PN cl, PN self) {
   PNAsm * volatile asmb;
   PN len;
 
+  //TODO extern protos
+  n->name = f->name;
   n->source = f->source;
   n->stack = f->stack;
   n->protos = potion_send(PN_clone, f->protos);
@@ -964,7 +966,6 @@ PN potion_proto_clone(Potion *P, PN cl, PN self) {
   n->localsize = f->localsize;
   n->upvalsize = f->upvalsize;
   n->pathsize = f->pathsize;
-  n->name = f->name;
   n->sig = PN_IS_TUPLE(f->sig) ? potion_send(PN_clone, f->sig) : f->sig;
 
   len = ((PNAsm *)f->asmb)->len;
@@ -1012,6 +1013,8 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   PN len = 0;
   PNAsm * volatile asmb = NULL;
   vPN(Proto) f = PN_ALLOC(PN_TPROTO, struct PNProto);
+  // TODO extern protos
+  f->name = READ_CONST(pn, *ptr);
   f->source = READ_CONST(pn, *ptr);
   if (f->source == PN_NIL) f->source = up;
   f->sig = READ_VALUES(pn, *ptr);
@@ -1092,6 +1095,8 @@ long potion_proto_dumpbc(Potion *P, PN proto, PN out, long pos) {
   vPN(Proto) f = (struct PNProto *)proto;
   char *start = PN_STR_PTR(out) + pos;
   u8 *ptr = (u8 *)start;
+  //TODO extern (by name)
+  WRITE_CONST(f->name, ptr);
   WRITE_CONST(f->source, ptr);
   WRITE_VALUES(f->sig, ptr);
   WRITE_CONST(f->stack, ptr);
