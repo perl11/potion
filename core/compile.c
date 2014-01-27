@@ -598,20 +598,13 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           PN_ASM2(OP_LOADPN, reg, PN_NIL);
         } else {
           // TODO: create a ffi wrapper to translate the args and return value
-          struct PNProto* cl = PN_ALLOC(PN_TPROTO, struct PNProto);
+          struct PNProto* cl = PN_CALLOC_N(PN_TPROTO, struct PNProto, 0);
           cl->source = PN_NIL;
           cl->stack = PN_NUM(1);
-          cl->protos = PN_TUP0();
-          cl->paths = PN_TUP0();
-          cl->locals = PN_TUP0();
-          cl->upvals = PN_TUP0();
-          cl->values = PN_TUP0();
+          cl->protos = cl->paths = cl->locals = cl->upvals = cl->values = PN_TUP0();
           cl->tree = (PN)t;
           cl->asmb = (PN)potion_asm_new(P);
           cl->name = PN_S(PN_TUPLE_AT(msg,0),0);
-          cl->localsize = PN_TUPLE_LEN(cl->locals);
-          cl->upvalsize = PN_TUPLE_LEN(cl->upvals);
-          cl->pathsize = PN_TUPLE_LEN(cl->paths);
           cl->jit = (PN_F)sym;
 	  PN sig = PN_TUPLE_LEN(msg) ? PN_TUPLE_AT(msg, 1) : PN_TUP0();
 	  cl->sig = sig;
@@ -623,6 +616,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 	    }
 	    // TODO fill in defaults
 	  }
+	  cl->asmb = (PN)potion_asm_op(P, (PNAsm *)cl->asmb, OP_RETURN, reg, 0);
           PN_ASM2(OP_PROTO, reg, PN_PUT(f->protos, (PN)cl));
           //PN_ASM2(OP_EXTERN, reg, breg);
         }
