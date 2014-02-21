@@ -426,6 +426,9 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       u8 opcode = OP_GETUPVAL, breg = reg;
 
       if (lhs->part == AST_EXPR) {
+        //TODO: compile to recursive match+bind, not just sequential (match op?)
+        // ignore _ and accept |
+        // return false or table
         unsigned long i = 0;
         c = PN_TUPLE_LEN(PN_S(lhs,0)) - 1;
         DBG_c("assign expr [%lu]\n", (_PN)c);
