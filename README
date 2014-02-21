@@ -264,26 +264,50 @@
 
   * Named block args
 
-
       (1, 2, 3) map (item=x, index=i): i display, x + 1.
 
+  * Assign is match + bind really (~planned~)
+
+     (1, x) = (1, 2) => x=2
+     (1, x) = (2, 3) => false
+     1 = 2           => false
+
+  Assignments are side-effects only, but here extended.  Atoms on the
+  left-hand side (lhs) are trivial, but we prefer the power of LISP's
+  destructuring-bind within macros, or prolog or elixirs matching. So
+  = is actually a match operator which will recursively check if the
+  expressions on both left and right side match, and binds all found
+  lhs variables.
+
+  _ is a special variable which matches everything, but is never bound,
+  | seperates the head and tail from a list or lick.
+
+  So we can check trees like this:
+
+    (_, x, 2)   = (0, 1, 2)   and say x #=> 1
+    [_, [x, 1]] = [0, [1, 2]] and say x #=> 1
+    [_, x]      = [0, [1, 2]] and say x #=> [1, 2]
+    [_ | x]     = [0, 1, 2]   and say x #=> [1, 2]
+
+    fun = (a, b): [0, [a, b]].
+    [_ | [x, 1]] = fun(1, 2)  and say x #=> 1
 
   ~ feverish and fond thankyous ~
 
-  I am gravely indebted to Basile Starynkevitch, who fielded my
-  questions about his garbage collector. I favor French hackers
+  why is gravely indebted to Basile Starynkevitch, who fielded
+  questions about his garbage collector. why favors French hackers
   to an extreme (Xavier Leroy, Nicolas Cannasse, Guy Decoux,
   Mathieu Bochard to name only a portion of those I admire) and
-  am very glad to represent their influence in Potion's garbage
+  is very glad to represent their influence in Potion's garbage
   collector.
 
-  Matz, for answering my questions about conservative GC and
-  for encouraging me so much. Potion's stack scanning code and
+  Matz, for answering why's questions about conservative GC and
+  for encouraging him so much. Potion's stack scanning code and
   some of the object model come from Ruby.
 
   Steve Dekorte for the Io language, libgarbagecollector and
   libcoroutine -- I referred frequently to all of them in
-  sorting out what I wanted.
+  sorting out what he wanted.
 
   Of course, Mauricio Fernandez for his inspiring programming
   journal housed at http://eigenclass.org/R2/ and for works
@@ -291,7 +315,7 @@
   Many of my thoughts about language internals (object repr,
   GC, etc.) are informed by him.
 
-  Ian Piumarta for peg/leg. I use a re-entrant custom version
+  Ian Piumarta for peg/leg. We use a re-entrant custom version
   of it, but the original library is sheer minimalist parsing
   amazement.
 
