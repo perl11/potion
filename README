@@ -278,7 +278,7 @@
   expressions on both left and right side match, and binds all found
   lhs variables.
 
-      (1, x) = (1, 2) => x=2
+      (1, x) = (1, 2) => (x=2)
       (1, x) = (2, 3) => false
       1 = 2           => false
 
