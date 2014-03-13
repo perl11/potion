@@ -3,7 +3,7 @@
 // the Potion!
 //
 // (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2013 by perl11 org
+// (c) 2013-2014 by perl11 org
 //
 #include <stdio.h>
 #include <sys/stat.h>
@@ -392,7 +392,7 @@ int main(int argc, char *argv[]) {
     for (; i < argc; i++) PN_PUSH(args, PN_STR(argv[i]));
     potion_define_global(P, PN_STR("argv"), args);
     if (buf != PN_NIL) {
-      potion_cmd_exec(P, buf, NULL, compile, PN_NIL);
+      potion_cmd_exec(P, buf, NULL, compile, "");
     } else {
       potion_cmd_exec(P, buf, fn, compile, addmodules);
     }

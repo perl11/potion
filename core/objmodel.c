@@ -205,7 +205,7 @@ void potion_add_metaclass(Potion *P, vPN(Vtable) vt) {
   meta->methods = (struct PNTable *)potion_table_empty(P);
   meta->ctor = PN_FUNC(potion_no_call, 0);
   PN_VTABLE(meta->type) = (PN)meta;
-  meta->meta = PN_NIL;
+  meta->meta = NULL;
   PN_TOUCH(P->vts);
 }
 /// create a non-user type, derived from self
