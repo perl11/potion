@@ -3,6 +3,7 @@
 // the Potion!
 //
 // (c) 2008 why the lucky stiff, the freelance professor
+// (c) 2013-2014 by perl11 org
 //
 #include <stdio.h>
 #include <sys/stat.h>
@@ -29,9 +30,11 @@ static void potion_cmd_usage(Potion *P) {
       "  -I, --inspect      print only the return value\n"
       "  -V, --verbose      show bytecode and ast info\n"
       "  -Ldirectory        add library search path\n"
-      "  -d, --debug        debug script\n"
+      "  -Mmodule[=args]    load module\n"
+      "  -d[module[=args]]  debug script\n"
+      "      --debug[=module[,args]]\n"
       "  -c, --compile      compile the script to bytecode\n"
-      "      --compile={c,exe}  compile to target: C or exe\n"   // jvm, .net
+      "      --compile={target[,args]} compile to target: c or exe\n" //TODO: js,jvm,.net
       "      --check        check the script syntax and exit\n"
       "  -h, --help         show this helpful stuff\n"
 #ifdef DEBUG
@@ -241,7 +244,6 @@ done:
   return code;
 }
 
-//XXX load is disabled and ignored in a SANDBOX
 char * addmodule(Potion *P, char *result, char *prefix, char *name) {
   char *args = strchr(name, '=');
   PN out = potion_bytes(P, 0);
@@ -260,9 +262,9 @@ char * addmodule(Potion *P, char *result, char *prefix, char *name) {
 
 int main(int argc, char *argv[]) {
   POTION_INIT_STACK(sp);
+  Potion *P = potion_create(sp);
   int i;
   exec_mode_t exec = POTION_JIT ? EXEC_JIT : EXEC_VM;
-  Potion *P = potion_create(sp);
   PN buf = PN_NIL;
   char *compile = NULL;
   char *fn = NULL;
@@ -316,7 +318,21 @@ int main(int argc, char *argv[]) {
     if (!strcmp(argv[i], "-X") || !strcmp(argv[i], "--x86")) {
       exec = EXEC_JIT; continue; }
     if (!strcmp(argv[i], "--debug") || !strcmp(argv[i], "-d")) {
+      addmodules = addmodule(P, addmodules, NULL, "debug");
       exec = EXEC_DEBUG; continue; }
+    if (!strcmp(argv[i], "--debug=")) {
+      addmodules = addmodule(P, addmodules, "debug", &argv[i][9]);
+      exec = EXEC_DEBUG; continue; }
+    if (argv[i][0] == '-' && argv[i][1] == 'd') {
+      if (argv[i][2] == '=')
+	addmodules = addmodule(P, addmodules, NULL,
+			       PN_STR_PTR(PN_STRCAT("debug=", &argv[i][3])));
+      else
+	addmodules = addmodule(P, addmodules, "debug", &argv[i][2]);
+      exec = EXEC_DEBUG; continue; }
+    if (argv[i][0] == '-' && argv[i][1] == 'M') {
+      addmodules = addmodule(P, addmodules, NULL, &argv[i][2]);
+      continue; }
 #ifdef DEBUG
     if (argv[i][0] == '-' && argv[i][1] == 'D') {
       if (strchr(&argv[i][2], '?')) {
@@ -376,7 +392,7 @@ int main(int argc, char *argv[]) {
     for (; i < argc; i++) PN_PUSH(args, PN_STR(argv[i]));
     potion_define_global(P, PN_STR("argv"), args);
     if (buf != PN_NIL) {
-      potion_cmd_exec(P, buf, NULL, compile, PN_NIL);
+      potion_cmd_exec(P, buf, NULL, compile, "");
     } else {
       potion_cmd_exec(P, buf, fn, compile, addmodules);
     }
