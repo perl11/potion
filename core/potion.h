@@ -176,6 +176,7 @@ struct PNVtable;
 			  || (!PN_IS_PTR(p) && p > (_PN)P->mem->birth_hi))
 
 #define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "String")
+#define PN_CHECK_STRB(obj)  if (!PN_IS_STR(obj) || (PN_TYPE(obj) != PN_TBYTES)) return potion_type_error_want(P, ""#obj, (PN)obj, "String or Bytes")
 #define PN_CHECK_INT(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Integer")
 #define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Bool")
 #define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Tuple")

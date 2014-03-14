@@ -5,7 +5,8 @@ v0.2	Mon Jan 13 20:39:05 2014 -0600
 	For tuple: slice. For bytes and string: clone
 	* Added support for negative arguments for string.slice
 	* Changed API's for potion_type_error_want
-	* Updated libuv from 0.11.14 to 0.11.17
+	* Updated libuv from 0.11.14 to 0.11.23
+	* Fixed uv_buf_t handling in aio
 	* Added SANDBOX support: make SANDBOX=1
 	  omit access to local filesystem, processes, loading shared libraries
 	  -L, and external compilers. bin/potion-s includes all modules statically.
