@@ -18,6 +18,9 @@ CCEX="$CC $AC -o $AOUT"
 LANG=C
 
 CCv=`$CC -v 2>&1`
+if [ "$?" != "0" ]; then
+  CC=cc
+fi
 ICC=`echo "$CCv" | sed "/icc version/!d"`
 TARGET=`echo "$CCv" | sed -e "/Target:/b" -e "/--target=/b" -e d | sed "s/.* --target=//; s/Target: //; s/ .*//" | head -1`
 MINGW_GCC=`echo "$TARGET" | sed "/mingw/!d"`
