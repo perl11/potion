@@ -19,8 +19,8 @@ endif
 ifneq (${SANDBOX},1)
 SRC += core/file.c core/load.c
 else
-PLIBS := readline aio
-PLIBS_SRC := lib/aio.c lib/readline/readline.c lib/readline/linenoise.c
+PLIBS = readline aio
+PLIBS_SRC = lib/aio.c lib/readline/readline.c lib/readline/linenoise.c
 ifeq ($(WIN32),1)
 PLIBS_SRC += lib/readline/win32fixes.c
 endif
@@ -49,7 +49,11 @@ ifneq (${WIN32},1)
     FPIC = -fPIC
     OPIC = opic
   else
-    PLIBS = $(subst aio,,${PLIBS})
+    ifneq (${SANDBOX},1)
+      PLIBS = readline buffile
+    else
+      PLIBS = readline
+    endif
   endif
 endif
 OBJ = ${SRC:.c=.o}
