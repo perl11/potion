@@ -1,6 +1,6 @@
 [submodule "3rd/libuv"]
 	path = 3rd/libuv
-	url = git://github.com/joyent/libuv.git
+	url = git://github.com/rurban/libuv.git
 [submodule "3rd/libtommath"]
 	path = 3rd/libtommath
 	url = git://github.com/libtom/libtommath.git
