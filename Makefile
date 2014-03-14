@@ -19,8 +19,8 @@ endif
 ifneq (${SANDBOX},1)
 SRC += core/file.c core/load.c
 else
-PLIBS := $(subst buffile,,${PLIBS})
-PLIBS_SRC := $(subst lib/buffile.c,,${PLIBS_SRC})
+PLIBS := readline aio
+PLIBS_SRC := lib/aio.c lib/readline/readline.c lib/readline/linenoise.c
 ifeq ($(WIN32),1)
 PLIBS_SRC += lib/readline/win32fixes.c
 endif
