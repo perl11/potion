@@ -1,10 +1,16 @@
-v0.2	planned: Dec 21 2013 rurban
+v0.2	planned: early 2014 rurban
 
         * print and say methods return "" instead of nil.
         * Added methods for table: clone, slice, keys, values.
 	For tuple: slice. For bytes and string: clone
 	* Added support for negative arguments for string.slice
 	* Changed API's for potion_type_error_want
+	* Updated libuv from 0.11.14 to 0.11.23
+	* Fixed uv_buf_t handling in aio
+	* Added SANDBOX support: make SANDBOX=1
+	  omit access to local filesystem, processes, loading shared libraries
+	  -L, and external compilers. bin/potion-s includes all modules statically.
+	  See INSTALL.md
 
 v0.1	Wed Oct 16 13:08:38 2013 rurban
 
