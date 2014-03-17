@@ -425,7 +425,7 @@ endif
 	@${PATCH_PHLPAPI2}
 	cd 3rd/libuv && ./autogen.sh
 	-grep "libuv 0." 3rd/libuv/configure && sed -i -e's,libuv 0.,libuv-0.,' 3rd/libuv/configure
-	cd 3rd/libuv && CC="${CC}" ./configure --enable-shared --prefix="$(shell pwd)" \
+	cd 3rd/libuv && CC="${CC}" ./configure --disable-dtrace --enable-shared --prefix="$(shell pwd)" \
 	  "${CROSSHOST}"
 
 lib/libuv.a: config.inc 3rd/libuv/Makefile
