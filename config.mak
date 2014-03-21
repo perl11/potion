@@ -250,11 +250,17 @@ ifneq ($(shell tools/config.sh "${CC}" bsd),1)
 endif
 
 ifneq ($(APPLE),1)
+ifneq ($(CROSS),1)
+ifneq ($(WIN32),1)
   ifneq ($(ICC),1)
 	WARNINGS += -Wno-zero-length-array -Wno-gnu
   endif
+  ifneq ($(CYGWIN),1)
 	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
 	LDDLLFLAGS += $(LDFLAGS)
+  endif
+endif
+endif
 endif
 ifeq (1,$(CROSS))
 	RANLIB = $(subst -gcc,-ranlib,${CC})
