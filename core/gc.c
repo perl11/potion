@@ -310,7 +310,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
     case POTION_COPIED:
     case POTION_FWD:
       sz = ((struct PNFwd *)ptr)->siz;
-      goto done;
+      goto done_1;
   }
 
   if (ptr->vt < PN_TNIL) goto err;
@@ -331,7 +331,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
 	      (unsigned long)ptr, (unsigned long)ptr->vt);
       return 0;
     }
-    goto done;
+    goto done_1;
   }
 
   switch (ptr->vt) {
@@ -385,7 +385,7 @@ PN_SIZE potion_type_size(Potion *P, const struct PNObject *ptr) {
     break;
   }
 
-done:
+done_1:
   if (sz < sizeof(struct PNFwd))
     sz = sizeof(struct PNFwd);
   return PN_ALIGN(sz, 8); // force 64-bit alignment
@@ -415,7 +415,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     case POTION_COPIED:
     case POTION_FWD:
       GC_MINOR_UPDATE(((struct PNFwd *)ptr)->ptr);
-    goto done;
+    goto done_2;
   }
 
   if (ptr->vt > PN_TUSER) {
@@ -423,7 +423,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     int ivars = ((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen;
     for (i = 0; i < ivars; i++)
       GC_MINOR_UPDATE(((struct PNObject *)ptr)->ivars[i]);
-    goto done;
+    goto done_2;
   }
 
   switch (ptr->vt) {
@@ -505,7 +505,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     break;
   }
 
-done:
+done_2:
   sz = potion_type_size(P, ptr);
   return (void *)((char *)ptr + sz);
 }
@@ -519,7 +519,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     case POTION_COPIED:
     case POTION_FWD:
       GC_MAJOR_UPDATE(((struct PNFwd *)ptr)->ptr);
-    goto done;
+    goto done_3;
   }
 
   if (ptr->vt > PN_TUSER) {
@@ -527,7 +527,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     int ivars = ((struct PNVtable *)PN_VTABLE(ptr->vt))->ivlen;
     for (i = 0; i < ivars; i++)
       GC_MAJOR_UPDATE(((struct PNObject *)ptr)->ivars[i]);
-    goto done;
+    goto done_3;
   }
 
   switch (ptr->vt) {
@@ -609,7 +609,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     break;
   }
 
-done:
+done_3:
   sz = potion_type_size(P, ptr);
   return (void *)((char *)ptr + sz);
 }

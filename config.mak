@@ -115,7 +115,7 @@ endif
 endif
 
 ifeq (${DEBUG},0)
-       DEBUGFLAGS += -O3
+       DEBUGFLAGS += -O3 -DNDEBUG
        CFLAGS += -D_FORTIFY_SOURCE=2
 endif
 ifneq (${SANDBOX},0)

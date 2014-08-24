@@ -40,7 +40,7 @@ struct PNVtable {
 struct PNTable {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_TABLE_HEADER;   ///< PN_SIZE n_buckets, size, n_occupied, upper_bound
-  char table[0];
+  char table[];
 };
 
 KHASH_MAP_INIT_PN(PN, struct PNTable)

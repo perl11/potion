@@ -72,7 +72,7 @@ struct PNBHeader {
   u8 minor;
   u8 vmid;
   u8 pn;
-  u8 proto[0];
+  u8 proto[];
 };
 
 size_t potion_cp_strlen_utf8(const char *);

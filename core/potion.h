@@ -53,6 +53,7 @@ and optionally args, statically typed via signature strings.
 #include <limits.h>
 #include <string.h>
 #include <fcntl.h>
+#include <assert.h>
 #include "config.h"
 #if POTION_WIN32
 # include <sys/stat.h>
@@ -229,7 +230,7 @@ struct PNVtable;
   PNType vt; \
   PNUniq uniq
 
-#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[0]; } N
+#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[]; } N
 #define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
 #define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
 
@@ -297,7 +298,7 @@ struct PNVtable;
 ///
 struct PNObject {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
-  PN ivars[0];
+  PN ivars[];
 };
 
 ///
@@ -320,7 +321,7 @@ struct PNFwd {
 struct PNData {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE siz;
-  char data[0];
+  char data[];
 };
 
 ///
@@ -331,7 +332,7 @@ struct PNData {
 struct PNString {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE len;
-  char chars[0];
+  char chars[];
 };
 
 ///
@@ -342,7 +343,7 @@ struct PNBytes {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE len;
   PN_SIZE siz;
-  char chars[0];
+  char chars[];
 };
 
 /// PN_MANTISSA the last part of ->real
@@ -382,7 +383,7 @@ struct PNClosure {
   int minargs;       ///< cached number of mandatory args, without optional
   PN_SIZE extra;     ///< 0 or 1 if has code attached at data
   PN name;           /// PNString
-  PN data[0];        ///< code
+  PN data[];        ///< code
 };
 
 ///
@@ -473,7 +474,7 @@ struct PNTuple {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE len;
   PN_SIZE alloc;     ///< overallocate a bit
-  PN set[0];
+  PN set[];
 };
 
 ///
@@ -514,7 +515,7 @@ struct PNLick {
 struct PNCont {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN_SIZE len;
-  PN stack[0]; // [0] = head of potion stack
+  PN stack[];  // [0] = head of potion stack
                // [1] = current %rsp
                // [2] = current %rbp
                // [3+] = full stack dump, ascending
@@ -562,7 +563,7 @@ static inline char *potion_str_ptr(PN s) {
 
 PN_FLEX(PNFlex, PN);
 //PN_FLEX(PNAsm, unsigned char);
-typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; unsigned char ptr[0]; } PNAsm;
+typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; unsigned char ptr[]; } PNAsm;
 
 ///
 /// the jit
@@ -682,6 +683,14 @@ static inline void *potion_gc_alloc(Potion *P, PNType vt, int siz) {
   if (siz < sizeof(struct PNFwd))
     siz = sizeof(struct PNFwd);
   siz = PN_ALIGN(siz, 8); // force 64-bit alignment
+  /*@ assert Value: mem_access: \valid_read(&M->dirty); */
+  /*@ assert
+    Value: ptr_comparison:
+    \pointer_comparable((char *)M->birth_cur+siz,
+                        (char *)M->birth_storeptr-2); */
+  assert(M);
+  assert(M->birth_cur);
+  assert(M->birth_storeptr);
   if (M->dirty || (char *)M->birth_cur + siz >= (char *)M->birth_storeptr - 2)
     potion_garbagecollect(P, siz + 4 * sizeof(double), 0);
   res = (struct PNObject *)M->birth_cur;
