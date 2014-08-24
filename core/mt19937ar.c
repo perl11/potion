@@ -117,12 +117,20 @@ static void next_state(void) {
   left = N;
   next = state;
   
-  for (j=N-M+1; --j; p++) 
+  for (j=N-M+1; --j; p++) {
+    /*@ assert Value: mem_access: \valid_read(p+1); */
+    /*@ assert Value: mem_access: \valid_read(p+397); */
     *p = p[M] ^ TWIST(p[0], p[1]);
+  }
 
-  for (j=M; --j; p++) 
+  for (j=M; --j; p++) {
+    /*@ assert Value: mem_access: \valid_read(p+1); */
+    /*@ assert Value: mem_access: \valid_read(p+(int)(397-624)); */
     *p = p[M-N] ^ TWIST(p[0], p[1]);
+  }
 
+  /*@ assert Value: mem_access: \valid(p); */
+  /*@ assert Value: mem_access: \valid_read(p+(int)(397-624)); */
   *p = p[M-N] ^ TWIST(p[0], state[0]);
 }
 

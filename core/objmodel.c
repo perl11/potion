@@ -579,9 +579,9 @@ PN potion_lobby_say(Potion *P, PN cl, PN self) {
 }
 
 static void potion_init_class_reference(Potion *P, PN name, PN vt) {
+  char meta_str[strlen("<metaclass: >") + PN_STR_LEN(name) + 1];
   potion_send(P->lobby, PN_def, name, vt);
   ((struct PNVtable *)vt)->name = name;
-  char meta_str[strlen("<metaclass: >") + PN_STR_LEN(name) + 1];
   sprintf(meta_str, "<metaclass: %s>", PN_STR_PTR(name));
   ((struct PNVtable *)vt)->meta->name = potion_str(P, meta_str);
 }
