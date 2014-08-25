@@ -4,7 +4,7 @@ PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
 PWD    = $(shell pwd)
 # -pedantic not yet
-WARNINGS = -Wall -Werror -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
+WARNINGS = -Wall -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
 CFLAGS = -D_GNU_SOURCE -fno-strict-aliasing
 INCS   = -I${PWD}/core
 LIBPTH = -L${PWD}/lib
@@ -252,9 +252,10 @@ endif
 ifneq ($(APPLE),1)
 ifneq ($(CROSS),1)
 ifneq ($(WIN32),1)
-  ifneq ($(ICC),1)
-	WARNINGS += -Wno-zero-length-array -Wno-gnu
-  endif
+  # only in very new compilers
+  #ifneq ($(ICC),1)
+  #	WARNINGS += -Wno-zero-length-array -Wno-gnu
+  #endif
   ifneq ($(CYGWIN),1)
 	LDFLAGS += -Wl,--as-needed -Wl,-z,relro -Wl,-z,now
 	LDDLLFLAGS += $(LDFLAGS)
