@@ -197,6 +197,7 @@ struct PNVtable;
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       ((long)((long)(x))>>1)
 #define PN_DBL(num)     (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDecimal *)num)->value)
+typedef _PN (*PN_F)(Potion *, PN, PN, ...);
 #define PN_PREC 16
 #define PN_RAND()       PN_NUM(potion_rand_int())
 #define PN_STR(x)       potion_str(P, x)
@@ -356,8 +357,6 @@ struct PNFile {
   PN path;
   mode_t mode;
 };
-
-typedef PN (*PN_F)(Potion *, PN, PN, ...);
 
 ///
 /// a closure is an anonymous function, without closed values, \see PNProto
