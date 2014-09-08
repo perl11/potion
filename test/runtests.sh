@@ -27,8 +27,8 @@ if [ "x$1" = "x-p2" ]; then
     cmdc="$cmd --compile"; extc=c
 fi
 
-test -f $cmd || make -s $cmd $MAKEFLAGS
-test -f $cmd2 || make -s $cmd2 $MAKEFLAGS
+test -f $cmd || make -s $cmd
+test -f $cmd2 || make -s $cmd2
 old_LIBRARY_PATH="$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH="lib:$LD_LIBRARY_PATH"
 
@@ -37,7 +37,7 @@ verbose() {
 }
 
 if test -z $1; then
-    make -s bin/potion-test bin/p2-test bin/gc-test $MAKEFLAGS
+    make -s bin/potion-test bin/p2-test bin/gc-test
     ${ECHO} running potion API tests
     bin/potion-test
     if [ $EXT = pl ]; then

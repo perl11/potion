@@ -554,10 +554,10 @@ check: test
 test:  test.pn test.p2
 
 test.pn: pn libs testable
-	test/runtests.sh -q -pn
+	+test/runtests.sh -q -pn
 
 test.p2: p2 libs testable
-	test/runtests.sh -q -p2
+	+test/runtests.sh -q -p2
 
 testable : bin/potion${EXE} bin/p2${EXE} libs bin/potion-test${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 
