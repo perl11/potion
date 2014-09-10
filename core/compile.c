@@ -730,6 +730,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_self) {
         PN_ASM1(OP_SELF, reg);
       } else {
+        // TODO lookup if macro
       loopfunc: ;
 	u8 opcode = OP_GETUPVAL;
         PN_SIZE num = PN_NONE;
