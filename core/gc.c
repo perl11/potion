@@ -151,7 +151,7 @@ static int potion_gc_minor(Potion *P, int sz) {
     return POTION_NO_MEM;
 
   scanptr = (void *) M->old_cur;
-  DBG_G(P,"running gc_minor "
+  DBG_Gv(P,"running gc_minor "
 	"(young: %p -> %p = %ld) "
 	"(old: %p -> %p = %ld) "
 	"(storeptr len = %ld)\n",
@@ -180,7 +180,7 @@ static int potion_gc_minor(Potion *P, int sz) {
   sz = NEW_BIRTH_REGION(M, wb, sz);
   M->minors++;
 
-  DBG_G(P,"(new young: %p -> %p = %ld)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
+  DBG_Gv(P,"(new young: %p -> %p = %ld)\n", M->birth_lo, M->birth_hi, (long)(M->birth_hi - M->birth_lo));
   return POTION_OK;
 }
 
@@ -394,8 +394,12 @@ done_1:
 void *potion_gc_copy(Potion *P, struct PNObject *ptr) {
   void *dst = (void *)P->mem->old_cur;
   PN_SIZE sz = potion_type_size(P, (const struct PNObject *)ptr);
-  if (!sz)
-    return ptr;
+  if (!sz) { //external pointer or immediate value
+    DBG_G(P,"GC copy: assuming extern pointer or immediate potion value: %p (%ld)\n", ptr, *(long*)ptr);
+    //return ptr;
+    memcpy(dst, ptr, sizeof(void*));
+    return dst;
+  }
   memcpy(dst, ptr, sz);
   P->mem->old_cur = (char *)dst + sz;
 
@@ -442,7 +446,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
     }
     break;
     case PN_TSTATE:
-      DBG_G(P,"GC mark minor Potion_State\n");  // only with threads
+      DBG_Gv(P,"GC mark minor Potion_State\n");  // only with threads
       GC_MINOR_UPDATE(((Potion *)ptr)->strings);
       GC_MINOR_UPDATE(((Potion *)ptr)->lobby);
       GC_MINOR_UPDATE(((Potion *)ptr)->vts);
@@ -453,6 +457,8 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((Potion *)ptr)->pbuf);
       GC_MINOR_UPDATE(((Potion *)ptr)->line);
       GC_MINOR_UPDATE(((Potion *)ptr)->unclosed);
+      //GC_MINOR_UPDATE(((Potion *)ptr)->target);
+      GC_MINOR_UPDATE(((Potion *)ptr)->mem);
     break;
     case PN_TFILE:
       GC_MINOR_UPDATE(((struct PNFile *)ptr)->path);
@@ -546,24 +552,37 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
     }
     break;
     case PN_TSTATE:
-      DBG_G(P,"GC mark major Potion_State\n"); // only with threads
+      DBG_Gv(P,"GC mark major Potion_State\n"); // only with threads
+      //DBG_G(P,"   strings\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->strings);
+      //DBG_G(P,"   lobby\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->lobby);
+      //DBG_G(P,"   vts\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->vts);
+      //DBG_G(P,"   call\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->call);
+      //DBG_G(P,"   callset\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->callset);
+      //DBG_G(P,"   input\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->input);
+      //DBG_G(P,"   source\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->source);
-      //GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
+      //DBG_G(P,"   pbuf\n");
+      GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
+      //DBG_G(P,"   line\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->line);
+      //DBG_G(P,"   unclosed\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->unclosed);
+      //GC_MAJOR_UPDATE(((Potion *)ptr)->target);
+      //DBG_G(P,"   mem\n");
+      GC_MAJOR_UPDATE(((Potion *)ptr)->mem);
     break;
     case PN_TFILE:
       GC_MAJOR_UPDATE(((struct PNFile *)ptr)->path);
     break;
     case PN_TVTABLE:
       if (((struct PNVtable *)ptr)->parent)
-        GC_MINOR_UPDATE(PN_VTABLE(((struct PNVtable *)ptr)->parent));
+        GC_MAJOR_UPDATE(PN_VTABLE(((struct PNVtable *)ptr)->parent));
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->name);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->ivars);
       GC_MAJOR_UPDATE(((struct PNVtable *)ptr)->methods);
@@ -576,7 +595,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[0]);
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[1]);
       GC_MAJOR_UPDATE(((struct PNSource *)ptr)->a[2]);
-      GC_MINOR_UPDATE(((struct PNSource *)ptr)->line);
+      GC_MAJOR_UPDATE(((struct PNSource *)ptr)->line);
     break;
     case PN_TPROTO:
       GC_MAJOR_UPDATE(((struct PNProto *)ptr)->source);
@@ -678,6 +697,7 @@ void potion_gc_release(Potion *P) {
 
   if (M->birth_lo != M) {
     void *protend = (void *)PN_ALIGN((_PN)M->protect, POTION_PAGESIZE);
+    DBG_G(P,"GC page delete: %p - %p\n", M, protend);
     pngc_page_delete((void *)M, (char *)protend - (char *)M);
   }
 
