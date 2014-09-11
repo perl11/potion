@@ -400,9 +400,9 @@ examples: pn
 	for e in example/*.pn; do echo $$e; time bin/potion $$e; done
 
 dist: $(AIO_DEPS) bins libs static ${GREG}
-	@if [ -n "${RPATH}" ]; then \
+	+@if [ -n "${RPATH}" ]; then \
 	  rm -f ${BINS} ${PNLIB}; \
-	  +$(MAKE) bins libs RPATH="${RPATH_INSTALL}"; \
+	  $(MAKE) bins libs RPATH="${RPATH_INSTALL}"; \
 	fi
 	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
