@@ -591,9 +591,9 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 	//defer dlsym to run-time to see load, or require load at BEGIN time?
 	//PN_ASM2(OP_LOADPN, breg++, name);
 	PN_F sym = (PN_F)dlsym(RTLD_DEFAULT, name);
-	DBG_c("extern %s => %p\n", name, sym);
+	DBG_c("extern %s => dlsym %p\n", name, sym);
 	if (!sym) {
-	  fprintf(stderr, "* extern %s not found. You may need load a library first\n",
+	  fprintf(stderr, "* extern %s not found. You may need to load a library first\n",
 	          name);
           PN_ASM2(OP_LOADPN, reg, PN_NIL);
         } else {
@@ -612,10 +612,23 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           for (i=0; i < arity; i++) {
 	    if (PN_TUPLE_LEN(msg) > 1) {
 	      // TODO set argtype translators
-	      //PN_ASM2(OP_LOADPN, breg++, sig);
+              PN arg = PN_TUPLE_AT(sig, i);
+              if (arg == PN_STR("N") || arg == PN_STR("int") || arg == PN_STR("long")) {
+                DBG_c("extern %s %d-th arg => PN_INT(N)\n", name, i);
+                //insert PN_INT >>1 at runtime
+                //PN_ASM2(OP_LOADPN, breg++, arg);
+              } else if (arg == PN_STR("S") || arg == PN_STR("char*")) {
+                DBG_c("extern %s %d-th arg => PN_STR_PTR(S)\n", name, i);
+                // insert call to potion_str_ptr at runtime
+                //PN_ASM2(OP_LOADPN, breg++, arg);
+              } else {
+                fprintf(stderr, "* unknown extern %s argument type qualifier\n",
+                        PN_STR_PTR(arg));
+              }
 	    }
-	    // TODO fill in defaults
+	    // maybe add code to check and fill in defaults?
 	  }
+          // TODO insert code to transform return values
 	  cl->asmb = (PN)potion_asm_op(P, (PNAsm *)cl->asmb, OP_RETURN, reg, 0);
           PN_ASM2(OP_PROTO, reg, PN_PUT(f->protos, (PN)cl));
           //PN_ASM2(OP_EXTERN, reg, breg);

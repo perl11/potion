@@ -1,3 +1,3 @@
 # ffi
-sleep = extern sleep(N)
-sleep(5)
+sleep_f = extern sleep(int)
+sleep_f(5)
