@@ -12,6 +12,7 @@ v0.2	Thu Sep 11 10:28:32 CDT 2014 rurban
 	  -L, and external compilers. bin/potion-s includes all modules statically.
 	  See INSTALL.md
         * Added rudimentary src debugger with -d
+        * parse extern functions, but args are not yet translated
         * Fixed GC stability issues
 
 v0.1	Wed Oct 16 13:08:38 2013 rurban
