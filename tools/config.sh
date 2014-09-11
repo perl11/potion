@@ -102,7 +102,7 @@ elif [ "$2" = "bsd" ]; then
   if [ "$BSD" = "" ]; then echo "0"
   else echo "1"; fi
 elif [ "$2" = "version" ]; then
-  sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//" < core/potion.h
+  sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//" < core/version.h
 elif [ "$2" = "target" ]; then
   if [ "$CC" = "gcc -m32" ]; then
       echo "$TARGET" | sed -e "s,x86_64,i686,; s,-unknown,,"
