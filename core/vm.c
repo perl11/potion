@@ -56,7 +56,7 @@ or http://www.lua.org/doc/jucs05.pdf
   - RETURN (pos)	 	return R(A), ... ,R(A+B-2)
   - PROTO (&pos, lregs, need, regs) define function prototype
   - CLASS (pos, need)    	find class for register value
-  - DEBUG (pos)	                set ast
+  - DEBUG (pos)	                set ast to lineno
 
 (c) 2008 why the lucky stiff, the freelance professor
 (c) 2013 by perl11 org
@@ -81,6 +81,22 @@ or http://www.lua.org/doc/jucs05.pdf
 #    endif
 // libdistorm64 has no usable headers yet
 #  endif
+#endif
+
+//#define DEBUG_PROTO_DEBUG_LOOP
+#define DEBUG_IN_C
+#include <dlfcn.h>
+#ifdef DEBUG_IN_C
+enum {
+  DBG_STEP = 0,
+  DBG_NEXT,
+  DBG_RUN,
+  DBG_QUIT,
+  DBG_EXIT
+};
+static PN (*pn_readline)(Potion *, PN, PN, PN);
+#else
+#include "ast.h"
 #endif
 
 #if DEBUG
@@ -319,7 +335,8 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(RETURN, (P, f, &asmb, pos))	// return R[a], ... ,R[a+b-2]
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))// define function prototype
       CASE_OP(CLASS, (P, f, &asmb, pos, need)) // find class for register value
-      case OP_DEBUG: break; // skip ast debugging
+      //CASE_OP(DEBUG, (P, f, &asmb, pos, need)) // set lineno and filename
+      case OP_DEBUG: break; // skip ast debugging in jit
     }
   }
 
@@ -361,9 +378,131 @@ static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numar
 }
 
 PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* stack) {
-  //if (P->flags & EXEC_DEBUG) {
-    return PN_NUM(0);
-  //}
+  if (P->flags & EXEC_DEBUG) {
+    PN ast;
+    PN *upvals, *locals;
+    PN *current = stack;
+    upvals = current;
+    locals = upvals + f->upvalsize;
+
+    if (PN_IS_TUPLE(f->debugs) && op.b >= 0 && op.b < PN_TUPLE_LEN(f->debugs))
+      ast = PN_TUPLE_AT(f->debugs, op.b);
+    else
+      ast = PN_NIL;
+#ifndef DEBUG_IN_C
+    // get AST from debug op
+    DBG_t("\nEntering debug loop\n");
+    DBG_vt("calling debug loop(src, proto)\n");
+    PN flags = (PN)P->flags; P->flags = EXEC_VM; //turn off tracing,debugging,...
+# ifdef DEBUG_PROTO_DEBUG_LOOP // This is the planned way to go.
+    // debug.pn loaded, debug object in upvals, call the init and loop method on it
+    PN debug = potion_message(P, self, PN_STR("debug")); // find debug object =>0
+    if (!debug) return PN_NUM(0);
+    PN loopmeth = potion_message(P, debug, PN_STR("loop"));
+    PN code = potion_vm_proto(P, (PN)PN_CLOSURE_F(loopmeth), debug, ast, (PN)f);
+# else
+    // avoid the GC-unsafe parser, and there's no other way yet to inject
+    // the current AST into the parser. (ast object?)
+    // - expr (msg ("debug"), msg ("loop" list (expr (src), ...))
+    PN code = (PN)PN_AST_(CODE,
+      PN_TUP(PN_AST_(EXPR, PN_PUSH(PN_TUP(PN_AST_(MSG, PN_STR("debug"))),
+	PN_AST2_(MSG, PN_STR("loop"),
+	  PN_AST_(LIST, PN_PUSH(PN_TUP(PN_AST_(MSG, ast)), PN_AST_(MSG, (PN)f))))))));
+    code = potion_send(code, PN_compile, (PN)f, PN_NIL);
+    locals = locals;
+    code = potion_vm(P, code, P->lobby, PN_NIL, f->upvalsize, upvals);
+# endif // DEBUG_PROTO_DEBUG_LOOP
+    locals = locals;
+    P->flags = flags;
+    if (code >= PN_NUM(5)) { // :q, :exit
+      P->flags &= ~EXEC_DEBUG);
+      if (code == PN_NUM(6)) // :exit
+        exit(0);
+    }
+#else // DEBUG_IN_C This is a hack and will go away
+    int loop = 1;
+    // TODO: check for breakpoints
+    vPN(Source) t = (struct PNSource*)ast;
+    if (t) {
+      if (t->line) {
+	PN fn = PN_TUPLE_AT(pn_filenames, t->loc.fileno);
+	if (fn) printf("(%s:%d):\t%s\n", PN_STR_PTR(fn), t->loc.lineno, PN_STR_PTR(t->line));
+	else    printf("(:%d):\t%s\n", t->loc.lineno, PN_STR_PTR(t->line));
+      }
+      while (loop) {
+	PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
+	if (str && potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
+	    && PN_STR_PTR(str)[0] == ':')
+	{
+	  if (str == PN_STR(":c"))         { break; }
+	  else if (str == PN_STR(":q"))    { P->flags -= EXEC_DEBUG; break; }
+	  else if (str == PN_STR(":exit")) { exit(0); }
+	  else if (str == PN_STR(":h"))    {
+	    printf("c readline debugger (no breakpoints and lexical env yet)\n"
+		   ":q      quit debugger and continue\n"
+		   ":exit   quit debugger and exit\n"
+		   ":c      continue\n"
+		   ":b line set breakpoint (nyi)\n"
+		   ":B line unset breakpoint (nyi)\n"
+		   ":n      step to next line (nyi)\n"
+		   ":s      step into function (nyi)\n"
+		   "/r      registers\n"
+		   "/l      locals\n" /* paths in debug */
+		   "/u      upvals\n"
+		   "/v      values\n"
+		   "/p      paths\n"
+		   "expr    eval expr");
+	  }
+	  else {
+	    printf("sorry, no debugger commands yet\n");
+	  }
+	}
+	else if (str && str != PN_STR("")) {
+	  PN flags = (PN)P->flags; P->flags = (Potion_Flags)EXEC_VM;
+          vPN(Closure) cl;
+          vPN(Tuple) sig;
+          vPN(Tuple) regs;
+          int i;
+          PN_F debug_fn;
+	  PN code = potion_parse(P, potion_send(str, PN_STR("bytes")), "-d");
+          PN_SIZE pos;
+          PN oldsig = f->sig;
+
+	  sig  = (struct PNTuple *) potion_tuple_with_size(P, 5);
+          PN_TUPLE_AT(sig,0) = PN_STR("r"); //regs
+          PN_TUPLE_AT(sig,1) = PN_STR("l"); //locals
+          PN_TUPLE_AT(sig,2) = PN_STR("u"); //upvals
+          PN_TUPLE_AT(sig,3) = PN_STR("v"); //values
+          PN_TUPLE_AT(sig,4) = PN_STR("p"); //paths
+          cl = (struct PNClosure *)potion_closure_new(P, (PN_F)potion_vm_proto, (PN)sig,
+                                                      PN_TUPLE_LEN(f->upvals) + 6);
+          cl->data[0] = (PN)f;
+          pos = 0;
+          PN_TUPLE_COUNT(f->upvals, i, {
+              pos++;
+              op = PN_OP_AT(f->asmb, pos);
+              if (op.code == OP_GETUPVAL) {
+                cl->data[i+1] = upvals[op.b];
+              } else if (op.code == OP_GETLOCAL) {
+                cl->data[i+1] = locals[op.b] = (PN)potion_ref(P, locals[op.b]);
+              } else {
+                fprintf(stderr, "** missing an upval to proto %p\n", (void *)f);
+              }
+          });
+          regs = (struct PNTuple *) potion_tuple_with_size(P, PN_INT(f->stack));
+          for (i=0; i < PN_INT(f->stack); i++) { regs->set[i] = reg[i]; }
+          debug_fn = PN_CLOSURE_F(cl);
+          printf("%s\n", AS_STR(debug_fn(P, (PN)cl, code, regs, f->locals,
+					 f->upvals, f->values, f->paths)));
+          f->sig = oldsig;
+	  P->flags = flags;
+	}
+	else loop=0;
+      }
+    }
+#endif // DEBUG_IN_C
+  }
+  return PN_NUM(0);
 }
 
 /** the bytecode run-loop */
@@ -380,6 +519,22 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   PN *args = NULL, *upvals, *locals, *reg;
   PN *current = stack;
 
+#ifdef DEBUG_IN_C
+  if (P->flags & EXEC_DEBUG) {
+    pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(RTLD_DEFAULT, "pn_readline");
+    if (!pn_readline) {
+#ifndef SANDBOX
+      void *handle = dlopen(potion_find_file(P,"readline",0), RTLD_LAZY);
+      if (!handle) potion_fatal("readline library not loaded");
+      pn_readline = (PN (*)(Potion *, PN, PN, PN))dlsym(handle, "pn_readline");
+#endif
+      if (!pn_readline) potion_fatal("pn_readline function not loaded");
+    }
+    DBG_t("\nEntering c debug mode");
+    printf("\nc debug (:h for help, <enter> for continue)\n");
+  }
+#endif
+
   if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
   memset((void*)stack, 0, STACK_MAX*sizeof(PN));
   DBG_t("-- run-time --\n");
@@ -395,6 +550,8 @@ reentry:
 
   if (pos == 0) {
     reg[-1] = reg[0] = self;
+    //if (f->localsize)
+    //  memset((void*)locals, 0, sizeof(PN) * f->localsize);
     if (upc > 0 && upargs != NULL) {
       PN_SIZE i;
       for (i = 0; i < upc; i++) {
