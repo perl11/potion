@@ -1,0 +1,5 @@
+# socket to ZeroBrane Studio
+# TODO: lua mobdebug protocol, serpent serializer
+
+load "debug/remote"
+# debug

@@ -1,0 +1,24 @@
+# via tcp socket
+# TODO: sock callbacks
+
+load "debug"
+
+# TODO: parse comma delim args
+remote.debug = Debug class (args):
+  /init = (): load "aio".
+
+  /init()
+  /port = 8172
+  /sock = Aio_tcp
+  /read = (): self/sock read.
+  /write = (o): self/sock write(o).
+
+  /sock bind("127.0.0.1", self/port)
+  /sock listen(1, self connect_cb)
+  /sock run
+.
+
+remote.debug connect_cb = (req, st): .
+remote.debug read_cb = (req, st): .
+
+debug = remote.debug

@@ -1,0 +1,79 @@
+# debugger API used if #undef DEBUG_IN_C (not yet enabled)
+
+#TODO: parse comma delim args. avoid readline (whois loading or calling)
+Debug = class (args):
+  /state = 0
+  /break = ()
+  /init = (): load "readline".
+  /read = (): readline("> ").
+  /write = (o): o print.
+
+  /init()
+.
+
+# API (from lua)
+Debug getinfo = (level, name): .
+Debug getlocal = (f, i): .
+Debug setlocal = (f, i, name): .
+Debug setupvalue = (f, i, name): .
+Debug traceback = (f| level): .
+Debug sethook = (hook, name): .
+
+# state 0 for next/step
+#       1 :c continue until break
+#       5 :q exit debugger
+#       6 :exit exit program
+Debug loop = (src, proto):
+  if (self/state == 1):
+    if (self/break bsearch(src line)): return 1.
+    .
+  write = self/write
+  ("\ndebug line ", src file,":", src line string,
+   " (:h for help, :q,:c,:n)\n") join write
+  loop:
+    code = self/read()
+    if (code == ":c"):
+      "continue\n" write
+      self/state = 1
+      return 1.
+    if (code == ":q"):
+      "quit\n" write
+      return 5.
+    if (code == ":exit"):
+      "exit\n" write
+      return 6.
+    if (code == ":h"):
+     (":q      quit debugger and continue",
+      ":exit   quit debugger and exit",
+      ":c      continue",
+      ":b line set breakpoint",
+      ":B line unset breakpoint",
+      ":n      step to next line",
+      ":s      step into function",
+      ":r      regs",
+      ":l      locals",
+      ":u      upvals",
+      ":v      values (paths)",
+      "expr    eval expr",
+      "src     current ast",
+      "proto   current function\n") join("\n") write
+      continue.
+    if (code slice(0,2) == ":b"):
+      b = code slice(4, code length) number
+      if (self/break bsearch(b)): ("breakpoint ",b string," already defined\n") join write.
+      else: self/break = self/break push (b) sort.
+      continue.
+    if (code slice(0,2) == ":B"):
+      b = code slice(4, code length) number
+      i = self/break bsearch(b)
+      if (i):
+        self/break delete(i)
+        ("breakpoint ", b string, " deleted") join write.
+      continue.
+    if (code != ""):
+      code = code eval string write.
+    .
+  2
+  .
+
+debug = Debug
