@@ -1,8 +1,8 @@
-v0.2	Mon Jan 13 20:39:05 2014 -0600
+v0.2	Thu Sep 11 10:28:32 CDT 2014 rurban
 
         * print and say methods return "" instead of nil.
         * Added methods for table: clone, slice, keys, values.
-	For tuple: slice. For bytes and string: clone
+	For tuple: slice. For bytes and string: clone.
 	* Added support for negative arguments for string.slice
 	* Changed API's for potion_type_error_want
 	* Updated libuv from 0.11.14 to 0.11.23
@@ -11,6 +11,8 @@ v0.2	Mon Jan 13 20:39:05 2014 -0600
 	  omit access to local filesystem, processes, loading shared libraries
 	  -L, and external compilers. bin/potion-s includes all modules statically.
 	  See INSTALL.md
+        * Added rudimentary src debugger with -d
+        * Fixed GC stability issues
 
 v0.1	Wed Oct 16 13:08:38 2013 rurban
 

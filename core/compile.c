@@ -706,12 +706,12 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           if (PN_S(t,2) != PN_NIL && (PN_PART(PN_S(t,2)) == AST_MSG)) {
             vPN(Source) t2 = PN_S_(t,2); //typed message (MSG LIST|NIL MSG)
             DBG_c("typed %s %s\n", AS_STR(t->a[0]), AS_STR(t2));
-            //TODO type must already exist. check native or user type
+            //TODO type should already exist at compile-time. check native or user type
             num = PN_PUT(f->values, PN_S(t2,0));
             PN_ASM2(OP_LOADK, reg, num);
             PN_ASM2(OP_BIND, reg, breg);
           } else {
-            PN_ASM2(PN_S(t,1) != PN_NIL || PN_S(t,2) != PN_NIL ? OP_MSG : OP_BIND, reg, breg);
+            PN_ASM2(((PN_S(t,1) != PN_NIL || PN_S(t,2) != PN_NIL) ? OP_MSG : OP_BIND), reg, breg);
           }
           if (t->part == AST_QUERY && PN_S(t,1) != PN_NIL) {
             jmp = PN_OP_LEN(f->asmb);
