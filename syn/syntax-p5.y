@@ -346,6 +346,7 @@ immed = undef { $$ = PN_NIL }
 #      | false { $$ = PN_FALSE }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)) }
       | dec   { $$ = ($$ == YY_TDEC) ? potion_decimal(P, yytext, yyleng) : PN_NUM(PN_ATOI(yytext, yyleng, 10)) }
+      | dec_wo_zero { potion_decimal(P, yytext, yyleng) }
       | str1 | str2
 
 lexglobal = MY t:name i:global { PN_SRC(i)->a[2] = PN_SRC(t); $$ = i }
@@ -427,9 +428,11 @@ undef = "undef" !utfw
 #false = "false" !utfw
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
+# TODO allow _
 dec = < '-'? ('0' | [1-9][0-9]* )
         ('.' [0-9]+ { $$ = YY_TDEC })?
         ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
+dec_wo_zero = < '-'? '.' [0-9]+ >
 version = 'v'? < ('0' | [1-9][0-9]*) ('.' [0-9]+ { $$ = YY_TDEC })? >
           { $$ = ($$ == YY_TDEC) ? PN_STRN(yytext, yyleng)
                                  : PN_NUM(PN_ATOI(yytext, yyleng, 10)) }
