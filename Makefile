@@ -556,8 +556,11 @@ test:  test.pn test.p2
 test.pn: pn libs testable
 	+test/runtests.sh -q -pn
 
+OK_ROAST = base/cond.t base/if.t
 test.p2: p2 libs testable
 	+test/runtests.sh -q -p2
+	@${ECHO} prove -e bin/p2 test/roast5/base/
+	@prove -e bin/p2 $(foreach m,${OK_ROAST},test/roast5/$m)
 
 testable : bin/potion${EXE} bin/p2${EXE} libs bin/potion-test${EXE} bin/p2-test${EXE} bin/gc-test${EXE}
 
