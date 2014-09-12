@@ -4,7 +4,7 @@
 # perl5 tokens and grammar
 #
 # (c) 2009 _why
-# (c) 2013 by perl11 org
+# (c) 2013-2014 by perl11 org
 #
 
 %{
@@ -345,8 +345,7 @@ immed = undef { $$ = PN_NIL }
 #      | true  { $$ = PN_TRUE }
 #      | false { $$ = PN_FALSE }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)) }
-      | dec   { $$ = ($$ == YY_TNUM) ? PN_NUM(PN_ATOI(yytext, yyleng, 10))
-                   : potion_decimal(P, yytext, yyleng) }
+      | dec   { $$ = ($$ == YY_TDEC) ? potion_decimal(P, yytext, yyleng) : PN_NUM(PN_ATOI(yytext, yyleng, 10)) }
       | str1 | str2
 
 lexglobal = MY t:name i:global { PN_SRC(i)->a[2] = PN_SRC(t); $$ = i }
@@ -354,23 +353,37 @@ lexglobal = MY t:name i:global { PN_SRC(i)->a[2] = PN_SRC(t); $$ = i }
           | i:global
 
 global  = scalar | listvar | hashvar | listel | hashel | funcvar | globvar
+# special scalar vars
+specialcaratscalar = < '^' [OCDFHIMPTVXNR] >
+specialscalar = < '$' ( [@%!"$()0<>&`'+] | specialcaratscalar ) > # "
 # send the value a msg, every global is a closure (see name)
 scalar  = < '$' i:id > - !'[' !'{'
-        { $$ = PN_AST(MSG, PN_STRCAT("$", PN_STR_PTR(i))) }
+	  { $$ = PN_AST(MSG, PN_STRCAT("$", PN_STR_PTR(i))) }
+	| i:specialscalar - !'[' !'{'
+	  { $$ = PN_AST(MSG, i) }
+	# size of array
+	| < '$' '#' l:id >  -
+	  { $$ = PN_OP(AST_MINUS, 
+                   PN_AST(EXPR, PN_PUSH(PN_TUP(PN_AST(MSG, PN_STRCAT("@", PN_STR_PTR(l)))),
+	                                       PN_AST(MSG, PN_STR("length")))),
+                   PN_AST(EXPR, PN_TUP(PN_AST(VALUE, PN_NUM(1))))) }
 listvar = < '@' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("@", PN_STR_PTR(i))) }
 hashvar = < '%' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("%", PN_STR_PTR(i))) }
 funcvar = < '&' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("&", PN_STR_PTR(i))) }
 globvar = < '*' i:id > - { $$ = PN_AST(MSG, PN_STRCAT("*", PN_STR_PTR(i))) }
 listel  = < '$' l:id - '[' - i:value - ']' > -
-        { $$ = PN_AST2(MSG, PN_STRCAT("@", PN_STR_PTR(l)),
-                            PN_AST(LIST, PN_TUP(i))) }
+	  { $$ = PN_AST2(MSG, PN_STRCAT("@", PN_STR_PTR(l)),
+	                      PN_AST(LIST, PN_TUP(i))) }
+	# ?? used as $#[0] in base/lex.t
+	| < '$' '#' - '[' - i:value - ']' >  -
+	  { $$ = PN_AST2(MSG, PN_STR("@_"), PN_AST(LIST, PN_TUP(i))) }
 hashel  = < '$' h:id - '{' - k:value - '}' > -
-        { $$ = PN_AST2(MSG, PN_STRCAT("%", PN_STR_PTR(h)),
-                            PN_AST(LIST, PN_TUP(k))) }
+          { $$ = PN_AST2(MSG, PN_STRCAT("%", PN_STR_PTR(h)),
+                              PN_AST(LIST, PN_TUP(k))) }
 
 semi = ';'
 comma = ','
-fatcomma = '=>' -
+fatcomma = "=>" -
 arrow = "->" -
 block-start = '{' space*
 block-end = semi? space* '}' -
@@ -414,13 +427,12 @@ undef = "undef" !utfw
 #false = "false" !utfw
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
-dec = < '-'? ('0' | [1-9][0-9]*) { $$ = YY_TNUM }
+dec = < '-'? ('0' | [1-9][0-9]* )
         ('.' [0-9]+ { $$ = YY_TDEC })?
         ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
-version = 'v'? < ('0' | [1-9][0-9]*) { $$ = YY_TNUM }
-          ('.' [0-9]+ { $$ = YY_TDEC })? >
-        { $$ = ($$ == YY_TNUM) ? PN_NUM(PN_ATOI(yytext, yyleng, 10))
-                               : PN_STRN(yytext, yyleng) }
+version = 'v'? < ('0' | [1-9][0-9]*) ('.' [0-9]+ { $$ = YY_TDEC })? >
+          { $$ = ($$ == YY_TDEC) ? PN_STRN(yytext, yyleng)
+                                 : PN_NUM(PN_ATOI(yytext, yyleng, 10)) }
 
 q1 = [']   # ' emacs highlight problems
 c1 = < (!q1 utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng) }
