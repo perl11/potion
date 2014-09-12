@@ -205,7 +205,7 @@ char potion_type_char(PNType type) {
   case PN_TNUMBER:	return 'N'; //1 Number
   case PN_TBOOLEAN:	return 'B'; //2 Boolean (unused)
   case PN_TSTRING:	return 'S'; //3 String
-  case PN_TWEAK:       	return 0;   //4 (illegal)
+  case PN_TWEAK:       	return 0;   //4 (illegal) but needed for extern (W)
   case PN_TCLOSURE:    	return '&'; //5
   case PN_TTUPLE:      	return 'u'; //6 (used)
   case PN_TSTATE:      	return 's'; //7
