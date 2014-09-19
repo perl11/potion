@@ -53,4 +53,6 @@ fannkuch = (n):
       r++
 .. n.
 
-fannkuch(11)
+n = argv(1) number
+if (n<1): n=11.
+fannkuch(n)
