@@ -1,0 +1,42 @@
+# See http://rosettacode.org/wiki/24_game#Potion
+is_num = (s):
+  x = s ord(0)
+  if (x >= "0"ord && x <= "9"ord): true.
+  else: false.
+  .
+
+nums = (s):
+  res = ()
+  b = 0, e = s length
+  while (b < e):
+    c = s(b)
+    if (is_num(c)):
+      res push(c).
+    b++.
+  res.
+
+try = 1
+while (true):
+  r = rand string
+  digits = (r(0),r(1),r(2),r(3))
+  "\nMy next four digits: " print
+  digits join(" ") say
+  digit_s = digits ins_sort string
+
+  ("Your expression to create 24 (try ", try, "): ") print
+  entry = read slice(0,-1)
+  expr = entry eval
+  parse = nums(entry)
+  parse_s = parse clone ins_sort string
+  try++
+  if (parse length != 4):
+    ("Wrong number of digits:", parse) say.
+  elsif (parse_s != digit_s):
+    ("Wrong digits:", parse) say.
+  elsif (expr == 24):
+    "You won!" say
+    entry print, " => 24" say
+    return().
+  else:
+    (entry, " => ", expr string, " != 24") join("") say.
+.
