@@ -1,3 +1,5 @@
+# See http://rosettacode.org/wiki/Topswops#Potion
+
 range = (a, b):
   i = 0, l = list(b-a+1)
   while (a + i <= b):
