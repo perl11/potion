@@ -1,0 +1,12 @@
+# See http://rosettacode.org/wiki/100_doors#Potion
+
+square=1, i=3, door=1
+while (door <= 100):
+  "door #" print, door print
+  if (door == square):
+    " is open" say
+    square += i
+    i += 2.
+  else: " is closed" say.
+  door++
+.
