@@ -271,7 +271,8 @@ PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
 }
 
 ///\memberof PNString
-/// type_call_is for PNString. (?)
+/// default function type_call_is for PNString, returning the character at
+/// the given position.
 ///\param index PNNumber
 ///\return PNString substring index .. index+1
 static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {

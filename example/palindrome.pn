@@ -1,0 +1,17 @@
+# See http://rosettacode.org/wiki/Palindrome_detection#Potion
+# The readable recursive version:
+# A single char is surely a palindrome; a string is a palindrome if
+# first and last char are the same and the remaining string (the
+# string starting from the second char and ending to the char
+# preceding the last one) is itself a palindrome.
+
+palindrome_i = (s, b, e):
+  if (e <= b): true.
+  elsif (s ord(b) != s ord(e)): false.
+  else: palindrome_i(s, b+1, e-1).
+.
+
+palindrome = (s):
+  palindrome_i(s, 0, s length - 1).
+
+palindrome(argv(1))

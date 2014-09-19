@@ -1,3 +1,4 @@
+# See http://rosettacode.org/wiki/Almost_prime#Potion
 kprime = (n, k):
   p = 2, f = 0
   while (f < k && p*p <= n):
