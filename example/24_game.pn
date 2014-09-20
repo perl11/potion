@@ -7,12 +7,11 @@ is_num = (s):
 
 nums = (s):
   res = ()
-  b = 0, e = s length
-  while (b < e):
+  0 to (s length, (b):
     c = s(b)
     if (is_num(c)):
       res push(c).
-    b++.
+  .)
   res.
 
 try = 1
@@ -25,6 +24,7 @@ while (true):
 
   ("Your expression to create 24 (try ", try, "): ") print
   entry = read slice(0,-1)
+  if (entry == "q"): return.
   expr = entry eval
   parse = nums(entry)
   parse_s = parse clone ins_sort string
