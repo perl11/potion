@@ -7,11 +7,11 @@ is_num = (s):
 
 nums = (s):
   res = ()
-  0 to (s length, (b):
+  s length times(b):
     c = s(b)
     if (is_num(c)):
       res push(c).
-  .)
+  .
   res.
 
 try = 1
