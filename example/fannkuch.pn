@@ -11,10 +11,9 @@ fannkuch = (n):
   perml = range(0, n), count = list(n), perm = list(n)
 
   loop:
-    if (check < 30):
-      perml join print, "\n" print
-      check++.
-
+    #if (check < 30):
+    #  perml join print, "\n" print
+    #  check++.
     while (r != 1):
       count (r-1) = r
       r--.
@@ -39,7 +38,7 @@ fannkuch = (n):
 
     loop:
       if (r == n):
-        maxf string print, "\n" print
+        (n, maxf) say
         return (maxf).
 
       i = 0, j = perml(0)
@@ -56,5 +55,5 @@ fannkuch = (n):
 .. n.
 
 n = argv(1) number
-if (n<1): n=11.
-fannkuch(n)
+if (n<1): n=10.
+1 to (n, (i): fannkuch(i).)
