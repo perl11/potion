@@ -6,19 +6,15 @@ kprime = (n, k):
       n /= p
       f++.
     p++.
-  n = if (n > 1): 1
-  . else: 0.
+  n = if (n > 1): 1.
+      else: 0.
   f + n == k.
 
-k = 1
-while (k <= 5):
+1 to 5 (k):
   "k = " print, k print, ":" print
   i = 2, c = 0
   while (c < 10):
-    if (kprime(i, k)):
-      " " print, i print
-      c++.
+    if (kprime(i, k)): " " print, i print, c++.
     i++
   .
-  k++
   "" say.
