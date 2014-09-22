@@ -49,6 +49,7 @@ PN potion_str2(Potion *P, char *str, size_t len) {
 
   vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
   s->len = (PN_SIZE)len;
+  assert(len < 0x10000000);
   PN_MEMCPY_N(s->chars, str, char, len);
   s->chars[len] = '\0';
 

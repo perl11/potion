@@ -459,21 +459,27 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
 	}
 	else if (str && str != PN_STR("")) {
 	  PN flags = (PN)P->flags; P->flags = (Potion_Flags)EXEC_VM;
+#if 0
           vPN(Closure) cl;
           vPN(Tuple) sig;
           vPN(Tuple) regs;
           int i;
           PN_F debug_fn;
-	  PN code = potion_parse(P, potion_send(str, PN_STR("bytes")), "-d");
           PN_SIZE pos;
           PN oldsig = f->sig;
+#endif
+	  PN code = potion_parse(P, potion_send(str, PN_STR("bytes")), "-d");
 
+          code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
+          printf("%s\n", AS_STR(potion_run(P, code, P->flags)));
+#if 0
+          /* TODO cannot access the current upvals, regs, locals, values, paths yet */
 	  sig  = (struct PNTuple *) potion_tuple_with_size(P, 5);
-          PN_TUPLE_AT(sig,0) = PN_STR("r"); //regs
-          PN_TUPLE_AT(sig,1) = PN_STR("l"); //locals
-          PN_TUPLE_AT(sig,2) = PN_STR("u"); //upvals
-          PN_TUPLE_AT(sig,3) = PN_STR("v"); //values
-          PN_TUPLE_AT(sig,4) = PN_STR("p"); //paths
+          PN_TUPLE_AT(sig, 0) = PN_STR("r"); //regs
+          PN_TUPLE_AT(sig, 1) = PN_STR("l"); //locals
+          PN_TUPLE_AT(sig, 2) = PN_STR("u"); //upvals
+          PN_TUPLE_AT(sig, 3) = PN_STR("v"); //values
+          PN_TUPLE_AT(sig, 4) = PN_STR("p"); //paths
           cl = (struct PNClosure *)potion_closure_new(P, (PN_F)potion_vm_proto, (PN)sig,
                                                       PN_TUPLE_LEN(f->upvals) + 6);
           cl->data[0] = (PN)f;
@@ -492,9 +498,10 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
           regs = (struct PNTuple *) potion_tuple_with_size(P, PN_INT(f->stack));
           for (i=0; i < PN_INT(f->stack); i++) { regs->set[i] = reg[i]; }
           debug_fn = PN_CLOSURE_F(cl);
-          printf("%s\n", AS_STR(debug_fn(P, (PN)cl, code, regs, f->locals,
-					 f->upvals, f->values, f->paths)));
+          printf("%s\n", AS_STR(debug_fn(P, (PN)cl, code /*, regs, f->locals,
+                                         f->upvals, f->values, f->paths */)));
           f->sig = oldsig;
+#endif
 	  P->flags = flags;
 	}
 	else loop=0;
