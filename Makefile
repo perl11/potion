@@ -712,6 +712,8 @@ clean:
 	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o front/*.os
 	@rm -rf lib/*/*.bundle.dSYM
 	@rm -f lib/libp2.* lib/p2/*${DLL}
+	@rm -f lib/potion/*.pnb lib/potion/*/*.pnb
+	@rm -f lib/p2/*.plc lib/p2/*/*.plc
 	@rm -f ${DOCHTML} README.md doc/footer.inc
 	@rm -f tools/*.o core/config.h core/version.h
 	@rm -f tools/*~ doc/*~ example/*~ core/*~ config.inc~ tools/config.c
