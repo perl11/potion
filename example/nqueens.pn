@@ -1,0 +1,42 @@
+# See http://rosettacode.org/wiki/N-queens_problem#Potion
+# Warning: This is not correct yet
+
+n = argv(1) number
+if (n < 1): n = 12.
+verbose = argv(2) number > 0
+
+solutions = (), prev = (), occupied = list(n)
+
+solve = (depth):
+  if (depth == n): solutions push(prev), return.
+  diag = list(n)
+  # diag: marks cells diagonally attackable by any previous queens.
+  prev length times(i):
+    d1 = prev(i) + depth - i
+    diag(d1 abs) = true
+    d2 = prev(i) - depth + i
+    if (d1 != d2): diag(d2 abs) = true.
+  .
+  if (verbose): ("depth"=depth,"diag"=diag,"prev"=prev) say.
+  row = 0
+  while (row < n):
+    if (occupied(row) or diag(row)): break.
+    # prev:     row numbers of previous queens
+    # occupied: rows already used. This gets inherited by each
+    #           recursion so we don't need to repeatedly look them up
+    prev push(row)
+    occupied(row) = true
+    if (verbose): ("row"=row,"prev"=prev,"occupied"=occupied) say.
+
+    solve(1+depth)
+
+    occupied(row) = false
+    prev pop
+    row++
+  .
+.
+
+solve(0)
+if (verbose and solutions length > 0): (solutions) say.
+# TODO display board with ♛
+("n"=n, "# solutions"=solutions length, "solutions"=solutions) say
