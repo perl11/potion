@@ -1,7 +1,8 @@
 /** \file/ opcodes.h
  the Potion VM instruction set (heavily based on Lua's)
 
- (c) 2008 why the lucky stiff, the freelance professor */
+ (c) 2008 why the lucky stiff, the freelance professor
+ (c) 2014 perl11.org */
 #ifndef POTION_OPCODES_H
 #define POTION_OPCODES_H
 
@@ -33,8 +34,10 @@ enum PN_OPCODE {
   OP_MOVE,
   OP_LOADK,
   OP_LOADPN,
+  OP_LOADNIL,
   OP_SELF,
   OP_NEWTUPLE,
+  OP_GETTUPLE,
   OP_SETTUPLE,
   OP_GETLOCAL,
   OP_SETLOCAL,
@@ -73,9 +76,9 @@ enum PN_OPCODE {
   OP_NAMED,
   OP_CALL,
   OP_CALLSET,
-  OP_TAILCALL,
+  OP_TAILCALL, /* TODO */
   OP_RETURN,
-  OP_PROTO,
+  OP_PROTO,  /* define a method */
   OP_CLASS,
   OP_DEBUG
 };

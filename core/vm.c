@@ -10,8 +10,9 @@ http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
 or http://www.lua.org/doc/jucs05.pdf
 
   - MOVE (pos)		 	copy value between registers
-  - LOADPN (pos)	 	load a PN value into a register
   - LOADK (pos, need)  	 	load a constant into a register
+  - LOADPN (pos)	 	load a PN value into a register
+  - LOADNIL (pos)	 	load nil into a register
   - SELF (pos, need)   	 	prepare an object method for calling
    			 	R(A+1) := R(B); R(A) := R(B)[RK(C)]
   - GETLOCAL (pos, regs)	read a local into a register
@@ -20,7 +21,9 @@ or http://www.lua.org/doc/jucs05.pdf
   - SETUPVAL (pos, lregs)	write to an upvalue
   - GLOBAL (pos, need)	 	returns a global (for get or set)
   - NEWTUPLE (pos, need)	create tuple
+  - GETTUPLE (pos, need)       	get tuple key
   - SETTUPLE (pos, need)	write register into tuple key
+  - GETTABLE (pos, need)       	get table entry
   - SETTABLE (pos, need)	write register into a table entry
   - NEWLICK (pos, need)	 	create lick. R(A) := {} (size = B,C)
   - GETPATH (pos, need)	 	read obj field into register
@@ -53,8 +56,9 @@ or http://www.lua.org/doc/jucs05.pdf
   - NAMED (pos, need)	 	assign named args before a CALL
   - CALL (pos, need)	 	call a function. R(A),...:= R(A)(R(A+1),...,R(A+B-1)
   - CALLSET (pos, need)		? set return register to write to
+  - TAILCALL(pos, need)	 	? jumps back to the function entry (TODO)
   - RETURN (pos)	 	return R(A), ... ,R(A+B-2)
-  - PROTO (&pos, lregs, need, regs) define function prototype
+  - PROTO (&pos, lregs, need, regs) define a method prototype
   - CLASS (pos, need)    	find class for register value
   - DEBUG (pos)	                set ast to lineno
 
@@ -289,17 +293,20 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
 
     switch (PN_OP_AT(f->asmb, pos).code) {
       CASE_OP(MOVE, (P, f, &asmb, pos))		// copy value between registers
-      CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
       CASE_OP(LOADK, (P, f, &asmb, pos, need))  // load a constant into a register
+      CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
+      CASE_OP(LOADNIL, (P, f, &asmb, pos))	// load nil into a register
       CASE_OP(SELF, (P, f, &asmb, pos, need))   // prepare an object method for calling
 						// R[a+1] := R[b]; R[a] := R[b][RK[c]]
       CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs))// read a local into a register
       CASE_OP(SETLOCAL, (P, f, &asmb, pos, regs))// write a register value into a local
       CASE_OP(GETUPVAL, (P, f, &asmb, pos, lregs))// read an upvalue (upper scope)
       CASE_OP(SETUPVAL, (P, f, &asmb, pos, lregs))// write to an upvalue
-      CASE_OP(GLOBAL, (P, f, &asmb, pos, need))	// returns a global (for get or set)
+      CASE_OP(GLOBAL, (P, f, &asmb, pos, need))	 // returns a global (for get or set)
       CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))// create tuple
+      CASE_OP(GETTUPLE, (P, f, &asmb, pos, need))// get tuple key
       CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))// write register into tuple key
+      CASE_OP(GETTABLE, (P, f, &asmb, pos, need))// get table key
       CASE_OP(SETTABLE, (P, f, &asmb, pos, need))// write register into a table entry
       CASE_OP(NEWLICK, (P, f, &asmb, pos, need))// create lick. R[a] := {} (size = b,c)
       CASE_OP(GETPATH, (P, f, &asmb, pos, need))// read obj field into register
@@ -332,6 +339,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(NAMED, (P, f, &asmb, pos, need))	// assign named args before a CALL
       CASE_OP(CALL, (P, f, &asmb, pos, need))	// call a function. R[a],...:= R[a]( R[a+1],...,R[a+b-1] )
       CASE_OP(CALLSET, (P, f, &asmb, pos, need))//? set return register to write to
+      //CASE_OP(TAILCALL, (P, f, &asmb, pos, need))//? jump back to the function
       CASE_OP(RETURN, (P, f, &asmb, pos))	// return R[a], ... ,R[a+b-2]
       CASE_OP(PROTO, (P, f, &asmb, &pos, lregs, need, regs))// define function prototype
       CASE_OP(CLASS, (P, f, &asmb, pos, need)) // find class for register value
@@ -421,6 +429,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
     }
 #else // DEBUG_IN_C This is a hack and will go away
     int loop = 1;
+    locals = locals;
     // TODO: check for breakpoints
     vPN(Source) t = (struct PNSource*)ast;
     if (t) {
@@ -470,7 +479,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
 #endif
 	  PN code = potion_parse(P, potion_send(str, PN_STR("bytes")), "-d");
 
-          code = potion_send(code, PN_compile, PN_NIL, PN_NIL);
+          code = potion_send(code, PN_compile, (PN)f, PN_NIL);
           printf("%s\n", AS_STR(potion_run(P, code, P->flags)));
 #if 0
           /* TODO cannot access the current upvals, regs, locals, values, paths yet */
@@ -593,12 +602,12 @@ reentry:
 #define L(op) L_##op
 
     static void *jmptbl[] = {
-      &&L(NONE), &&L(MOVE), &&L(LOADK), &&L(LOADPN), &&L(SELF), &&L(NEWTUPLE),
-      &&L(SETTUPLE), &&L(GETLOCAL), &&L(SETLOCAL), &&L(GETUPVAL), &&L(SETUPVAL),
-      &&L(GLOBAL), &&L(GETTABLE), &&L(SETTABLE), &&L(NEWLICK), &&L(GETPATH),
-      &&L(SETPATH), &&L(ADD), &&L(SUB), &&L(MULT), &&L(DIV), &&L(REM), &&L(POW),
-      &&L(NOT), &&L(CMP), &&L(EQ), &&L(NEQ), &&L(LT), &&L(LTE), &&L(GT), &&L(GTE),
-      &&L(BITN), &&L(BITL), &&L(BITR), &&L(DEF), &&L(BIND), &&L(MSG), &&L(JMP),
+      &&L(NONE), &&L(MOVE), &&L(LOADK), &&L(LOADPN), &&L(LOADNIL), &&L(SELF), &&L(NEWTUPLE),
+      &&L(GETTUPLE), &&L(SETTUPLE), &&L(GETLOCAL), &&L(SETLOCAL), &&L(GETUPVAL),
+      &&L(SETUPVAL), &&L(GLOBAL), &&L(GETTABLE), &&L(SETTABLE), &&L(NEWLICK),
+      &&L(GETPATH), &&L(SETPATH), &&L(ADD), &&L(SUB), &&L(MULT), &&L(DIV), &&L(REM),
+      &&L(POW), &&L(NOT), &&L(CMP), &&L(EQ), &&L(NEQ), &&L(LT), &&L(LTE), &&L(GT),
+      &&L(GTE), &&L(BITN), &&L(BITL), &&L(BITR), &&L(DEF), &&L(BIND), &&L(MSG), &&L(JMP),
       &&L(TEST), &&L(TESTJMP), &&L(NOTJMP), &&L(NAMED), &&L(CALL), &&L(CALLSET),
       &&L(TAILCALL), &&L(RETURN), &&L(PROTO), &&L(CLASS), &&L_DEBUG
     };
@@ -616,6 +625,7 @@ reentry:
       CASE(MOVE,   reg[op.a] = reg[op.b] )
       CASE(LOADK,  reg[op.a] = PN_TUPLE_AT(f->values, op.b) )
       CASE(LOADPN, reg[op.a] = (PN)op.b )
+      CASE(LOADNIL,reg[op.a] = PN_NIL )
       CASE(SELF,   reg[op.a] = reg[-1] )
       CASE(GETLOCAL,
         if (PN_IS_REF(locals[op.b])) {
@@ -643,10 +653,14 @@ reentry:
 	   reg[op.a] = reg[op.b])
       CASE(NEWTUPLE,
 	   reg[op.a] = PN_TUP0())
+      CASE(GETTUPLE,
+	   reg[op.a] = potion_tuple_at(P, PN_NIL, reg[op.a], reg[op.b]))
       CASE(SETTUPLE,
 	   reg[op.a] = PN_PUSH(reg[op.a], reg[op.b]))
+      CASE(GETTABLE,
+	   reg[op.a] = potion_table_at(P, PN_NIL, reg[op.a], reg[op.b]))
       CASE(SETTABLE,
-	   potion_table_set(P, reg[op.a], reg[op.a + 1], reg[op.b]); )
+	   potion_table_set(P, reg[op.a], reg[op.a + 1], reg[op.b]))
       CASE(NEWLICK, {
         PN attr = op.b > op.a ? reg[op.a + 1] : PN_NIL;
         PN inner = op.b > op.a + 1 ? reg[op.b] : PN_NIL;
@@ -793,8 +807,6 @@ reentry:
 	   reg[op.a] = potion_obj_get_callset(P, reg[op.b]))
       CASE(TAILCALL,
 	   potion_fatal("OP_TAILCALL not implemented"))
-      CASE(GETTABLE,
-	   potion_fatal("OP_GETTABLE not implemented"))
       CASE(NONE, )     // ignored
       CASE(RETURN,
         if (current != stack) {
@@ -816,7 +828,7 @@ reentry:
           goto done;
         }
       )
-      CASE(PROTO, {
+      CASE(PROTO, { /* define a method */
         vPN(Closure) cl;
         unsigned areg = op.a;
         proto = PN_TUPLE_AT(f->protos, op.b);

@@ -1,9 +1,12 @@
 # See http://rosettacode.org/wiki/N-queens_problem#Potion
 # Warning: This is not correct yet
+# nqueens N verbose-level
+# verbose-level 1: print solutions as board
+#               2: print every recursion step
 
 n = argv(1) number
 if (n < 1): n = 12.
-verbose = argv(2) number > 0
+verbose = argv(2) number > 1
 
 solutions = (), prev = (), occupied = list(n)
 
@@ -13,9 +16,11 @@ solve = (depth):
   # diag: marks cells diagonally attackable by any previous queens.
   prev length times(i):
     d1 = prev(i) + depth - i
-    diag(d1 abs) = true
+    d1 = d1 abs
+    if (d1 >=0 and d1 < n): diag(d1) = true.
     d2 = prev(i) - depth + i
-    if (d1 != d2): diag(d2 abs) = true.
+    d2 = d2 abs
+    if (d1 != d2 and d2 >=0 and d2 < n): diag(d2) = true.
   .
   if (verbose): ("depth"=depth,"diag"=diag,"prev"=prev) say.
   row = 0
@@ -37,6 +42,21 @@ solve = (depth):
 .
 
 solve(0)
+
 if (verbose and solutions length > 0): (solutions) say.
-# TODO display board with ♛
-("n"=n, "# solutions"=solutions length, "solutions"=solutions) say
+("n"=n, "#solutions"=solutions length, "solutions"=solutions) say
+
+if (argv(2) number > 0):
+  solutions length times(x):
+    s = solutions(x)
+    n times(i):
+      si = s(i)
+      n times(j):
+        if (si(j)): "|♛" print.
+        else: "| " print.
+      .
+      "|" say
+    .
+  .
+.
+

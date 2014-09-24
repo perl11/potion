@@ -155,6 +155,7 @@ extern = "extern" - n:name list-start { P->source = PN_TUP0() } l:arg-list list-
 name = p:path           { $$ = PN_AST(PATH, p) }
      | quiz ( m:msg     { $$ = PN_AST(QUERY, m) }
             | p:path    { $$ = PN_AST(PATHQ, p) })
+     | t:table -        { $$ = PN_AST(VALUE, t) }
      | !keyword
        m:msg            { $$ = PN_AST(MSG, m) }
 
@@ -177,13 +178,15 @@ list  = list-start s:statements list-end   { $$ = PN_AST(LIST, s) }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s) }
 lick  = lick-start i:lick-items lick-end   { $$ = PN_AST(LIST, i) }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s) }
+table = < utfw+ > l:lick  { $$ = PN_PUSH(PN_TUP(PN_STRN(yytext, yyleng)), l) }
 
 path = '/' < utfw+ > -    { $$ = PN_STRN(yytext, yyleng); }
 msg  =
-       < utfw ( utfw | [.:] )+ utfw+ '?'? > - { $$ = PN_STRN(yytext, yyleng); }
-     | < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng); }
+       < utfw ( utfw | [.:] )+ utfw+ '?'? > - { $$ = PN_STRN(yytext, yyleng) }
+     | < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng) }
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
+      | t:table - { $$ = PN_AST(VALUE, t) }
       | lick
       | group
 

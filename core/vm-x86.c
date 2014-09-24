@@ -3,8 +3,7 @@ the x86 and x86_64 jit.
 \see core/vm.c and doc/INTERNALS.md
 
 (c) 2008 why the lucky stiff, the freelance professor
-(c) 2013 perl11 org
-*/
+(c) 2013-2014 perl11 org */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -320,6 +319,11 @@ void potion_x86_loadpn(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   X86_MOVQ(op.a, op.b);
 }
 
+void potion_x86_loadnil(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_MOVQ(op.a, 0);
+}
+
 PN potion_f_values(Potion *P, PN cl) {
   return potion_fwd(PN_PROTO(PN_CLOSURE(cl)->data[0])->values);
 }
@@ -417,12 +421,32 @@ void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_MOV_RBP(0x89, op.a); 			 // mov %rax local
 }
 
+void potion_x86_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(start - 3, 0);
+  X86_ARGO(op.a, 1);
+  X86_ARGO(op.b, 2);
+  X86_PRE(); ASM(0xB8); ASMN(potion_tuple_at);  // mov &potion_tuple_at %rax
+  ASM(0xFF); ASM(0xD0); 			// callq %rax
+  X86_MOV_RBP(0x89, op.a); 			// mov %rax local
+}
+
 void potion_x86_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
   X86_ARGO(op.b, 2);
   X86_PRE(); ASM(0xB8); ASMN(potion_tuple_push);// mov &potion_tuple_push %rax
+  ASM(0xFF); ASM(0xD0); 			// callq %rax
+  X86_MOV_RBP(0x89, op.a); 			// mov %rax local
+}
+
+void potion_x86_gettable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(start - 3, 0);
+  X86_ARGO(op.a, 1);
+  X86_ARGO(op.b, 2);
+  X86_PRE(); ASM(0xB8); ASMN(potion_table_at);  // mov &potion_table_set %rax
   ASM(0xFF); ASM(0xD0); 			// callq %rax
   X86_MOV_RBP(0x89, op.a); 			// mov %rax local
 }
@@ -809,6 +833,10 @@ void potion_x86_callset(Potion *P, struct PNProto * volatile f, PNAsm * volatile
   X86_MOV_RBP(0x89, op.a); // mov %rax local
 }
 
+/*TODO*/
+void potion_x86_tailcall(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+}
+
 void potion_x86_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   X86_MOV_RBP(0x8B, 0); // mov -0(%rbp) %eax
   ASM(0xC9); ASM(0xC3); // leave; ret
@@ -824,6 +852,7 @@ PN potion_f_protos(Potion *P, PN cl, PN i) {
   return (PN)c;
 }
 
+/* OP_PROTO */
 void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE *pos, long lregs, long start, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, *pos);
   PN proto = PN_TUPLE_AT(f->protos, op.b);

@@ -5,10 +5,6 @@
 /core/config.h
 /core/config.h.bak
 /core/version.h
-/core/vm-arm.c
-/core/pn-scan.c
-/core/pn-gram.[ch]
-/core/pn-gram.out
 /core/*.i
 /core/*.o
 /core/*.opic
@@ -58,3 +54,6 @@
 /tools/bisect*.sh
 /MANIFEST
 /mcc.sh
+/frama-c*
+/cover_db
+/xx.[Scp]

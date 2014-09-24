@@ -410,7 +410,7 @@ enum PN_AST {
   AST_EXPR,
   AST_LIST, /* for TABLE (=,..) and TUPLE (,...) */
   AST_BLOCK,
-  AST_LICK,
+  AST_LICK, /* [...] */
   AST_PROTO,
   AST_DEBUG
 };
@@ -559,7 +559,7 @@ typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; unsigned char ptr[]
 
 typedef void (*OP_F)(Potion *P, struct PNProto *, PNAsm * volatile *, ...);
 
-/// definition of the jit targets: x86 or ppc, arm later
+/// definition of the jit targets: x86, ppc, arm
 typedef struct {
   void (*setup)    (Potion *, struct PNProto * volatile, PNAsm * volatile *);
   void (*stack)    (Potion *, struct PNProto * volatile, PNAsm * volatile *, long);
