@@ -33,7 +33,6 @@ typedef struct {
       (OP_F)potion_##arch##_move, \
       (OP_F)potion_##arch##_loadk, \
       (OP_F)potion_##arch##_loadpn, \
-      (OP_F)potion_##arch##_loadnil, \
       (OP_F)potion_##arch##_self, \
       (OP_F)potion_##arch##_newtuple, \
       (OP_F)potion_##arch##_gettuple, \

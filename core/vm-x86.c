@@ -319,11 +319,6 @@ void potion_x86_loadpn(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   X86_MOVQ(op.a, op.b);
 }
 
-void potion_x86_loadnil(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
-  PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_MOVQ(op.a, 0);
-}
-
 PN potion_f_values(Potion *P, PN cl) {
   return potion_fwd(PN_PROTO(PN_CLOSURE(cl)->data[0])->values);
 }

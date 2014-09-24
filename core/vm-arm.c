@@ -130,11 +130,6 @@ void potion_arm_loadpn(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
   ARM2(14, REG(op.a), op.b); // li rA,B
 }
 
-void potion_arm_loadnil(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
-  PN_OP op = PN_OP_AT(f->asmb, pos);
-  ARM2(14, REG(op.a), 0); // li rA,B
-}
-
 void potion_arm_loadk(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PN val = PN_TUPLE_AT(f->values, op.b);

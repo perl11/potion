@@ -12,7 +12,6 @@ or http://www.lua.org/doc/jucs05.pdf
   - MOVE (pos)		 	copy value between registers
   - LOADK (pos, need)  	 	load a constant into a register
   - LOADPN (pos)	 	load a PN value into a register
-  - LOADNIL (pos)	 	load nil into a register
   - SELF (pos, need)   	 	prepare an object method for calling
    			 	R(A+1) := R(B); R(A) := R(B)[RK(C)]
   - GETLOCAL (pos, regs)	read a local into a register
@@ -295,7 +294,6 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(MOVE, (P, f, &asmb, pos))		// copy value between registers
       CASE_OP(LOADK, (P, f, &asmb, pos, need))  // load a constant into a register
       CASE_OP(LOADPN, (P, f, &asmb, pos))	// load a value into a register
-      CASE_OP(LOADNIL, (P, f, &asmb, pos))	// load nil into a register
       CASE_OP(SELF, (P, f, &asmb, pos, need))   // prepare an object method for calling
 						// R[a+1] := R[b]; R[a] := R[b][RK[c]]
       CASE_OP(GETLOCAL, (P, f, &asmb, pos, regs))// read a local into a register
@@ -602,7 +600,7 @@ reentry:
 #define L(op) L_##op
 
     static void *jmptbl[] = {
-      &&L(NONE), &&L(MOVE), &&L(LOADK), &&L(LOADPN), &&L(LOADNIL), &&L(SELF), &&L(NEWTUPLE),
+      &&L(NONE), &&L(MOVE), &&L(LOADK), &&L(LOADPN), &&L(SELF), &&L(NEWTUPLE),
       &&L(GETTUPLE), &&L(SETTUPLE), &&L(GETLOCAL), &&L(SETLOCAL), &&L(GETUPVAL),
       &&L(SETUPVAL), &&L(GLOBAL), &&L(GETTABLE), &&L(SETTABLE), &&L(NEWLICK),
       &&L(GETPATH), &&L(SETPATH), &&L(ADD), &&L(SUB), &&L(MULT), &&L(DIV), &&L(REM),
@@ -625,7 +623,6 @@ reentry:
       CASE(MOVE,   reg[op.a] = reg[op.b] )
       CASE(LOADK,  reg[op.a] = PN_TUPLE_AT(f->values, op.b) )
       CASE(LOADPN, reg[op.a] = (PN)op.b )
-      CASE(LOADNIL,reg[op.a] = PN_NIL )
       CASE(SELF,   reg[op.a] = reg[-1] )
       CASE(GETLOCAL,
         if (PN_IS_REF(locals[op.b])) {

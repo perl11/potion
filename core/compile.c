@@ -28,7 +28,7 @@ const struct {
   const char *name;
   const u8 args;
 } potion_ops[] = {
-  {"noop", 0}, {"move", 2}, {"loadk", 2}, {"loadpn", 2}, {"loadnil", 1}, {"self", 1},
+  {"noop", 0}, {"move", 2}, {"loadk", 2}, {"loadpn", 2}, {"self", 1},
   {"newtuple", 2}, {"gettuple", 2}, {"settuple", 2}, {"getlocal", 2}, {"setlocal", 2},
   {"getupval", 2}, {"setupval", 2}, {"global", 2}, {"gettable", 2},
   {"settable", 2}, {"newlick", 2}, {"getpath", 2}, {"setpath", 2},
@@ -160,9 +160,6 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
       case OP_LOADPN:
         pn_printf(P, out, "; ");
         potion_bytes_obj_string(P, out, PN_OP_AT(t->asmb, x).b);
-        break;
-      case OP_LOADNIL:
-        pn_printf(P, out, "; nil");
         break;
       case OP_LOADK:
         pn_printf(P, out, "; ");
@@ -598,7 +595,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 	if (!sym) {
 	  fprintf(stderr, "* extern %s not found. You may need to load a library first\n",
 	          name);
-          PN_ASM1(OP_LOADNIL, reg);
+          PN_ASM2(OP_LOADPN, reg, PN_NIL);
         } else {
           // TODO: create a ffi wrapper to translate the args and return value
           struct PNProto* cl = PN_CALLOC_N(PN_TPROTO, struct PNProto, 0);
@@ -796,7 +793,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       if (PN_S(t,1) != PN_NIL)
         potion_source_asmb(P, f, loop, 0, t->a[1], ++breg);
       else if (PN_S(t,2) != PN_NIL)
-        PN_ASM1(OP_LOADNIL, ++breg);
+        PN_ASM2(OP_LOADPN, ++breg, PN_NIL);
       if (PN_S(t,2) != PN_NIL)
         potion_source_asmb(P, f, loop, 0, t->a[2], ++breg);
       PN_ASM2(OP_NEWLICK, reg, breg);
