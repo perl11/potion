@@ -153,22 +153,23 @@ extern = "extern" - n:name list-start { P->source = PN_TUP0() } l:arg-list list-
          { $$ = PN_AST2(MSG, PN_extern, PN_TUP(n)) }
 
 name = p:path           { $$ = PN_AST(PATH, p) }
-     | quiz ( m:msg     { $$ = PN_AST(QUERY, m) }
+     | quiz ( m:msg -   { $$ = PN_AST(QUERY, m) }
             | p:path    { $$ = PN_AST(PATHQ, p) })
      | t:table -        { $$ = PN_AST(VALUE, t) }
      | !keyword
-       m:msg            { $$ = PN_AST(MSG, m) }
+       m:msg -          { $$ = PN_AST(MSG, m) }
 
 lick-items = i1:lick-item     { $$ = i1 = PN_TUP(i1) }
             (sep i2:lick-item { $$ = i1 = PN_PUSH(i1, i2) })*
              sep?
            | ''               { $$ = PN_NIL; }
 
-lick-item = m:msg t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
-          | m:msg t:list { $$ = PN_AST3(LICK, m, PN_NIL, t) }
-          | m:msg v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
-          | m:msg v:loose { $$ = PN_AST2(LICK, m, v) }
-          | m:msg         { $$ = PN_AST(LICK, m) }
+lick-item = m:msg - t:list v:loose { $$ = PN_AST3(LICK, m, v, t) }
+          | m:msg - t:list  { $$ = PN_AST3(LICK, m, PN_NIL, t) }
+          | m:msg - v:loose t:list { $$ = PN_AST3(LICK, m, v, t) }
+          | m:msg - v:loose { $$ = PN_AST2(LICK, m, v) }
+          | m:msg -         { $$ = PN_AST(LICK, m) }
+          | v:loose -       { $$ = PN_AST(LICK, v) }
 
 loose = value
       | v:unquoted { $$ = PN_AST(VALUE, v) }
@@ -178,12 +179,12 @@ list  = list-start s:statements list-end   { $$ = PN_AST(LIST, s) }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s) }
 lick  = lick-start i:lick-items lick-end   { $$ = PN_AST(LIST, i) }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s) }
-table = < utfw+ > l:lick  { $$ = PN_PUSH(PN_TUP(PN_STRN(yytext, yyleng)), l) }
+table = m:msg l:lick  { $$ = PN_AST2(LICK, PN_AST(MSG, m), l) }
 
 path = '/' < utfw+ > -    { $$ = PN_STRN(yytext, yyleng); }
 msg  =
-       < utfw ( utfw | [.:] )+ utfw+ '?'? > - { $$ = PN_STRN(yytext, yyleng) }
-     | < utfw+ '?'? > -   { $$ = PN_STRN(yytext, yyleng) }
+       < utfw ( utfw | [.:] )+ utfw+ '?'? > { $$ = PN_STRN(yytext, yyleng) }
+     | < utfw+ '?'? >   { $$ = PN_STRN(yytext, yyleng) }
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
       | t:table - { $$ = PN_AST(VALUE, t) }

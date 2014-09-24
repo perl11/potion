@@ -4,10 +4,10 @@
  * implement PNSource (AST) and PNProto (closure) methods,
  * special signature handling (parsed extra) and compile, bytecode load and dump methods.
  * Some special control methods are handled here and not in the parser. We do not need 
- * lexed keywords.
- */
-// (c) 2008 why the lucky stiff, the freelance professor
-
+ * lexed keywords, and are free to extend everything dynamically.
+ *
+ * (c) 2008 why the lucky stiff, the freelance professor
+ * (c) 2014 perl11.org */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -235,7 +235,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   numup; \
 })
 #define PN_ARG_TABLE(args, reg, inc) potion_arg_asmb(P, f, loop, args, &reg, inc)
-#define SRC_TUPLE_AT(src,i)  PN_SRC((PN_TUPLE_AT(PN_S(src,0), i)))
+#define SRC_TUPLE_AT(src,i)  PN_SRC(PN_TUPLE_AT(PN_S(src,0), i))
 #define PN_ASM_DEBUG(REG, T) REG = potion_source_debug(P, f, T, REG)
 
 /// insert DEBUG ops for every new line
@@ -347,15 +347,41 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
     break;
 
     case AST_VALUE: {
-      PN_OP op; op.a = PN_S(t,0);
-      if (!PN_IS_PTR(PN_S(t,0)) && PN_S(t,0) == (PN)op.a) {
+      vPN(Source)  a = PN_S_(t,0);
+      PN_OP op; op.a = PN_S(t,0); // but 12bit only
+      if (!PN_IS_PTR(a) && (PN)a == (PN)op.a) {
         PN_ASM2(OP_LOADPN, reg, PN_S(t,0));
+      } else if (a != PN_NIL
+                 && PN_IS_PTR(a)
+                 && a->part == AST_LICK
+                 && a->a[0]->part == AST_MSG)
+      {
+        PN tbl = PN_TUPLE_AT(a, 0);
+        PN_SIZE num = PN_PUT(f->values, tbl);
+        DBG_c("values %d %s => %d\n", reg, PN_STR_PTR(tbl), (int)num);
+        PN_ASM2(OP_LOADPN, reg, num);
+        // constant or variable key?
+        if (PN_VTYPE(a->a[1]->a[0]) == PN_TTUPLE) {
+          PN key = PN_S(PN_TUPLE_AT(PN_S(a->a[1], 0), 0), 0);
+          PN_SIZE kv = PN_PUT(f->values, key);
+          DBG_c("values %d %s => %d\n", reg, PN_STR_PTR(key), (int)kv);
+          PN_ASM2(OP_LOADPN, reg+1, kv);
+          DBG_c("gettable %d %s[%s]\n", reg, PN_STR_PTR(tbl), PN_STR_PTR(key));
+        } else {
+          // t->a[0]->a[1]->a[0]->part == AST_VALUE
+          PN key = PN_TUPLE_AT(PN_S(a->a[1]->a[0], 0), 0);
+          PN_SIZE kv = PN_PUT(f->values, key);
+          DBG_c("values %d %s => %d\n", reg, PN_STR_PTR(key), (int)kv);
+          PN_ASM2(OP_LOADK, reg+1, kv);
+          DBG_c("gettable %d %s[\"%s\"]\n", reg, PN_STR_PTR(tbl), PN_STR_PTR(key));
+        }
+        PN_ASM2(OP_GETTABLE, reg, reg+1);
       } else {
-        PN_SIZE num = PN_PUT(f->values, PN_S(t,0));
-	DBG_c("values %d %s => %d\n", reg, AS_STR(t->a[0]), (int)num);
+        PN_SIZE num = PN_PUT(f->values, (PN)a);
+	DBG_c("values %d %s => %d\n", reg, AS_STR(a), (int)num);
         PN_ASM2(OP_LOADK, reg, num);
       }
-      if (PN_S(t,1) != PN_NIL) {
+      if (PN_S(t,1) != PN_NIL && a->part != AST_LICK) {
         u8 breg = reg;
         PN_ASM1(OP_SELF, ++breg);
         PN_ARG_TABLE(PN_S(t,1), breg, 1);
