@@ -184,9 +184,11 @@ struct PNVtable;
 #ifdef DEBUG
 #define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE(obj,type)
 #define DBG_CHECK_INT(obj) PN_CHECK_INT(obj)
+#define DBG_CHECK_TUPLE(obj) PN_CHECK_TUPLE(obj)
 #else
 #define DBG_CHECK_TYPE(obj,type)
 #define DBG_CHECK_INT(obj)
+#define DBG_CHECK_TUPLE(obj)
 #endif
 
 ///\class PNNumber

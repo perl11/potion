@@ -253,7 +253,7 @@ PN potion_tuple_new(Potion *P, PN value) {
 
 PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   vPN(Tuple) t = PN_GET_TUPLE(tuple);
-  DBG_CHECK_TYPE(t,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t);
   if (t->len >= t->alloc) {
     PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->alloc + 3)); // overalloc by 2
     t->alloc += 3;
@@ -269,7 +269,7 @@ PN potion_tuple_push(Potion *P, PN tuple, PN value) {
 ///\param value PN
 ///\return PNTuple
 PN potion_tuple_append(Potion *P, PN cl, PN self, PN value) {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  DBG_CHECK_TUPLE(self);
   return potion_tuple_push(P, self, value);
 }
 
@@ -278,7 +278,7 @@ PN potion_tuple_append(Potion *P, PN cl, PN self, PN value) {
 ///\param value PN
 ///\return int
 PN_SIZE potion_tuple_find(Potion *P, PN tuple, PN value) {
-  DBG_CHECK_TYPE(tuple,PN_TTUPLE);
+  DBG_CHECK_TUPLE(tuple);
   PN_TUPLE_EACH(tuple, i, v, {
     if (v == value) return i;
   });
@@ -288,7 +288,7 @@ PN_SIZE potion_tuple_find(Potion *P, PN tuple, PN value) {
 ///\param tuple PNTuple
 ///\param value PN
 PN_SIZE potion_tuple_push_unless(Potion *P, PN tuple, PN value) {
-  DBG_CHECK_TYPE(tuple,PN_TTUPLE);
+  DBG_CHECK_TUPLE(tuple);
   PN_SIZE idx = potion_tuple_find(P, tuple, value);
   if (idx != PN_NONE) return idx;
 
@@ -307,7 +307,7 @@ PN_SIZE potion_tuple_push_unless(Potion *P, PN tuple, PN value) {
  \param index PNNumber. If negative, count from end. If too large, return nil.
  \return tuple element at index */
 PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  DBG_CHECK_TUPLE(self);
   long i = PN_INT(index), len = PN_TUPLE_LEN(self);
   if (i < 0) i += len;
   if (i >= len) return PN_NIL;
@@ -320,7 +320,7 @@ PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
 static
 PN potion_tuple_clone(Potion *P, PN cl, PN self) {
   vPN(Tuple) t1 = PN_GET_TUPLE(self);
-  DBG_CHECK_TYPE(t1,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t1);
   NEW_TUPLE(t2, t1->len);
   PN_MEMCPY_N(t2->set, t1->set, PN, t1->len);
   t2->alloc = t1->len;
@@ -347,7 +347,7 @@ static
 PN potion_tuple_slice(Potion *P, PN cl, PN self, PN start, PN end) {
   vPN(Tuple) t1 = PN_GET_TUPLE(self);
   long i, l;
-  DBG_CHECK_TYPE(t1,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t1);
   if (!start)
     return potion_tuple_clone(P, cl, self);
   else {
@@ -381,7 +381,7 @@ PN potion_tuple_slice(Potion *P, PN cl, PN self, PN start, PN end) {
 ///\param block PNClosure
 ///\return self PNTuple
 PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  DBG_CHECK_TUPLE(self);
   int with_index = potion_sig_arity(P, PN_CLOSURE(block)->sig) >= 2;
   PN_TUPLE_EACH(self, i, v, {
     if (with_index)
@@ -396,7 +396,7 @@ PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
 /// "first" method.
 ///\return first PN or PN_NIL if the PNTuple is empty
 PN potion_tuple_first(Potion *P, PN cl, PN self) {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  DBG_CHECK_TUPLE(self);
   if (PN_TUPLE_LEN(self) < 1) return PN_NIL;
   return PN_TUPLE_AT(self, 0);
 }
@@ -406,7 +406,7 @@ PN potion_tuple_first(Potion *P, PN cl, PN self) {
 ///\param sep PNString
 ///\return PNBytes
 PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  DBG_CHECK_TUPLE(self);
   PN out = potion_byte_str(P, "");
   PN_TUPLE_EACH(self, i, v, {
     if (i > 0 && sep != PN_NIL) potion_bytes_obj_string(P, out, sep);
@@ -419,7 +419,7 @@ PN potion_tuple_join(Potion *P, PN cl, PN self, PN sep) {
 /// "last" method.
 ///\return last PN or PN_NIL if the PNTuple is empty
 PN potion_tuple_last(Potion *P, PN cl, PN self) {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  DBG_CHECK_TUPLE(self);
   long len = PN_TUPLE_LEN(self);
   if (len < 1) return PN_NIL;
   return PN_TUPLE_AT(self, len - 1);
@@ -429,7 +429,7 @@ PN potion_tuple_last(Potion *P, PN cl, PN self) {
 /// "string" method. serializable ascii dump
 ///\return PNString
 PN potion_tuple_string(Potion *P, PN cl, PN self) {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  DBG_CHECK_TUPLE(self);
   int licks = 0;
   PN out = potion_byte_str(P, "(");
   PN_TUPLE_EACH(self, i, v, {
@@ -449,7 +449,7 @@ PN potion_tuple_string(Potion *P, PN cl, PN self) {
 ///\return last PN
 PN potion_tuple_pop(Potion *P, PN cl, PN self) {
   vPN(Tuple) t = PN_GET_TUPLE(self);
-  DBG_CHECK_TYPE(t,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t);
   PN obj = t->set[t->len - 1];
   PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len - 1));
   t->len--;
@@ -465,7 +465,7 @@ PN potion_tuple_pop(Potion *P, PN cl, PN self) {
 ///\return self PNTuple
 PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
   if (PN_IS_NUM(key)) {
-    DBG_CHECK_TYPE(self,PN_TTUPLE);
+    DBG_CHECK_TUPLE(self);
     long i = PN_INT(key), len = PN_TUPLE_LEN(self);
     if (i < 0) i += len;
     if (i < len) {
@@ -484,7 +484,7 @@ PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
 ///\return PNTuple
 PN potion_tuple_unshift(Potion *P, PN cl, PN self, PN value) {
   vPN(Tuple) t = PN_GET_TUPLE(self);
-  DBG_CHECK_TYPE(t,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t);
   if (t->len >= t->alloc) {
     PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->alloc + 3)); // overalloc by 2
     t->alloc += 3;
@@ -502,7 +502,7 @@ PN potion_tuple_unshift(Potion *P, PN cl, PN self, PN value) {
 ///\return PNTuple
 PN potion_tuple_shift(Potion *P, PN cl, PN self) {
   vPN(Tuple) t = PN_GET_TUPLE(self);
-  DBG_CHECK_TYPE(t,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t);
   PN obj = t->set[0];
   PN_MEMMOVE_N(&t->set[0], &t->set[1], PN, t->len);
   PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len - 1));
@@ -515,7 +515,7 @@ PN potion_tuple_shift(Potion *P, PN cl, PN self) {
 /// "print" method. call print on all elements
 ///\return PN_NIL
 PN potion_tuple_print(Potion *P, PN cl, PN self) {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  DBG_CHECK_TUPLE(self);
   PN_TUPLE_EACH(self, i, v, {
     potion_send(v, PN_print);
   });
@@ -534,7 +534,7 @@ PN potion_tuple_length(Potion *P, PN cl, PN self) {
 /// "reverse" a list non-destructively
 ///\return a new PNTuple
 PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
-  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  DBG_CHECK_TUPLE(self);
   unsigned long len = PN_TUPLE_LEN(self);
   PN tuple = potion_tuple_with_size(P, len);
   len--;
@@ -558,7 +558,7 @@ PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
   \return a copy of PNTuple with one less element */
 PN potion_tuple_remove(Potion *P, PN cl, PN self, PN index) {
   struct PNTuple *t = PN_GET_TUPLE(self);
-  DBG_CHECK_TYPE(t,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t);
   if (t->len) {
     PN_SIZE i = PN_INT(index);
     PN data = potion_tuple_clone(P, cl, self);
@@ -579,7 +579,7 @@ PN potion_tuple_remove(Potion *P, PN cl, PN self, PN index) {
   \return PNTuple */
 PN potion_tuple_delete(Potion *P, PN cl, PN self, PN index) {
   struct PNTuple *t = PN_GET_TUPLE(self);
-  DBG_CHECK_TYPE(t,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t);
   if (t->len) {
     PN_SIZE i = PN_INT(index);
     if (i < t->len)
@@ -595,7 +595,7 @@ PN potion_tuple_delete(Potion *P, PN cl, PN self, PN index) {
 ///\return the same PNTuple with reversed elements
 PN potion_tuple_nreverse(Potion *P, PN cl, PN self) {
   struct PNTuple *t = PN_GET_TUPLE(self);
-  DBG_CHECK_TYPE(t,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t);
   PN_SIZE len = t->len;
   if (len) {
     PN_SIZE i;
@@ -613,7 +613,7 @@ PN potion_tuple_nreverse(Potion *P, PN cl, PN self) {
 ///\return found index or false
 PN potion_tuple_bsearch(Potion *P, PN cl, PN self, PN x) {
   struct PNTuple *t = PN_GET_TUPLE(self);
-  DBG_CHECK_TYPE(t,PN_TTUPLE);
+  DBG_CHECK_TUPLE(t);
   PNUniq xu = PN_UNIQ(x);
   long i = 0, j = t->len - 1;
   while (i <= j) {
