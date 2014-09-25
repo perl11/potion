@@ -351,31 +351,45 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       PN_OP op; op.a = PN_S(t,0); // but 12bit only
       if (!PN_IS_PTR(a) && (PN)a == (PN)op.a) {
         PN_ASM2(OP_LOADPN, reg, PN_S(t,0));
-      } else if (a != PN_NIL
-                 && PN_IS_PTR(a)
-                 && a->part == AST_LICK
-                 && a->a[0]->part == AST_MSG)
-      {
-        PN tbl = PN_TUPLE_AT(a, 0);
-        PN_SIZE num = PN_PUT(f->values, tbl);
-        DBG_c("values %d %s => %d\n", reg, PN_STR_PTR(tbl), (int)num);
-        PN_ASM2(OP_LOADPN, reg, num);
-        // constant or variable key?
-        if (PN_VTYPE(a->a[1]->a[0]) == PN_TTUPLE) {
-          PN key = PN_S(PN_TUPLE_AT(PN_S(a->a[1], 0), 0), 0);
-          PN_SIZE kv = PN_PUT(f->values, key);
-          DBG_c("values %d %s => %d\n", reg, PN_STR_PTR(key), (int)kv);
-          PN_ASM2(OP_LOADPN, reg+1, kv);
-          DBG_c("gettuple %d %s[%s]\n", reg, PN_STR_PTR(tbl), PN_STR_PTR(key));
-        } else { //constant, could to be optimized in jit
-          assert(t->a[0]->a[1]->a[0]->part == AST_VALUE);
-          PN key = PN_TUPLE_AT(PN_S(a->a[1]->a[0], 0), 0);
-          PN_SIZE kv = PN_PUT(f->values, key);
-          DBG_c("values %d %s => %d\n", reg, PN_STR_PTR(key), (int)kv);
-          PN_ASM2(OP_LOADK, reg+1, kv);
-          DBG_c("gettuple %d %s[\"%s\"]\n", reg, PN_STR_PTR(tbl), PN_STR_PTR(key));
+      } else if (a != PN_NIL && PN_IS_PTR(a)
+                 && a->part == AST_LICK && a->a[0]->part == AST_MSG) {
+        PN tpl = PN_TUPLE_AT(a->a[0], 0);
+        PN_SIZE num = PN_PUT(f->locals, tpl);
+        if (reg != num) {
+          PN_ASM2(OP_GETLOCAL, reg, num);
         }
-        PN_ASM2(OP_GETTUPLE, reg, reg+1);
+        a = PN_S_(PN_TUPLE_AT(a->a[1]->a[0], 0), 0);
+        if (a->vt == PN_TSTRING) { // a message, variable
+          PN key = (PN)a;
+          num = PN_PUT(f->locals, key);
+          DBG_c("locals %s => %d\n", PN_STR_PTR(key), (int)num);
+          PN_ASM2(OP_GETLOCAL, reg+1, num);
+          num = reg+1;
+          DBG_c("gettuple %d %d %s[%s]\n", reg, num, PN_STR_PTR(tpl), PN_STR_PTR(key));
+          PN_ASM2(OP_GETTUPLE, reg, num);
+        } else { // constant, could to be optimized in jit
+          assert(a->vt == PN_TSOURCE && a->part == AST_VALUE);
+          PN key = PN_S(a, 0);
+          if (PN_IS_NUM(key)) {
+            if (PN_INT(key) >= 1024 || PN_INT(key) < 0) {
+              num = PN_PUT(f->values, num);
+              PN_ASM2(OP_LOADK, reg+1, num);
+              DBG_c("values %ld => %d\n", PN_INT(key), (int)num);
+              num = reg + 1;
+            } else {
+              num = PN_INT(key) | 1024;
+            }
+            DBG_c("gettuple %d %d %s[%ld]\n", reg, num, PN_STR_PTR(tpl), PN_INT(key));
+            PN_ASM2(OP_GETTUPLE, reg, num);
+          } else {
+            num = PN_PUT(f->values, key); // op.b has 12 bits
+            PN_ASM2(OP_LOADK, reg+1, num);
+            DBG_c("values \"%s\" => %d\n", PN_STR_PTR(key), (int)num);
+            num = reg+1;
+            DBG_c("gettable %d %d %s[\"%s\"]\n", reg, num, PN_STR_PTR(tpl), PN_STR_PTR(key));
+            PN_ASM2(OP_GETTABLE, reg, num);
+          }
+        }
       } else {
         PN_SIZE num = PN_PUT(f->values, (PN)a);
 	DBG_c("values %d %s => %d\n", reg, AS_STR(a), (int)num);
@@ -430,7 +444,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 #if 0 // store func names
 	    if (lhs->part == AST_MSG) {
 	      PN rhs = PN_TUPLE_AT(f->locals, num);
-	      fname = PN_S(lhs,0);
+	      PN fname = PN_S(lhs,0);
 	      DBG_c("getlocal %s %ld = %s\n",
 	            PN_STR_PTR(fname), PN_INT(num), AS_STR(rhs));
             }

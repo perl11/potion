@@ -47,7 +47,7 @@
 # define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
 # define YY_SET(G, text, count, thunk, P) \
   yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
-           PN_STR_PTR(potion_send(yy, PN_string))));\
+    PN_IS_NUM(yy)||PN_IS_PTR(yy) ? PN_STR_PTR(potion_send(yy, PN_string)) : "")); \
   G->val[count]= yy;
 #endif
 
@@ -155,7 +155,7 @@ extern = "extern" - n:name list-start { P->source = PN_TUP0() } l:arg-list list-
 name = p:path           { $$ = PN_AST(PATH, p) }
      | quiz ( m:msg -   { $$ = PN_AST(QUERY, m) }
             | p:path    { $$ = PN_AST(PATHQ, p) })
-     | t:table -        { $$ = PN_AST(VALUE, t) }
+     | t:tuple -        { $$ = PN_AST(VALUE, t) } # like a lick, but only a arrayref
      | !keyword
        m:msg -          { $$ = PN_AST(MSG, m) }
 
@@ -179,15 +179,15 @@ list  = list-start s:statements list-end   { $$ = PN_AST(LIST, s) }
 block = block-start s:statements block-end { $$ = PN_AST(BLOCK, s) }
 lick  = lick-start i:lick-items lick-end   { $$ = PN_AST(LIST, i) }
 group = group-start s:statements group-end { $$ = PN_AST(EXPR, s) }
-table = m:msg l:lick  { $$ = PN_AST2(LICK, PN_AST(MSG, m), l) }
+tuple = m:msg l:lick  { $$ = PN_AST2(LICK, PN_AST(MSG, m), l) }
 
-path = '/' < utfw+ > -    { $$ = PN_STRN(yytext, yyleng); }
+path = '/' < utff utfw* > -    { $$ = PN_STRN(yytext, yyleng); }
 msg  =
-       < utfw ( utfw | [.:] )+ utfw+ '?'? > { $$ = PN_STRN(yytext, yyleng) }
-     | < utfw+ '?'? >   { $$ = PN_STRN(yytext, yyleng) }
+       < utff ( utfw | [.:] )* utfw+ '?'? > { $$ = PN_STRN(yytext, yyleng) }
+     | < utff utfw* '?'? >   { $$ = PN_STRN(yytext, yyleng) }
 
 value = i:immed - { $$ = PN_AST(VALUE, i) }
-      | t:table - { $$ = PN_AST(VALUE, t) }
+      | t:tuple - { $$ = PN_AST(VALUE, t) } # arrayref
       | lick
       | group
 
@@ -202,6 +202,11 @@ immed = nil   { $$ = PN_NIL; }
               } }
       | str1 | str2
 
+utff = [A-Za-z_$@]
+     | '\304' [\250-\277]
+     | [\305-\337] [\200-\277]
+     | [\340-\357] [\200-\277] [\200-\277]
+     | [\360-\364] [\200-\277] [\200-\277] [\200-\277]
 utfw = [A-Za-z0-9_$@;`{}]
      | '\304' [\250-\277]
      | [\305-\337] [\200-\277]
@@ -246,14 +251,14 @@ gte = ">=" --
 neq = "!=" --
 eq = "==" --
 cmp = "<=>" --
-and = ("&&" | "and" !utfw) --
-or = ("||" | "or" !utfw) --
-not = ("!" | "not" !utfw) --
-keyword = ("and" | "or" | "not") !utfw
+and = ("&&" | "and" !utff) --
+or = ("||" | "or" !utff) --
+not = ("!" | "not" !utff) --
+keyword = ("and" | "or" | "not") !utff
 
-nil = "nil" !utfw
-true = "true" !utfw
-false = "false" !utfw
+nil = "nil" !utff
+true = "true" !utff
+false = "false" !utff
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
 dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM; }
@@ -350,7 +355,7 @@ arg-list = arg-set (optional arg-set)?
          | optional arg-set
 arg-set = arg (comma - arg)*
 
-arg-name = < utfw+ > -    { $$ = PN_STRN(yytext, yyleng) }
+arg-name = < utff utfw* > -    { $$ = PN_STRN(yytext, yyleng) }
 # not with :=, const '-' would make sense, \ and * not
 arg-modifier = < ('-' | '\\' | '*' ) >  { $$ = PN_NUM(yytext[0]); }
 # for FFIs, map to potion and C types. See potion_type_char()

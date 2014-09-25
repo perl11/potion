@@ -418,6 +418,7 @@ struct PNSource {
   PN_OBJECT_HEADER;  	///< PNType vt; PNUniq uniq
   enum PN_AST part;     ///< AST type, avoid -Wswitch (aligned access: 4+4+8+4+24)
   struct PNSource * volatile a[3];///< PNTuple of 1-3 kids, \see ast.c
+  // luxury for reflection only: debugging, error messages
   struct {
 #if PN_SIZE_T != 8
     PNType fileno:16;
@@ -454,7 +455,7 @@ struct PNProto {
 };
 
 ///
-/// a tuple is an ordered list,
+/// a tuple is an array of PNs.
 /// volatile.
 ///
 struct PNTuple {
