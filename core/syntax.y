@@ -251,14 +251,14 @@ gte = ">=" --
 neq = "!=" --
 eq = "==" --
 cmp = "<=>" --
-and = ("&&" | "and" !utff) --
-or = ("||" | "or" !utff) --
-not = ("!" | "not" !utff) --
-keyword = ("and" | "or" | "not") !utff
+and = ("&&" | "and" !utfw) --
+or = ("||" | "or" !utfw) --
+not = ("!" | "not" !utfw) --
+keyword = ("and" | "or" | "not") !utfw
 
-nil = "nil" !utff
-true = "true" !utff
-false = "false" !utff
+nil = "nil" !utfw
+true = "true" !utfw
+false = "false" !utfw
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
 dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM; }
