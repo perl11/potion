@@ -423,12 +423,12 @@ void potion_x86_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 #ifndef JIT_UNCHECKED_TUPLE
     X86_ARGO(start - 3, 0);
     X86_ARGO(op.a, 2);
-    X86_ARGO_IMM(PN_NUM(op.b - 1024), 3);
+    X86_ARGO_IMM(op.b - 1024, 3);
 #else
     X86_MOV_RBP(0x8B, op.a); 		    // mov -B(%rbp) %eax
-    X86_ARGO_IMM(2+PN_NUM(op.b - 1024), 2); // + skip 2 words into %rdx
+    X86_ARGO_IMM(2 + op.b - 1024, 2);       // + skip 2 words into %rdx
     X86_PRE(); ASM(0x8b); ASM(0x04); ASM(0xd0);  //mov (%rax,%rdx,8),%rax (64bit only)
-    X86_MOV_RBP(0x89, op.a); 			// mov %rax local
+    X86_MOV_RBP(0x89, op.a); 		    // mov %rax local
     return;
 #endif
   } else {
