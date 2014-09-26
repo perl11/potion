@@ -14,6 +14,7 @@
 #define POTION_ASM_H
 
 #define ASM_UNIT 512
+#define ASM_TPL_IMM 1024    // bitflag for immediate gettuple op.b value
 
 /// record labels to be patched
 typedef struct {

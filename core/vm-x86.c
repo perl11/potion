@@ -416,36 +416,28 @@ void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_MOV_RBP(0x89, op.a); 			 // mov %rax local
 }
 // the fast version does not work yet, unchecked direct access to the PNTuple offset
-//#define JIT_UNCHECKED_TUPLE
+#define JIT_UNCHECKED_TUPLE
 void potion_x86_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  if (op.b & 1024) { // imm index. TODO: no tuple_at
+  if (op.b & ASM_TPL_IMM) { // imm index. XXX Note that op.a is not initialized here
 #ifdef JIT_UNCHECKED_TUPLE
     X86_MOV_RBP(0x8B, op.a); 		    // mov -A(%rbp) %eax
-# if PN_SIZE_T != 8
-    ASM(0xc7);ASM(0xc2);ASM(op.b +2-1024);  // mov B+2, %rdx # + skip 2 words into PNTuple
-# else
-    X86_ARGO_IMM(op.b +2-1024, 2);          // # arg2 writes to %rdx
-# endif
-    X86_PRE();ASM(0x8b);ASM(0x04);ASM(0xd0);// mov (%rax,%rdx,8),%rax (64bit only?)
+    X86_PRE();ASM(0xc7);ASM(0xc2);ASMI(op.b+2-ASM_TPL_IMM);// mov B+$2, %rdx PNTuple+2
+    X86_PRE();ASM(0x8b);ASM(0x04);ASM(0xd0);// mov (%rax,%rdx,8),%rax
     X86_MOV_RBP(0x89, op.a); 		    // mov %rax local
     return;
 #else
-    X86_ARGO(start - 3, 0);
-    X86_ARGO(0, 1);
-    X86_ARGO(op.a, 2);     // XXX
-    X86_ARGO_IMM(PN_NUM(op.b - 1024), 3);
+    X86_ARGO(start - 3, 0);                      // mov P, %rdi
+    //X86_ARGO(0, 1);				 // cl ignored
+    X86_ARGO(op.a, 2);                           // mov -A(%rbp), %rdx
+    X86_ARGO_IMM(PN_NUM(op.b - ASM_TPL_IMM), 3); // mov -B(%rbp), %rcx
 #endif
   } else {
 #ifdef JIT_UNCHECKED_TUPLE
     X86_MOV_RBP(0x8B, op.a); 		    // mov -A(%rbp) %eax
-# if PN_SIZE_T != 8
-    ASM(0x8b);ASM(0x55);ASM(0xff-(char)op.b);// mov -B(%rbp) %rdx
-    ASM(0x83);ASM(0xc2);ASM(0x02);	    // addq $0x2, %rdx
-# else
-    X86_ARGO(op.b +2, 2);                   // # arg2 writes to %rdx
-# endif
-    X86_PRE(); ASM(0x8b); ASM(0x04); ASM(0xd0);
+    X86_PRE();ASM(0x8b);ASM_MOV_EBP(0x55,op.b);// mov -B(%rbp) %rdx
+    X86_PRE();ASM(0x83);ASM(0xc2);ASM(0x02);// add $2, %rdx
+    X86_PRE();ASM(0x8b);ASM(0x04);ASM(0xd0);// mov (%rax,%rdx,8), %rax
     X86_MOV_RBP(0x89, op.a); 		    // mov %rax local
     return;
   }

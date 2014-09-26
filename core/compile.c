@@ -371,13 +371,13 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           assert(a->vt == PN_TSOURCE && a->part == AST_VALUE);
           PN key = PN_S(a, 0);
           if (PN_IS_NUM(key)) {
-            if (PN_INT(key) >= 1024 || PN_INT(key) < 0) {
+            if (PN_INT(key) >= ASM_TPL_IMM || PN_INT(key) < 0) {
               num = PN_PUT(f->values, num);
               PN_ASM2(OP_LOADK, reg+1, num);
               DBG_c("values %ld => %d\n", PN_INT(key), (int)num);
               num = reg + 1;
             } else {
-              num = PN_INT(key) | 1024;
+              num = PN_INT(key) | ASM_TPL_IMM;
             }
             DBG_c("gettuple %d %d %s[%ld]\n", reg, num, PN_STR_PTR(tpl), PN_INT(key));
             PN_ASM2(OP_GETTUPLE, reg, num);

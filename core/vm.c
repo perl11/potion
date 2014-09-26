@@ -652,7 +652,7 @@ reentry:
 	   reg[op.a] = PN_TUP0())
       CASE(GETTUPLE,
 	   reg[op.a] = potion_tuple_at(P, PN_NIL, reg[op.a],
-                                       op.b & 1024 ? PN_NUM(op.b - 1024) : reg[op.b]))
+                         op.b & ASM_TPL_IMM ? PN_NUM(op.b - ASM_TPL_IMM) : reg[op.b]))
       CASE(SETTUPLE,
 	   reg[op.a] = PN_PUSH(reg[op.a], reg[op.b]))
       CASE(GETTABLE,
