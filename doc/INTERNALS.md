@@ -451,10 +451,10 @@ object handles are marked volatile as well.
 In the above case, the PN typedef handles that.
 
 Also be sure to not nest function calls which return PN
-objects. With an overly aggressive and incorrect compiler
-(gcc -O3) such intermediate results might be stored
-in a register, and the GC will not see this PN and move
-references to it away.
+objects. With an optimizing (gcc/clang -O3) such
+intermediate results might be stored in a register, as
+volatile only applies to lvalues and the GC will not see this
+PN and move references to it away.
 Use temp. PN variables instead.
 
 This is a bit tedious to keep in mind, but
