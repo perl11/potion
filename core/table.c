@@ -297,7 +297,7 @@ PN_SIZE potion_tuple_push_unless(Potion *P, PN tuple, PN value) {
 }
 
 /**\memberof PNTuple
- "at" method, the generic tuple accessor.
+ "at" method, the safe generic tuple accessor. Use the tpl[index] syntax for the fast unchecked version.
  \code
        t=(0,1,2)
        t(0)  #=> 0

@@ -398,6 +398,7 @@ PN potion_lookup(Potion *P, PN closure, PN self, PN key) {
   return PN_NIL;
 }
 
+/// find method for given receiver and message (method lookup)
 PN potion_bind(Potion *P, PN rcv, PN msg) {
   PN closure = PN_NIL;
   PN vt = PN_NIL;

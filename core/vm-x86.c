@@ -111,6 +111,7 @@ the x86 and x86_64 jit.
 #define TAG_LABEL(tag)   (*asmp)->ptr[tag] = ((*asmp)->len - tag - 1)
 
 
+// ASM(0xcc); int3 trap: __asm__("int3");
 #define X86_DEBUG() \
   X86_PRE(); ASM(0xB8); ASMN(potion_x86_debug); \
   ASM(0xFF); ASM(0xD0)
@@ -119,25 +120,31 @@ the x86 and x86_64 jit.
 void potion_x86_debug() {
   Potion *P;
   int n = 0;
-  _PN rax, *rbp, *sp;
+  _PN rax, rcx, rdx, *rbp, *sp;
 
 #if POTION_X86 == POTION_JIT_TARGET
 #if PN_SIZE_T != 8
   __asm__ ("mov %%eax, %0;"
+           :"=r"(rax));
+  __asm__ ("mov %%ecx, %0;"
+           :"=r"(rcx));
+  __asm__ ("mov %%edx, %0;"
+           :"=r"(rdx));
+  __asm__ ("mov %%ebp, %0;"
+           :"=r"(sp));
 #else
   __asm__ ("mov %%rax, %0;"
-#endif
-           :"=r"(rax)
-          );
-
-  printf("RAX = %lx (%u)\n", rax, potion_type(rax));
-#if PN_SIZE_T != 8
-  __asm__ ("mov %%ebp, %0;"
-#else
+           :"=r"(rax));
+  __asm__ ("mov %%rcx, %0;"
+           :"=r"(rcx));
+  __asm__ ("mov %%rdx, %0;"
+           :"=r"(rdx));
   __asm__ ("mov %%rbp, %0;"
+           :"=r"(sp));
 #endif
-           :"=r"(sp)
-          );
+  printf("RAX = %lx (%x)\n", rax, potion_type(rax));
+  printf("RCX = %lx (%x)\n", rcx, potion_type(rcx));
+  printf("RDX = %lx (%x)\n", rdx, potion_type(rdx));
 #endif
 
   P = (Potion *)sp[2];
@@ -149,7 +156,7 @@ again:
   if (rbp > sp - 2 && sp[2] == (PN)P) {
     printf("RBP = %lx (%lx), SP = %lx\n", (PN)rbp, *rbp, (PN)sp);
     while (sp < rbp) {
-      printf("STACK[%d] = %lx\n", n++, *sp);
+      printf("STACK[%d] = %lx (%x)\n", n++, *sp, PN_TYPE(*sp));
       sp++;
     }
     goto again;
@@ -415,41 +422,22 @@ void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   ASM(0xFF); ASM(0xD0); 			 // callq %rax
   X86_MOV_RBP(0x89, op.a); 			 // mov %rax local
 }
-// the fast version does not work yet, unchecked direct access to the PNTuple offset
-//#define JIT_UNCHECKED_TUPLE
+
+// the fast version for unsafe unchecked direct access to the PNTuple offset
+// the slow version is done by the normal tuple at(index) method call
 void potion_x86_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  if (op.b & ASM_TPL_IMM) { // imm index. XXX Note that op.a is not initialized here
-#ifdef JIT_UNCHECKED_TUPLE
-    X86_MOV_RBP(0x8B, op.a); 		    	// mov -A(%rbp) %eax
-    X86_PRE();ASM(0xc7);ASM(0xc2);ASMI(op.b+2-ASM_TPL_IMM);// mov B+$2, %rdx #PNTuple+2
-    X86_PRE();ASM(0x8b);ASM(0x04);ASM(0xd0);	// mov (%rax,%rdx,8),%rax
-    X86_MOV_RBP(0x89, op.a); 		    	// mov %rax local
-    return;
-#else
-    X86_ARGO(start - 3, 0);			// mov P, %rdi
-    //X86_ARGO(0, 1);				// cl ignored
-    X86_ARGO(op.a, 2);				// mov -A(%rbp), %rdx
-    X86_ARGO_IMM(PN_NUM(op.b - ASM_TPL_IMM), 3);// mov -B(%rbp), %rcx
-#endif
-  } else {
-#ifdef JIT_UNCHECKED_TUPLE
-    X86_MOV_RBP(0x8B, op.a); 		    	// mov -A(%rbp) %eax
-    X86_PRE();ASM(0x8b);ASM_MOV_EBP(0x55,op.b); // mov -B(%rbp) %rdx
+  //TODO fwd op.a // movq -A(%rbp), %rax; movq %rax, %rdi; call potion_fwd;
+  X86_MOV_RBP(0x8B, op.a); 		    	// mov -A(%rbp) %eax
+  if (op.b & ASM_TPL_IMM) { // not immediate index. R(B)
+    X86_PRE();ASM(0x8b);ASM_MOV_EBP(0x55,op.b); // mov -B(%rbp) %rdx !!!
     X86_PRE();ASM(0x83);ASM(0xc2);ASM(0x02);	// add $2, %rdx
-    X86_PRE();ASM(0x8b);ASM(0x04);ASM(0xd0);	// mov (%rax,%rdx,8), %rax
-    X86_MOV_RBP(0x89, op.a); 		    	// mov %rax local
-    return;
+  } else { // immediate index B
+    X86_PRE();ASM(0xc7);ASM(0xc2);ASMI(op.b+2-ASM_TPL_IMM);// mov B+$2, %rdx #PNTuple+2
   }
-#else
-    X86_ARGO(start - 3, 0);
-    X86_ARGO(op.a, 2);
-    X86_ARGO(op.b, 3);
-  }
-  X86_PRE(); ASM(0xB8); ASMN(potion_tuple_at);  // mov &potion_tuple_at %rax
-  ASM(0xFF); ASM(0xD0); 			// callq %rax
-  X86_MOV_RBP(0x89, op.a); 			// mov %rax local
-#endif
+  X86_PRE();ASM(0x8b);ASM(0x04);ASM(0xd0);	// mov (%rax,%rdx,8),%rax
+  X86_MOV_RBP(0x89, op.a); 		    	// mov %rax local
+  return;
 }
 
 void potion_x86_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {

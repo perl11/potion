@@ -359,15 +359,16 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           PN_ASM2(OP_GETLOCAL, reg, num);
         }
         a = PN_S_(PN_TUPLE_AT(a->a[1]->a[0], 0), 0);
-        if (a->vt == PN_TSTRING) { // a message, variable
+        if (a->vt == PN_TSTRING) { // a[k] a variable
           PN key = (PN)a;
           num = PN_PUT(f->locals, key);
           DBG_c("locals %s => %d\n", PN_STR_PTR(key), (int)num);
           PN_ASM2(OP_GETLOCAL, reg+1, num);
           num = reg+1;
           DBG_c("gettuple %d %d %s[%s]\n", reg, num, PN_STR_PTR(tpl), PN_STR_PTR(key));
-          PN_ASM2(OP_GETTUPLE, reg, num);
-        } else { // constant, could to be optimized in jit
+          PN_ASM2(OP_GETTUPLE, reg, num | ASM_TPL_IMM);
+          PN_REG(f, reg + 1);
+        } else { // a[0] constant, could to be optimized in jit
           assert(a->vt == PN_TSOURCE && a->part == AST_VALUE);
           PN key = PN_S(a, 0);
           if (PN_IS_NUM(key)) {
@@ -376,8 +377,9 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
               PN_ASM2(OP_LOADK, reg+1, num);
               DBG_c("values %ld => %d\n", PN_INT(key), (int)num);
               num = reg + 1;
+              PN_REG(f, reg + 1);
             } else {
-              num = PN_INT(key) | ASM_TPL_IMM;
+              num = PN_INT(key);
             }
             DBG_c("gettuple %d %d %s[%ld]\n", reg, num, PN_STR_PTR(tpl), PN_INT(key));
             PN_ASM2(OP_GETTUPLE, reg, num);
@@ -388,6 +390,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
             num = reg+1;
             DBG_c("gettable %d %d %s[\"%s\"]\n", reg, num, PN_STR_PTR(tpl), PN_STR_PTR(key));
             PN_ASM2(OP_GETTABLE, reg, num);
+            PN_REG(f, reg + 1);
           }
         }
       } else {

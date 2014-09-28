@@ -9,60 +9,60 @@ bytecode is nearly identical.  See
 http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
 or http://www.lua.org/doc/jucs05.pdf
 
-  - MOVE (pos)		 	copy value between registers
-  - LOADK (pos, need)  	 	load a constant into a register
-  - LOADPN (pos)	 	load a PN value into a register
+  - MOVE (pos)		 	copy value between registers R(A)=R(B)
+  - LOADK (pos, need)  	 	load a constant into a register R(A)=value[B]
+  - LOADPN (pos)	 	load a PN value into a register R(A)=B
   - SELF (pos, need)   	 	prepare an object method for calling
    			 	R(A+1) := R(B); R(A) := R(B)[RK(C)]
-  - GETLOCAL (pos, regs)	read a local into a register
-  - SETLOCAL (pos, regs)	write a register value into a local
-  - GETUPVAL (pos, lregs)	read an upvalue (upper scope)
-  - SETUPVAL (pos, lregs)	write to an upvalue
-  - GLOBAL (pos, need)	 	returns a global (for get or set)
-  - NEWTUPLE (pos, need)	create tuple
-  - GETTUPLE (pos, need)       	get tuple key
-  - SETTUPLE (pos, need)	write register into tuple key
-  - GETTABLE (pos, need)       	get table entry
-  - SETTABLE (pos, need)	write register into a table entry
+  - GETLOCAL (pos, regs)	read a local into a register R(A)=local[B])
+  - SETLOCAL (pos, regs)	write a register value into a local local[A]=R(B)
+  - GETUPVAL (pos, lregs)	read an upvalue (upper scope) R(A)=upval[B]
+  - SETUPVAL (pos, lregs)	write to an upvalue upval[A]=R(B)
+  - GLOBAL (pos, need)	 	returns a global (for get or set) name R(A)= value R(B)
+  - NEWTUPLE (pos, need)	create tuple  R(A)=()
+  - GETTUPLE (pos, need)       	get tuple key R(A)=R(A)(B&1024?R(B):B)
+  - SETTUPLE (pos, need)	write register into tuple key R(A)=push(R(A), R(B)
+  - GETTABLE (pos, need)       	get table entry R(A)=R(A){B}
+  - SETTABLE (pos, need)	write register into a table entry R(A) = R(A){R(A+1)} = R(B)
   - NEWLICK (pos, need)	 	create lick. R(A) := {} (size = B,C)
-  - GETPATH (pos, need)	 	read obj field into register
-  - SETPATH (pos, need)	 	write into obj field
-  - ADD (pos, need)	 	a = b + c
-  - SUB (pos, need)	 	a = b - c
-  - MULT (pos, need)
+  - GETPATH (pos, need)	 	read obj field obj_get(R(A), R(B)) 
+  - SETPATH (pos, need)	 	write into obj field obj_set(R(A), R(A+1), R(B))
+  - ADD (pos, need)	 	R(A) = R(A) + R(B)
+  - SUB (pos, need)	 	R(A) = R(A) - R(B)
+  - MULT (pos, need)                -"-
   - DIV (pos, need)
   - REM (pos, need)
   - POW (pos, need)
-  - NEQ (pos)
-  - EQ (pos)		 	if ((RK(B) == RK(C) ~= A) then PC++
-  - LT (pos)		 	if ((RK(B) < RK(C) ~= A) then PC++
-  - LTE (pos)		 	if ((RK(B) <= RK(C) ~= A) then PC++
-  - GT (pos)
-  - GTE (pos)
-  - BITN (pos, need)
-  - BITL (pos, need)
-  - BITR (pos, need)
-  - DEF (pos, need)	 	define a method for an object
-  - BIND (pos, need)   	 	extend obj by set a binding
+  - NOT (pos)		 	R(A) = !R(A)
+  - CMP (pos)                   R(A) = int( R(B) - R(A) )
+  - NEQ (pos)                   R(A) = R(A) != R(B)
+  - EQ (pos)		 	R(A) = R(A) == R(B)
+  - LT (pos)		 	R(A) = R(A) < R(B)
+  - LTE (pos)		 	R(A) = R(A) <= R(B)
+  - GT (pos)                    R(A) = R(A) > R(B)
+  - GTE (pos)                   R(A) = R(A) >= R(B)
+  - BITN (pos, need)            R(A) = ~R(B)
+  - BITL (pos, need)            R(A) = R(A) << R(B)
+  - BITR (pos, need)            R(A) = R(A) >> R(B)
+  - DEF (pos, need)	 	def_method(R(A), R(A+1), R(B)) define a method for an object 
+  - BIND (pos, need)   	 	bind(R(A), R(B)) method lookup for receiver A and message B
    				http://piumarta.com/software/cola/colas-whitepaper.pdf
-  - MSG (pos, need)	 	call a method of an object
-  - JMP (pos, jmps, offs, &jmpc) PC += sBx
-  - TEST (pos)		 	if not (R(A) <=> C) then PC++
-  - NOT (pos)		 	a = not b
-  - CMP (pos)
-  - TESTJMP (pos, jmps, offs, &jmpc)
-  - NOTJMP (pos, jmps, offs, &jmpc)
+  - MSG (pos, need)	 	message(R(A), R(B))  call a method of an object
+  - JMP (pos, jmps, offs, &jmpc) pos += R(A)
+  - TEST (pos)		 	R(A) = bool R(A)
+  - TESTJMP (pos, jmps, offs, &jmpc) if R(A) pos += R(B)
+  - NOTJMP (pos, jmps, offs, &jmpc)  if !R(A) pos += R(B)
   - NAMED (pos, need)	 	assign named args before a CALL
   - CALL (pos, need)	 	call a function. R(A),...:= R(A)(R(A+1),...,R(A+B-1)
-  - CALLSET (pos, need)		? set return register to write to
+  - CALLSET (pos, need)		get default writer for R(B) R(A)=get_callset(R(B))
   - TAILCALL(pos, need)	 	? jumps back to the function entry (TODO)
   - RETURN (pos)	 	return R(A), ... ,R(A+B-2)
   - PROTO (&pos, lregs, need, regs) define a method prototype
-  - CLASS (pos, need)    	find class for register value
+  - CLASS (pos, need)    	R(A) = vm_class(R(B), R(A)) creates class from closure B and parent A
   - DEBUG (pos)	                set ast to lineno
 
 (c) 2008 why the lucky stiff, the freelance professor
-(c) 2013 by perl11 org
+(c) 2013-2014 by perl11 org
 */
 #include <stdio.h>
 #include <stdarg.h>
@@ -192,7 +192,9 @@ PN potion_vm_proto(Potion *P, PN cl, PN self, ...) {
     PN_CLOSURE(cl)->extra - 1, &PN_CLOSURE(cl)->data[1]);
 }
 
-/** implements the class op */
+/** implements the class op
+    creates a class (or type) from a closure and parent class with obj ivars
+ */
 PN potion_vm_class(Potion *P, PN cl, PN self) {
   if (PN_TYPE(cl) == PN_TCLOSURE) {
     vPN(Proto) proto = PN_PROTO(PN_CLOSURE(cl)->data[0]);
@@ -302,7 +304,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(SETUPVAL, (P, f, &asmb, pos, lregs))// write to an upvalue
       CASE_OP(GLOBAL, (P, f, &asmb, pos, need))	 // returns a global (for get or set)
       CASE_OP(NEWTUPLE, (P, f, &asmb, pos, need))// create tuple
-      CASE_OP(GETTUPLE, (P, f, &asmb, pos, need))// get tuple key
+      CASE_OP(GETTUPLE, (P, f, &asmb, pos, need))// get tuple key (fast and unsafe)
       CASE_OP(SETTUPLE, (P, f, &asmb, pos, need))// write register into tuple key
       CASE_OP(GETTABLE, (P, f, &asmb, pos, need))// get table key
       CASE_OP(SETTABLE, (P, f, &asmb, pos, need))// write register into a table entry
@@ -650,9 +652,10 @@ reentry:
 	   reg[op.a] = reg[op.b])
       CASE(NEWTUPLE,
 	   reg[op.a] = PN_TUP0())
-      CASE(GETTUPLE,
-	   reg[op.a] = potion_tuple_at(P, PN_NIL, reg[op.a],
-                         op.b & ASM_TPL_IMM ? PN_NUM(op.b - ASM_TPL_IMM) : reg[op.b]))
+      CASE(GETTUPLE, /* fast unsafe version, not bound checked */
+	   DBG_CHECK_TUPLE(reg[op.a]);
+           long i = op.b & ASM_TPL_IMM ? PN_INT(reg[op.b - ASM_TPL_IMM]) : op.b;
+	   reg[op.a] =  PN_TUPLE_AT(reg[op.a], i));
       CASE(SETTUPLE,
 	   reg[op.a] = PN_PUSH(reg[op.a], reg[op.b]))
       CASE(GETTABLE,
