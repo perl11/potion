@@ -142,9 +142,9 @@ void potion_x86_debug() {
   __asm__ ("mov %%rbp, %0;"
            :"=r"(sp));
 #endif
-  printf("RAX = %lx (%x)\n", rax, potion_type(rax));
-  printf("RCX = %lx (%x)\n", rcx, potion_type(rcx));
-  printf("RDX = %lx (%x)\n", rdx, potion_type(rdx));
+  printf("RAX = 0x%lx (0x%x)\n", rax, potion_type(rax));
+  printf("RCX = 0x%lx (0x%x)\n", rcx, potion_type(rcx));
+  printf("RDX = 0x%lx (0x%x)\n", rdx, potion_type(rdx));
 #endif
 
   P = (Potion *)sp[2];
@@ -154,9 +154,9 @@ again:
   n = 0;
   rbp = (unsigned long *)*sp;
   if (rbp > sp - 2 && sp[2] == (PN)P) {
-    printf("RBP = %lx (%lx), SP = %lx\n", (PN)rbp, *rbp, (PN)sp);
+    printf("RBP = 0x%lx (0x%lx), SP = 0x%lx\n", (PN)rbp, *rbp, (PN)sp);
     while (sp < rbp) {
-      printf("STACK[%d] = %lx (%x)\n", n++, *sp, PN_TYPE(*sp));
+      printf("STACK[%d] = 0x%lx (0x%x)\n", n++, *sp, PN_TYPE(*sp));
       sp++;
     }
     goto again;
@@ -424,17 +424,18 @@ void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 }
 
 // the fast version for unsafe unchecked direct access to the PNTuple offset
-// the slow version is done by the normal tuple at(index) method call
+// with immediate constant directly, and the indirect version uses R(B-1024)
 void potion_x86_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   //TODO fwd op.a // movq -A(%rbp), %rax; movq %rax, %rdi; call potion_fwd;
   X86_MOV_RBP(0x8B, op.a); 		    	// mov -A(%rbp) %eax
-  if (op.b & ASM_TPL_IMM) { // not immediate index. R(B)
-    X86_PRE();ASM(0x8b);ASM_MOV_EBP(0x55,op.b); // mov -B(%rbp) %rdx !!!
+  if (op.b & ASM_TPL_IMM) { // not immediate index. R(B-1024)
+    //X86_DEBUG();
+    X86_PRE();ASM(0x8b);ASM_MOV_EBP(0x55,(op.b-ASM_TPL_IMM)); // mov -B-1024(%rbp) %rdx
     X86_PRE();ASM(0x83);ASM(0xc2);ASM(0x02);	// add $2, %rdx
   } else { // immediate index B
-    X86_PRE();ASM(0xc7);ASM(0xc2);ASMI(op.b+2-ASM_TPL_IMM);// mov B+$2, %rdx #PNTuple+2
-  }
+    X86_PRE();ASM(0xc7);ASM(0xc2);ASMI(op.b+2); // mov B+$2, %rdx #PNTuple+2
+  } // TODO 32 bit size
   X86_PRE();ASM(0x8b);ASM(0x04);ASM(0xd0);	// mov (%rax,%rdx,8),%rax
   X86_MOV_RBP(0x89, op.a); 		    	// mov %rax local
   return;
