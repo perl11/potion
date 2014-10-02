@@ -50,8 +50,9 @@ typedef unsigned char u8;
 
 #define PN_ATOI(X,N,B) ({ \
   char *Ap = X; \
-  long Ai = 0; \
+  long Ai = 0; int Am = 1; \
   size_t Al = N; \
+  if (*Ap == '-') { Am = -1; Ap++; Al--; } \
   while (Al--) { \
     if ((*Ap >= '0') && (*Ap <= '9')) \
       Ai = (Ai * B) + (*Ap - '0'); \
@@ -62,7 +63,7 @@ typedef unsigned char u8;
     else break; \
     Ap++; \
   } \
-  Ai; \
+  Ai * Am; \
 })
 
 /// .pnb binary dump header

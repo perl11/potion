@@ -347,20 +347,20 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
     break;
 
     case AST_VALUE: {
-      vPN(Source)  a = PN_S_(t,0);
+      vPN(Source) a = PN_S_(t,0);
       PN_OP op; op.a = PN_S(t,0); // but 12bit only
       if (!PN_IS_PTR(a) && (PN)a == (PN)op.a) {
         PN_ASM2(OP_LOADPN, reg, PN_S(t,0));
       } else if (a != PN_NIL && PN_IS_PTR(a)
-                 && a->part == AST_LICK && a->a[0]->part == AST_MSG) {
-        PN tpl = PN_TUPLE_AT(a->a[0], 0);
+                 && PN_PART(a) == AST_LICK && PN_PART(a->a[0]) == AST_MSG) {
+        struct PNSource * volatile msg = a->a[0];
+        PN tpl = PN_S(msg, 0);
         PN_SIZE num = PN_PUT(f->locals, tpl);
+        PN key = PN_S(PN_TUPLE_AT(a->a[1]->a[0], 0), 0);
         if (reg != num) {
           PN_ASM2(OP_GETLOCAL, reg, num);
         }
-        a = PN_S_(PN_TUPLE_AT(a->a[1]->a[0], 0), 0);
-        if (a->vt == PN_TSTRING) { // a[k] a variable
-          PN key = (PN)a;
+        if (PN_VTYPE(key) == PN_TSTRING) { // a[k] a variable
           num = PN_PUT(f->locals, key);
           DBG_c("locals %s => %d\n", PN_STR_PTR(key), (int)num);
           PN_ASM2(OP_GETLOCAL, reg+1, num);
@@ -369,26 +369,26 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           PN_ASM2(OP_GETTUPLE, reg, num | ASM_TPL_IMM);
           PN_REG(f, reg + 1);
         } else { // a[0] constant, could to be optimized in jit
-          assert(a->vt == PN_TSOURCE && a->part == AST_VALUE);
-          PN key = PN_S(a, 0);
-          if (PN_IS_NUM(key)) {
-            if (PN_INT(key) >= ASM_TPL_IMM || PN_INT(key) < 0) {
-              num = PN_PUT(f->values, num);
+          assert(PN_VTYPE(key) == PN_TSOURCE && PN_PART(key) == AST_VALUE);
+          PN k = PN_S(key, 0);
+          if (PN_IS_NUM(k)) {
+            if (PN_INT(k) >= ASM_TPL_IMM || PN_INT(k) < 0) {
+              num = PN_PUT(f->values, k);
               PN_ASM2(OP_LOADK, reg+1, num);
-              DBG_c("values %ld => %d\n", PN_INT(key), (int)num);
+              DBG_c("values %ld => %d\n", PN_INT(k), (int)num);
               num = reg + 1;
               PN_REG(f, reg + 1);
             } else {
-              num = PN_INT(key);
+              num = PN_INT(k);
             }
-            DBG_c("gettuple %d %d %s[%ld]\n", reg, num, PN_STR_PTR(tpl), PN_INT(key));
+            DBG_c("gettuple %d %d %s[%ld]\n", reg, num, PN_STR_PTR(tpl), PN_INT(k));
             PN_ASM2(OP_GETTUPLE, reg, num);
           } else {
-            num = PN_PUT(f->values, key); // op.b has 12 bits
+            num = PN_PUT(f->values, k); // op.b has 12 bits
             PN_ASM2(OP_LOADK, reg+1, num);
-            DBG_c("values \"%s\" => %d\n", PN_STR_PTR(key), (int)num);
+            DBG_c("values \"%s\" => %d\n", PN_STR_PTR(k), (int)num);
             num = reg+1;
-            DBG_c("gettable %d %d %s[\"%s\"]\n", reg, num, PN_STR_PTR(tpl), PN_STR_PTR(key));
+            DBG_c("gettable %d %d %s[\"%s\"]\n", reg, num, PN_STR_PTR(tpl), PN_STR_PTR(k));
             PN_ASM2(OP_GETTABLE, reg, num);
             PN_REG(f, reg + 1);
           }

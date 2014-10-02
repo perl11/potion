@@ -261,7 +261,7 @@ true = "true" !utfw
 false = "false" !utfw
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
-dec = < ('0' | [1-9][0-9]*) { $$ = YY_TNUM; }
+dec = < ('0' | '-'? [1-9][0-9]*) { $$ = YY_TNUM; }
         ('.' [0-9]+ { $$ = YY_TDEC; })?
         ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
 
