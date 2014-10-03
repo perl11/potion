@@ -22,8 +22,9 @@ Try `make -j1 test` or gmake-4.0 then.
 ## ~ the latest potion ~
 
 To build the bleeding edge, you will need
-GNU make, binutils and clang or gcc.
+GNU make, binutils, perl, sed, git and gcc or better clang.
 clang produces better code than gcc, but is harder to debug.
+gcc-4.6.3 is broken, at least on ubuntu.
 
     $ git clone git://github.com/perl11/potion.git
     $ cd potion
@@ -33,11 +34,11 @@ clang produces better code than gcc, but is harder to debug.
 ## ~ external dependencies ~
 
     build-time: gnu make, perl, sed, gcc or clang, echo, cat, expr, git
-    perl is only needed because of BSD/darwin sed problems)
+    perl is only needed because of BSD/darwin sed problems
 
     run-time:
-    libuv is included, but external packagers
-    should choose to use existing packages. see dist.mak
+    libuv (later: pcre, libtomath) is included, but external
+    should choose to use existing packages. see `dist.mak`
 
     optional:
 
@@ -90,7 +91,7 @@ Potion's win32 binaries are built using MinGW.
 
 It's a bit hard to setup mingw and gmake on Windows.
 I usually run a shell under Cygwin and add MinGW
-to my $PATH.
+to my `$PATH`.
 
 Once that's all done,
 
@@ -104,10 +105,11 @@ On Ubuntu, if you have MinGW installed,
     $ touch core/syntax.c
     $ make && make dist
 
-This will first create a native greg and core/syntax.c,
-sets CROSS=1 and cross-compiles with the given CC.
-See tools/mk-release.sh.
-make test will not work, you need to copy a make dist tarball
+This will first create a native greg and `core/syntax.c`,
+sets `CROSS=1` and cross-compile with the given CC.
+See `tools/mk-release.sh`
+
+`make test` will not work, you need to copy a make dist tarball
 to the machine and test it there.
 
 win64 is not supported yet. It uses a slighlty different ABI,
@@ -123,7 +125,7 @@ You can either install gnu make (gmake)
 
 or try `./configure` which creates a special BSD `config.mk`
 
-or try to merge 'master' with the branch 'bsd'
+or try to merge `master` with the branch `bsd`
 
     $ git merge bsd
     ... resolve conflicts, or not
@@ -131,12 +133,13 @@ or try to merge 'master' with the branch 'bsd'
 ## ~ building with a strict C++ compiler ~
 
 potion does not support strict C++ compilers.
+If you have no modern C compiler:
 
-Either add a C dialect to CC in config.inc (i.e. -std=c89),
+Either add a C dialect to CC in config.inc (i.e. `-std=c89`),
 
     g++ --help=C; clang++ -x C -std=gnu89
 
-or try to merge with the branch 'p2-c++'.
+or try to merge with the branch `p2-c++`.
 
 ## ~ creating documentation ~
 
