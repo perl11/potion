@@ -142,7 +142,7 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	ICC = 1
         #DEFINES += -DCGOTO
 	DEBUGFLAGS += -falign-functions=16
-# 177: label "l414" was declared but never referenced in syntax-p5.c sets fail case
+# 177: label "l414" was declared but never referenced in syntax.c sets fail case
 # 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
 # 188: enumerated type mixed with another type (treating P->flags as int)
 	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 177,186,188

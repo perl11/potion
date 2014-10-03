@@ -683,7 +683,7 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Lick"),         PN_VTABLE(PN_TLICK));
   potion_init_class_reference(P, potion_str(P, "Error"),        PN_VTABLE(PN_TERROR));
   potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
-#if defined(P2)
+#ifdef P2
   potion_init_class_reference(P, potion_str(P, "Num"),          PN_VTABLE(PN_TDECIMAL));
 #endif
 
