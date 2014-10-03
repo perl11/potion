@@ -1,7 +1,8 @@
 /** \file/ opcodes.h
  the Potion VM instruction set (heavily based on Lua's)
 
- (c) 2008 why the lucky stiff, the freelance professor */
+ (c) 2008 why the lucky stiff, the freelance professor
+ (c) 2014 perl11.org */
 #ifndef POTION_OPCODES_H
 #define POTION_OPCODES_H
 
@@ -12,6 +13,7 @@
 #endif
 
 /// PN_OP - a compressed three-address op (as 32bit int bitfield)
+/// TODO: expand to 64bit, check jit then
 typedef struct {
   u8 code:8; ///< the op. See vm.c http://www.lua.org/doc/jucs05.pdf
   int a:12;  ///< the data (i.e the register)
@@ -34,6 +36,7 @@ enum PN_OPCODE {
   OP_LOADPN,
   OP_SELF,
   OP_NEWTUPLE,
+  OP_GETTUPLE,
   OP_SETTUPLE,
   OP_GETLOCAL,
   OP_SETLOCAL,
@@ -72,11 +75,11 @@ enum PN_OPCODE {
   OP_NAMED,
   OP_CALL,
   OP_CALLSET,
-  OP_TAILCALL,
+  OP_TAILCALL, /* TODO */
   OP_RETURN,
-  OP_PROTO,
+  OP_PROTO,  /* define a method */
   OP_CLASS,
-  OP_DBG
+  OP_DEBUG
 };
 
 #endif

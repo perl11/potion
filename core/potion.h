@@ -3,7 +3,7 @@
 
   (c) 2008 why the lucky stiff, the freelance professor */
 /**
-\mainpage potion + p2
+\mainpage potion
 
 \see doc/INTERNALS.md
 
@@ -34,15 +34,10 @@ and optionally args, statically typed via signature strings.
   - N Num
   - & Closure
   - S String
-
 */
-
 #ifndef POTION_H
 #define POTION_H
 
-#define POTION_MAJOR    0
-#define POTION_MINOR    2
-#define POTION_VERSION  "0.2"
 #define POTION_SIG      "p\07\10n"
 #define POTION_VMID     0x79
 
@@ -101,13 +96,12 @@ struct PNVtable;
 
 /* patch for issue #1 supplied by joeatwork */
 #ifndef __WORDSIZE
-#ifdef __LP64__
-#define __WORDSIZE 64
-#else /* ! __LP64__ */
-#define __WORDSIZE 32
+# if PN_SIZE_T == 8
+#  define __WORDSIZE 64
+# else
+#  define __WORDSIZE 32
+# endif
 #endif
-#endif
-/* end patch for issue #1 */
 
 #define PN_TNIL         0x250000    /// NIL is magic 0x250000 (type 0)
 #define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a Num (TDecimal)
@@ -130,7 +124,7 @@ struct PNVtable;
 #define PN_TSTRINGS     (18+PN_TNIL) //12
 #define PN_TERROR       (19+PN_TNIL) //13
 #define PN_TCONT        (20+PN_TNIL) //14
-#define PN_TDECIMAL     (21+PN_TNIL) //15 Num. for p2 class definitions only, unused within potion (yet)
+#define PN_TDECIMAL     (21+PN_TNIL) //15 Num, i.e. double. no arbitrary prec. num yet
 #define PN_TUSER        (22+PN_TNIL) //16
 
 #define vPN(t)          struct PN##t * volatile
@@ -191,14 +185,16 @@ struct PNVtable;
 #define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Bool")
 #define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Tuple")
 #define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Closure")
-//TODO: check parents and mixins via bind
+//exact only. TODO check derived types, parents and mixins via bind
 #define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, (PN)obj)
 #ifdef DEBUG
 #define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE(obj,type)
 #define DBG_CHECK_INT(obj) PN_CHECK_INT(obj)
+#define DBG_CHECK_TUPLE(obj) PN_CHECK_TUPLE(obj)
 #else
 #define DBG_CHECK_TYPE(obj,type)
 #define DBG_CHECK_INT(obj)
+#define DBG_CHECK_TUPLE(obj)
 #endif
 
 ///\class PNNumber
@@ -209,6 +205,7 @@ struct PNVtable;
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       ((long)((long)(x))>>1)
 #define PN_DBL(num)     (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDecimal *)num)->value)
+typedef _PN (*PN_F)(Potion *, PN, PN, ...);
 #define PN_PREC 16
 #define PN_RAND()       PN_NUM(potion_rand_int())
 #define PN_STR(x)       potion_str(P, x)
@@ -369,8 +366,6 @@ struct PNFile {
   mode_t mode;
 };
 
-typedef PN (*PN_F)(Potion *, PN, PN, ...);
-
 ///
 /// a closure is an anonymous function, without closed values, \see PNProto
 /// non-volatile.
@@ -423,7 +418,7 @@ enum PN_AST {
   AST_EXPR,
   AST_LIST, /* for TABLE (=,..) and TUPLE (,...) */
   AST_BLOCK,
-  AST_LICK,
+  AST_LICK, /* [...] */
   AST_PROTO,
   AST_DEBUG
 };
@@ -431,8 +426,9 @@ struct PNSource {
   PN_OBJECT_HEADER;  	///< PNType vt; PNUniq uniq
   enum PN_AST part;     ///< AST type, avoid -Wswitch (aligned access: 4+4+8+4+24)
   struct PNSource * volatile a[3];///< PNTuple of 1-3 kids, \see ast.c
+  // luxury for reflection only: debugging, error messages
   struct {
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
     PNType fileno:16;
     PNType lineno:16;
 #else
@@ -467,7 +463,7 @@ struct PNProto {
 };
 
 ///
-/// a tuple is an ordered list,
+/// a tuple is an array of PNs.
 /// volatile.
 ///
 struct PNTuple {
@@ -568,11 +564,11 @@ typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; unsigned char ptr[]
 ///
 /// the jit
 ///
-#define OP_MAX 64
+#define OP_MAX 50 // OP_DEBUG+1 was 64, statically allocated in Potion interpreter
 
 typedef void (*OP_F)(Potion *P, struct PNProto *, PNAsm * volatile *, ...);
 
-/// definition of the jit targets: x86 or ppc, arm later
+/// definition of the jit targets: x86, ppc, arm
 typedef struct {
   void (*setup)    (Potion *, struct PNProto * volatile, PNAsm * volatile *);
   void (*stack)    (Potion *, struct PNProto * volatile, PNAsm * volatile *, long);
@@ -605,7 +601,7 @@ typedef enum {
 #define EXEC_BITS 4 ///< 0-4
 
 typedef enum {
-  MODE_STD    = 1<<EXEC_BITS,   ///< 0x10 16 plain potion/p5
+  MODE_STD    = 1<<EXEC_BITS,   ///< 0x10 16 plain potion syntax
 #ifdef P2
   MODE_P2     = MODE_STD+1,     ///< 0x11 17 use p2 extensions
   MODE_P6     = MODE_STD+2,     ///< 0x12 18 syntax p6. other via use syntax ""
@@ -778,6 +774,7 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
   PN_while;
 extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 extern PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
+extern PN PN_extern;
 extern PN pn_filenames;
 
 /// zero values per type
@@ -917,8 +914,9 @@ void Potion_Init_buffile(Potion *);
 void Potion_Init_aio(Potion *);
 #endif
 
-void potion_dump_stack(Potion *);
 PN potion_any_is_nil(Potion *, PN, PN);
+
+void potion_dump_stack(Potion *);
 PN potion_num_string(Potion *, PN, PN);
 PN potion_gc_reserved(Potion *, PN, PN);
 PN potion_gc_actual(Potion *, PN, PN);

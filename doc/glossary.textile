@@ -34,4 +34,3 @@ And 4 native (and jitted) VM ops: @SELF@, @CLASS@, @BIND@ and @MSG@.
 !p2-mop.png(p2-mop)!
 
 - <a name="flex">flex</a> := the mixin type. A mixin is created with @potion_type_new()@ referencing a parent type, and are handled with @PN_FLEX@ macros.
-

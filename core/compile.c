@@ -4,10 +4,10 @@
  * implement PNSource (AST) and PNProto (closure) methods,
  * special signature handling (parsed extra) and compile, bytecode load and dump methods.
  * Some special control methods are handled here and not in the parser. We do not need 
- * lexed keywords.
- */
-// (c) 2008 why the lucky stiff, the freelance professor
-
+ * lexed keywords, and are free to extend everything dynamically.
+ *
+ * (c) 2008 why the lucky stiff, the freelance professor
+ * (c) 2014 perl11.org */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -17,6 +17,9 @@
 #include "ast.h"
 #include "opcodes.h"
 #include "asm.h"
+#ifdef WITH_EXTERN
+#include <dlfcn.h>
+#endif
 
 #define PN_ASM1(ins, _a)     f->asmb = (PN)potion_asm_op(P, (PNAsm *)f->asmb, (u8)ins, (int)_a, 0)
 #define PN_ASM2(ins, _a, _b) f->asmb = (PN)potion_asm_op(P, (PNAsm *)f->asmb, (u8)ins, (int)_a, (int)_b)
@@ -26,7 +29,7 @@ const struct {
   const u8 args;
 } potion_ops[] = {
   {"noop", 0}, {"move", 2}, {"loadk", 2}, {"loadpn", 2}, {"self", 1},
-  {"newtuple", 2}, {"settuple", 2}, {"getlocal", 2}, {"setlocal", 2},
+  {"newtuple", 2}, {"gettuple", 2}, {"settuple", 2}, {"getlocal", 2}, {"setlocal", 2},
   {"getupval", 2}, {"setupval", 2}, {"global", 2}, {"gettable", 2},
   {"settable", 2}, {"newlick", 2}, {"getpath", 2}, {"setpath", 2},
   {"add", 2}, {"sub", 2}, {"mult", 2}, {"div", 2}, {"mod", 2}, {"pow", 2},
@@ -248,7 +251,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
   numup; \
 })
 #define PN_ARG_TABLE(args, reg, inc) potion_arg_asmb(P, f, loop, args, &reg, inc)
-#define SRC_TUPLE_AT(src,i)  PN_SRC((PN_TUPLE_AT(PN_S(src,0), i)))
+#define SRC_TUPLE_AT(src,i)  PN_SRC(PN_TUPLE_AT(PN_S(src,0), i))
 #define PN_ASM_DEBUG(REG, T) REG = potion_source_debug(P, f, T, REG)
 
 /// insert DEBUG ops for every new line
@@ -256,7 +259,7 @@ u8 potion_source_debug(Potion *P, struct PNProto * volatile f, struct PNSource *
   static PNType lineno = 0;
   if ((P->flags & EXEC_DEBUG) && t && t->loc.lineno != lineno && t->loc.lineno > 0) {
     PN_SIZE num = PN_PUT(f->debugs, (PN)t);
-    PN_ASM2(OP_DBG, reg, num);
+    PN_ASM2(OP_DEBUG, reg, num);
     lineno = t->loc.lineno;
     DBG_c("debug %s :%d\n", PN_STR_PTR(potion_send(t, PN_name)), lineno);
   }
@@ -360,15 +363,63 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
     break;
 
     case AST_VALUE: {
-      PN_OP op; op.a = PN_S(t,0);
-      if (!PN_IS_PTR(PN_S(t,0)) && PN_S(t,0) == (PN)op.a) {
+      vPN(Source) a = PN_S_(t,0);
+      PN_OP op; op.a = PN_S(t,0); // but 12bit only
+      if (!PN_IS_PTR(a) && (PN)a == (PN)op.a) {
         PN_ASM2(OP_LOADPN, reg, PN_S(t,0));
+      } else if (a != PN_NIL && PN_IS_PTR(a)
+                 && PN_PART(a) == AST_LICK && PN_PART(a->a[0]) == AST_MSG) {
+        vPN(Source) msg = a->a[0];
+        PN tpl = PN_S(msg, 0);
+        // locals or upvals. locals alone broke nbody
+        PN_SIZE num = PN_UPVAL(tpl);
+        u8 opcode =  OP_GETUPVAL;
+        PN key = PN_S(PN_TUPLE_AT(a->a[1]->a[0], 0), 0);
+        if (num == PN_NONE) {
+          num = PN_PUT(f->locals, tpl);
+          DBG_c("locals %s => %d\n", AS_STR(tpl), (int)num);
+          opcode = OP_GETLOCAL;
+        }
+        PN_ASM2(opcode, reg, num);
+        if (PN_VTYPE(key) == PN_TSTRING) { // a[k] a variable
+          num = PN_PUT(f->locals, key);
+          DBG_c("locals %s => %d\n", PN_STR_PTR(key), (int)num);
+          PN_ASM2(OP_GETLOCAL, reg+1, num);
+          num = reg+1;
+          DBG_c("gettuple %d %d %s[%s]\n", reg, num, PN_STR_PTR(tpl), PN_STR_PTR(key));
+          PN_ASM2(OP_GETTUPLE, reg, num | ASM_TPL_IMM);
+          PN_REG(f, reg + 1);
+        } else { // a[0] constant, could to be optimized in jit
+          assert(PN_VTYPE(key) == PN_TSOURCE && PN_PART(key) == AST_VALUE);
+          PN k = PN_S(key, 0);
+          if (PN_IS_NUM(k)) {
+            if (PN_INT(k) >= ASM_TPL_IMM || PN_INT(k) < 0) {
+              num = PN_PUT(f->values, k);
+              PN_ASM2(OP_LOADK, reg+1, num);
+              DBG_c("values %ld => %d\n", PN_INT(k), (int)num);
+              num = reg + 1;
+              PN_REG(f, reg + 1);
+            } else {
+              num = PN_INT(k);
+            }
+            DBG_c("gettuple %d %d %s[%ld]\n", reg, num, PN_STR_PTR(tpl), PN_INT(k));
+            PN_ASM2(OP_GETTUPLE, reg, num);
+          } else {
+            num = PN_PUT(f->values, k); // op.b has 12 bits
+            PN_ASM2(OP_LOADK, reg+1, num);
+            DBG_c("values \"%s\" => %d\n", PN_STR_PTR(k), (int)num);
+            num = reg+1;
+            DBG_c("gettable %d %d %s[\"%s\"]\n", reg, num, PN_STR_PTR(tpl), PN_STR_PTR(k));
+            PN_ASM2(OP_GETTABLE, reg, num);
+            PN_REG(f, reg + 1);
+          }
+        }
       } else {
-        PN_SIZE num = PN_PUT(f->values, PN_S(t,0));
-	DBG_c("values %d %s => %d\n", reg, AS_STR(t->a[0]), (int)num);
+        PN_SIZE num = PN_PUT(f->values, (PN)a);
+	DBG_c("values %d %s => %d\n", reg, AS_STR(a), (int)num);
         PN_ASM2(OP_LOADK, reg, num);
       }
-      if (PN_S(t,1) != PN_NIL) {
+      if (PN_S(t,1) != PN_NIL && a->part != AST_LICK) {
         u8 breg = reg;
         PN_ASM1(OP_SELF, ++breg);
         PN_ARG_TABLE(PN_S(t,1), breg, 1);
@@ -423,7 +474,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 #if 0 // store func names
 	    if (lhs->part == AST_MSG) {
 	      PN rhs = PN_TUPLE_AT(f->locals, num);
-	      fname = PN_S(lhs,0);
+	      PN fname = PN_S(lhs,0);
 	      DBG_c("getlocal %s %ld = %s\n",
 	            PN_STR_PTR(fname), PN_INT(num), AS_STR(rhs));
             }
@@ -686,6 +737,58 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           PN_BLOCK(breg, (PN)blk, PN_S(t,1));
         }
         PN_ASM2(OP_CLASS, reg, breg);
+#ifdef WITH_EXTERN
+      } else if (t->part == AST_MSG && PN_S(t,0) == PN_extern) { // ffi
+        //u8 breg = reg;
+	int i, arity;
+        PN msg = PN_S(t,1);
+	char *name = PN_STR_PTR(PN_S(PN_TUPLE_AT(msg,0),0));
+	//defer dlsym to run-time to see load, or require load at BEGIN time?
+	//PN_ASM2(OP_LOADPN, breg++, name);
+	PN_F sym = (PN_F)dlsym(RTLD_DEFAULT, name);
+	DBG_c("extern %s => dlsym %p\n", name, sym);
+	if (!sym) {
+	  fprintf(stderr, "* extern %s not found. You may need to load a library first\n",
+	          name);
+          PN_ASM2(OP_LOADPN, reg, PN_NIL);
+        } else {
+          // TODO: create a ffi wrapper to translate the args and return value
+          struct PNProto* cl = PN_CALLOC_N(PN_TPROTO, struct PNProto, 0);
+          cl->source = PN_NIL;
+          cl->stack = PN_NUM(1);
+          cl->protos = cl->paths = cl->locals = cl->upvals = cl->values = PN_TUP0();
+          cl->tree = (PN)t;
+          cl->asmb = (PN)potion_asm_new(P);
+          cl->name = PN_S(PN_TUPLE_AT(msg,0),0);
+          cl->jit = (PN_F)sym;
+	  PN sig = PN_TUPLE_LEN(msg) ? PN_TUPLE_AT(msg, 1) : PN_TUP0();
+	  cl->sig = sig;
+	  arity = cl->arity = potion_sig_arity(P, sig);
+          for (i=0; i < arity; i++) {
+	    if (PN_TUPLE_LEN(msg) > 1) {
+	      // TODO set argtype translators
+              PN arg = PN_TUPLE_AT(sig, i);
+              if (arg == PN_STR("N") || arg == PN_STR("int") || arg == PN_STR("long")) {
+                DBG_c("extern %s %d-th arg => PN_INT(N)\n", name, i);
+                //insert PN_INT >>1 at runtime
+                //PN_ASM2(OP_LOADPN, breg++, arg);
+              } else if (arg == PN_STR("S") || arg == PN_STR("char*")) {
+                DBG_c("extern %s %d-th arg => PN_STR_PTR(S)\n", name, i);
+                // insert call to potion_str_ptr at runtime
+                //PN_ASM2(OP_LOADPN, breg++, arg);
+              } else {
+                fprintf(stderr, "* unknown extern %s argument type qualifier\n",
+                        PN_STR_PTR(arg));
+              }
+	    }
+	    // maybe add code to check and fill in defaults?
+	  }
+          // TODO insert code to transform return values
+	  cl->asmb = (PN)potion_asm_op(P, (PNAsm *)cl->asmb, OP_RETURN, reg, 0);
+          PN_ASM2(OP_PROTO, reg, PN_PUT(f->protos, (PN)cl));
+          //PN_ASM2(OP_EXTERN, reg, breg);
+        }
+#endif
       } else if (t->part == AST_MSG && (PN_S(t,0) == PN_while || PN_S(t,0) == PN_loop)) {
         int jmp1 = 0, jmp2 = PN_OP_LEN(f->asmb); breg++;
         struct PNLoop l; l.bjmpc = 0; l.cjmpc = 0;
@@ -695,7 +798,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           jmp1 = PN_OP_LEN(f->asmb);
           PN_ASM2(OP_NOTJMP, breg, 0);
         } else if (PN_S(t,1) || !t->a[2]) {
-	  //warn or skip to allow a method named loop?
+	  //warn or skip to allow a method named loop? for aio we want loop methods
 	  //fprintf(stderr, "* loop takes no args, just a block");
 	  goto loopfunc;
 	}
@@ -758,12 +861,12 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           if (PN_S(t,2) != PN_NIL && (PN_PART(PN_S(t,2)) == AST_MSG)) {
             vPN(Source) t2 = PN_S_(t,2); //typed message (MSG LIST|NIL MSG)
             DBG_c("typed %s %s\n", AS_STR(t->a[0]), AS_STR(t2));
-            //TODO type must already exist. check native or user type
+            //TODO type should already exist at compile-time. check native or user type
             num = PN_PUT(f->values, PN_S(t2,0));
             PN_ASM2(OP_LOADK, reg, num);
             PN_ASM2(OP_BIND, reg, breg);
           } else {
-            PN_ASM2(PN_S(t,1) != PN_NIL || PN_S(t,2) != PN_NIL ? OP_MSG : OP_BIND, reg, breg);
+            PN_ASM2(((PN_S(t,1) != PN_NIL || PN_S(t,2) != PN_NIL) ? OP_MSG : OP_BIND), reg, breg);
           }
           if (t->part == AST_QUERY && PN_S(t,1) != PN_NIL) {
             jmp = PN_OP_LEN(f->asmb);
@@ -1073,6 +1176,8 @@ PN potion_proto_clone(Potion *P, PN cl, PN self) {
   PNAsm * volatile asmb;
   PN len;
 
+  //TODO extern protos
+  n->name = f->name;
   n->source = f->source;
   n->stack = f->stack;
   n->protos = potion_send(PN_clone, f->protos);
@@ -1085,7 +1190,6 @@ PN potion_proto_clone(Potion *P, PN cl, PN self) {
   n->localsize = f->localsize;
   n->upvalsize = f->upvalsize;
   n->pathsize = f->pathsize;
-  n->name = f->name;
   n->sig = PN_IS_TUPLE(f->sig) ? potion_send(PN_clone, f->sig) : f->sig;
 
   len = ((PNAsm *)f->asmb)->len;
@@ -1133,6 +1237,8 @@ PN potion_proto_load(Potion *P, PN up, u8 pn, u8 **ptr) {
   PN len = 0;
   PNAsm * volatile asmb = NULL;
   vPN(Proto) f = PN_ALLOC(PN_TPROTO, struct PNProto);
+  // TODO extern protos
+  f->name = READ_CONST(pn, *ptr);
   f->source = READ_CONST(pn, *ptr);
   if (f->source == PN_NIL) f->source = up;
   f->sig = READ_VALUES(pn, *ptr);
@@ -1213,6 +1319,8 @@ long potion_proto_dumpbc(Potion *P, PN proto, PN out, long pos) {
   vPN(Proto) f = (struct PNProto *)proto;
   char *start = PN_STR_PTR(out) + pos;
   u8 *ptr = (u8 *)start;
+  //TODO extern (by name)
+  WRITE_CONST(f->name, ptr);
   WRITE_CONST(f->source, ptr);
   WRITE_VALUES(f->sig, ptr);
   WRITE_CONST(f->stack, ptr);

@@ -3,8 +3,7 @@ the x86 and x86_64 jit.
 \see core/vm.c and doc/INTERNALS.md
 
 (c) 2008 why the lucky stiff, the freelance professor
-(c) 2013 perl11 org
-*/
+(c) 2013-2014 perl11 org */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -19,7 +18,7 @@ the x86 and x86_64 jit.
 #define RBPN(x)  (- (int)((x + 1) * sizeof(PN)))
 #define RBPI(x)  (0x100 - ((x + 1) * sizeof(int)))
 
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
 #define X86_PRE_T 0
 #define X86_PRE()
 #define X86_POST()
@@ -112,6 +111,7 @@ the x86 and x86_64 jit.
 #define TAG_LABEL(tag)   (*asmp)->ptr[tag] = ((*asmp)->len - tag - 1)
 
 
+// ASM(0xcc); int3 trap: __asm__("int3");
 #define X86_DEBUG() \
   X86_PRE(); ASM(0xB8); ASMN(potion_x86_debug); \
   ASM(0xFF); ASM(0xD0)
@@ -120,25 +120,31 @@ the x86 and x86_64 jit.
 void potion_x86_debug() {
   Potion *P;
   int n = 0;
-  _PN rax, *rbp, *sp;
+  _PN rax, rcx, rdx, *rbp, *sp;
 
 #if POTION_X86 == POTION_JIT_TARGET
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   __asm__ ("mov %%eax, %0;"
+           :"=r"(rax));
+  __asm__ ("mov %%ecx, %0;"
+           :"=r"(rcx));
+  __asm__ ("mov %%edx, %0;"
+           :"=r"(rdx));
+  __asm__ ("mov %%ebp, %0;"
+           :"=r"(sp));
 #else
   __asm__ ("mov %%rax, %0;"
-#endif
-           :"=r"(rax)
-          );
-
-  printf("RAX = %lx (%u)\n", rax, potion_type(rax));
-#if __WORDSIZE != 64
-  __asm__ ("mov %%ebp, %0;"
-#else
+           :"=r"(rax));
+  __asm__ ("mov %%rcx, %0;"
+           :"=r"(rcx));
+  __asm__ ("mov %%rdx, %0;"
+           :"=r"(rdx));
   __asm__ ("mov %%rbp, %0;"
+           :"=r"(sp));
 #endif
-           :"=r"(sp)
-          );
+  printf("RAX = 0x%lx (0x%x)\n", rax, potion_type(rax));
+  printf("RCX = 0x%lx (0x%x)\n", rcx, potion_type(rcx));
+  printf("RDX = 0x%lx (0x%x)\n", rdx, potion_type(rdx));
 #endif
 
   P = (Potion *)sp[2];
@@ -148,9 +154,9 @@ again:
   n = 0;
   rbp = (unsigned long *)*sp;
   if (rbp > sp - 2 && sp[2] == (PN)P) {
-    printf("RBP = %lx (%lx), SP = %lx\n", (PN)rbp, *rbp, (PN)sp);
+    printf("RBP = 0x%lx (0x%lx), SP = 0x%lx\n", (PN)rbp, *rbp, (PN)sp);
     while (sp < rbp) {
-      printf("STACK[%d] = %lx\n", n++, *sp);
+      printf("STACK[%d] = 0x%lx (0x%x)\n", n++, *sp, PN_TYPE(*sp));
       sp++;
     }
     goto again;
@@ -164,9 +170,9 @@ again:
   \param regn: value (usually indirect stack ptr, relative to ebp)
   \param argn: argument index (0-5 in regs on 64bit) */
 static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int regn, int argn) {
-#if PN_SIZE_T != 8
     // need to address -(x)%ebp: max regn=29/14
     // assert(((regn + 1) * sizeof(PN)) < 0x7f);
+#if PN_SIZE_T != 8
     // IA-32 cdecl ABI, non-microsoft only. TODO: win32 stdcall for the w32api ffi
     if (argn == 0) {
       // OPT: the first argument is always (Potion *)
@@ -417,12 +423,43 @@ void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_MOV_RBP(0x89, op.a); 			 // mov %rax local
 }
 
+// the fast version for unsafe unchecked direct access to the PNTuple offset
+// with immediate constant directly, and the indirect version uses R(B-1024)
+void potion_x86_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(op.a, 0);				// movq -A(%rbp), %rdi
+  X86_PRE(); ASM(0xB8); ASMN(potion_fwd);	// mov &potion_fwd, %rax
+  ASM(0xFF); ASM(0xD0);				// callq %rax
+  if (op.b & ASM_TPL_IMM) { // not immediate index. R(B-1024)
+    X86_PRE();ASM(0x8b);ASM_MOV_EBP(0x55,op.b-ASM_TPL_IMM); // mov -B-1024(%rbp) %rdx
+    X86_PRE();ASM(0x48);ASM(0xd1);ASM(0xea);                // shr %rdx,1
+    //ASM(0xcc);                  // displacement: 0x90 or 0xd0
+    X86_PRE();ASM(0x8b);ASM(0x44);ASM((5+PN_SIZE_T)<<4);ASM(0x10);// mov 0x10(%rax,%rdx,PN_SIZE_T),%rax
+  } else { // immediate index B
+    X86_PRE();ASM(0xc7);ASM(0xc2);ASMI(op.b+2);         // mov B+$2, %rdx #PNTuple+2
+    X86_PRE();ASM(0x8b);ASM(0x04);ASM((5+PN_SIZE_T)<<4);// mov (%rax,%rdx,PN_SIZE_T),%rax
+  }
+  X86_MOV_RBP(0x89, op.a); 		    	// mov %rax local
+  return;
+}
+
 void potion_x86_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 1);
   X86_ARGO(op.b, 2);
   X86_PRE(); ASM(0xB8); ASMN(potion_tuple_push);// mov &potion_tuple_push %rax
+  ASM(0xFF); ASM(0xD0); 			// callq %rax
+  X86_MOV_RBP(0x89, op.a); 			// mov %rax local
+}
+
+void potion_x86_gettable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(start - 3, 0);
+  //X86_ARGO(0, 1);
+  X86_ARGO(op.a, 2);
+  X86_ARGO(op.b, 3);
+  X86_PRE(); ASM(0xB8); ASMN(potion_table_at);  // mov &potion_table_set %rax
   ASM(0xFF); ASM(0xD0); 			// callq %rax
   X86_MOV_RBP(0x89, op.a); 			// mov %rax local
 }
@@ -761,7 +798,8 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   X86_PRE(); ASM(0xB8); ASMN(potion_sig_find); 		// mov &potion_sig_find %rax
   ASM(0xFF); ASM(0xD0);					// callq %eax
   ASM(0x85); ASM(0xC0);					// test %eax %eax
-  TAG_PREP(tag); ASM(0x78); ASM(0);			// js +12
+  TAG_PREP(tag);
+  ASM(0x78); ASM(0);					// js +12
   X86_PRE(); ASM(0xF7); ASM(0xD8);			// neg %rax
   X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55, op.b)		// mov -B(%rbp) %rdx
 #if PN_SIZE_T != 8
@@ -871,6 +909,10 @@ void potion_x86_callset(Potion *P, struct PNProto * volatile f, PNAsm * volatile
   X86_MOV_RBP(0x89, op.a); // mov %rax local
 }
 
+/*TODO*/
+void potion_x86_tailcall(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+}
+
 void potion_x86_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   X86_MOV_RBP(0x8B, 0); // mov -0(%rbp) %eax
   ASM(0xC9); ASM(0xC3); // leave; ret
@@ -886,6 +928,7 @@ PN potion_f_protos(Potion *P, PN cl, PN i) {
   return (PN)c;
 }
 
+/* OP_PROTO */
 void potion_x86_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE *pos, long lregs, long start, long regs) {
   PN_OP op = PN_OP_AT(f->asmb, *pos);
   PN proto = PN_TUPLE_AT(f->protos, op.b);
@@ -936,7 +979,7 @@ void potion_x86_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 
 void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
   unsigned k;
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   ASM(0x55); 							// push %ebp
   ASM(0x89); ASM(0xE5);						// mov %esp %ebp
   ASM(0x8B); ASM(0x55); ASM(0x08);				// mov 0x8(%ebp) %edx
@@ -947,27 +990,27 @@ void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
         ASMI(PN_UNIQ(kh_key(PN, vt->methods, k - 1)));		// cmp NAME %edi
         ASM(0x75); ASM(X86C(7,11, 0,0));			// jnz +11
       X86_PRE(); ASM(0xB8); ASMN(kh_val(PN, vt->methods, k - 1)); // mov CL %rax
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
       ASM(0x5D);
 #endif
       ASM(0xC3); // retq
     }
   }
   ASM(0xB8); ASMI(0); // mov NIL %eax
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   ASM(0x5D);
 #endif
   ASM(0xC3); // retq
 }
 
 void potion_x86_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   ASM(0x55); 				// push %ebp
   ASM(0x89); ASM(0xE5); 		// mov %esp %ebp
   ASM(0x8B); ASM(0x55); ASM(0x08);	// mov 0x8(%ebp) %edx
 #else
 #endif
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   PN_TUPLE_EACH(ivars, i, v, {
     ASM(0x81); ASM(X86C(0xFA,0xFF, 0,0));
     ASMI(PN_UNIQ(v));			// cmp UNIQ %edi
@@ -986,7 +1029,7 @@ void potion_x86_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
   });
 #endif
   X86_PRE(); ASM(0xB8); ASMN(-1);	// mov -1 %rax
-#if __WORDSIZE != 64
+#if PN_SIZE_T != 8
   ASM(0x5D);                            // pop %rbp
 #endif
   ASM(0xC3);				// retq

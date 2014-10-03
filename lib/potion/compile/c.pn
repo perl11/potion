@@ -1,3 +1,4 @@
+# TODO write this c compiler
 Source = class(source|opts=S): /source = source, /opts = opts.
 
 # optionally transform ast

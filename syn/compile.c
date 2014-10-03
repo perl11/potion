@@ -180,15 +180,13 @@ static char *makeCharClass(unsigned char *cclass)
 static void nl(void)	        { fprintf(output, "\n"); }
 static void pindent(void)	{ fprintf(output, "%*s", 2*indent, ""); }
 static void begin(void)		{ indent++; pindent(); fprintf(output, "{"); }
+static void define(const char* const def, const char* const v) { pindent(); fprintf(output, "  #define %s %s\n", def, v); }
+static void undef(const char* const def) { pindent(); fprintf(output, "  #undef %s\n", def); }
 static void save(int n)		{ nl(); pindent(); fprintf(output, "  int yypos%d= G->pos, yythunkpos%d= G->thunkpos;\n", n, n); }
-static void label(int n)	{ nl(); pindent(); fprintf(output, "  l%d:\n", n); }
+static void label(int n)	{ nl(); pindent(); fprintf(output, "  l%d:\n", n); } /* Note: ensure that there is an expr following */
 static void jump(int n)		{ pindent(); fprintf(output, "  goto l%d;", n); }
 static void restore(int n)	{ pindent(); fprintf(output, "  G->pos= yypos%d; G->thunkpos= yythunkpos%d;\n", n, n); }
 static void end(void)		{ pindent(); indent--; fprintf(output, "}\n"); }
-
-static void callErrBlock(Node * node) {
-    fprintf(output, " { YY_XTYPE YY_XVAR = (YY_XTYPE) G->data; int yyindex = G->offset + G->pos; %s; }", ((struct Any*) node)->errblock);
-}
 
 static void Node_compile_c_ko(Node *node, int ko)
 {
@@ -201,26 +199,15 @@ static void Node_compile_c_ko(Node *node, int ko)
       break;
 
     case Dot:
-      pindent();
-      fprintf(output, "  if (!yymatchDot(G)) goto l%d;\n", ko);
+      pindent(); fprintf(output, "  if (!yymatchDot(G)) goto l%d;\n", ko);
       break;
 
     case Name:
-      pindent();
-      fprintf(output, "  if (!yy_%s(G)) ", node->name.rule->rule.name);
-      if(((struct Any*) node)->errblock) {
-	fprintf(output, "{  "); indent++;
-	callErrBlock(node);
-	pindent();
-	fprintf(output, "  goto l%d; }\n", ko); indent--;
-      } else {
-	pindent();
-	fprintf(output, "  goto l%d;\n", ko);
-      }
+      pindent(); fprintf(output, "  if (!yy_%s(G)) ", node->name.rule->rule.name);
+      pindent(); fprintf(output, "  goto l%d;\n", ko);
       if (node->name.variable) {
-	pindent();
-	fprintf(output, "  yyDo(G, yySet, %d, 0, \"yySet %s\");\n",
-		node->name.variable->variable.offset, node->name.rule->rule.name);
+	pindent(); fprintf(output, "  yyDo(G, yySet, %d, 0, \"yySet %s\");\n",
+                           node->name.variable->variable.offset, node->name.rule->rule.name);
       }
       break;
 
@@ -254,13 +241,35 @@ static void Node_compile_c_ko(Node *node, int ko)
       break;
 
     case Action:
-      pindent();
-      fprintf(output, "  yyDo(G, yy%s, G->begin, G->end, \"yy%s\");\n", node->action.name, node->action.name);
+      pindent(); fprintf(output, "  yyDo(G, yy%s, G->begin, G->end, \"yy%s\");\n",
+                         node->action.name, node->action.name);
       break;
 
     case Predicate:
-      pindent();
-      fprintf(output, "  yyText(G, G->begin, G->end);\n  if (!(%s)) goto l%d;\n", node->action.text, ko);
+      pindent(); fprintf(output, "  yyText(G, G->begin, G->end);\n");
+      begin(); nl();
+      define("yytext", "G->text"); define("yyleng", "G->textlen");
+      pindent(); fprintf(output, "  if (!(%s)) goto l%d;\n", node->action.text, ko);
+      undef("yytext"); undef("yyleng");
+      end(); nl();
+      break;
+
+
+    case Error:
+      {
+        int eok= yyl(), eko= yyl();
+        Node_compile_c_ko(node->error.element, eko);
+        jump(eok);
+        label(eko);
+        pindent(); fprintf(output, "  yyText(G, G->begin, G->end);\n");
+        begin(); nl();
+        define("yytext", "G->text"); define("yyleng", "G->textlen");
+        pindent(); fprintf(output, "  %s;\n", node->error.text);
+        undef("yytext"); undef("yyleng");
+        end(); nl();
+        jump(ko);
+        label(eok);
+      }
       break;
 
     case Alternate:
@@ -281,6 +290,7 @@ static void Node_compile_c_ko(Node *node, int ko)
 	    Node_compile_c_ko(node, ko);
 	end();
 	label(ok);
+        pindent(); fprintf(output, "  ;\n");
       }
       break;
 
@@ -315,15 +325,15 @@ static void Node_compile_c_ko(Node *node, int ko)
 
     case Query:
       {
-	int qko= yyl(), qok= yyl();
+	int again= yyl(), out= yyl();
 	begin();
-	save(qko);
-	Node_compile_c_ko(node->query.element, qko);
-	jump(qok);
-	label(qko);
-	restore(qko);
+	save(out);
+	Node_compile_c_ko(node->query.element, out);
+	jump(again);
+	label(out);
+	restore(out);
 	end();
-	label(qok);
+	label(again);
 	pindent(); fprintf(output, "  ;\n");
       }
       break;
@@ -380,8 +390,7 @@ static void defineVariables(Node *node)
   int count= 0;
   while (node)
     {
-      pindent();
-      fprintf(output, "  #define %s G->val[%d]\n", node->variable.name, --count);
+      pindent(); fprintf(output, "  #define %s G->val[%d]\n", node->variable.name, --count);
       node->variable.offset= count;
       node= node->variable.next;
     }
@@ -391,8 +400,7 @@ static void undefineVariables(Node *node)
 {
   while (node)
     {
-      pindent();
-      fprintf(output, "  #undef %s\n", node->variable.name);
+      undef(node->variable.name);
       node= node->variable.next;
     }
 }
@@ -649,15 +657,19 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
   if (G->pos < G->limit || !feof(G->input))\n\
     {\n\
       G->buf[G->limit]= '\\0';\n\
-      if (G->pos < G->limit) {\n\
-        fprintf(stderr, \" before text \\\"\");\n\
-        while (G->pos < G->limit)\n\
+      fprintf(stderr, \" before text \\\"\");\n\
+      while (G->pos < G->limit)\n\
 	{\n\
 	  if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
 	  fputc(G->buf[G->pos++], stderr);\n\
 	}\n\
-        fputc('\\\"', stderr);\n\
-      }\n\
+      if (G->pos == G->limit)\n\
+        {\n\
+	  int c;\n\
+	  while (EOF != (c= fgetc(G->input)) && '\\n' != c && '\\r' != c)\n\
+	    fputc(c, stderr);\n\
+	}\n\
+      fputc('\\\"', stderr);\n\
     }\n\
   fprintf(stderr, \" at %s:%d\\n\", G->filename, G->lineno);\n\
   exit(1);\n\
@@ -895,7 +907,10 @@ YY_PARSE(GREG *) YY_NAME(parse_new)(YY_XTYPE data)\n\
 }\n\
 YY_PARSE(void) YY_NAME(init)(GREG *G)\n\
 {\n\
-    memcpy(G, YY_NAME(parse_new)(NULL), sizeof(GREG));\n\
+  memset(G, 0, sizeof(GREG));\n\
+  G->input= stdin;\n\
+  G->lineno= 1;\n\
+  G->filename= \"-\";\n\
 }\n\
 \n\
 YY_PARSE(void) YY_NAME(deinit)(GREG *G)\n\
@@ -950,6 +965,7 @@ int consumesInput(Node *node)
     case Class:		return 1;
     case Action:	return 0;
     case Predicate:	return 0;
+    case Error:		return consumesInput(node->error.element);
 
     case Alternate:
       {
@@ -1006,7 +1022,9 @@ void Rule_compile_c(Node *node)
       tmp = yyqq(block);
       fprintf(output, "  yyprintf((stderr, \"\\n  {%s}\\n\"));\n", tmp);
       if (tmp != block) YY_FREE(tmp);
-      fprintf(output, "  %s;\n", block);
+      fprintf(output, "  {\n");
+      fprintf(output, "    %s;\n", block);
+      fprintf(output, "  }\n");
       undefineVariables(n->action.rule->rule.variables);
       fprintf(output, "}\n");
     }

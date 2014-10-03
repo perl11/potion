@@ -395,7 +395,7 @@ void *potion_gc_copy(Potion *P, struct PNObject *ptr) {
   void *dst = (void *)P->mem->old_cur;
   PN_SIZE sz = potion_type_size(P, (const struct PNObject *)ptr);
   if (!sz) { //external pointer or immediate value
-    DBG_G(P,"GC copy: assuming extern pointer or immediate potion value: %p (%ld)\n", ptr, *(long*)ptr);
+    DBG_G(P,"GC copy: assuming extern pointer or immediate potion value %p: %ld / 0x%lx\n", ptr, *(long*)ptr, *(long*)ptr);
     //return ptr;
     memcpy(dst, ptr, sizeof(void*));
     return dst;
@@ -454,7 +454,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((Potion *)ptr)->callset);
       GC_MINOR_UPDATE(((Potion *)ptr)->input);
       GC_MINOR_UPDATE(((Potion *)ptr)->source);
-      GC_MINOR_UPDATE(((Potion *)ptr)->pbuf);
+      //GC_MINOR_UPDATE(((Potion *)ptr)->pbuf);
       GC_MINOR_UPDATE(((Potion *)ptr)->line);
       GC_MINOR_UPDATE(((Potion *)ptr)->unclosed);
       //GC_MINOR_UPDATE(((Potion *)ptr)->target);
@@ -568,7 +568,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       //DBG_G(P,"   source\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->source);
       //DBG_G(P,"   pbuf\n");
-      GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
+      //GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
       //DBG_G(P,"   line\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->line);
       //DBG_G(P,"   unclosed\n");
@@ -672,7 +672,7 @@ Potion *potion_gc_boot(void *sp) {
 
   // stack must be 16-byte aligned on amd64 SSE or __APPLE__, and 32-byte with AVX instrs.
   // at least amd64 atof() does SSE register return.
-#if (__WORDSIZE == 64) || defined(__APPLE__)
+#if (PN_SIZE_T == 8) || defined(__APPLE__)
   M->cstack = (((_PN)sp & ((1<<5)-1)) == 0 )
     ? sp : (void *)(_PN)((_PN)sp | ((1<<5)-1) )+1;
 #else

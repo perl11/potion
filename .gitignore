@@ -1,12 +1,10 @@
 /bin
 /tools/config.c
 /config.inc
+/config.inc.*
 /core/config.h
+/core/config.h.bak
 /core/version.h
-/core/vm-arm.c
-/core/pn-scan.c
-/core/pn-gram.[ch]
-/core/pn-gram.out
 /core/*.[io]
 /core/*.o2
 /core/*.opic
@@ -23,7 +21,6 @@
 /syn/greg.exe
 /syn/greg
 /test/api/*.o
-/config.inc
 /.gdbinit
 /.bash_history
 /.kdev4
@@ -55,16 +52,12 @@
 /GRTAGS
 /GTAGS
 /HTML
+/doc/ref
 /doc/html
 /doc/latex
 /README.md
 /doc/footer.inc
 /tools/bisect*.sh
-/MANIFEST
-/config.inc-*
-/asm*.S
-/*.p
-/*.patch
 /lib32
 /web
 /mcc.sh
@@ -79,3 +72,12 @@
 /syn/keywords.pl
 /syn/sql-*
 
+/mcc.sh
+/frama-c*
+/cover_db
+/xx.[Scp]
+/MANIFEST
+/config.inc-*
+/asm*.S
+/*.p
+/*.patch

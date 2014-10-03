@@ -14,7 +14,7 @@
  * 
  * THE SOFTWARE IS PROVIDED 'AS IS'.  USE ENTIRELY AT YOUR OWN RISK.
  * 
- * Last edited: 2013-04-15 09:55:07 rurban
+ * Last edited: 2013-10-01 12:19:49 rurban
  */
 
 #include <stdio.h>
@@ -39,24 +39,23 @@ static inline Node *_newNode(NodeType type, int size)
 {
   Node *node= calloc(1, size);
   node->type= type;
-  ((struct Any *) node)->errblock= NULL;
   return node;
 }
 
 #define newNode(T)	_newNode(T, sizeof(struct T))
 
-Node *makeRule(char *name, int starts)
+Node *makeRule(char *name, int defined)
 {
   Node *node= newNode(Rule);
   node->rule.name= strdup(name);
   node->rule.id= ++ruleCount;
-  node->rule.flags= starts ? RuleUsed : 0;
+  node->rule.flags= defined ? RuleUsed : 0;
   node->rule.next= rules;
   rules= node;
   return node;
 }
 
-Node *findRule(char *name, int starts)
+Node *findRule(char *name, int defined)
 {
   Node *n;
   char *ptr;
@@ -67,7 +66,7 @@ Node *findRule(char *name, int starts)
       if (!strcmp(name, n->rule.name))
 	return n;
     }
-  return makeRule(name, starts);
+  return makeRule(name, defined);
 }
 
 Node *beginRule(Node *rule)
@@ -161,6 +160,14 @@ Node *makePredicate(char *text)
 {
   Node *node= newNode(Predicate);
   node->predicate.text= strdup(text);
+  return node;
+}
+
+Node *makeError(Node *e, char *text)
+{
+  Node *node= newNode(Error);
+  node->error.element= e;
+  node->error.text= strdup(text);
   return node;
 }
 
@@ -308,6 +315,7 @@ static void Node_fprint(FILE *stream, Node *node)
     case Class:		fprintf(stream, " [%s]", node->cclass.value);				break;
     case Action:	fprintf(stream, " { %s }", node->action.text);				break;
     case Predicate:	fprintf(stream, " ?{ %s }", node->action.text);				break;
+    case Error:		fprintf(stream, " ~{ %s }", node->error.text);				break;
 
     case Alternate:	node= node->alternate.first;
 			fprintf(stream, " (");
@@ -387,6 +395,7 @@ void Rule_free(Node *node)
 #endif
 	free(node->action.text); free(node->action.name); 	break;
     case Predicate:	free(node->predicate.text);		break;
+    case Error:		free(node->error.text);			break;
     case Alternate:
       {
 	Node *root= node;
@@ -426,8 +435,6 @@ void Rule_free(Node *node)
     }
   assert(node);
   node->type = Freed;
-  if (((struct Any *)node)->errblock)
-    free(((struct Any *)node)->errblock);
 #ifndef DD_CYCLE
   free(node);
 #endif

@@ -6,5 +6,5 @@ DOXYGEN_VERSION=`doxygen --version`
 
 echo '<hr class="footer"/><address class="footer"><small>'
 echo "Generated on $GENERATED for p2 $P2_VERSION (date=$POTION_DATE)"
-echo "by <a href='http://www.doxygen.org/index.html'>doxygen</a> $DOXYGEN_VERSION"
+echo 'by <a href="http://www.doxygen.org/index.html">doxygen</a> ' $DOXYGEN_VERSION
 echo '</small></address></body></html>'

@@ -102,7 +102,7 @@ elif [ "$2" = "bsd" ]; then
   if [ "$BSD" = "" ]; then echo "0"
   else echo "1"; fi
 elif [ "$2" = "version" ]; then
-  sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//" < core/potion.h
+  sed "/POTION_VERSION/!d; s/\\\"$//; s/.*\\\"//" < core/version.h
 elif [ "$2" = "p2version" ]; then
   sed "/P2_VERSION/!d; s/\\\"$//; s/.*\\\"//" < core/p2.h
 elif [ "$2" = "target" ]; then
@@ -120,6 +120,8 @@ elif [ "$2" = "jit" ]; then
     echo "PPC"
   elif [ "$JIT_ARM" != "" ]; then
     echo "ARM"
+  else
+    echo "UNKNOWN"
   fi
 elif [ "$2" = "strip" ]; then
   if [ $MINGW -eq 0 ]; then
@@ -203,4 +205,7 @@ else
   echo "#define POTION_STACK_DIR  $STACKDIR"
   #echo "#define POTION_ARGS_DIR   $ARGDIR"
   echo "#define HAVE_ASAN_ATTR    $HAVE_ASAN"
+  echo "#ifndef SANDBOX"
+  echo "#define WITH_EXTERN	1"
+  echo "#endif"
 fi

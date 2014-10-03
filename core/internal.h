@@ -50,8 +50,9 @@ typedef unsigned char u8;
 
 #define PN_ATOI(X,N,B) ({ \
   char *Ap = X; \
-  long Ai = 0; \
+  long Ai = 0; int Am = 1; \
   size_t Al = N; \
+  if (*Ap == '-') { Am = -1; Ap++; Al--; } \
   while (Al--) { \
     if ((*Ap >= '0') && (*Ap <= '9')) \
       Ai = (Ai * B) + (*Ap - '0'); \
@@ -62,7 +63,7 @@ typedef unsigned char u8;
     else break; \
     Ap++; \
   } \
-  Ai; \
+  Ai * Am; \
 })
 
 /// .pnb binary dump header
@@ -90,7 +91,7 @@ int asprintf (char **string_ptr, const char *format, ...);
 // stack manipulation routines
 //
 #if POTION_X86 == POTION_JIT_TARGET
-#if __WORDSIZE == 64
+#if PN_SIZE_T == 8
 // preserve: rbx r12 r13 r14 r15. scratch: rax rcx rdx r8 r9 r10 r11.
 #define PN_SAVED_REGS 5
 #if defined(__SANITIZE_ADDRESS__) && defined(__APPLE__)

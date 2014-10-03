@@ -1,6 +1,6 @@
 #!/bin/sh
 # usage: test/runtests.sh [-q] [testfile]
-#        cmd="valgrind ./potion" test/runtests.sh
+#        cmd="valgrind -q bin/potion" test/runtests.sh
 
 cmd=${cmd:-bin/potion}
 cmd2=${cmd2:-bin/p2}
@@ -14,9 +14,12 @@ maxpass=6
 count=0; failed=0; pass=0
 cmdi="$cmd -I"; cmdx="$cmdi -X"
 cmdc="$cmd -c"; extc=b
-
 QUIET=
 if [ "x$1" = "x-q" ]; then QUIET=1; shift; fi
+
+verbose() {
+  if [ "x$QUIET" = "x" ]; then ${ECHO} $@; else ${ECHO} -n .; fi
+}
 
 if [ "x$1" = "x-pn" ]; then shift; maxpass=3; fi
 if [ "x$1" = "x-p2" ]; then 

@@ -2,7 +2,7 @@
  some assembler macros
 
  (c) 2008 why the lucky stiff, the freelance professor
-
+ (c) 2014 perl11.org
 
  PNAsm(vt = PN_TUSER, siz, ptr, len)
    -> PNFlex(vt = PN_TUSER, siz, ...)
@@ -14,6 +14,7 @@
 #define POTION_ASM_H
 
 #define ASM_UNIT 512
+#define ASM_TPL_IMM 1024    // bitflag for immediate gettuple op.b value
 
 /// record labels to be patched
 typedef struct {
@@ -35,13 +36,14 @@ typedef struct {
       (OP_F)potion_##arch##_loadpn, \
       (OP_F)potion_##arch##_self, \
       (OP_F)potion_##arch##_newtuple, \
+      (OP_F)potion_##arch##_gettuple, \
       (OP_F)potion_##arch##_settuple, \
       (OP_F)potion_##arch##_getlocal, \
       (OP_F)potion_##arch##_setlocal, \
       (OP_F)potion_##arch##_getupval, \
       (OP_F)potion_##arch##_setupval, \
       (OP_F)potion_##arch##_global, \
-      (OP_F)NULL, \
+      (OP_F)potion_##arch##_gettable, \
       (OP_F)potion_##arch##_settable, \
       (OP_F)potion_##arch##_newlick, \
       (OP_F)potion_##arch##_getpath, \
@@ -73,7 +75,7 @@ typedef struct {
       (OP_F)potion_##arch##_named, \
       (OP_F)potion_##arch##_call, \
       (OP_F)potion_##arch##_callset, \
-      (OP_F)NULL, \
+      (OP_F)potion_##arch##_tailcall, \
       (OP_F)potion_##arch##_return, \
       (OP_F)potion_##arch##_method, \
       (OP_F)potion_##arch##_class \

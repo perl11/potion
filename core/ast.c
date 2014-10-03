@@ -61,14 +61,14 @@ PN potion_source(Potion *P, u8 p, PN a, PN b, PN c, int lineno, PN line) {
 ///\memberof PNSource
 /// "size" method
 ///\returns number of ast trees: 1,2 or 3
-PN potion_source_size(Potion *P, PN cl, PN self) {
+static PN potion_source_size(Potion *P, PN cl, PN self) {
   vPN(Source) t = (struct PNSource *)potion_fwd(self);
   return PN_NUM(potion_ast_sizes[t->part]);
 }
 
 ///\memberof PNSource
 /// "name" method
-PN potion_source_name(Potion *P, PN cl, PN self) {
+static PN potion_source_name(Potion *P, PN cl, PN self) {
   vPN(Source) t = (struct PNSource *)potion_fwd(self);
   return potion_str(P, potion_ast_names[t->part]);
 }
@@ -76,23 +76,31 @@ PN potion_source_name(Potion *P, PN cl, PN self) {
 ///\memberof PNSource
 /// "file" method
 ///\returns filename of associated AST
-PN potion_source_file(Potion *P, PN cl, PN self) {
+static PN potion_source_file(Potion *P, PN cl, PN self) {
   vPN(Source) t = (struct PNSource *)potion_fwd(self);
   return PN_TUPLE_AT(pn_filenames, t->loc.fileno);
 }
 
 ///\memberof PNSource
-/// "line" method
+/// "lineno" method
 ///\returns line number of associated AST
-PN potion_source_line(Potion *P, PN cl, PN self) {
+static PN potion_source_lineno(Potion *P, PN cl, PN self) {
   vPN(Source) t = (struct PNSource *)potion_fwd(self);
   return PN_NUM(t->loc.lineno);
 }
 
 ///\memberof PNSource
+/// "line" method
+///\returns line string of associated AST
+static PN potion_source_line(Potion *P, PN cl, PN self) {
+  vPN(Source) t = (struct PNSource *)potion_fwd(self);
+  return t->line;
+}
+
+///\memberof PNSource
 /// "string" method of the AST
 /// Note: Does not output the AST type, filename nor lineno
-PN potion_source_string(Potion *P, PN cl, PN self) {
+static PN potion_source_string(Potion *P, PN cl, PN self) {
   int i, n, cut = 0;
   vPN(Source) t = (struct PNSource *)potion_fwd(self);
   PN out = potion_byte_str(P, potion_ast_names[t->part]);
@@ -136,11 +144,13 @@ PN potion_source_string(Potion *P, PN cl, PN self) {
   return PN_STR_B(out);
 }
 
-PN potion_source_loc(Potion *P, PN cl, PN self) {
+///\memberof PNSource
+/// \returns file.c:lineno
+static PN potion_source_loc(Potion *P, PN cl, PN self) {
   PN out = potion_byte_str(P, "");
   pn_printf(P, out, "%s:%ld",
             PN_STR_PTR(potion_source_file(P, cl, self)),
-            PN_INT(potion_source_line(P, cl, self)));
+            PN_INT(potion_source_lineno(P, cl, self)));
   return PN_STR_B(out);
 }
 
@@ -150,5 +160,7 @@ void potion_source_init(Potion *P) {
   potion_method(src_vt, "string", potion_source_string, 0);
   potion_method(src_vt, "size", potion_source_size, 0);
   potion_method(src_vt, "file", potion_source_file, 0);
+  potion_method(src_vt, "lineno", potion_source_lineno, 0);
   potion_method(src_vt, "line", potion_source_line, 0);
+  potion_method(src_vt, "loc",  potion_source_loc, 0);
 }

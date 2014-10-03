@@ -22,11 +22,13 @@ Try `make -j1 test` or gmake-4.0 then.
 ## ~ the latest potion ~
 
 To build the bleeding edge, you will need
-GNU make, binutils, perl, sed, and gcc or better clang.
+GNU make, binutils, perl, sed, git and gcc or better clang.
 clang produces better code than gcc, but is harder to debug.
+gcc-4.6.3 is broken, at least on ubuntu.
 
-    $ git clone --branch master git://github.com/perl11/potion.git
+    $ git clone git://github.com/perl11/potion.git
     $ cd potion
+    $ git submodule update --init
     $ make
 
 ## ~ external dependencies ~
@@ -36,7 +38,7 @@ clang produces better code than gcc, but is harder to debug.
 
     run-time:
     libuv (later: pcre, libtomath) is included, but external
-    packagers should choose to use existing packages. see dist.mak
+    packagers should choose to use existing packages. see `dist.mak`
 
     optional:
 
@@ -98,8 +100,8 @@ Once that's all done,
 The easiest way to do this, actually, is on Linux or Darwin.
 On Ubuntu, if you have MinGW installed,
 
-    $ make; make clean
-    $ make config CC=i586-mingw32msvc-gcc
+    $ make clean; make core/syntax.c
+    $ make config CC=i686-w64-mingw32-gcc CROSS=1
     $ touch core/syntax.c
     $ make && make dist
 

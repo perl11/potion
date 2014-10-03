@@ -1,5 +1,7 @@
 # -*- makefile -*-
 # create config.inc and core/config.h
+POTION_MAJOR = 0
+POTION_MINOR = 2
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
 PWD    = $(shell pwd)
@@ -126,6 +128,7 @@ ifneq (,$(findstring ccache,${CC}))
 	WARNINGS = -Wall -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
 	CFLAGS += -Qunused-arguments
 endif
+
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	WARNINGS += -Wno-unused-value -Wno-switch -Wno-unused-label
@@ -185,7 +188,7 @@ CROSS = $(shell tools/config.sh "${CC}" cross)
 # maybe parse versions from core/potion.h
 ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 	WIN32 = 1
-	LDFLAGS += -Wl,--major-image-version,0,--minor-image-version,1
+	LDFLAGS += -Wl,--major-image-version,${POTION_MAJOR},--minor-image-version,${POTION_MINOR}
 	LDDLLFLAGS = -shared
 	EXE  = .exe
 	DLL  = .dll
@@ -221,7 +224,7 @@ ifeq ($(shell tools/config.sh "${CC}" mingw),1)
 else
 ifeq ($(shell tools/config.sh "${CC}" cygwin),1)
 	CYGWIN = 1
-	LDFLAGS += -Wl,--major-image-version,0,--minor-image-version,1
+	LDFLAGS += -Wl,--major-image-version,${MAJOR_IMAGE_VERSION},--minor-image-version,${MINOR_IMAGE_VERSION}
 	LDDLLFLAGS = -shared
 	LIBS += -Llib -luv
 	LOADEXT = .dll
@@ -346,6 +349,9 @@ core/config.h: config.inc core/version.h tools/config.sh config.mak
 core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${ECHO} MAKE $@
 	@${ECHO} "/* created by ${MAKE} -f config.mak */" > core/version.h
+	@${ECHO} "#define POTION_MAJOR ${POTION_MAJOR}" >> core/version.h
+	@${ECHO} "#define POTION_MINOR ${POTION_MINOR}" >> core/version.h
+	@${ECHO} "#define POTION_VERSION \"${POTION_MAJOR}.${POTION_MINOR}\"" >> core/version.h
 	@${ECHO} -n "#define POTION_DATE   \"" >> core/version.h
 	@${ECHO} -n $(shell date +%Y-%m-%d) >> core/version.h
 	@${ECHO} "\"" >> core/version.h

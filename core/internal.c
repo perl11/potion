@@ -16,6 +16,7 @@ PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
    PN_return, PN_self, PN_string, PN_while;
 PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
+PN PN_extern;
 #ifdef P2
 PN PN_use, PN_no;
 #endif
@@ -83,6 +84,7 @@ static void potion_init(Potion *P) {
   PN_string = PN_STRN("string", 6);
   PN_lookup = PN_STRN("lookup", 6);
   PN_number = PN_STRN("number", 6);
+  PN_extern = PN_STRN("extern", 6);
   PN_compile = PN_STRN("compile", 7);
   PN_allocate = PN_STRN("allocate", 8);
   PN_continue = PN_STRN("continue", 8);
@@ -201,11 +203,11 @@ PNType potion_kind_of(PN obj) {
 /// valid signature modifiers: '|' optional, '.' end, ':' default
 char potion_type_char(PNType type) {
   switch (type) {
-  case PN_TNIL:  	return 'n'; //0 nil
+  case PN_TNIL:  	return 'n'; //0 nil?  (unused)
   case PN_TNUMBER:	return 'N'; //1 Number
   case PN_TBOOLEAN:	return 'B'; //2 Boolean (unused)
   case PN_TSTRING:	return 'S'; //3 String
-  case PN_TWEAK:       	return 0;   //4 (illegal) but needed for extern (W)
+  case PN_TWEAK:       	return 0;   //4 (illegal)
   case PN_TCLOSURE:    	return '&'; //5
   case PN_TTUPLE:      	return 'u'; //6 (used)
   case PN_TSTATE:      	return 's'; //7
@@ -222,7 +224,7 @@ char potion_type_char(PNType type) {
   case PN_TSTRINGS:    	return 'x'; //18
   case PN_TERROR:      	return 'r'; //19
   case PN_TCONT:       	return 'c'; //20
-  case PN_TDECIMAL:    	return 'd'; //21
+  case PN_TDECIMAL:    	return 'D'; //21
   case PN_TUSER:       	return 'm'; //22 generated mixins (unused)
   default:       	return 'm'; //22++
   }
@@ -260,7 +262,7 @@ static inline char *potion_type_name(Potion *P, PN obj) {
   obj = potion_fwd(obj);
   return PN_IS_PTR(obj)
     ? AS_STR(potion_send(PN_VTABLE(PN_TYPE(obj)), PN_string))
-    : PN_IS_NIL(obj) ? NIL_NAME
+    : PN_IS_NIL(obj) ? "nil"
       : PN_IS_NUM(obj) ? "Number"
         : "Boolean";
 }
@@ -334,16 +336,16 @@ void potion_dump_stack(Potion *P) {
 #endif
 
   printf("-- dumping %ld stack from %p to %p --\n", n, start, end);
-  printf("   ebp = %p, *ebp = %lx\n", ebp, *ebp);
+  printf("   ebp = %p, *ebp = 0x%lx\n", ebp, *ebp);
   while (n--) {
     vPN(Object) o = (struct PNObject*)*start;
-    printf("   stack(%ld) = %p: %lx", n, start, *start);
+    printf("   stack(%ld) = %p: 0x%lx", n, start, *start);
     if (IS_GC_PROTECTED(*start))
-      printf(" vt=%x gc", PN_TYPE(o));
+      printf(" vt=%x prot", PN_TYPE(o));
     else if (IN_BIRTH_REGION(*start))
-      printf(" vt=%x gc(0)", PN_TYPE(o));
+      printf(" vt=%x birth", PN_TYPE(o));
     else if (IN_OLDER_REGION(*start))
-      printf(" vt=%x gc(1)", PN_TYPE(o));
+      printf(" vt=%x OLD", PN_TYPE(o));
 
     if (*start == 0)
       printf(" nil\n");

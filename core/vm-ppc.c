@@ -1,9 +1,8 @@
 /**\file vm-ppc.c
-the powerpc jit (32-bit only)
+the powerpc jit (32-bit only), unfinished!
 \see core/vm.c and doc/INTERNALS.md
 
-(c) 2008 why the lucky stiff, the freelance professor
-*/
+(c) 2008 why the lucky stiff, the freelance professor */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -162,12 +161,17 @@ void potion_ppc_global(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 void potion_ppc_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
+void potion_ppc_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
 void potion_ppc_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
 void potion_ppc_search(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
+void potion_ppc_gettable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
 void potion_ppc_settable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
@@ -324,6 +328,9 @@ void potion_ppc_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 }
 
 void potion_ppc_callset(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+}
+
+void potion_ppc_tailcall(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
 void potion_ppc_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {

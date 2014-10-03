@@ -16,10 +16,10 @@
 
 Potion *P;
 
-#ifdef DEBUG
-#define DBG_Gv(P,...)	       \
-  if (P->flags & DEBUG_GC && P->flags & DEBUG_VERBOSE) { \
-    printf(__VA_ARGS__);       \
+#if defined(DEBUG)
+#define DBG_Gv(P,...)				\
+  if (P->flags & (DEBUG_GC | DEBUG_VERBOSE)) {	\
+    printf(__VA_ARGS__);			\
   }
 #define DBG_G(P,...)	       \
   if (P->flags & DEBUG_GC) {   \

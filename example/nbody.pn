@@ -41,7 +41,7 @@ lbodies = nbodies - 1
 
 advance = (dt):
   nbodies times(i):
-    bi = bodies(i)
+    bi = bodies[i]
     bix = bi/x
     biy = bi/y
     biz = bi/z
@@ -51,7 +51,7 @@ advance = (dt):
     bimass = bi/mass
     j = i+1
     while (j < nbodies):
-      bj = bodies(j)
+      bj = bodies[j]
       dx = bix - bj/x
       dy = biy - bj/y
       dz = biz - bj/z
@@ -80,7 +80,7 @@ offsetmomentum = ():
   py = 0.0
   pz = 0.0
   nbodies times(i):
-    bi = bodies(i)
+    bi = bodies[i]
     bimass = bi/mass
     px += (bi/vx * bimass)
     py += (bi/vy * bimass)
@@ -94,7 +94,7 @@ offsetmomentum = ():
 energy = ():
   e = 0.0
   nbodies times(i):
-    bi = bodies(i)
+    bi = bodies[i]
     bix = bi/x
     biy = bi/y
     biz = bi/z
@@ -106,7 +106,7 @@ energy = ():
     e += 0.5 * bimass * f
     j = i+1
     while (j < nbodies):
-      bj = bodies(j)
+      bj = bodies[j]
       dx = bix - bj/x
       dy = biy - bj/y
       dz = biz - bj/z
