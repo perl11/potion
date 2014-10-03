@@ -30,10 +30,10 @@ PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
 
 static void potion_init(Potion *P) {
   PN vtable, obj_vt;
-  P->lobby = potion_type_new(P, PN_TLOBBY, 0);
-  vtable = potion_type_new(P, PN_TVTABLE, P->lobby);
+  P->lobby = potion_type_new(P, PN_TLOBBY, 0);       // named Lobby resp. P2
+  vtable = potion_type_new(P, PN_TVTABLE, P->lobby); // named Mixin
   obj_vt = potion_type_new(P, PN_TOBJECT, P->lobby);
-  potion_type_new(P, PN_TNIL, obj_vt);
+  potion_type_new(P, PN_TNIL, obj_vt);               // named NilKind resp. Undef
   potion_type_new(P, PN_TNUMBER, obj_vt);
   potion_type_new(P, PN_TBOOLEAN, obj_vt);
   potion_type_new(P, PN_TSTRING, obj_vt);
@@ -41,7 +41,7 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TCLOSURE, obj_vt);
   potion_type_new(P, PN_TTUPLE, obj_vt);
   potion_type_new(P, PN_TFILE, obj_vt);
-  potion_type_new(P, PN_TSTATE, obj_vt);
+  potion_type_new(P, PN_TSTATE, obj_vt); // named Potion
   potion_type_new(P, PN_TSOURCE, obj_vt);
   potion_type_new(P, PN_TBYTES, obj_vt);
   potion_type_new(P, PN_TPROTO, obj_vt);
@@ -220,7 +220,7 @@ char potion_type_char(PNType type) {
   case PN_TSTRINGS:    	return 'x'; //18
   case PN_TERROR:      	return 'r'; //19
   case PN_TCONT:       	return 'c'; //20
-  case PN_TDECIMAL:    	return 'd'; //21
+  case PN_TDECIMAL:    	return 'D'; //21
   case PN_TUSER:       	return 'm'; //22 generated mixins (unused)
   default:       	return 'm'; //22++
   }
@@ -311,8 +311,8 @@ void potion_esp(void **esp) {
 void potion_dump(Potion *P, PN data) {
   PN pd = potion_send(data, PN_string);
   PN pt = potion_send(PN_VTABLE(PN_TYPE(data)), PN_string);
-  char *d = pd ? PN_STR_PTR(pd) : "nil";
-  char *t = pt ? PN_STR_PTR(pt) : "NilKind";
+  char *d = pd ? PN_STR_PTR(pd) : NIL_NAME;
+  char *t = pt ? PN_STR_PTR(pt) : NILKIND_NAME;
   printf("%s (%s)\n", d, t);
 }
 #define pdump(data) potion_dump(P, data)

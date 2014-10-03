@@ -84,7 +84,7 @@ pkg/${PKGBIN}-devel.tar.gz: ${GREG} bin/potion-s${EXE} lib/libpotion.a
                  dist/share/potion/doc/ref dist/share/potion/test
 	cp ${GREG}			dist/bin/
 	cp bin/potion-s${EXE}		dist/bin/
-	cp lib/libpotion.a			dist/lib/
+	cp lib/libpotion.a	        dist/lib/
 	cp core/*.h			dist/include/potion/
 	rm dist/include/potion/potion.h dist/include/potion/config.h
 	-cp -r doc/*.textile doc/html	dist/share/potion/doc/
@@ -105,7 +105,7 @@ tarball: core/version.h core/syntax.c
 	rm -rf ${PKG}
 	git checkout-index --prefix=${PKG}/ -a
 	rm -f ${PKG}/.gitignore
-	${MAKE} MANIFEST
+	+${MAKE} MANIFEST
 	cp MANIFEST ${PKG}/
 	cp core/version.h ${PKG}/core/
 	cp core/syntax.c ${PKG}/core/

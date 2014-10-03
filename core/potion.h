@@ -34,9 +34,7 @@ and optionally args, statically typed via signature strings.
   - N Num
   - & Closure
   - S String
-
 */
-
 #ifndef POTION_H
 #define POTION_H
 
@@ -147,7 +145,7 @@ struct PNVtable;
 #define POTION_FWD      0xFFFFFFFE
 #define POTION_COPIED   0xFFFFFFFF
 
-#define NIL_NAME        "nil"
+#define NIL_NAME        "nil" // "undef" in p2
 #define NILKIND_NAME    "NilKind"
 
 #define PN_FNUMBER      1
@@ -595,7 +593,11 @@ typedef enum {
 #define EXEC_BITS 4 ///< 0-4
 
 typedef enum {
-  MODE_STD    = 1<<EXEC_BITS,            ///< 0x10 16 plain potion
+  MODE_STD    = 1<<EXEC_BITS,   ///< 0x10 16 plain potion syntax
+#ifdef P2
+  MODE_P2     = MODE_STD+1,     ///< 0x11 17 use p2 extensions
+  MODE_P6     = MODE_STD+2,     ///< 0x12 18 syntax p6. other via use syntax ""
+#endif
   // room for registered syntax modules 18-63 (45 modules: p5, p6, sql, c, ...)
   MAX_SYNTAX  = (1<<(EXEC_BITS+2))-1     ///< sanity-check
 } syntax_mode_t;
@@ -764,8 +766,8 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
   PN_while;
 extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 extern PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
-extern PN pn_filenames;
 extern PN PN_extern;
+extern PN pn_filenames;
 
 /// zero values per type
 static inline PN potion_type_default(char type) {

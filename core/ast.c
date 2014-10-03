@@ -144,6 +144,8 @@ static PN potion_source_string(Potion *P, PN cl, PN self) {
   return PN_STR_B(out);
 }
 
+///\memberof PNSource
+/// \returns file.c:lineno
 static PN potion_source_loc(Potion *P, PN cl, PN self) {
   PN out = potion_byte_str(P, "");
   pn_printf(P, out, "%s:%ld",

@@ -650,7 +650,7 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Lobby"),        P->lobby);
   potion_init_class_reference(P, potion_str(P, "Mixin"),        PN_VTABLE(PN_TVTABLE));
   potion_init_class_reference(P, potion_str(P, "Object"),       PN_VTABLE(PN_TOBJECT));
-  potion_init_class_reference(P, potion_str(P, "NilKind"),      PN_VTABLE(PN_TNIL));
+  potion_init_class_reference(P, potion_str(P, NILKIND_NAME),   PN_VTABLE(PN_TNIL));
   potion_init_class_reference(P, potion_str(P, "Number"),       PN_VTABLE(PN_TNUMBER));
   potion_init_class_reference(P, potion_str(P, "Boolean"),      PN_VTABLE(PN_TBOOLEAN));
   potion_init_class_reference(P, potion_str(P, "String"),       PN_VTABLE(PN_TSTRING));
@@ -666,9 +666,6 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Lick"),         PN_VTABLE(PN_TLICK));
   potion_init_class_reference(P, potion_str(P, "Error"),        PN_VTABLE(PN_TERROR));
   potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
-#if defined(P2)
-  potion_init_class_reference(P, potion_str(P, "Num"),          PN_VTABLE(PN_TDECIMAL));
-#endif
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
   

@@ -174,6 +174,7 @@ PN potion_proto_string(Potion *P, PN cl, PN self) {
     pn_printf(P, out, "\n");
     num++;
   }
+  //pn_printf(P, out, "\n");
   pn_printf(P, out, "; function end\n");
   return PN_STR_B(out);
 }

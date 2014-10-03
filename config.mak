@@ -99,6 +99,23 @@ else
 	INCS += -I${PWD}/3rd/libuv/include
 endif
 
+#yet disabled
+ifeq (0,1)
+ifeq ($(shell tools/config.sh "${CC}" lib -lpcre pcre.h /usr/local),1)
+	HAVE_PCRE = 1
+	DEFINES += -DHAVE_PCRE
+	INCS += -I/usr/local/include
+	LIBS += -L/usr/local/lib
+else
+ifeq ($(shell tools/config.sh "${CC}" lib -lpcre pcre.h /usr),1)
+	HAVE_PCRE = 1
+	DEFINES += -DHAVE_PCRE
+else
+	HAVE_PCRE = 0
+endif
+endif
+endif
+
 ifeq (${DEBUG},0)
        DEBUGFLAGS += -O3 -DNDEBUG
        CFLAGS += -D_FORTIFY_SOURCE=2
@@ -111,6 +128,7 @@ ifneq (,$(findstring ccache,${CC}))
 	WARNINGS = -Wall -Wno-variadic-macros -Wno-pointer-arith -Wno-return-type
 	CFLAGS += -Qunused-arguments
 endif
+
 ifneq ($(shell tools/config.sh "${CC}" clang),0)
 	CLANG = 1
 	WARNINGS += -Wno-unused-value -Wno-switch -Wno-unused-label
@@ -124,12 +142,12 @@ ifneq ($(shell ./tools/config.sh "${CC}" icc),0)
 	ICC = 1
         #DEFINES += -DCGOTO
 	DEBUGFLAGS += -falign-functions=16
-# 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
 # 177: label "l414" was declared but never referenced in syntax.c sets fail case
+# 186: pointless comparison of unsigned integer with zero in PN_TYPECHECK
 # 188: enumerated type mixed with another type (treating P->flags as int)
-	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 186,177,188
+	WARNINGS += -Wno-sign-compare -Wno-pointer-arith -diag-remark 177,186,188
   ifeq (${DEBUG},0)
-# -Ofast
+                    # -Ofast
 	DEBUGFLAGS += -finline
   else
         DEBUGFLAGS += -g3 -gdwarf-3
@@ -276,6 +294,8 @@ config.inc.echo:
 	@${ECHO} "LIBS    = ${LIBS}"
 	@${ECHO} "LDFLAGS = ${LDFLAGS}"
 	@${ECHO} "LDDLLFLAGS = ${LDDLLFLAGS}"
+	@${ECHO} "HAVE_LIBUV = ${HAVE_LIBUV}"
+	@${ECHO} "HAVE_PCRE  = ${HAVE_PCRE}"
 	@${ECHO} "STRIP   = ${STRIP}"
 	@${ECHO} "AR      = ${AR}"
 	@${ECHO} "RANLIB  = ${RANLIB}"
