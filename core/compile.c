@@ -353,13 +353,18 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         PN_ASM2(OP_LOADPN, reg, PN_S(t,0));
       } else if (a != PN_NIL && PN_IS_PTR(a)
                  && PN_PART(a) == AST_LICK && PN_PART(a->a[0]) == AST_MSG) {
-        struct PNSource * volatile msg = a->a[0];
+        vPN(Source) msg = a->a[0];
         PN tpl = PN_S(msg, 0);
-        PN_SIZE num = PN_PUT(f->locals, tpl);
+        // locals or upvals. locals alone broke nbody
+        PN_SIZE num = PN_UPVAL(tpl);
+        u8 opcode =  OP_GETUPVAL;
         PN key = PN_S(PN_TUPLE_AT(a->a[1]->a[0], 0), 0);
-        if (reg != num) {
-          PN_ASM2(OP_GETLOCAL, reg, num);
+        if (num == PN_NONE) {
+          num = PN_PUT(f->locals, tpl);
+          DBG_c("locals %s => %d\n", AS_STR(tpl), (int)num);
+          opcode = OP_GETLOCAL;
         }
+        PN_ASM2(opcode, reg, num);
         if (PN_VTYPE(key) == PN_TSTRING) { // a[k] a variable
           num = PN_PUT(f->locals, key);
           DBG_c("locals %s => %d\n", PN_STR_PTR(key), (int)num);
