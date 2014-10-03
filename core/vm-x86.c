@@ -427,13 +427,13 @@ void potion_x86_newtuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 // with immediate constant directly, and the indirect version uses R(B-1024)
 void potion_x86_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  //TODO fwd op.a // movq -A(%rbp), %rax; movq %rax, %rdi; call potion_fwd;
-  X86_MOV_RBP(0x8B, op.a); 		    	// mov -A(%rbp) %eax
+  X86_ARGO(op.a, 0);				// movq -A(%rbp), %rdi
+  X86_PRE(); ASM(0xB8); ASMN(potion_fwd);	// mov &potion_fwd, %rax
+  ASM(0xFF); ASM(0xD0);				// callq %rax
   if (op.b & ASM_TPL_IMM) { // not immediate index. R(B-1024)
-    //X86_DEBUG();
     X86_PRE();ASM(0x8b);ASM_MOV_EBP(0x55,op.b-ASM_TPL_IMM); // mov -B-1024(%rbp) %rdx
     X86_PRE();ASM(0x48);ASM(0xd1);ASM(0xea);                // shr %rdx,1
-    //ASM(0xcc); //0x90 or 0xd0
+    //ASM(0xcc);                  // displacement: 0x90 or 0xd0
     X86_PRE();ASM(0x8b);ASM(0x44);ASM((5+PN_SIZE_T)<<4);ASM(0x10);// mov 0x10(%rax,%rdx,PN_SIZE_T),%rax
   } else { // immediate index B
     X86_PRE();ASM(0xc7);ASM(0xc2);ASMI(op.b+2);         // mov B+$2, %rdx #PNTuple+2

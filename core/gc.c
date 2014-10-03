@@ -395,7 +395,7 @@ void *potion_gc_copy(Potion *P, struct PNObject *ptr) {
   void *dst = (void *)P->mem->old_cur;
   PN_SIZE sz = potion_type_size(P, (const struct PNObject *)ptr);
   if (!sz) { //external pointer or immediate value
-    DBG_G(P,"GC copy: assuming extern pointer or immediate potion value: %p (%ld)\n", ptr, *(long*)ptr);
+    DBG_G(P,"GC copy: assuming extern pointer or immediate potion value %p: %ld / 0x%lx\n", ptr, *(long*)ptr, *(long*)ptr);
     //return ptr;
     memcpy(dst, ptr, sizeof(void*));
     return dst;
@@ -454,7 +454,7 @@ void *potion_mark_minor(Potion *P, const struct PNObject *ptr) {
       GC_MINOR_UPDATE(((Potion *)ptr)->callset);
       GC_MINOR_UPDATE(((Potion *)ptr)->input);
       GC_MINOR_UPDATE(((Potion *)ptr)->source);
-      GC_MINOR_UPDATE(((Potion *)ptr)->pbuf);
+      //GC_MINOR_UPDATE(((Potion *)ptr)->pbuf);
       GC_MINOR_UPDATE(((Potion *)ptr)->line);
       GC_MINOR_UPDATE(((Potion *)ptr)->unclosed);
       //GC_MINOR_UPDATE(((Potion *)ptr)->target);
@@ -568,7 +568,7 @@ void *potion_mark_major(Potion *P, const struct PNObject *ptr) {
       //DBG_G(P,"   source\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->source);
       //DBG_G(P,"   pbuf\n");
-      GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
+      //GC_MAJOR_UPDATE(((Potion *)ptr)->pbuf);
       //DBG_G(P,"   line\n");
       GC_MAJOR_UPDATE(((Potion *)ptr)->line);
       //DBG_G(P,"   unclosed\n");

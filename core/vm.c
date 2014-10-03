@@ -644,33 +644,35 @@ reentry:
       )
       CASE(GETUPVAL, reg[op.a] = PN_DEREF(upvals[op.b]) )
       CASE(SETUPVAL,
-        PN_DEREF(upvals[op.b]) = reg[op.a];
-        PN_TOUCH(upvals[op.b])
+           PN_DEREF(upvals[op.b]) = reg[op.a];
+           PN_TOUCH(upvals[op.b])
       )
       CASE(GLOBAL,
            potion_define_global(P, reg[op.a], reg[op.b]);
-	   reg[op.a] = reg[op.b])
+           reg[op.a] = reg[op.b])
       CASE(NEWTUPLE,
-	   reg[op.a] = PN_TUP0())
-      CASE(GETTUPLE, /* fast unsafe version, not bound checked */
-	   DBG_CHECK_TUPLE(reg[op.a]);
-           long i = op.b & ASM_TPL_IMM ? PN_INT(reg[op.b - ASM_TPL_IMM]) : op.b;
-	   reg[op.a] =  PN_TUPLE_AT(reg[op.a], i));
+           reg[op.a] = PN_TUP0())
+      CASE(GETTUPLE, { /* fast unsafe version, not bound checked */
+          vPN(Tuple) tpl = (vPN(Tuple))potion_fwd(reg[op.a]);
+          DBG_CHECK_TUPLE(tpl);
+          long i = op.b & ASM_TPL_IMM ? PN_INT(reg[op.b - ASM_TPL_IMM]) : op.b;
+          reg[op.a] =  PN_TUPLE_AT(tpl, i);
+      })
       CASE(SETTUPLE,
-	   reg[op.a] = PN_PUSH(reg[op.a], reg[op.b]))
+           reg[op.a] = PN_PUSH(reg[op.a], reg[op.b]))
       CASE(GETTABLE,
-	   reg[op.a] = potion_table_at(P, PN_NIL, reg[op.a], reg[op.b]))
+           reg[op.a] = potion_table_at(P, PN_NIL, reg[op.a], reg[op.b]))
       CASE(SETTABLE,
-	   potion_table_set(P, reg[op.a], reg[op.a + 1], reg[op.b]))
+           potion_table_set(P, reg[op.a], reg[op.a + 1], reg[op.b]))
       CASE(NEWLICK, {
-        PN attr = op.b > op.a ? reg[op.a + 1] : PN_NIL;
-        PN inner = op.b > op.a + 1 ? reg[op.b] : PN_NIL;
-        reg[op.a] = potion_lick(P, reg[op.a], attr, inner);
+          PN attr = op.b > op.a ? reg[op.a + 1] : PN_NIL;
+          PN inner = op.b > op.a + 1 ? reg[op.b] : PN_NIL;
+          reg[op.a] = potion_lick(P, reg[op.a], attr, inner);
       })
       CASE(GETPATH,
-	   reg[op.a] = potion_obj_get(P, PN_NIL, reg[op.a], reg[op.b]))
+           reg[op.a] = potion_obj_get(P, PN_NIL, reg[op.a], reg[op.b]))
       CASE(SETPATH,
-	   potion_obj_set(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]))
+           potion_obj_set(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]))
       CASE(ADD, PN_VM_MATH(add, +))
       CASE(SUB, PN_VM_MATH(sub, -))
       CASE(MULT,PN_VM_MATH(mult, *))

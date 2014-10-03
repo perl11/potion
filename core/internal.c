@@ -16,11 +16,11 @@ PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
    PN_return, PN_self, PN_string, PN_while;
 PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
-PN pn_filenames;
 PN PN_extern;
 #ifdef P2
 PN PN_use, PN_no;
 #endif
+PN pn_filenames;
 
 PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
   struct PNData *obj = PN_ALLOC_N(PN_TUSER, struct PNData, PN_INT(len));
@@ -332,16 +332,16 @@ void potion_dump_stack(Potion *P) {
 #endif
 
   printf("-- dumping %ld stack from %p to %p --\n", n, start, end);
-  printf("   ebp = %p, *ebp = %lx\n", ebp, *ebp);
+  printf("   ebp = %p, *ebp = 0x%lx\n", ebp, *ebp);
   while (n--) {
     vPN(Object) o = (struct PNObject*)*start;
-    printf("   stack(%ld) = %p: %lx", n, start, *start);
+    printf("   stack(%ld) = %p: 0x%lx", n, start, *start);
     if (IS_GC_PROTECTED(*start))
-      printf(" vt=%x gc", PN_TYPE(o));
+      printf(" vt=%x prot", PN_TYPE(o));
     else if (IN_BIRTH_REGION(*start))
-      printf(" vt=%x gc(0)", PN_TYPE(o));
+      printf(" vt=%x birth", PN_TYPE(o));
     else if (IN_OLDER_REGION(*start))
-      printf(" vt=%x gc(1)", PN_TYPE(o));
+      printf(" vt=%x OLD", PN_TYPE(o));
 
     if (*start == 0)
       printf(" nil\n");

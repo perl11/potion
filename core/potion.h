@@ -558,7 +558,7 @@ typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; unsigned char ptr[]
 ///
 /// the jit
 ///
-#define OP_MAX 64
+#define OP_MAX 50 // OP_DEBUG+1 was 64, statically allocated in Potion interpreter
 
 typedef void (*OP_F)(Potion *P, struct PNProto *, PNAsm * volatile *, ...);
 
