@@ -17,4 +17,17 @@ install:
 script: make config CC=$CC DEBUG=$DEBUG; make && make -j1 test
 
 notifications:
-  irc: "irc.perl.org#perl11"
+  irc:
+    channels:
+      - "irc.perl.org#perl11"
+    on_success: always
+    on_failure: always
+    # to enable skip_join, in IRC channel first execute `/mode -n`
+    skip_join: true
+    template:
+      - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message} %{build_url}"
+
+# DEFAULT TEMPLATE
+#      - "%{repository}#%{build_number} (%{branch} - %{commit} : %{author}): %{message}"
+#      - "Change view : %{compare_url}"
+#      - "Build details : %{build_url}"
