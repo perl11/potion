@@ -1,3 +1,9 @@
+v0.3
+
+        * Added new syntax tuple[index] for fast unchecked access,
+	  also for table with a string literal: table["key"]
+        * Added more examples
+
 v0.2	Thu Sep 11 10:28:32 CDT 2014 rurban v0.2-0-ga280506-1153
 
         * print and say methods return "" instead of nil.
