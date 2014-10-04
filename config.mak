@@ -2,6 +2,7 @@
 # create config.inc and core/config.h
 POTION_MAJOR = 0
 POTION_MINOR = 3
+# P2_VERSION: see core/p2.h
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
 PWD    = $(shell pwd)
