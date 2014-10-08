@@ -95,7 +95,7 @@ primary=	(
 |		action					{ push(makeAction(yytext)); }
 |		BEGIN					{ push(makePredicate("YY_BEGIN")); }
 |		END					{ push(makePredicate("YY_END")); }
-                ) (errblock { Node *node = pop(); ((struct Any *) node)->errblock = strdup(yytext); push(node); })?
+                ) (errblock { push(makeError(pop(), strdup(yytext))); })?
 
 # Lexical syntax
 
