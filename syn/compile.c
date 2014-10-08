@@ -457,6 +457,21 @@ static void Rule_compile_c2(Node *node)
     Rule_compile_c2(node->rule.next);
 }
 
+#ifdef YY_DEBUG
+static void yyprintcontext(FILE *stream, char *s)
+{
+  char *context = s;
+  char *nl = strchr(context, 10);
+  if (nl) {
+    context = (char*)malloc(nl-s+1);
+    strncpy(context, s, nl-s);
+    context[nl-s] = '\0'; /* replace nl by 0 */
+  }
+  fprintf(stream, " @ \"%s\"", context);
+  if (nl) free(context);
+}
+#endif
+
 static char *header= "\
 #include <stdio.h>\n\
 #include <stdlib.h>\n\
