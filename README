@@ -51,6 +51,10 @@
    * A lightweight generational GC, based on Basile Starynkevitch's
      work on Qish, with ~4ms per GC on average with < 100MB heaps.
      <http://starynkevitch.net/Basile/qishintro.html>
+     The compiler will add hooks for objects leaving scope and add
+     DESTROY method calls if they are visible at
+     compile-time. Run-time created DESTROY methods will not be
+     automatically called.
 
    * Using most of Damian Conway's p5i recommendations:
      i.e. classes are immutable and final by default.
@@ -109,13 +113,6 @@
      structures (list, trees, hashes of hashes) against structures,
      values and types.
 
-   * A lightweight generational GC, based on Basile Starynkevitch's
-     work on Qish.  <http://starynkevitch.net/Basile/qishintro.html>
-     The compiler will add hooks for objects leaving scope and add
-     DESTROY method calls if they are visible at
-     compile-time. Run-time created DESTROY methods will not be
-     automatically called.
-
    * Bootstrapped "id" object model, based on Ian Piumarta's soda
      languages.  This means everything in the language, including
      object allocation, parser, compiler and interpreter state are
@@ -151,7 +148,7 @@
   However, some warnings:
 
    * Ints cannot hold pointers and need to be boxed. This should be
-     transparent though.
+     transparent though. Use WeakRefs for pointers.
 
    * Strings are immutable (like Lua) and byte arrays are used for I/O
      buffers. All strings and symbols are utf8 internally.
