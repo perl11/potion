@@ -21,24 +21,28 @@ potion_cp_strlen_utf8(const char * _s)
   size_t u;
   unsigned char b;
 
+  /* Handle any initial misaligned bytes. */
   for (s = _s; (uintptr_t)(s) & (sizeof(size_t) - 1); s++) {
     b = *s;
     if (b == '\0') goto done;
-    count += (b >> 7) & ((~b) >> 6);
+    count += (b >> 7) & ((~b) >> 6); /* NOT the first byte of a character? */
   }
-
+  /* Handle complete blocks, vectorizable */
   for (; ; s += sizeof(size_t)) {
     __builtin_prefetch(&s[256], 0, 0);
-    u = *(size_t *)(s);
-    if ((u - ONEMASK) & (~u) & (ONEMASK * 0x80)) break;
+    u = *(size_t *)(s); /* Grab 4 or 8 bytes of UTF-8 data. */
+    if ((u - ONEMASK) & (~u) & (ONEMASK * 0x80)) break; /* exit on \0 */
+    /* count bytes which are NOT the first byte of a character.
+       TODO: could use a lookup table */
     u = ((u & (ONEMASK * 0x80)) >> 7) & ((~u) >> 6);
     count += (u * ONEMASK) >> ((sizeof(size_t) - 1) * 8);
   }
-
+  /* any left-over bytes. */
   for (; ; s++) {
     b = *s;
     if (b == '\0') break;
-    count += (b >> 7) & ((~b) >> 6);
+    /* Is this byte NOT the first byte of a character? */
+    count += (b >> 7) & ((~b) >> 6); /* NOT the first byte of a character? */
   }
 done:
   return ((s - _s) - count);
