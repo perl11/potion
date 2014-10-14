@@ -293,7 +293,8 @@ PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
 ///\param index PNNumber
 ///\return PNString substring index .. index+1
 static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
-  size_t startoffset, endoffset, start;
+  size_t startoffset, endoffset;
+  ssize_t start;
   char *str  = PN_STR_PTR(potion_fwd(self));
   DBG_CHECK_TYPE(index, PN_TNUMBER);
   start = PN_INT(index);
