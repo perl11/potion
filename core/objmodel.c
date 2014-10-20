@@ -719,20 +719,24 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Number"),       PN_VTABLE(PN_TNUMBER));
   potion_init_class_reference(P, potion_str(P, "Boolean"),      PN_VTABLE(PN_TBOOLEAN));
   potion_init_class_reference(P, potion_str(P, "String"),       PN_VTABLE(PN_TSTRING));
-  potion_init_class_reference(P, potion_str(P, "Table"),        PN_VTABLE(PN_TTABLE));
-  potion_init_class_reference(P, potion_str(P, "Function"),     PN_VTABLE(PN_TCLOSURE));
-  potion_init_class_reference(P, potion_str(P, "Tuple"),        PN_VTABLE(PN_TTUPLE));
-  potion_init_class_reference(P, potion_str(P, "File"),         PN_VTABLE(PN_TFILE));
-  potion_init_class_reference(P, potion_str(P, "Potion"),       PN_VTABLE(PN_TSTATE));
-  potion_init_class_reference(P, potion_str(P, "Source"),       PN_VTABLE(PN_TSOURCE));
   potion_init_class_reference(P, potion_str(P, "Bytes"),        PN_VTABLE(PN_TBYTES));
+  potion_init_class_reference(P, potion_str(P, "Tuple"),        PN_VTABLE(PN_TTUPLE));
+  potion_init_class_reference(P, potion_str(P, "Table"),        PN_VTABLE(PN_TTABLE));
+  potion_init_class_reference(P, potion_str(P, "Cons"),         PN_VTABLE(PN_TCONS));
+  potion_init_class_reference(P, potion_str(P, "Lick"),         PN_VTABLE(PN_TLICK));
+  potion_init_class_reference(P, potion_str(P, "File"),         PN_VTABLE(PN_TFILE));
+  potion_init_class_reference(P, potion_str(P, "Function"),     PN_VTABLE(PN_TCLOSURE));
+  potion_init_class_reference(P, potion_str(P, "State"),        PN_VTABLE(PN_TSTATE));
+  potion_init_class_reference(P, potion_str(P, "Source"),       PN_VTABLE(PN_TSOURCE));
+  potion_init_class_reference(P, potion_str(P, "Parser"),       PN_VTABLE(PN_TPARSER));
   potion_init_class_reference(P, potion_str(P, "Compiled"),     PN_VTABLE(PN_TPROTO));
   potion_init_class_reference(P, potion_str(P, "Ref"),          PN_VTABLE(PN_TWEAK));
-  potion_init_class_reference(P, potion_str(P, "Lick"),         PN_VTABLE(PN_TLICK));
   potion_init_class_reference(P, potion_str(P, "Error"),        PN_VTABLE(PN_TERROR));
   potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
   potion_init_class_reference(P, potion_str(P, "Integer"),      PN_VTABLE(PN_TINTEGER));
   potion_init_class_reference(P, potion_str(P, "Double"),       PN_VTABLE(PN_TDOUBLE));
+  potion_init_class_reference(P, potion_str(P, "Bigint"),       PN_VTABLE(PN_TBIGINT));
+  potion_init_class_reference(P, potion_str(P, "Bignum"),       PN_VTABLE(PN_TBIGNUM));
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
   

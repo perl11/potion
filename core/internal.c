@@ -29,26 +29,31 @@ PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
 }
 
 static void potion_init(Potion *P) {
-  PN vtable, obj_vt, num_vt;
+  PN vtable, obj_vt, num_vt, cons_vt;
   P->lobby = potion_type_new(P, PN_TLOBBY, 0);       // named Lobby resp. P2
   vtable = potion_type_new(P, PN_TVTABLE, P->lobby); // named Mixin
   obj_vt = potion_type_new(P, PN_TOBJECT, P->lobby);
   num_vt = potion_type_new(P, PN_TNUMBER, obj_vt);
-  potion_type_new(P, PN_TDOUBLE, num_vt);
-  potion_type_new(P, PN_TINTEGER, num_vt);
   potion_type_new(P, PN_TNIL, obj_vt);               // named NilKind resp. Undef
+  potion_type_new(P, PN_TDOUBLE, num_vt);  // subtype of Number
+  potion_type_new(P, PN_TINTEGER, num_vt); // subtype of Number
+                                           // only needed for compiler opts (i=I)
+  potion_type_new(P, PN_TBIGINT, num_vt);  // subtype of Number
+  potion_type_new(P, PN_TBIGNUM, num_vt);  // subtype of Number
   potion_type_new(P, PN_TBOOLEAN, obj_vt);
   potion_type_new(P, PN_TSTRING, obj_vt);
   potion_type_new(P, PN_TTABLE, obj_vt);
   potion_type_new(P, PN_TCLOSURE, obj_vt);
   potion_type_new(P, PN_TTUPLE, obj_vt);
   potion_type_new(P, PN_TFILE, obj_vt);
-  potion_type_new(P, PN_TSTATE, obj_vt); 	     // named Potion
+  potion_type_new(P, PN_TSTATE, obj_vt);  // named Potion
   potion_type_new(P, PN_TSOURCE, obj_vt);
+  potion_type_new(P, PN_TPARSER, obj_vt); // greg
   potion_type_new(P, PN_TBYTES, obj_vt);
   potion_type_new(P, PN_TPROTO, obj_vt);
   potion_type_new(P, PN_TWEAK, obj_vt);
-  potion_type_new(P, PN_TLICK, obj_vt);
+  cons_vt = potion_type_new(P, PN_TCONS, obj_vt);
+  potion_type_new(P, PN_TLICK, cons_vt);  // subtype of cons
   potion_type_new(P, PN_TERROR, obj_vt);
   potion_type_new(P, PN_TCONT, obj_vt);
 
@@ -203,6 +208,7 @@ PNType potion_kind_of(PN obj) {
 /// valid signature types
 /// syntax.y: arg-type = ('s' | 'S' | 'n' | 'N' | 'b' | 'B' | 'k' | 't' | 'o' | 'O' | '-' | '&')
 /// valid signature modifiers: '|' optional, '.' end, ':' default
+/// upper-case: scalars, lower-char: aggregate objects
 char potion_type_char(PNType type) {
   switch (type) {
   case PN_TNIL:  	return 'n'; //0 nil?  (unused)
@@ -211,25 +217,29 @@ char potion_type_char(PNType type) {
   case PN_TINTEGER:	return 'I'; //3
   case PN_TDOUBLE:    	return 'D'; //4
   case PN_TSTRING:	return 'S'; //5 String
-  case PN_TWEAK:       	return 0;   //6 (illegal)
-  case PN_TCLOSURE:    	return '&'; //7
-  case PN_TTUPLE:      	return 'u'; //8 (used)
-  case PN_TSTATE:      	return 's'; //9
-  case PN_TFILE:       	return 'F'; //10
-  case PN_TOBJECT:     	return 'o'; //11 any (used)
-  case PN_TVTABLE:     	return 't'; //12 type (unused)
-  case PN_TSOURCE:     	return 'a'; //13 ast or code (used in source_compile)
-  case PN_TBYTES:      	return 'b'; //14 aio (used)
-  case PN_TPROTO:      	return 'P'; //15
-  case PN_TLOBBY:      	return 'l'; //16
-  case PN_TTABLE:      	return 'T'; //17 (used)
-  case PN_TLICK:       	return 'k'; //18
-  case PN_TFLEX:       	return 'f'; //19
-  case PN_TSTRINGS:    	return 'x'; //20
-  case PN_TERROR:      	return 'r'; //21
-  case PN_TCONT:       	return 'c'; //22
-  case PN_TUSER:       	return 'm'; //23 generated mixins (unused)
-  default:       	return 'm'; //23++
+  case PN_TBYTES:      	return 'b'; //6 (used in aio)
+  case PN_TTUPLE:      	return 'A'; //7 array, (used, was u)
+  case PN_TTABLE:      	return 'H'; //8 hash (used, was T)
+  case PN_TCONS:       	return 'C'; //9
+  case PN_TLICK:       	return 'K'; //10
+  case PN_TFILE:       	return 'F'; //11
+  case PN_TSTATE:      	return 's'; //12
+  case PN_TWEAK:       	return 0;   //13 (illegal)
+  case PN_TPROTO:      	return 'c'; //14 Compiled closure declaration
+  case PN_TCLOSURE:    	return '&'; //15
+  case PN_TOBJECT:     	return 'o'; //16 any (used)
+  case PN_TVTABLE:     	return 'v'; //17 type (unused)
+  case PN_TSOURCE:     	return 'a'; //18 ast or code (used in source_compile)
+  case PN_TPARSER:     	return 'g'; //19 Parser state (greg)
+  case PN_TLOBBY:      	return 'l'; //20
+  case PN_TSTRINGS:    	return 'x'; //21
+  case PN_TERROR:      	return 'r'; //22
+  case PN_TCONT:       	return 't'; //23
+  case PN_TBIGINT:     	return 'i'; //24 not yet
+  case PN_TBIGNUM:    	return 'd'; //25 not yet
+  case PN_TFLEX:       	return 'f'; //26
+  case PN_TUSER:       	return 'm'; //27 generated mixins (unused)
+  default:       	return 'm'; //27++
   }
 }
 
@@ -267,7 +277,7 @@ static inline char *potion_type_name(Potion *P, PN obj) {
   obj = potion_fwd(obj);
   return PN_IS_PTR(obj)
     ? AS_STR(potion_send(PN_VTABLE(PN_TYPE(obj)), PN_string))
-    : PN_IS_NIL(obj) ? "NilKind"
+    : PN_IS_NIL(obj) ? NILKIND_NAME
     : PN_IS_INT(obj) ? "Integer"
                      : "Boolean";
 }

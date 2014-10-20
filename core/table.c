@@ -1,10 +1,11 @@
 ///\file table.c
-/// implement unordered hashes and ordered lists (PNTable and PNTuple)
+/// implement unordered hashes and tuples (arrays) (PNTable, PNTuple)
 ///\class PNTable - unordered hash, the central table type, based on khash
-///\class PNTuple - ordered list (array)
+///\class PNTuple - array
 //
 // (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2013, 2015 perl11 org
+// (c) 2013-2015 perl11 org
+
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -922,7 +923,20 @@ PN potion_tuple_cmp(Potion *P, PN cl, PN self, PN value) {
 /// global "list" method. return a new empty list
 ///\param size PNInteger
 ///\return PNTuple
+PN potion_lobby_array(Potion *P, PN cl, PN self, PN size) {
+  return potion_tuple_with_size(P, PN_INT(size));
+}
+
+///\memberof Lobby
+/// global deprecated "list" method. use array instead
+///\param size PNInteger
+///\return PNTuple
 PN potion_lobby_list(Potion *P, PN cl, PN self, PN size) {
+  static int printed = 0;
+  if (!printed) {
+    fprintf(stderr, "* list is deprecated, use array instead\n");
+    printed++;
+  }
   return potion_tuple_with_size(P, PN_INT(size));
 }
 
@@ -938,7 +952,7 @@ void potion_table_init(Potion *P) {
   potion_method(tbl_vt, "remove", potion_table_remove, "index=o");
   potion_method(tbl_vt, "string", potion_table_string, 0);
   potion_method(tbl_vt, "clone", potion_table_clone, 0);
-  potion_method(tbl_vt, "slice", potion_table_slice, "|keys=u");
+  potion_method(tbl_vt, "slice", potion_table_slice, "|keys=A");
   potion_method(tbl_vt, "keys", potion_table_keys, 0);
   potion_method(tbl_vt, "values", potion_table_values, 0);
   potion_method(tbl_vt, "map", potion_table_map, "block=&");
@@ -973,5 +987,6 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "ins_sort", potion_tuple_ins_sort, "|block=&");
   potion_method(tpl_vt, "cmp", potion_tuple_cmp, "value=o");
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
-  potion_method(P->lobby, "list", potion_lobby_list, "length=N");
+  potion_method(P->lobby, "array", potion_lobby_array, "length=N");
+  potion_method(P->lobby, "list", potion_lobby_list, "length=N"); // DEPRECATED
 }

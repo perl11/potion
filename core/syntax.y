@@ -4,6 +4,7 @@
 # Potion tokens and grammar
 #
 # (c) 2009 _why
+# (c) 2014 perl11.org
 #
 
 %{
@@ -360,7 +361,7 @@ arg-name = < utff utfw* > -    { $$ = PN_STRN(yytext, yyleng) }
 # not with :=, const '-' would make sense, \ and * not
 arg-modifier = < ('-' | '\\' | '*' ) >  { $$ = PN_NUM(yytext[0]); }
 # for FFIs, map to potion and C types. See potion_type_char()
-arg-type = < [NBIDS&oTaubnsFPlkftxrcdm] > - { $$ = PN_NUM(yytext[0]) }
+arg-type = < [nNBIDSbAHCKsc&ovaglxrtidfm] > - { $$ = PN_NUM(yytext[0]) }
 arg = m:arg-modifier n:arg-name assign t:arg-type
                         { SRC_TPL3(n,t,m) }
     | m:arg-modifier n:arg-name

@@ -94,6 +94,8 @@ struct PNError;
 struct PNCont;
 struct PNMemory;
 struct PNVtable;
+//struct PNBigInt;
+//struct PNBigFloat;
 
 /* patch for issue #1 supplied by joeatwork */
 #ifndef __WORDSIZE
@@ -104,30 +106,34 @@ struct PNVtable;
 # endif
 #endif
 
-#define PN_TNIL         0x250000    /// NIL is magic 0x250000 (type 0)
-#define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a TDouble
-#define PN_TBOOLEAN     (2+PN_TNIL)
-#define PN_TDOUBLE      (3+PN_TNIL) //is a Number, no arbitrary prec. yet
-#define PN_TINTEGER     (4+PN_TNIL) //is a Number
-#define PN_TSTRING      (5+PN_TNIL)
-#define PN_TWEAK        (6+PN_TNIL)
-#define PN_TCLOSURE     (7+PN_TNIL)
-#define PN_TTUPLE       (8+PN_TNIL)
-#define PN_TSTATE       (9+PN_TNIL)
-#define PN_TFILE        (10+PN_TNIL) //0a
-#define PN_TOBJECT      (11+PN_TNIL) //0b
-#define PN_TVTABLE      (12+PN_TNIL) //0c
-#define PN_TSOURCE      (13+PN_TNIL) //0d
-#define PN_TBYTES       (14+PN_TNIL) //0e
-#define PN_TPROTO       (15+PN_TNIL) //0f
-#define PN_TLOBBY       (16+PN_TNIL) //10
-#define PN_TTABLE       (17+PN_TNIL) //11
-#define PN_TLICK        (18+PN_TNIL) //12
-#define PN_TFLEX        (19+PN_TNIL) //13
-#define PN_TSTRINGS     (20+PN_TNIL) //14
-#define PN_TERROR       (21+PN_TNIL) //15
-#define PN_TCONT        (22+PN_TNIL) //16
-#define PN_TUSER        (23+PN_TNIL) //17
+#define PN_TNIL         0x250000     // NIL is magic 0x250000 (type 0)
+#define PN_TNUMBER      (1+PN_TNIL)  // Integer, or if fwd'd a Double, or BigInt or BigNum
+#define PN_TBOOLEAN     (2+PN_TNIL)  // TRUE or FALSE
+#define PN_TINTEGER     (3+PN_TNIL)  // a Number, special typed-optimized. no overflow check yet
+#define PN_TDOUBLE      (4+PN_TNIL)  // a Number, special typed-optimized. no overflow check yet
+#define PN_TSTRING      (5+PN_TNIL)  // a unique, hashed, utf8-string
+#define PN_TBYTES       (6+PN_TNIL)  // binary string
+#define PN_TTUPLE       (7+PN_TNIL)  // an array
+#define PN_TTABLE       (8+PN_TNIL)  // a hash
+#define PN_TCONS        (9+PN_TNIL)  // a linked list
+#define PN_TLICK        (10+PN_TNIL) //0a a named tree
+#define PN_TFILE        (11+PN_TNIL) //0b
+#define PN_TSTATE       (12+PN_TNIL) //0c the Potion Interpreter
+#define PN_TWEAK        (13+PN_TNIL) //0d
+#define PN_TPROTO       (14+PN_TNIL) //0e
+#define PN_TCLOSURE     (15+PN_TNIL) //0f
+#define PN_TOBJECT      (16+PN_TNIL) //10
+#define PN_TVTABLE      (17+PN_TNIL) //11
+#define PN_TSOURCE      (18+PN_TNIL) //12
+#define PN_TPARSER      (19+PN_TNIL) //13
+#define PN_TLOBBY       (20+PN_TNIL) //14
+#define PN_TSTRINGS     (21+PN_TNIL) //15
+#define PN_TERROR       (22+PN_TNIL) //16
+#define PN_TCONT        (23+PN_TNIL) //17
+#define PN_TBIGINT      (24+PN_TNIL) //18 arprec with int (not yet)
+#define PN_TBIGNUM      (25+PN_TNIL) //1a arprec with float (not yet)
+#define PN_TFLEX        (26+PN_TNIL) //1b
+#define PN_TUSER        (27+PN_TNIL) //1c
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -342,12 +348,11 @@ struct PNBytes {
   char chars[];
 };
 
-/// PN_MANTISSA the last part of ->real
-#define PN_MANTISSA(d, n) d->real[1 + n]
+/// PN_MANTISSA the last part of ->real (a leftover from decimals)
+//#define PN_MANTISSA(d, n) d->real[1 + n]
 
 ///
-/// doubles are floating point numbers
-/// stored as binary data. immutable.
+/// doubles are floating point numbers stored as native 2 word double. immutable.
 ///
 struct PNDouble {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
@@ -494,13 +499,22 @@ struct PNError {
 };
 
 ///
-/// a lick is a unit of generic tree data.
+/// a lick is a unit of generic named tree data.
 ///
 struct PNLick {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   PN name;  ///< PNString
   PN attr;  ///< PN
   PN inner; ///< "licks" PNTuple or "text" PNString member
+};
+
+///
+/// a cons is a generic list element
+///
+struct PNCons {
+  PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
+  PN head;  ///< PN
+  PN tail;  ///< PN
 };
 
 ///

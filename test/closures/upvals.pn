@@ -16,7 +16,7 @@ cl4 = (y): x + y.
 
 z1 = true
 z2 = 16
-z3 = list(2)
+z3 = array(2)
 z4 = (a=1)
 "" print
 

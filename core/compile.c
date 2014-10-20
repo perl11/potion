@@ -51,7 +51,7 @@ PN potion_proto_tree(Potion *P, PN cl, PN self) {
 
 ///\memberof PNProto
 /// call method of PNProto. i.e. apply - bind args to a closure.
-///\param args
+///\param args PNTuple
 PN potion_proto_call(Potion *P, PN cl, PN self, PN args) {
   return potion_vm(P, self, P->lobby, args, 0, NULL);
 }
@@ -1314,11 +1314,11 @@ PN potion_eval(Potion *P, PN bytes) {
 void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
   PN src_vt = PN_VTABLE(PN_TSOURCE);
-  potion_method(pro_vt, "call", potion_proto_call, "args=u");
+  potion_method(pro_vt, "call", potion_proto_call, "args=A");
   potion_method(pro_vt, "tree", potion_proto_tree, 0);
   potion_method(pro_vt, "string", potion_proto_string, 0);
   potion_method(pro_vt, "clone", potion_proto_clone, 0);
-  potion_method(src_vt, "compile", potion_source_compile, "source=a,sig=u");
+  potion_method(src_vt, "compile", potion_source_compile, "source=a,sig=A");
   potion_method(src_vt, "dump", potion_source_dump, "backend=S|options=S");
   potion_method(src_vt, "dumpbc", potion_source_dumpbc, "|options=S");
 }

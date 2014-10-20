@@ -1,14 +1,14 @@
 # See http://rosettacode.org/wiki/Topswops#Potion
 
 range = (a, b):
-  i = 0, l = list(b-a+1)
+  i = 0, l = array(b-a+1)
   while (a + i <= b):
     l(i) = a + i++.
   l.
 
 fannkuch = (n):
   flips = 0, maxf = 0, k = 0, m = n - 1, r = n, check = 0
-  perml = range(0, n), count = list(n), perm = list(n)
+  perml = range(0, n), count = array(n), perm = array(n)
 
   loop:
     #if (check < 30):

@@ -1,7 +1,7 @@
 #
-# allocate a million lists, but dispose of them immediately.
+# allocate a million big arrays, but dispose of them immediately.
 # run with -V option to see memory use.
 #
 ary = nil
-1000000 times: ary = list(200000).
+1000000 times: ary = array(200000).
 nil

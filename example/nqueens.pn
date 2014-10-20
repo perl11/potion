@@ -8,11 +8,11 @@ n = argv(1) number
 if (n < 1): n = 12.
 verbose = argv(2) number > 1
 
-solutions = (), prev = (), occupied = list(n)
+solutions = (), prev = (), occupied = array(n)
 
 solve = (depth):
   if (depth == n): solutions push(prev), return.
-  diag = list(n)
+  diag = array(n)
   # diag: marks cells diagonally attackable by any previous queens.
   prev length times(i):
     d1 = prev(i) + depth - i

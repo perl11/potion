@@ -1,7 +1,9 @@
 ///\file lick.c
-/// PNLick class - the interleaved data format
+///\class PNLick - the interleaved data format, a named tree node
+///\class PNCons - node of a chained list (head, tail)
 //
 // (c) 2008 why the lucky stiff, the freelance professor
+// (c) 2014 perl11 org
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,11 +67,105 @@ PN potion_lick_string(Potion *P, PN cl, PN self) {
   return PN_STR_B(out);
 }
 
+struct PNCons * potion_cons(Potion *P, PN head) {
+  vPN(Cons) cons = PN_ALLOC(PN_TCONS, struct PNCons);
+  cons->head = head;
+  cons->tail = PN_NIL;
+  return cons;
+}
+
+///\memberof Lobby
+/// global "cons" method. allocate a new cons
+///\return PNCons (head . nil)
+PN potion_lobby_cons(Potion *P, PN cl, PN self, PN head) {
+  vPN(Cons) cons = PN_ALLOC(PN_TCONS, struct PNCons);
+  cons->head = head;
+  cons->tail = PN_NIL;
+  return (PN)cons;
+}
+
+///\memberof PNCons
+/// push a value to a cons
+///\return PNCons
+PN potion_list_cons(Potion *P, PN cl, PN self, PN value) {
+  vPN(Cons) cons = potion_cons(P, value);
+  cons->tail = self;
+  return (_PN)cons;
+}
+
+///\memberof PNCons
+///\return PNCons
+PN potion_list_head(Potion *P, PN cl, PN self) {
+  return ((struct PNCons*)self)->head;
+}
+
+///\memberof PNCons
+///\return PNCons
+PN potion_list_tail(Potion *P, PN cl, PN self) {
+  return ((struct PNCons*)self)->tail;
+}
+
+///\memberof PNCons
+///\return PNCons
+PN potion_list_sethead(Potion *P, PN cl, PN self, PN head) {
+  ((struct PNCons*)self)->head = head;
+  return self;
+}
+
+///\memberof PNCons
+///\return PNCons
+PN potion_list_settail(Potion *P, PN cl, PN self, PN tail) {
+  ((struct PNCons*)self)->tail = tail;
+  return self;
+}
+
+///\memberof PNCons
+///\return PNCons
+PN potion_list_append(Potion *P, PN cl, PN self, PN list) {
+  // TODO
+  return self;
+}
+
+///\memberof PNCons
+///\return PNCons
+PN potion_list_member(Potion *P, PN cl, PN self, PN value) {
+  do {
+    if (((struct PNCons*)self)->head == value)
+      return self;
+  } while (((struct PNCons*)self)->tail);
+  return PN_NIL;
+}
+
+///\memberof PNCons
+///\return PNCons
+PN potion_list_reverse(Potion *P, PN cl, PN self) {
+  // TODO
+  return self;
+}
+
+///\memberof PNCons
+///\return PNCons
+PN potion_list_nreverse(Potion *P, PN cl, PN self) {
+  // TODO
+  return self;
+}
+
 void potion_lick_init(Potion *P) {
-  PN lk_vt = PN_VTABLE(PN_TLICK);
-  potion_method(lk_vt, "attr", potion_lick_attr, 0);
-  potion_method(lk_vt, "licks", potion_lick_licks, 0);
-  potion_method(lk_vt, "name", potion_lick_name, 0);
-  potion_method(lk_vt, "string", potion_lick_string, 0);
-  potion_method(lk_vt, "text", potion_lick_text, 0);
+  PN c_vt = PN_VTABLE(PN_TCONS);
+  potion_method(P->lobby, "cons", potion_lobby_cons, "head=o");
+  potion_method(c_vt, "cons", potion_list_cons, "tail=C");
+  potion_method(c_vt, "head", potion_list_head, 0);
+  potion_method(c_vt, "tail", potion_list_tail, 0);
+  potion_method(c_vt, "head", potion_list_head, "head=o");
+  potion_method(c_vt, "tail", potion_list_tail, "tail=C");
+  potion_method(c_vt, "append", potion_list_append, "list=C");
+  potion_method(c_vt, "member", potion_list_member, "value=o");
+  potion_method(c_vt, "reverse", potion_list_reverse, 0);
+  potion_method(c_vt, "nreverse", potion_list_nreverse, 0);
+  PN l_vt = PN_VTABLE(PN_TLICK);
+  potion_method(l_vt, "attr", potion_lick_attr, 0);
+  potion_method(l_vt, "licks", potion_lick_licks, 0);
+  potion_method(l_vt, "name", potion_lick_name, 0);
+  potion_method(l_vt, "string", potion_lick_string, 0);
+  potion_method(l_vt, "text", potion_lick_text, 0);
 }

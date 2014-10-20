@@ -1,4 +1,4 @@
-a = list(20)
+a = array(20)
 a put(10, 1)
 (a at(0), a at(10), a at(11))
 #=> (nil, 1, nil)

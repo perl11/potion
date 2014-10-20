@@ -2,6 +2,7 @@
 /// simple arithmetic.
 /// PNNumber is either an immediate PN_INT integer (with one bit for a tag, range 2^30/2^62)
 /// or a boxed full-precision double PNDouble.
+/// BigInt/BigNum in arbrec.c later
 //
 // (c) 2008 why the lucky stiff, the freelance professor
 // (c) 2013-2014 perel11.org
@@ -25,6 +26,7 @@ PN potion_strtod(Potion *P, char *str, int len) {
   char *ptr = str + len;
   return potion_double(P, strtod(str, &ptr));
 }
+
 /**\memberof PNNumber
   "**" method.
   not static, needed in x86 jit.
@@ -147,6 +149,7 @@ static PN potion_int_sub(Potion *P, PN cl, PN self, PN num) { PN_INT_MATH(-) }
  \param num PNInteger
  \return PNInteger */
 static PN potion_int_mult(Potion *P, PN cl, PN self, PN num) { PN_INT_MATH(*) }
+
 /**\memberof PNInteger
   "/" method
  \param num PNInteger
@@ -440,50 +443,50 @@ void potion_num_init(Potion *P) {
   PN num_vt = PN_VTABLE(PN_TNUMBER);
   PN dbl_vt = PN_VTABLE(PN_TDOUBLE);
   PN int_vt = PN_VTABLE(PN_TINTEGER);
-  potion_method(num_vt, "+", potion_num_add, "value=N");
-  potion_method(num_vt, "-", potion_num_sub, "value=N");
-  potion_method(num_vt, "*", potion_num_mult, "value=N");
-  potion_method(num_vt, "/", potion_num_div, "value=N");
-  potion_method(num_vt, "%", potion_num_rem, "value=N");
-  potion_method(num_vt, "~", potion_num_bitn, 0);
-  potion_method(num_vt, "<<", potion_num_bitl, "value=N");
-  potion_method(num_vt, ">>", potion_num_bitr, "value=N");
-  potion_method(num_vt, "**", potion_num_pow, "value=N");
+  potion_method(num_vt, "+",   potion_num_add, "value=N");
+  potion_method(num_vt, "-",   potion_num_sub, "value=N");
+  potion_method(num_vt, "*",   potion_num_mult, "value=N");
+  potion_method(num_vt, "/",   potion_num_div, "value=N");
+  potion_method(num_vt, "%",   potion_num_rem, "value=N");
+  potion_method(num_vt, "~",   potion_num_bitn, 0);
+  potion_method(num_vt, "<<",  potion_num_bitl, "value=N");
+  potion_method(num_vt, ">>",  potion_num_bitr, "value=N");
+  potion_method(num_vt, "**",  potion_num_pow, "value=N");
   potion_method(num_vt, "abs", potion_num_abs, 0);
-  potion_method(num_vt, "sqrt", potion_num_sqrt, 0);
+  potion_method(num_vt, "sqrt",potion_num_sqrt, 0);
   potion_method(num_vt, "cmp", potion_num_cmp, "value=o");
   potion_method(num_vt, "chr", potion_int_chr, 0);
   potion_method(num_vt, "string", potion_num_string, 0);
   potion_method(num_vt, "number", potion_num_number, 0);
-  potion_method(num_vt, "integer", potion_num_integer, 0);
+  potion_method(num_vt, "integer",potion_num_integer, 0);
   potion_method(num_vt, "double", potion_num_double, 0);
-  potion_method(num_vt, "number?", potion_num_is_number, 0);
-  potion_method(num_vt, "integer?", potion_num_is_integer, 0);
-  potion_method(num_vt, "double?", potion_num_is_double, 0);
-  potion_method(num_vt, "rand", potion_num_rand, 0);
+  potion_method(num_vt, "number?",potion_num_is_number, 0);
+  potion_method(num_vt, "integer?",potion_num_is_integer, 0);
+  potion_method(num_vt, "double?",potion_num_is_double, 0);
+  potion_method(num_vt, "rand",   potion_num_rand, 0);
   // optimized double-only methods, for both operands
   potion_method(dbl_vt, "string", potion_dbl_string, 0);
-  potion_method(dbl_vt, "+", potion_dbl_add, "value=D");
-  potion_method(dbl_vt, "-", potion_dbl_sub, "value=D");
-  potion_method(dbl_vt, "*", potion_dbl_mult, "value=D");
-  potion_method(dbl_vt, "/", potion_dbl_div, "value=D");
+  potion_method(dbl_vt, "+",   potion_dbl_add, "value=D");
+  potion_method(dbl_vt, "-",   potion_dbl_sub, "value=D");
+  potion_method(dbl_vt, "*",   potion_dbl_mult, "value=D");
+  potion_method(dbl_vt, "/",   potion_dbl_div, "value=D");
   potion_method(dbl_vt, "abs", potion_dbl_abs, 0);
   potion_method(dbl_vt, "cmp", potion_dbl_cmp, "value=D");
   //potion_method(dbl_vt, "rand", potion_dbl_rand, 0);
   // optimized integer-only methods, for both operands
-  potion_method(int_vt, "+", potion_int_add, "value=I");
-  potion_method(int_vt, "-", potion_int_sub, "value=I");
-  potion_method(int_vt, "*", potion_int_mult, "value=I");
-  potion_method(int_vt, "/", potion_int_div, "value=I");
-  potion_method(int_vt, "%", potion_int_rem, "value=I");
-  potion_method(int_vt, "<<", potion_int_bitl, "value=I");
-  potion_method(int_vt, ">>", potion_int_bitr, "value=I");
-  potion_method(int_vt, "~", potion_int_bitn, 0);
+  potion_method(int_vt, "+",   potion_int_add, "value=I");
+  potion_method(int_vt, "-",   potion_int_sub, "value=I");
+  potion_method(int_vt, "*",   potion_int_mult, "value=I");
+  potion_method(int_vt, "/",   potion_int_div, "value=I");
+  potion_method(int_vt, "%",   potion_int_rem, "value=I");
+  potion_method(int_vt, "<<",  potion_int_bitl, "value=I");
+  potion_method(int_vt, ">>",  potion_int_bitr, "value=I");
+  potion_method(int_vt, "~",   potion_int_bitn, 0);
   potion_method(int_vt, "chr", potion_int_chr, 0);
   potion_method(int_vt, "abs", potion_int_abs, 0);
   potion_method(int_vt, "cmp", potion_int_cmp, "value=I");
   //potion_method(int_vt, "rand", potion_int_rand, 0);
-  potion_method(num_vt, "step", potion_int_step, "end=N,step=N,block=&");
+  potion_method(num_vt, "step",  potion_int_step, "end=N,step=N,block=&");
   potion_method(num_vt, "times", potion_int_times, "block=&");
-  potion_method(num_vt, "to",   potion_int_to, "end=N,block=&");
+  potion_method(num_vt, "to",    potion_int_to, "end=N,block=&");
 }

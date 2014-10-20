@@ -622,7 +622,10 @@ PN potion_vm(Potion *P, PN proto, PN self, PN vargs, PN_SIZE upc, PN *upargs) {
   }
 #endif
 
-  if (vargs != PN_NIL) args = PN_GET_TUPLE(vargs)->set;
+  if (vargs != PN_NIL) {
+    DBG_CHECK_TUPLE(vargs);
+    args = PN_GET_TUPLE(vargs)->set;
+  }
   memset((void*)stack, 0, STACK_MAX*sizeof(PN));
   DBG_t("-- run-time --\n");
 
