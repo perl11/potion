@@ -67,10 +67,11 @@ PN potion_lick_string(Potion *P, PN cl, PN self) {
   return PN_STR_B(out);
 }
 
-struct PNCons * potion_cons(Potion *P, PN head) {
+// internal cons. add tail to head. tail usually nil.
+struct PNCons * potion_cons(Potion *P, PN head, PN tail) {
   vPN(Cons) cons = PN_ALLOC(PN_TCONS, struct PNCons);
   cons->head = head;
-  cons->tail = PN_NIL;
+  cons->tail = tail;
   return cons;
 }
 
@@ -88,8 +89,7 @@ PN potion_lobby_cons(Potion *P, PN cl, PN self, PN head) {
 /// push a value to a cons
 ///\return PNCons
 PN potion_list_cons(Potion *P, PN cl, PN self, PN value) {
-  vPN(Cons) cons = potion_cons(P, value);
-  cons->tail = self;
+  vPN(Cons) cons = potion_cons(P, value, self);
   return (_PN)cons;
 }
 
@@ -122,7 +122,9 @@ PN potion_list_settail(Potion *P, PN cl, PN self, PN tail) {
 ///\memberof PNCons
 ///\return PNCons
 PN potion_list_append(Potion *P, PN cl, PN self, PN list) {
-  // TODO
+  vPN(Cons) tmp = (struct PNCons*)self;
+  while (tmp->tail) { tmp = (struct PNCons*)tmp->tail; }
+  tmp->tail = list;
   return self;
 }
 
@@ -130,28 +132,40 @@ PN potion_list_append(Potion *P, PN cl, PN self, PN list) {
 ///\return PNCons
 PN potion_list_member(Potion *P, PN cl, PN self, PN value) {
   do {
+    // which equality?
     if (((struct PNCons*)self)->head == value)
       return self;
   } while (((struct PNCons*)self)->tail);
   return PN_NIL;
 }
 
+PN potion_list_reverse_r(Potion *P, struct PNCons* head, PN tail) {
+  if (head)
+    return potion_list_reverse_r(P, (struct PNCons*)head->tail,
+               (PN)potion_cons(P, head->head, tail));
+  else
+    return PN_NIL;
+}
 ///\memberof PNCons
 ///\return PNCons
 PN potion_list_reverse(Potion *P, PN cl, PN self) {
-  // TODO
+  //(if l (reverse (cdr l) (cons (car l) r))
+  vPN(Cons) head = (vPN(Cons))self;
+  if (head)
+    return potion_list_reverse_r(P, (struct PNCons*)head->tail,
+               (PN)potion_cons(P, head->head, PN_NIL));
   return self;
 }
 
 ///\memberof PNCons
 ///\return PNCons
-PN potion_list_nreverse(Potion *P, PN cl, PN self) {
+//PN potion_list_nreverse(Potion *P, PN cl, PN self) {
   // TODO
-  return self;
-}
+  //return self;
+//}
 
 void potion_lick_init(Potion *P) {
-  PN c_vt = PN_VTABLE(PN_TCONS);
+  PN c_vt = PN_VTABLE(PN_TCONS); // should inherit from nil
   potion_method(P->lobby, "cons", potion_lobby_cons, "head=o");
   potion_method(c_vt, "cons", potion_list_cons, "tail=C");
   potion_method(c_vt, "head", potion_list_head, 0);
@@ -161,7 +175,7 @@ void potion_lick_init(Potion *P) {
   potion_method(c_vt, "append", potion_list_append, "list=C");
   potion_method(c_vt, "member", potion_list_member, "value=o");
   potion_method(c_vt, "reverse", potion_list_reverse, 0);
-  potion_method(c_vt, "nreverse", potion_list_nreverse, 0);
+  //potion_method(c_vt, "nreverse", potion_list_nreverse, 0);
   PN l_vt = PN_VTABLE(PN_TLICK);
   potion_method(l_vt, "attr", potion_lick_attr, 0);
   potion_method(l_vt, "licks", potion_lick_licks, 0);
