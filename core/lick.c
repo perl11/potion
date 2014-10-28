@@ -121,6 +121,23 @@ PN potion_list_settail(Potion *P, PN cl, PN self, PN tail) {
 
 ///\memberof PNCons
 ///\return PNCons
+PN potion_list_nth(Potion *P, PN cl, PN self, PN index) {
+  int i;
+  vPN(Cons) tmp = (struct PNCons*)self;
+  for (i=0; tmp && i < PN_NUM(index); i++, tmp = (struct PNCons*)tmp->tail);
+  return (PN)tmp;
+}
+
+///\memberof PNCons
+///\return PNCons
+PN potion_list_setnth(Potion *P, PN cl, PN self, PN index, PN value) {
+  PN tmp = potion_list_nth(P, cl, self, index);
+  tmp = value;
+  return (PN)tmp;
+}
+
+///\memberof PNCons
+///\return PNCons
 PN potion_list_append(Potion *P, PN cl, PN self, PN list) {
   vPN(Cons) tmp = (struct PNCons*)self;
   while (tmp->tail) { tmp = (struct PNCons*)tmp->tail; }
@@ -167,12 +184,14 @@ PN potion_list_reverse(Potion *P, PN cl, PN self) {
 void potion_lick_init(Potion *P) {
   PN c_vt = PN_VTABLE(PN_TCONS); // should inherit from nil
   potion_method(P->lobby, "cons", potion_lobby_cons, "head=o");
-  potion_method(c_vt, "cons", potion_list_cons, "tail=C");
+  potion_method(c_vt, "cons", potion_list_cons, "list=C");
   potion_method(c_vt, "head", potion_list_head, 0);
   potion_method(c_vt, "tail", potion_list_tail, 0);
-  potion_method(c_vt, "head", potion_list_head, "head=o");
-  potion_method(c_vt, "tail", potion_list_tail, "tail=C");
-  potion_method(c_vt, "append", potion_list_append, "list=C");
+  potion_method(c_vt, "sethead", potion_list_sethead, "value=o");
+  potion_method(c_vt, "settail", potion_list_settail, "list=o");
+  potion_type_call_is(c_vt, PN_FUNC(potion_list_nth, "index=N"));
+  potion_type_callset_is(c_vt, PN_FUNC(potion_list_setnth, "index=N,value=o"));
+  potion_method(c_vt, "append", potion_list_append, "list=o");
   potion_method(c_vt, "member", potion_list_member, "value=o");
   potion_method(c_vt, "reverse", potion_list_reverse, 0);
   //potion_method(c_vt, "nreverse", potion_list_nreverse, 0);
