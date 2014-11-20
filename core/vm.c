@@ -361,11 +361,17 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   return f->jit = (PN_F)fn;
 }
 
-#define PN_VM_MATH(name, oper) \
-  if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b])) \
+#define PN_VM_MATH(name, oper)					  \
+  if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b]))		  \
     reg[op.a] = PN_NUM(PN_INT(reg[op.a]) oper PN_INT(reg[op.b])); \
-  else \
+  else								  \
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);
+
+#define PN_VM_NUMCMP(cmp)					  \
+  if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b]))		  \
+    reg[op.a] = PN_BOOL(reg[op.a] cmp reg[op.b]);		  \
+  else							          \
+    reg[op.a] = PN_BOOL(PN_DBL(reg[op.a]) cmp PN_DBL(reg[op.b])); \
 
 static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
   if (numargs > 0) {  //allow fun() to return the closure
@@ -688,22 +694,22 @@ reentry:
       CASE(CMP, reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a])))
       CASE(NEQ,
            DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL(reg[op.a] != reg[op.b]))
+	   PN_VM_NUMCMP(!=))
       CASE(EQ,
            DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL(reg[op.a] == reg[op.b]))
+	   PN_VM_NUMCMP(==))
       CASE(LT,
            DBG_t("\t; %s<%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL((long)(reg[op.a]) < (long)(reg[op.b])))
+	   PN_VM_NUMCMP(<))
       CASE(LTE,
 	   DBG_t("\t; %s<=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL((long)(reg[op.a]) <= (long)(reg[op.b])))
+	   PN_VM_NUMCMP(<=))
       CASE(GT,
 	   DBG_t("\t; %s>%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL((long)(reg[op.a]) > (long)(reg[op.b])))
+	   PN_VM_NUMCMP(>))
       CASE(GTE,
 	   DBG_t("\t; %s>=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL((long)(reg[op.a]) >= (long)(reg[op.b])))
+	   PN_VM_NUMCMP(>=))
       CASE(BITN,
 	   reg[op.a] = PN_IS_NUM(reg[op.b]) ? PN_NUM(~PN_INT(reg[op.b])) : potion_obj_bitn(P, reg[op.b]))
       CASE(BITL, PN_VM_MATH(bitl, <<))
