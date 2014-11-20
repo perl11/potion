@@ -394,10 +394,11 @@ static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numar
 PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* stack) {
   if (P->flags & EXEC_DEBUG) {
     PN ast;
-    PN *upvals, *locals;
-    PN *current = stack;
-    upvals = current;
-    locals = upvals + f->upvalsize;
+    //PN *upvals;
+    //PN *locals;
+    //PN *current = stack;
+    //upvals = current;
+    //locals = upvals + f->upvalsize;
 
     if (PN_IS_TUPLE(f->debugs) && op.b >= 0 && op.b < PN_TUPLE_LEN(f->debugs))
       ast = PN_TUPLE_AT(f->debugs, op.b);
@@ -423,10 +424,10 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
 	PN_AST2_(MSG, PN_STR("loop"),
 	  PN_AST_(LIST, PN_PUSH(PN_TUP(PN_AST_(MSG, ast)), PN_AST_(MSG, (PN)f))))))));
     code = potion_send(code, PN_compile, (PN)f, PN_NIL);
-    locals = locals;
+    //locals = locals;
     code = potion_vm(P, code, P->lobby, PN_NIL, f->upvalsize, upvals);
 # endif // DEBUG_PROTO_DEBUG_LOOP
-    locals = locals;
+    //locals = locals;
     P->flags = flags;
     if (code >= PN_NUM(5)) { // :q, :exit
       P->flags &= ~EXEC_DEBUG);
@@ -435,7 +436,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
     }
 #else // DEBUG_IN_C This is a hack and will go away
     int loop = 1;
-    locals = locals;
+    //locals = locals;
     // TODO: check for breakpoints
     vPN(Source) t = (struct PNSource*)ast;
     if (t) {

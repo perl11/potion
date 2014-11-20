@@ -1,0 +1,75 @@
+x = 1 < 0
+x print
+x = 1 <= 0
+x print
+x = 0 < 1
+x print
+x = 0 <= 1
+x print
+x = 0 > 1
+x print
+x = 0 >= 1
+x print
+x = 0 == 0
+x print
+x = 0 != 1
+x print
+" int-int\n" print
+#=> falsefalsetruetruefalsefalsetruetrue int-int
+
+x = 1.0 < 0
+x print
+x = 1.0 <= 0
+x print
+x = 0.0 < 1
+x print
+x = 0.0 <= 1
+x print
+x = 0.0 > 1
+x print
+x = 0.0 >= 1
+x print
+x = 0.0 == 0
+x print
+x = 0.0 != 1
+x print
+" dbl-int\n" print
+#=> falsefalsetruetruefalsefalsetruetrue dbl-int
+
+x = 1 < 0.0
+x print
+x = 1 <= 0.0
+x print
+x = 0 < 1.0 #
+x print
+x = 0 <= 1.0
+x print
+x = 0 > 1.0
+x print
+x = 0 >= 1.0
+x print
+x = 0 == 0.0 #
+x print
+x = 0 != 1.0 #
+x print
+" int-dbl\n" print
+#=> falsefalsetruetruefalsefalsetruetrue int-dbl
+
+x = 1.0 < 0.0
+x print
+x = 1.0 <= 0.0
+x print
+x = 0.0 < 1.0
+x print
+x = 0.0 <= 1.0
+x print
+x = 0.0 > 1.0
+x print
+x = 0.0 >= 1.0
+x print
+x = 0.0 == 0.0
+x print
+x = 0.0 != 1.0
+x print
+" dbl-dbl\n" print
+#=> falsefalsetruetruefalsefalsetruetrue dbl-dbl

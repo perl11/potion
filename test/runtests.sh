@@ -97,7 +97,8 @@ done
 ${ECHO}
 if [ $failed -gt 0 ]; then
     ${ECHO} "$failed FAILS ($count tests)"
+    exit 1
 else
     ${ECHO} "OK ($count tests)"
 fi
-	    
+  
