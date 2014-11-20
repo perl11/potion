@@ -84,6 +84,7 @@ the x86 and x86_64 jit.
         (*asmp)->ptr[asmpos + 1] = ((*asmp)->len - asmpos) - 2; \
         X86_MOV_RBP(0x89, op.a) 				   /* [b]: mov -B(%rbp) %eax */ \
 })
+//TODO IS_DBL
 #define X86_CMP(ops) \
         X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55,op.a)	/* mov -A(%rbp) %edx */ \
         X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %eax */ \
@@ -91,7 +92,7 @@ the x86 and x86_64 jit.
         ASM(ops); ASM(X86C(9,16, 1,op.a));		/* j? +9 */   \
         X86_MOVQ(op.a, PN_TRUE); 			/* -A(%rbp) = TRUE */ \
         ASM(0xEB); ASM(X86C(7,14, 1,op.a));		/* jmp +7 */    \
-        X86_MOVQ(op.a, PN_FALSE) 		     /*+9 -A(%rbp) = FALSE */
+        X86_MOVQ(op.a, PN_FALSE) 		     /*+9: -A(%rbp) = FALSE */
 #define X86_ARGO(regn, argn) potion_x86_c_arg(P, asmp, 1, regn, argn)
 #define X86_ARGO_IMM(regn, argn) potion_x86_c_arg(P, asmp, 2, regn, argn)
 #define X86_ARGI(regn, argn) potion_x86_c_arg(P, asmp, 0, regn, argn)
