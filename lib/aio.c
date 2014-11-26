@@ -10,7 +10,7 @@
   For POSIX unbuffered fileio \see file.c open,read,write,seek calls on fd
   and lib/buffile.c for buffered IO.
 
- (c) 2013 perl11.org */
+ (c) 2013-2014 perl11.org */
 #include <stdio.h>
 #include <stdlib.h>
 #include <uv.h>
@@ -204,6 +204,13 @@ static PN aio_error(Potion *P, char *name, int status) {
   Potion *P = wrap->P;    \
   FATAL_AIO_TYPE(data,T); \
   if (cb) cb->method(P, (PN)cb, data, PN_NUM(status))
+#define DEF_AIO_CB_NOSTATUS(T)			       \
+  aio_##T##_t* wrap = (aio_##T##_t*)req;	       \
+  vPN(Closure) cb = PN_CLOSURE(wrap->cb);              \
+  PN data = (PN)((char*)wrap - sizeof(struct PNData)); \
+  Potion *P = wrap->P;    \
+  FATAL_AIO_TYPE(data,T); \
+  if (cb) cb->method(P, (PN)cb, data)
 
 static void
 aio_getaddrinfo_cb(uv_getaddrinfo_t* req, int status, struct addrinfo* res) {
@@ -609,8 +616,8 @@ static PN aio_sem_new(Potion *P, PN cl, PN self, PN value) {
   return (PN)data;
 }
 static void
-aio_async_cb(uv_async_t* req, int status) {
-  DEF_AIO_CB(async);
+aio_async_cb(uv_async_t* req) {
+  DEF_AIO_CB_NOSTATUS(async);
 }
 static PN aio_async_new(Potion *P, PN cl, PN self, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(async);
@@ -667,12 +674,12 @@ aio_shutdown_cb(uv_shutdown_t* req, int status) {
   DEF_AIO_CB(shutdown);
 }
 static void
-aio_prepare_cb(uv_prepare_t* req, int status) {
-  DEF_AIO_CB(prepare);
+aio_prepare_cb(uv_prepare_t* req) {
+  DEF_AIO_CB_NOSTATUS(prepare);
 }
 static void
-aio_check_cb(uv_check_t* req, int status) {
-  DEF_AIO_CB(check);
+aio_check_cb(uv_check_t* req) {
+  DEF_AIO_CB_NOSTATUS(check);
 }
 static void
 aio_connection_cb(uv_stream_t* req, int status) {
@@ -683,12 +690,12 @@ aio_udp_send_cb(uv_udp_send_t* req, int status) {
   DEF_AIO_CB(udp_send);
 }
 static void
-aio_idle_cb(uv_idle_t* req, int status) {
-  DEF_AIO_CB(idle);
+aio_idle_cb(uv_idle_t* req) {
+  DEF_AIO_CB_NOSTATUS(idle);
 }
 static void
-aio_timer_cb(uv_timer_t* req, int status) {
-  DEF_AIO_CB(timer);
+aio_timer_cb(uv_timer_t* req) {
+  DEF_AIO_CB_NOSTATUS(timer);
 }
 static void
 aio_signal_cb(uv_signal_t* req, int status) { //signum really
@@ -1679,6 +1686,18 @@ static PN aio_fs_mkdir(Potion *P, PN cl, PN self, PN path, PN mode, PN cb, PN lo
   return r ? aio_error(P, "fs mkdir", r) : self;
 }
 /**\memberof Aio_fs
+   \param tpl String
+   \param cb fs_cb
+   \param loop optional */
+static PN aio_fs_mkdtemp(Potion *P, PN cl, PN self, PN tpl, PN cb, PN loop) {
+  DEF_AIO_NEW_LOOP(fs);
+  aio_fs_t* req = (aio_fs_t*)handle;
+  PN_CHECK_STR(tpl);
+  AIO_CB_SET(fs,req);
+  int r = uv_fs_mkdtemp(l, &req->r, PN_STR_PTR(tpl), fs_cb);
+  return r ? aio_error(P, "fs mkdtemp", r) : self;
+}
+/**\memberof Aio_fs
    \param path String
    \param cb fs_cb
    \param loop optional */
@@ -1695,14 +1714,27 @@ static PN aio_fs_rmdir(Potion *P, PN cl, PN self, PN path, PN cb, PN loop) {
    \param flags Integer
    \param cb fs_cb
    \param loop optional */
-static PN aio_fs_readdir(Potion *P, PN cl, PN self, PN path, PN flags, PN cb, PN loop) {
+static PN aio_fs_scandir(Potion *P, PN cl, PN self, PN path, PN flags, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
   PN_CHECK_STR(path);
   PN_CHECK_INT(flags);
   AIO_CB_SET(fs,req);
-  int r = uv_fs_readdir(l, &req->r, PN_STR_PTR(path), PN_INT(flags), fs_cb);
+  int r = uv_fs_scandir(l, &req->r, PN_STR_PTR(path), PN_INT(flags), fs_cb);
   return r ? aio_error(P, "fs readdir", r) : self;
+}
+/**\memberof Aio_fs
+   \returns tuple of name, type. Or "", -1 if EOF
+*/
+static PN aio_fs_scandir_next(Potion *P, PN cl, PN self) {
+  aio_fs_t *req = AIO_DATA(fs,self);
+  uv_dirent_t dent;
+  int r = uv_fs_scandir_next(&req->r, &dent);
+  PN retval = potion_tuple_with_size(P, 2); //uv_dirent_t
+  vPN(Tuple) t = PN_GET_TUPLE(retval);
+  t->set[0] = r ? PN_STR0 : PN_STR(dent.name);
+  t->set[1] = PN_NUM(r ? -1 : dent.type); // UV_EOF
+  return retval;
 }
 /**\memberof Aio_fs
    \param path String
@@ -1832,6 +1864,7 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_NUM_GLOBAL(FS_FTRUNCATE);
   DEF_AIO_NUM_GLOBAL(FS_UTIME);
   DEF_AIO_NUM_GLOBAL(FS_FUTIME);
+  DEF_AIO_NUM_GLOBAL(FS_ACCESS);
   DEF_AIO_NUM_GLOBAL(FS_CHMOD);
   DEF_AIO_NUM_GLOBAL(FS_FCHMOD);
   DEF_AIO_NUM_GLOBAL(FS_FSYNC);
@@ -1839,13 +1872,22 @@ void Potion_Init_aio(Potion *P) {
   DEF_AIO_NUM_GLOBAL(FS_UNLINK);
   DEF_AIO_NUM_GLOBAL(FS_RMDIR);
   DEF_AIO_NUM_GLOBAL(FS_MKDIR);
+  DEF_AIO_NUM_GLOBAL(FS_MKDTEMP);
   DEF_AIO_NUM_GLOBAL(FS_RENAME);
-  DEF_AIO_NUM_GLOBAL(FS_READDIR);
+  DEF_AIO_NUM_GLOBAL(FS_SCANDIR);
   DEF_AIO_NUM_GLOBAL(FS_LINK);
   DEF_AIO_NUM_GLOBAL(FS_SYMLINK);
   DEF_AIO_NUM_GLOBAL(FS_READLINK);
   DEF_AIO_NUM_GLOBAL(FS_CHOWN);
   DEF_AIO_NUM_GLOBAL(FS_FCHOWN);
+  DEF_AIO_NUM_GLOBAL(DIRENT_UNKNOWN);
+  DEF_AIO_NUM_GLOBAL(DIRENT_FILE);
+  DEF_AIO_NUM_GLOBAL(DIRENT_DIR);
+  DEF_AIO_NUM_GLOBAL(DIRENT_LINK);
+  DEF_AIO_NUM_GLOBAL(DIRENT_FIFO);
+  DEF_AIO_NUM_GLOBAL(DIRENT_SOCKET);
+  DEF_AIO_NUM_GLOBAL(DIRENT_CHAR);
+  DEF_AIO_NUM_GLOBAL(DIRENT_BLOCK);
 #endif /* SANDBOX */
 
   potion_method(P->lobby, "Aio_version", aio_version, 0);
@@ -1988,8 +2030,11 @@ void Potion_Init_aio(Potion *P) {
   potion_method(aio_fs_vt, "unlink", aio_fs_unlink, "path=S,cb=&|loop=o");
   potion_method(aio_fs_vt, "write", aio_fs_write, "fd=N,buf=o,length=N,offset=N,cb=&|loop=o");
   potion_method(aio_fs_vt, "mkdir", aio_fs_mkdir, "path=S,mode=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "mkdtemp", aio_fs_mkdtemp, "tpl=S,cb=&|loop=o");
   potion_method(aio_fs_vt, "rmdir", aio_fs_rmdir, "path=S,cb=&|loop=o");
-  potion_method(aio_fs_vt, "readdir", aio_fs_readdir, "path=S,flags=N,cb=&|loop=o");
+  //potion_method(aio_fs_vt, "readdir", aio_fs_readdir, "path=S,flags=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "scandir", aio_fs_scandir, "path=S,flags=N,cb=&|loop=o");
+  potion_method(aio_fs_vt, "scandir_next", aio_fs_scandir_next, "dirent=o,cb=&|loop=o");
   potion_method(aio_fs_vt, "stat", aio_fs_stat, "path=S,cb=&|loop=o");
   potion_method(aio_fs_vt, "fstat", aio_fs_fstat, "fd=N,cb=&|loop=o");
   potion_method(aio_fs_vt, "rename", aio_fs_rename, "path=S,newpath=S,cb=&|loop=o");
