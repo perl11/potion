@@ -247,7 +247,7 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
  \sa potion_tuple_sort. */
 static PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
   if (PN_IS_DECIMAL(self)) {
-    double d1 = PN_DBL(self);
+    double d1 = ((struct PNDecimal *)self)->value;
     double d2 = PN_DBL(potion_send(PN_number, n));
     return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_ZERO : PN_NUM(1);
   } else {

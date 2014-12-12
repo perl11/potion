@@ -42,6 +42,7 @@ endif
 
 ifeq (${JIT},1)
 ifeq (${JIT_TARGET},X86)
+CFLAGS += -msse2
 ifneq (${DEBUG},0)
 # http://udis86.sourceforge.net/ x86 16,32,64 bit
 # port install udis86

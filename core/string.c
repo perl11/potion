@@ -150,12 +150,23 @@ static PN potion_str_print(Potion *P, PN cl, PN self) {
     return PN_NIL;
 }
 
+/// returns byte position of the index-th utf8 char
+// Maybe use the optimized strlen in contrib.c
 static size_t potion_utf8char_offset(const char *s, size_t index) {
   int i;
   for (i = 0; s[i]; i++)
     if ((s[i] & 0xC0) != 0x80)
       if (index-- == 0)
         return i;
+  return i;
+}
+
+/// returns byte position of next utf8 char after s[offset]
+static size_t potion_utf8char_nextchar(const char *s, size_t offset) {
+  size_t i;
+  for (i = offset+1; s[i]; i++)
+    if ((s[i] & 0xC0) != 0x80)
+      return i;
   return i;
 }
 
@@ -191,6 +202,7 @@ static const uint8_t utf8d[] = {
   1,1,1,4,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,8,7,6,4,5,4,3,2,1,1,1,1,
 };
 
+/// decode the utf8 codepoint at s, i.e. ord
 static unsigned long potion_utf8char_decode(const char *s) {
   unsigned char data, byte;
   unsigned long unic = 0;
@@ -204,6 +216,7 @@ static unsigned long potion_utf8char_decode(const char *s) {
   return unic;
 }
 
+/// helper function for potion_str_slice to fix index.
 inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
   int i = PN_INT(index);
   int corrected;
@@ -236,16 +249,19 @@ static PN potion_str_slice(Potion *P, PN cl, PN self, PN start, PN end) {
   else {
     DBG_CHECK_TYPE(start, PN_TNUMBER);
   }
-  size_t startoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(start, len, 0)));
+  size_t startoffset = potion_utf8char_offset(str,
+                         PN_INT(potion_str_slice_index(start, len, 0)));
   if (!end)
     end = PN_NUM(len);
   else {
     DBG_CHECK_INT(end);
   }
   if (end < start) {
-    endoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(start+end, len, len)));
+    endoffset = potion_utf8char_offset(str,
+                  PN_INT(potion_str_slice_index(start+end, len, len)));
   } else {
-    endoffset = potion_utf8char_offset(str, PN_INT(potion_str_slice_index(end, len, len)));
+    endoffset = potion_utf8char_offset(str,
+                  PN_INT(potion_str_slice_index(end, len, len)));
   }
   return potion_str2(P, str + startoffset, endoffset - startoffset);
 }
@@ -277,7 +293,18 @@ PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
 ///\param index PNNumber
 ///\return PNString substring index .. index+1
 static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
-  return potion_str_slice(P, cl, self, index, PN_NUM(PN_INT(index) + 1));
+  size_t startoffset, endoffset;
+  ssize_t start;
+  char *str  = PN_STR_PTR(potion_fwd(self));
+  DBG_CHECK_TYPE(index, PN_TNUMBER);
+  start = PN_INT(index);
+  if (start < 0) {
+    size_t len = potion_cp_strlen_utf8(str);
+    start = PN_INT(potion_str_slice_index(index, len, 0)); // supports s(-1)
+  }
+  startoffset = potion_utf8char_offset(str, start);
+  endoffset = potion_utf8char_nextchar(str, startoffset);
+  return potion_str2(P, str + startoffset, endoffset - startoffset);
 }
 
 ///\memberof PNString
@@ -286,15 +313,18 @@ static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
 ///\param index int (optional, default: 0)
 ///\return PNNumber
 static PN potion_str_ord(Potion *P, PN cl, PN self, PN index) {
-  self = potion_fwd(self);
-  long len = potion_cp_strlen_utf8(PN_STR_PTR(self));
-  if (len == PN_STR_LEN(self) && index < len) {
-    char *s = PN_STR_PTR(self);
-    return PN_NUM(s[PN_INT(index)]);
-  }
+  const char *str = PN_STR_PTR(potion_fwd(self));
+  if (PN_STR_LEN(self) > 255) goto slow;
   else {
-    return PN_NUM(potion_utf8char_decode
-		  (PN_STR_PTR(potion_str_at(P, cl, self, index))));
+    long len = potion_cp_strlen_utf8(str);
+    if (len == PN_STR_LEN(self) && PN_INT(index) < len) {
+      return PN_NUM(str[PN_INT(index)]);
+    }
+    else {
+    slow:
+      return PN_NUM(potion_utf8char_decode(
+               &str[potion_utf8char_offset(str, PN_INT(index))]));
+    }
   }
 }
 

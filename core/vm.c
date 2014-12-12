@@ -361,11 +361,17 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   return f->jit = (PN_F)fn;
 }
 
-#define PN_VM_MATH(name, oper) \
-  if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b])) \
+#define PN_VM_MATH(name, oper)					  \
+  if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b]))		  \
     reg[op.a] = PN_NUM(PN_INT(reg[op.a]) oper PN_INT(reg[op.b])); \
-  else \
+  else								  \
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);
+
+#define PN_VM_NUMCMP(cmp)					  \
+  if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b]))		  \
+    reg[op.a] = PN_BOOL(reg[op.a] cmp reg[op.b]);		  \
+  else							          \
+    reg[op.a] = PN_BOOL(PN_DBL(reg[op.a]) cmp PN_DBL(reg[op.b])); \
 
 static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
   if (numargs > 0) {  //allow fun() to return the closure
@@ -388,10 +394,11 @@ static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numar
 PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* stack) {
   if (P->flags & EXEC_DEBUG) {
     PN ast;
-    PN *upvals, *locals;
-    PN *current = stack;
-    upvals = current;
-    locals = upvals + f->upvalsize;
+    //PN *upvals;
+    //PN *locals;
+    //PN *current = stack;
+    //upvals = current;
+    //locals = upvals + f->upvalsize;
 
     if (PN_IS_TUPLE(f->debugs) && op.b >= 0 && op.b < PN_TUPLE_LEN(f->debugs))
       ast = PN_TUPLE_AT(f->debugs, op.b);
@@ -417,10 +424,10 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
 	PN_AST2_(MSG, PN_STR("loop"),
 	  PN_AST_(LIST, PN_PUSH(PN_TUP(PN_AST_(MSG, ast)), PN_AST_(MSG, (PN)f))))))));
     code = potion_send(code, PN_compile, (PN)f, PN_NIL);
-    locals = locals;
+    //locals = locals;
     code = potion_vm(P, code, P->lobby, PN_NIL, f->upvalsize, upvals);
 # endif // DEBUG_PROTO_DEBUG_LOOP
-    locals = locals;
+    //locals = locals;
     P->flags = flags;
     if (code >= PN_NUM(5)) { // :q, :exit
       P->flags &= ~EXEC_DEBUG);
@@ -429,7 +436,7 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
     }
 #else // DEBUG_IN_C This is a hack and will go away
     int loop = 1;
-    locals = locals;
+    //locals = locals;
     // TODO: check for breakpoints
     vPN(Source) t = (struct PNSource*)ast;
     if (t) {
@@ -688,22 +695,22 @@ reentry:
       CASE(CMP, reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a])))
       CASE(NEQ,
            DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL(reg[op.a] != reg[op.b]))
+	   PN_VM_NUMCMP(!=))
       CASE(EQ,
            DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL(reg[op.a] == reg[op.b]))
+	   PN_VM_NUMCMP(==))
       CASE(LT,
            DBG_t("\t; %s<%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL((long)(reg[op.a]) < (long)(reg[op.b])))
+	   PN_VM_NUMCMP(<))
       CASE(LTE,
 	   DBG_t("\t; %s<=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL((long)(reg[op.a]) <= (long)(reg[op.b])))
+	   PN_VM_NUMCMP(<=))
       CASE(GT,
 	   DBG_t("\t; %s>%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL((long)(reg[op.a]) > (long)(reg[op.b])))
+	   PN_VM_NUMCMP(>))
       CASE(GTE,
 	   DBG_t("\t; %s>=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   reg[op.a] = PN_BOOL((long)(reg[op.a]) >= (long)(reg[op.b])))
+	   PN_VM_NUMCMP(>=))
       CASE(BITN,
 	   reg[op.a] = PN_IS_NUM(reg[op.b]) ? PN_NUM(~PN_INT(reg[op.b])) : potion_obj_bitn(P, reg[op.b]))
       CASE(BITL, PN_VM_MATH(bitl, <<))

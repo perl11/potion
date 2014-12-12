@@ -62,6 +62,10 @@ the x86 and x86_64 jit.
         X86_PRE(); ASM(0xb8); ASMN((PN)(x)); 			/* movq x, %rax */ \
         X86_PRE(); ASM(0x89); ASM_MOV_EBP(0x45,reg)	       	/* movq %rax, -A(%rbp) */
 #endif
+#define TAG_PREP(tag)    tag = (*asmp)->len + 1
+#define TAG_LABEL(tag)   (*asmp)->ptr[tag] = ((*asmp)->len - tag - 1)
+// TODO refactor to use named TAGs
+// math binop for 2 numbers, int (inlined) or double (via call)
 #define X86_MATH(two, func, ops) ({ \
         int asmpos = 0; \
         X86_MOV_RBP(0x8B, op.a); 					/* mov -A(%rbp) %eax */ \
@@ -72,9 +76,9 @@ the x86 and x86_64 jit.
         if (two) { ASM(0xF6); ASM(0xC2); ASM(0x01); }			/* test 0x1 %dl */ \
         if (two) { ASM(0x74); ASM(0); 					/* je [a] */ } \
         ops; /* add, sub, ... */ \
-        (*asmp)->ptr[asmpos + 1] = ((*asmp)->len - asmpos); \
+        (*asmp)->ptr[asmpos + 1] = ((*asmp)->len - asmpos);		\
         if (two) { (*asmp)->ptr[asmpos + 6] = ((*asmp)->len - asmpos) - 5; } \
-        asmpos = (*asmp)->len; \
+        asmpos = (*asmp)->len;						\
         ASM(0xEB); ASM(0); 						/*  jmp [b] */ \
         X86_ARGO(start - 3, 0); 				   /* [a]: mov &P  0(%esp) */ \
         X86_ARGO(op.a, 1);  					        /* mov &CL 1(%esp) */ \
@@ -83,15 +87,52 @@ the x86 and x86_64 jit.
         ASM(0xFF); ASM(0xD0); 						/* callq %rax */ \
         (*asmp)->ptr[asmpos + 1] = ((*asmp)->len - asmpos) - 2; \
         X86_MOV_RBP(0x89, op.a) 				   /* [b]: mov -B(%rbp) %eax */ \
-})
-#define X86_CMP(ops) \
-        X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55,op.a)	/* mov -A(%rbp) %edx */ \
-        X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %eax */ \
-        X86_PRE(); ASM(0x39); ASM(0xC2); 		/* cmp %rax %rdx */ \
-        ASM(ops); ASM(X86C(9,16, 1,op.a));		/* j? +9 */   \
-        X86_MOVQ(op.a, PN_TRUE); 			/* -A(%rbp) = TRUE */ \
-        ASM(0xEB); ASM(X86C(7,14, 1,op.a));		/* jmp +7 */    \
-        X86_MOVQ(op.a, PN_FALSE) 		     /*+9 -A(%rbp) = FALSE */
+	  })
+// cmp 2 numbers, int or double. eq/neq/gt/ge/lt/le, both inlined (requires SSE)
+// iop: jl, jg, jle, jge, je, jne for normal cmp comparisons
+// xop: jb, jbe", jae, ja, ... for SSE ucomisd comparisons.
+// TODO we also need to check jp for PF (parity) if one number is nan, to force false.
+#define X86_CMP(iop, xop, xmms)                                         \
+        int dbl_a, dbl_b, cmp_dbl, true_1, true_2, false_;			\
+        X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55,op.a)	/* mov -A(%rbp) %rdx */ \
+        X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %rax */ \
+        ASMS("\xA8\x01");		 		/* test $1, %al */ \
+        TAG_PREP(dbl_b); ASM(0x74);ASM(0); 		/* je [dbl_b] */ \
+        ASMS("\xF6\xC2\x01");				/* test $1, %dl */ \
+        TAG_PREP(dbl_a); ASM(0x74);ASM(0);		/* je [dbl_a] */ \
+	/* cmp both int */						\
+        X86_PRE(); ASM(0x39); ASM(0xC2);                /* both_int: cmp %rax, %rdx */ \
+        TAG_PREP(true_1); ASM(iop); ASM(0);		/* j? [true] */	\
+        TAG_PREP(false_); ASM(0xEB); ASM(0);		/* jmp [false] */ \
+                                                                        \
+	/* convert 1 or 2 to dbl, only with sse2. all amd64 have sse2 */ \
+	/* TODO: so if 32bit without sse2 call the math func instead */ \
+        TAG_LABEL(dbl_a);                               /* #dbl_a: b=int + a=dbl */ \
+	ASMS("\xf2\x0f\x10\x42");ASM(PN_SIZE_T);	/* movsd 8(%rdx), %xmm0 [a] */ \
+        ASMS("\x66\x0f\xef\xc9");			/* pxor %xmm1, %xmm1 */ \
+	X86_PRE(); ASMS("\xd1\xf8");	                /* sar %rax */ \
+	ASM(0xF2);X86_PRE();ASMS("\x0f\x2a\xc8");       /* cvtsi2sd %rax, %xmm1 [b] */ \
+        TAG_PREP(cmp_dbl); ASM(0xEB);ASM(0);		/* jmp [cmp_dbl] */ \
+                                                                        \
+        TAG_LABEL(dbl_b); 				/* #b dbl, a? */ \
+	ASMS("\xf2\x0f\x10\x48");ASM(PN_SIZE_T);	/* movsd 8(%rax), %xmm1 [b] */ \
+        ASMS("\xF6\xC2\x01");				/* test $1, %dl */ \
+        ASM(0x74);ASM(X86C(12,14, 0,0));                /* je +cvt */ \
+        ASMS("\x66\x0f\xef\xc0");			/* pxor %xmm0, %xmm0 */ \
+	X86_PRE(); ASMS("\xd1\xfa");	                /* sar %rdx */ \
+	ASM(0xF2);X86_PRE();ASMS("\x0f\x2a\xc2");	/* cvtsi2sd %rdx, %xmm0 [a] */ \
+        ASM(0xEB); ASM(X86C(5,5, 0,0));			/* jmp [cmp_dbl] */ \
+	ASMS("\xf2\x0f\x10\x42");ASM(PN_SIZE_T);	/* movsd 8(%rdx), %xmm0 [a] */ \
+        /* cmp dbl */							\
+	TAG_LABEL(cmp_dbl); ASMS(xmms);			/* ucomisd xmm0<=>xmm1; */ \
+        TAG_PREP(true_2);  ASM(xop); ASM(0);            /* j? [true] */   \
+        TAG_LABEL(false_); X86_MOVQ(op.a, PN_FALSE); 	/* false: -A(%rbp) = FALSE */ \
+        ASM(0xEB); ASM(X86C(7,14, 1,op.a));		/* jmp [+true] */ \
+        TAG_LABEL(true_1); TAG_LABEL(true_2); \
+        X86_MOVQ(op.a, PN_TRUE);      			/* true: -A(%rbp) = TRUE */
+//TODO: optimize j? true, set false, jmp true, set true
+//   => movzbl %al,edx;lea 0x2(,%rdx,4),%rdx;mov %rdx,-A(%rbp)
+
 #define X86_ARGO(regn, argn) potion_x86_c_arg(P, asmp, 1, regn, argn)
 #define X86_ARGO_IMM(regn, argn) potion_x86_c_arg(P, asmp, 2, regn, argn)
 #define X86_ARGI(regn, argn) potion_x86_c_arg(P, asmp, 0, regn, argn)
@@ -107,8 +148,6 @@ the x86 and x86_64 jit.
         } else { \
           ASMI(0); \
         }
-#define TAG_PREP(tag)    tag = (*asmp)->len + 1
-#define TAG_LABEL(tag)   (*asmp)->ptr[tag] = ((*asmp)->len - tag - 1)
 
 
 // ASM(0xcc); int3 trap: __asm__("int3");
@@ -177,8 +216,8 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
     if (argn == 0) {
       // OPT: the first argument is always (Potion *)
       if (!out) {
-	ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));		//mov argn(%ebp), %edx
-	ASM(0x89); ASM(0x14); ASM(0x24);			//mov %edx, (%esp)
+	ASM(0x8b); ASM(0x55); ASM(2 * sizeof(PN));	//mov argn(%ebp), %edx
+	ASMS("\x89\x14\x24");				//mov %edx, (%esp)
       }
     }
     else {
@@ -189,7 +228,7 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
       }
       if (!out) argn += 2;
       if (out == 1) {
-	ASM(0x89); ASM(0x54); ASM(0x24); ASM(argn * sizeof(PN));//mov %edx, argn(%esp)
+	ASMS("\x89\x54\x24"); ASM(argn * sizeof(PN));//mov %edx, argn(%esp)
       } else if (!out) {
 	ASM(0x8b); ASM(0x55); ASM(argn * sizeof(PN));		//mov argn(%ebp), %edx
       }
@@ -231,14 +270,14 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
     break;
   case 4: //r8
     if (out == 2) { // 2nd default arg - mov $regn, %r8
-      ASM(0x49); ASM(0xc7); ASM(0xc0); ASMI(regn);
+      ASMS("\x49\xc7\xc0"); ASMI(regn);
     } else { // mov -regn(%rbp), %r8
       ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM_MOV_EBP(0x45,regn)
     }
     break;
   case 5: //r9
     if (out == 2) { // 3rd default arg - mov $regn, %r9
-      ASM(0x49); ASM(0xc7); ASM(0xc1); ASMI(regn);
+      ASMS("\x49\xc7\xc1"); ASMI(regn);
     } else { // mov -regn(%rbp), %r9
       ASM(0x4c); ASM(out ? 0x8b : 0x89); ASM_MOV_EBP(0x4d,regn)
     }
@@ -247,9 +286,9 @@ static void potion_x86_c_arg(Potion *P, PNAsm * volatile *asmp, int out, int reg
       if (out) {
 	X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x5d,regn) // mov %rbp(A) %rbx
 	if (argn == 6) {
-	  X86_PRE(); ASM(0x89); ASM(0x1c); ASM(0x24);    // mov %rbx (%rsp)
+	  X86_PRE(); ASMS("\x89\x1c\x24");    // mov %rbx (%rsp)
 	} else {
-	  X86_PRE(); ASM(0x89); ASM(0x5c); ASM(0x24); ASM((argn - 6) * sizeof(PN)); // mov %rbx N(%rsp)
+	  X86_PRE(); ASMS("\x89\x5c\x24"); ASM((argn - 6) * sizeof(PN)); // mov %rbx N(%rsp)
 	}
       } else {
 	X86_PRE(); ASM(0x8b); ASM(0x5d); ASM((argn - 4) * sizeof(PN));
@@ -355,11 +394,11 @@ void potion_x86_getlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   PN_HAS_UPVALS(up);
   X86_MOV_RBP(0x8B, regs + op.b); 		// mov %ebp(B) %eax
   if (up) { // upvals need to be deref'd
-    ASM(0xF6); ASM(0xC0); ASM(0x01); 		// test 0x1 %al
-    ASM(0x75); ASM(X86C(19,20, 0,0)); 		// jnz a
-    ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); 	// test REFMASK %eax
+    ASMS("\xF6\xC0\x01" 		// test 0x1 %al
+	 "\x75"); ASM(X86C(19,20, 0,0)); 		// jnz a
+    ASMS("\xF7\xC0"); ASMI(PN_REF_MASK); 	// test REFMASK %eax
     ASM(0x74); ASM(X86C(11,12, 0,0)); 		// jz a
-    ASM(0x81); ASM(0x38); ASMI(PN_TWEAK); 	// cmpq WEAK (%eax)   # 0x250004
+    ASMS("\x81\x38"); ASMI(PN_TWEAK); 	// cmpq WEAK (%eax)   # 0x250004
     ASM(0x75); ASM(X86C(3,4, 0,0)); 		// jnz a
     X86_PRE(); ASM(0x8B); ASM(0x40);
                ASM(sizeof(struct PNObject)); 	// mov N(%eax) %eax;  #WeakRef->data (Obj+PN)
@@ -375,11 +414,11 @@ void potion_x86_setlocal(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55, op.a) 	// mov %rsp(A) %rdx
   if (up) { // upvals need to be deref'd
     X86_MOV_RBP(0x8B, regs + op.b); 			// mov %rsp(B) %rax
-    ASM(0xF6); ASM(0xC0); ASM(0x01); 			// test 0x1 %al
-    ASM(0x75); ASM(X86C(19,20, 0,0)); 			// jnz a
-    ASM(0xF7); ASM(0xC0); ASMI(PN_REF_MASK); 		// test REFMASK %eax
+    ASMS("\xF6\xC0\x01" 				// test 0x1 %al
+	 "\x75"); ASM(X86C(19,20, 0,0)); 		// jnz a
+    ASMS("\xF7\xC0"); ASMI(PN_REF_MASK); 		// test REFMASK %eax
     ASM(0x74); ASM(X86C(11,12, 0,0)); 			// jz a
-    ASM(0x81); ASM(0x38); ASMI(PN_TWEAK); 		// cmpq WEAK (%rax) # 0x250004
+    ASMS("\x81\x38"); ASMI(PN_TWEAK); 			// cmpq WEAK (%rax) # 0x250004
     ASM(0x75); ASM(X86C(3,4, 0,0)); 			// jnz a
     X86_PRE(); ASM(0x89); ASM(0x50);
                ASM(sizeof(struct PNObject)); 		// mov N(%rax) %rax
@@ -432,7 +471,7 @@ void potion_x86_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
   ASM(0xFF); ASM(0xD0);				// callq %rax
   if (op.b & ASM_TPL_IMM) { // not immediate index. R(B-1024)
     X86_PRE();ASM(0x8b);ASM_MOV_EBP(0x55,op.b-ASM_TPL_IMM); // mov -B-1024(%rbp) %rdx
-    X86_PRE();ASM(0x48);ASM(0xd1);ASM(0xea);                // shr %rdx,1
+    X86_PRE();ASMS("\xd1\xea");                // shr %rdx,1
     //ASM(0xcc);                  // displacement: 0x90 or 0xd0
     X86_PRE();ASM(0x8b);ASM(0x44);ASM((5+PN_SIZE_T)<<4);ASM(0x10);// mov 0x10(%rax,%rdx,PN_SIZE_T),%rax
   } else { // immediate index B
@@ -521,7 +560,7 @@ void potion_x86_setpath(Potion *P, struct PNProto * volatile f, PNAsm * volatile
 void potion_x86_add(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MATH(1, potion_obj_add, {
-    X86_PRE(); ASM(0x8D); ASM(0x44); ASM(0x10); ASM(0xFF); // lea -1(%eax,%edx,1),%eax
+    X86_PRE(); ASMS("\x8D\x44\x10\xFF"); // lea -1(%eax,%edx,1),%eax
   });
 }
 
@@ -536,36 +575,36 @@ void potion_x86_sub(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 void potion_x86_mult(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MATH(1, potion_obj_mult, {
-    X86_PRE(); ASM(0xD1); ASM(0xFA); 		// sar %rdx
-    X86_PRE(); ASM(0xFF); ASM(0xC8); 		// dec %rax
-    X86_PRE(); ASM(0x0F); ASM(0xAF); ASM(0xC2); // imul %rdx %rax
-    X86_PRE(); ASM(0xFF); ASM(0xC0); 		// inc %rax
+    X86_PRE(); ASMS("\xD1\xFA"); 	// sar %rdx
+    X86_PRE(); ASMS("\xFF\xC8"); 	// dec %rax
+    X86_PRE(); ASMS("\x0F\xAF\xC2"); 	// imul %rdx %rax
+    X86_PRE(); ASMS("\xFF\xC0"); 	// inc %rax
   });
 }
 
 void potion_x86_div(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MATH(1, potion_obj_div, {
-    ASM(0xD1); ASM(0xF8); 			// sar %rax
-    ASM(0xD1); ASM(0xFA); 			// sar %edx
-    ASM(0x89); ASM(0xD1); 			// mov %edx %ecx
-    ASM(0x89); ASM(0xC2); 			// mov %eax %edx
-    ASM(0xC1); ASM(0xFA); ASM(0x1F); 		// sar 0x1f %edx
-    ASM(0xF7); ASM(0xF9); 			// idiv %ecx
-    ASM(0x8D); ASM(0x44); ASM(0x00); ASM(0x01); // lea 0x1(%eax,%eax,1),%eax
+    ASMS("\xD1\xF8" 		// sar %rax
+	 "\xD1\xFA" 		// sar %edx
+	 "\x89\xD1" 		// mov %edx %ecx
+	 "\x89\xC2" 		// mov %eax %edx
+	 "\xC1\xFA\x1F" 	// sar 0x1f %edx
+	 "\xF7\xF9" 		// idiv %ecx
+	 "\x8D\x44\x00\x01");	// lea 0x1(%eax,%eax,1),%eax
   });
 }
 
 void potion_x86_rem(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MATH(1, potion_obj_rem, {
-    ASM(0xD1); ASM(0xF8); 		// sar %rax
-    ASM(0xD1); ASM(0xFA); 		// sar %edx
-    ASM(0x89); ASM(0xD1); 		// mov %edx %ecx
-    ASM(0x89); ASM(0xC2); 		// mov %eax %edx
-    ASM(0xC1); ASM(0xFA); ASM(0x1F); 	// sar 0x1f %edx
-    ASM(0xF7); ASM(0xF9); 		// idiv %ecx
-    ASM(0x8D); ASM(0x44); ASM(0x12); ASM(0x01); // lea 0x1(%edx,%edx,1),%eax
+    ASMS("\xD1\xF8"	  	// sar %rax
+	 "\xD1\xFA" 		// sar %edx
+	 "\x89\xD1" 		// mov %edx %ecx
+	 "\x89\xC2" 		// mov %eax %edx
+	 "\xC1\xFA\x1F" 	// sar 0x1f %edx
+	 "\xF7\xF9" 		// idiv %ecx
+	 "\x8D\x44\x12\x01");   // lea 0x1(%edx,%edx,1),%eax
   });
 }
 
@@ -581,32 +620,44 @@ void potion_x86_pow(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 
 void potion_x86_neq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_CMP(0x74); // jz
+  X86_CMP(0x75, 0x75, 	 	 // jne, jne
+	  "\x66\x0F\x2e\xc8" 	 // ucomisd %xmm0, %xmm1
+	  ); // TODO false if jp (parity) or jne (not equal)
 }
 
 void potion_x86_eq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_CMP(0x75); // jnz
+  X86_CMP(0x74, 0x74, 		 // je, je
+	  "\x66\x0F\x2e\xc8" 	 // ucomisd %xmm0, %xmm1
+	  );
 }
 
 void potion_x86_lt(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_CMP(0x7D); // jge
+  X86_CMP(0x7C, 0x72,  		// jl, jb
+	  "\x66\x0F\x2e\xc1" 	// ucomisd %xmm1, %xmm0
+	  );
 }
 
 void potion_x86_lte(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_CMP(0x7F); // jg
+  X86_CMP(0x7E, 0x76,		// jle, jbe
+	  "\x66\x0F\x2e\xc1" 	// ucomisd %xmm1, %xmm0
+	  );
 }
 
 void potion_x86_gt(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_CMP(0x7E); // jle
+  X86_CMP(0x7F, 0x77,		// jg, ja
+	  "\x66\x0F\x2e\xc1" 	// ucomisd %xmm1, %xmm0
+	  );
 }
 
 void potion_x86_gte(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  X86_CMP(0x7C); // jl
+  X86_CMP(0x7D, 0x73, 		// jge, jae
+	  "\x66\x0F\x2e\xc1" 	// ucomisd %xmm1, %xmm0
+	  );
 }
 
 void potion_x86_bitn(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
@@ -620,24 +671,24 @@ void potion_x86_bitn(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 void potion_x86_bitl(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MATH(1, potion_obj_bitl, {
-    ASM(0xD1); ASM(0xF8); 			// sar %eax
-    ASM(0xD1); ASM(0xFA); 			// sar %edx
-    ASM(0x89); ASM(0xD1); 			// mov %edx %ecx
-    ASM(0x89); ASM(0xC2); 			// mov %eax %edx
-    ASM(0xD3); ASM(0xE0); 			// sar %cl %eax
-    ASM(0x8D); ASM(0x44); ASM(0x00); ASM(0x01); // lea 0x1(%eax,%eax,1),%eax
+      ASMS("\xD1\xF8" 		// sar %eax
+	   "\xD1\xFA" 		// sar %edx
+	   "\x89\xD1" 		// mov %edx %ecx
+	   "\x89\xC2" 		// mov %eax %edx
+	   "\xD3\xE0" 		// sal %cl %eax
+	   "\x8D\x44\x00\x01"); // lea 0x1(%eax,%eax,1),%eax
   });
 }
 
 void potion_x86_bitr(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MATH(1, potion_obj_bitr, {
-    ASM(0xD1); ASM(0xF8); 			// sar %rax
-    ASM(0xD1); ASM(0xFA); 			// sar %edx
-    ASM(0x89); ASM(0xD1); 			// mov %edx %ecx
-    ASM(0x89); ASM(0xC2); 			// mov %eax %edx
-    ASM(0xD3); ASM(0xF8); 			// sar %cl %eax
-    ASM(0x8D); ASM(0x44); ASM(0x00); ASM(0x01); // lea 0x1(%eax,%eax,1),%eax
+    ASMS("\xD1\xF8" 		// sar %rax
+	 "\xD1\xFA"		// sar %edx
+	 "\x89\xD1"		// mov %edx %ecx
+	 "\x89\xC2"		// mov %eax %edx
+	 "\xD3\xF8"		// sar %cl %eax
+	 "\x8D\x44\x00\x01");	// lea 0x1(%eax,%eax,1),%eax
   });
 }
 
@@ -796,8 +847,8 @@ void potion_x86_named(Potion *P, struct PNProto * volatile f, PNAsm * volatile *
   X86_ARGO(op.a, 1);      				//cl
   X86_ARGO(op.b - 1, 2);  				//name
   X86_PRE(); ASM(0xB8); ASMN(potion_sig_find); 		// mov &potion_sig_find %rax
-  ASM(0xFF); ASM(0xD0);					// callq %eax
-  ASM(0x85); ASM(0xC0);					// test %eax %eax
+  ASMS("\xFF\xD0"					// callq %eax
+       "\x85\xC0");					// test %eax %eax
   TAG_PREP(tag);
   ASM(0x78); ASM(0);					// js +12
   X86_PRE(); ASM(0xF7); ASM(0xD8);			// neg %rax
@@ -980,9 +1031,9 @@ void potion_x86_finish(Potion *P, struct PNProto * volatile f, PNAsm * volatile 
 void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
   unsigned k;
 #if PN_SIZE_T != 8
-  ASM(0x55); 							// push %ebp
-  ASM(0x89); ASM(0xE5);						// mov %esp %ebp
-  ASM(0x8B); ASM(0x55); ASM(0x08);				// mov 0x8(%ebp) %edx
+  ASMS("\x55" 				// push %ebp
+       "\x89\xE5"			// mov %esp %ebp
+       "\x8B\x55\x08");			// mov 0x8(%ebp) %edx
 #endif
   for (k = kh_end(vt->methods); k > kh_begin(vt->methods); k--) {
     if (kh_exist(PN, vt->methods, k - 1)) {
@@ -1005,9 +1056,9 @@ void potion_x86_mcache(Potion *P, vPN(Vtable) vt, PNAsm * volatile *asmp) {
 
 void potion_x86_ivars(Potion *P, PN ivars, PNAsm * volatile *asmp) {
 #if PN_SIZE_T != 8
-  ASM(0x55); 				// push %ebp
-  ASM(0x89); ASM(0xE5); 		// mov %esp %ebp
-  ASM(0x8B); ASM(0x55); ASM(0x08);	// mov 0x8(%ebp) %edx
+  ASMS("\x55" 				// push %ebp
+       "\x89\xE5"			// mov %esp %ebp
+       "\x8B\x55\x08");			// mov 0x8(%ebp) %edx
 #else
 #endif
 #if PN_SIZE_T != 8

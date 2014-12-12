@@ -33,6 +33,8 @@ PNAsm *potion_asm_put(Potion *P, PNAsm * volatile asmb, PN val, size_t len) {
     *((int *)ptr) = (int)val;
   else if (len == sizeof(PN))
     *((PN *)ptr) = val;
+  else if (len == 2)
+    *((short *)ptr) = (short)val;
 
   asmb->len += len;
   return asmb;

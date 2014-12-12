@@ -3,6 +3,10 @@ compiler:
   - clang
   - gcc
 
+os:
+  - linux
+  - osx
+
 env:
   - DEBUG=0
   - DEBUG=1

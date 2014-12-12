@@ -32,6 +32,8 @@ fi
 
 test -f $cmd || make -s $cmd
 test -f $cmd2 || make -s $cmd2
+
+# linux/bsd only
 old_LIBRARY_PATH="$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH="lib:$LD_LIBRARY_PATH"
 
@@ -149,6 +151,7 @@ done
 ${ECHO}
 if [ $failed -gt 0 ]; then
     ${ECHO} "$failed FAILS ($count tests)"
+    exit 1
 else
     ${ECHO} "OK ($count tests)"
 fi

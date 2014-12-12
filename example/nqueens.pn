@@ -17,10 +17,10 @@ solve = (depth):
   prev length times(i):
     d1 = prev(i) + depth - i
     d1 = d1 abs
-    if (d1 >=0 and d1 < n): diag(d1) = true.
+    if (d1 >= 0 and d1 < n): diag(d1) = true.
     d2 = prev(i) - depth + i
     d2 = d2 abs
-    if (d1 != d2 and d2 >=0 and d2 < n): diag(d2) = true.
+    if (d1 != d2 and d2 >= 0 and d2 < n): diag(d2) = true.
   .
   if (verbose): ("depth"=depth,"diag"=diag,"prev"=prev) say.
   row = 0
@@ -33,7 +33,7 @@ solve = (depth):
     occupied(row) = true
     if (verbose): ("row"=row,"prev"=prev,"occupied"=occupied) say.
 
-    solve(1+depth)
+    solve(1 + depth)
 
     occupied(row) = false
     prev pop
