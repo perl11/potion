@@ -90,7 +90,8 @@ the x86 and x86_64 jit.
 	  })
 // cmp 2 numbers, int or double. eq/neq/gt/ge/lt/le, both inlined (requires SSE)
 // iop: jl, jg, jle, jge, je, jne for normal cmp comparisons
-// xop: "jb", "jbe", "je", "jae", or "ja" for SSE ucomisd comparisons.
+// xop: jb, jbe", jae, ja, ... for SSE ucomisd comparisons.
+// TODO we also need to check jp for PF (parity) if one number is nan, to force false.
 #define X86_CMP(iop, xop, xmms)                                         \
         int dbl_a, dbl_b, cmp_dbl, true_1, true_2, false_;			\
         X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55,op.a)	/* mov -A(%rbp) %rdx */ \
