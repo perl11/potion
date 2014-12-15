@@ -125,7 +125,7 @@ static PN potion_str_number(Potion *P, PN cl, PN self) {
     return PN_NUM(sign * PN_ATOI(str, i, 10));
   }
 
-  return potion_double(P, PN_STR_PTR(self), PN_STR_LEN(self));
+  return potion_strtod(P, PN_STR_PTR(self), PN_STR_LEN(self));
 }
 
 ///\memberof PNString

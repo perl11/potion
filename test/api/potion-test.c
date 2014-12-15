@@ -58,7 +58,7 @@ void potion_test_int3(CuTest *T) {
 }
 
 void potion_test_double(CuTest *T) {
-  PN dec = potion_double(P, "14466", 5);
+  PN dec = potion_strtod(P, "14466", 5);
   CuAssert(T, "double not a number", PN_TYPE(dec) == PN_TNUMBER);
 }
 

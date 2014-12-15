@@ -14,16 +14,16 @@
 #include "internal.h"
 
 /// new PNDouble (double)
-PN potion_real(Potion *P, double v) {
+PN potion_double(Potion *P, double v) {
   vPN(Double) d = PN_ALLOC_N(PN_TNUMBER, struct PNDouble, 0);
   d->value = v;
   return (PN)d;
 }
 
-/// strtod
-PN potion_double(Potion *P, char *str, int len) {
+/// Convert string to double
+PN potion_strtod(Potion *P, char *str, int len) {
   char *ptr = str + len;
-  return potion_real(P, strtod(str, &ptr));
+  return potion_double(P, strtod(str, &ptr));
 }
 /**\memberof PNNumber
   "**" method.
@@ -35,19 +35,19 @@ PN potion_pow(Potion *P, PN cl, PN self, PN sup) {
   double z = pow(x, y);
   if (PN_IS_NUM(self) && PN_IS_NUM(sup) && abs(z) < INT_MAX)
     return PN_NUM((int)z);
-  return potion_real(P, z);
+  return potion_double(P, z);
 }
 /**\memberof PNNumber
   "sqrt" as double
  \return PNDouble */
 static PN potion_sqrt(Potion *P, PN cl, PN self) {
-  return potion_real(P, sqrt(PN_DBL(self)));
+  return potion_double(P, sqrt(PN_DBL(self)));
 }
 
 #define PN_NUM_MATH(int_math) \
   if (PN_IS_NUM(self) && PN_IS_NUM(num)) \
     return PN_NUM(PN_INT(self) int_math PN_INT(num)); \
-  return potion_real(P, PN_DBL(self) int_math PN_DBL(num));
+  return potion_double(P, PN_DBL(self) int_math PN_DBL(num));
 
 /**\memberof PNNumber
   "+" method
@@ -90,7 +90,7 @@ static PN potion_rem(Potion *P, PN cl, PN self, PN num) {
     return PN_NUM(PN_INT(self) % PN_INT(num));
   double x = PN_DBL(self), y = PN_DBL(num);
   int z = (int)(x / y);
-  return potion_real(P, x - (y * (double)z));
+  return potion_double(P, x - (y * (double)z));
 }
 
 /**\memberof PNNumber
@@ -99,7 +99,7 @@ static PN potion_rem(Potion *P, PN cl, PN self, PN num) {
 static PN potion_bitn(Potion *P, PN cl, PN self) {
   if (PN_IS_NUM(self))
     return PN_NUM(~PN_INT(self));
-  return (PN)potion_real(P, 0.0);
+  return (PN)potion_double(P, 0.0);
 }
 
 /**\memberof PNNumber
@@ -109,7 +109,7 @@ static PN potion_bitn(Potion *P, PN cl, PN self) {
 static PN potion_bitl(Potion *P, PN cl, PN self, PN num) {
   if (PN_IS_NUM(self) && PN_IS_NUM(num))
     return PN_NUM(PN_INT(self) << PN_INT(num));
-  return (PN)potion_real(P, 0.0);
+  return (PN)potion_double(P, 0.0);
 }
 
 /**\memberof PNNumber
@@ -119,7 +119,7 @@ static PN potion_bitl(Potion *P, PN cl, PN self, PN num) {
 static PN potion_bitr(Potion *P, PN cl, PN self, PN num) {
   if (PN_IS_NUM(self) && PN_IS_NUM(num))
     return PN_NUM(PN_INT(self) >> PN_INT(num));
-  return (PN)potion_real(P, 0.0);
+  return (PN)potion_double(P, 0.0);
 }
 /**\memberof PNNumber
   "number" method, identity. \code 4 number #=> 4 \endcode
@@ -234,7 +234,7 @@ static PN potion_abs(Potion *P, PN cl, PN self) {
   if (PN_IS_DOUBLE(self)) {
     double d = PN_DBL(self);
     if (d < 0.0)
-      return (PN) potion_real(P, -d);
+      return (PN) potion_double(P, -d);
     else
       return self;
   }

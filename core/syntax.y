@@ -198,7 +198,7 @@ immed = nil   { $$ = PN_NIL; }
       | dec   { if ($$ == YY_TNUM) {
                   $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10));
                 } else {
-                  $$ = potion_double(P, yytext, yyleng);
+                  $$ = potion_strtod(P, yytext, yyleng);
               } }
       | str1 | str2
 
