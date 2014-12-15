@@ -49,7 +49,7 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TLICK, obj_vt);
   potion_type_new(P, PN_TERROR, obj_vt);
   potion_type_new(P, PN_TCONT, obj_vt);
-  potion_type_new(P, PN_TDECIMAL, obj_vt);
+  potion_type_new(P, PN_TDOUBLE, obj_vt);
 
   potion_str_hash_init(P);
   PN_STR0 = PN_STRN("", 0);
@@ -220,7 +220,7 @@ char potion_type_char(PNType type) {
   case PN_TSTRINGS:    	return 'x'; //18
   case PN_TERROR:      	return 'r'; //19
   case PN_TCONT:       	return 'c'; //20
-  case PN_TDECIMAL:    	return 'D'; //21
+  case PN_TDOUBLE:    	return 'D'; //21
   case PN_TUSER:       	return 'm'; //22 generated mixins (unused)
   default:       	return 'm'; //22++
   }

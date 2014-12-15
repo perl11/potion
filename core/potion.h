@@ -1,7 +1,8 @@
 /** \file potion.h
   The potion API
 
-  (c) 2008 why the lucky stiff, the freelance professor */
+  (c) 2008 why the lucky stiff, the freelance professor
+  (c) 2013-2014 perl11.org */
 /**
 \mainpage potion
 
@@ -84,7 +85,7 @@ struct PNFwd;
 struct PNData;
 struct PNString;
 struct PNBytes;
-struct PNDecimal;
+struct PNDouble;
 struct PNClosure;
 struct PNProto;
 struct PNTuple;
@@ -104,7 +105,7 @@ struct PNVtable;
 #endif
 
 #define PN_TNIL         0x250000    /// NIL is magic 0x250000 (type 0)
-#define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a Num (TDecimal)
+#define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a Num (TDouble)
 #define PN_TBOOLEAN     (2+PN_TNIL)
 #define PN_TSTRING      (3+PN_TNIL)
 #define PN_TWEAK        (4+PN_TNIL)
@@ -124,7 +125,7 @@ struct PNVtable;
 #define PN_TSTRINGS     (18+PN_TNIL) //12
 #define PN_TERROR       (19+PN_TNIL) //13
 #define PN_TCONT        (20+PN_TNIL) //14
-#define PN_TDECIMAL     (21+PN_TNIL) //15 Num, i.e. double. no arbitrary prec. num yet
+#define PN_TDOUBLE      (21+PN_TNIL) //15 Num, i.e. double. no arbitrary prec. num yet
 #define PN_TUSER        (22+PN_TNIL) //16
 
 #define vPN(t)          struct PN##t * volatile
@@ -164,7 +165,7 @@ struct PNVtable;
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
-#define PN_IS_DECIMAL(v) (PN_IS_PTR(v) && PN_TYPE(v) == PN_TNUMBER) // TODO: => PN_IS_DOUBLE
+#define PN_IS_DOUBLE(v)  (PN_IS_PTR(v) && PN_TYPE(v) == PN_TNUMBER)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
 #define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
 #define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
@@ -192,11 +193,11 @@ struct PNVtable;
 ///\class PNNumber
 /// Either a PN_INT immediate object (no struct) 0x...1
 ///        Integer: 31bit/63bit shifted off the last 1 bit
-/// or a PNDecimal double.
+/// or a PNDouble double.
 ///\see PN_NUM (int to obj), PN_INT (obj to int), PN_IS_NUM (is num obj?)
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       ((long)((long)(x))>>1)
-#define PN_DBL(num)     (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDecimal *)num)->value)
+#define PN_DBL(num)     (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDouble *)num)->value)
 typedef _PN (*PN_F)(Potion *, PN, PN, ...);
 #define PN_PREC 16
 #define PN_RAND()       PN_NUM(potion_rand_int())
@@ -342,7 +343,7 @@ struct PNBytes {
 /// decimals are floating point numbers
 /// stored as binary data. immutable.
 ///
-struct PNDecimal {
+struct PNDouble {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
   double value;
 };

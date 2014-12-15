@@ -168,7 +168,7 @@ PN potion_srand(Potion *P, PN cl, PN self, PN seed) {
 /**\memberof Lobby
   "rand" generate random ulong number
   \code rand #=> xxxxxx \endcode
- \return PNDecimal in [0,0xffffffff]-interval
+ \return PNDouble in [0,0xffffffff]-interval
  \sa potion_num_rand for double, potion_srand. */
 PN potion_rand(Potion *P, PN cl, PN self) {
   return PN_NUM(potion_rand_int());
@@ -177,7 +177,7 @@ PN potion_rand(Potion *P, PN cl, PN self) {
 /**\memberof PNNumber
   "rand" generate random float number
   \code 1 rand #=> 0.xxxxxx \endcode
- \return PNDecimal in [0.0,0.1]-interval
+ \return PNDouble in [0.0,0.1]-interval
  \sa potion_rand for long, potion_srand. */
 PN potion_num_rand(Potion *P, PN cl, PN self) {
   return PN_NUM(potion_rand_double());

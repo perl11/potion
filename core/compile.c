@@ -1167,7 +1167,7 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
       WRITE_PN(count, ptr); \
       PN_MEMCPY_N(ptr, PN_STR_PTR(val), char, PN_STR_LEN(val)); \
       ptr += PN_STR_LEN(val); \
-    } else if (PN_IS_DECIMAL(val)) { \
+    } else if (PN_IS_DOUBLE(val)) { \
       PN str = potion_num_string(P, PN_NIL, val); \
       PN count = ((PN_STR_LEN(str)+1) << 4) | 2; \
       WRITE_PN(count, ptr); \

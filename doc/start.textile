@@ -357,7 +357,7 @@ Basic numbers take up no memory and are passed as plain (32-bit or 64-bit, depen
 </code>
 </pre>
 
-Decimal numbers use a boxed double-precision floating point number.
+Double numbers use a boxed double-precision floating point number.
 
 <pre>
 <code>

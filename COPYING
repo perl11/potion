@@ -7,6 +7,7 @@
                                  ~
   
   Copyright (c) 2008 why the lucky stiff
+  Copyright (c) 2013-2014 perl11.org
   
   HOWEVER:
   Be it known, parts of the object model taken from obj.c
@@ -19,11 +20,7 @@
   The Mersenne Twister (MT19937)
     (c) 1997-2002, Makoto Matsumoto and Takuji Nishimura (MIT licensed)
     <http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html>
-  Decimal code based on ARPREC, an arbitrary-precision lib (BSD licensed)
-    (c) 2003-2009 Lawrence Berkeley Natl Lab
-    David H. Bailey, Yozo Hida, Karthik Jeyabalan, Xiaoye S. Li, Brandon Thompson
-    <http://crd.lbl.gov/~dhbailey/mpdist/>
-  Lastly, khash.h
+  khash.h
     (c) 2008, by Attractive Chaos
     <http://attractivechaos.awardspace.com/khash.h.html> (MIT licensed)
   
