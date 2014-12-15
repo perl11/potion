@@ -29,19 +29,21 @@ PN potion_allocate(Potion *P, PN cl, PN self, PN len) {
 }
 
 static void potion_init(Potion *P) {
-  PN vtable, obj_vt;
+  PN vtable, obj_vt, num_vt;
   P->lobby = potion_type_new(P, PN_TLOBBY, 0);       // named Lobby resp. P2
   vtable = potion_type_new(P, PN_TVTABLE, P->lobby); // named Mixin
   obj_vt = potion_type_new(P, PN_TOBJECT, P->lobby);
+  num_vt = potion_type_new(P, PN_TNUMBER, obj_vt);
+  potion_type_new(P, PN_TDOUBLE, num_vt);
+  potion_type_new(P, PN_TINTEGER, num_vt);
   potion_type_new(P, PN_TNIL, obj_vt);               // named NilKind resp. Undef
-  potion_type_new(P, PN_TNUMBER, obj_vt);
   potion_type_new(P, PN_TBOOLEAN, obj_vt);
   potion_type_new(P, PN_TSTRING, obj_vt);
   potion_type_new(P, PN_TTABLE, obj_vt);
   potion_type_new(P, PN_TCLOSURE, obj_vt);
   potion_type_new(P, PN_TTUPLE, obj_vt);
   potion_type_new(P, PN_TFILE, obj_vt);
-  potion_type_new(P, PN_TSTATE, obj_vt); // named Potion
+  potion_type_new(P, PN_TSTATE, obj_vt); 	     // named Potion
   potion_type_new(P, PN_TSOURCE, obj_vt);
   potion_type_new(P, PN_TBYTES, obj_vt);
   potion_type_new(P, PN_TPROTO, obj_vt);
@@ -49,7 +51,6 @@ static void potion_init(Potion *P) {
   potion_type_new(P, PN_TLICK, obj_vt);
   potion_type_new(P, PN_TERROR, obj_vt);
   potion_type_new(P, PN_TCONT, obj_vt);
-  potion_type_new(P, PN_TDOUBLE, obj_vt);
 
   potion_str_hash_init(P);
   PN_STR0 = PN_STRN("", 0);
@@ -203,26 +204,26 @@ char potion_type_char(PNType type) {
   case PN_TNIL:  	return 'n'; //0 nil?  (unused)
   case PN_TNUMBER:	return 'N'; //1 Number = Integer or Double
   case PN_TBOOLEAN:	return 'B'; //2 Boolean (unused)
-  case PN_TSTRING:	return 'S'; //3 String
-  case PN_TWEAK:       	return 0;   //4 (illegal)
-  case PN_TCLOSURE:    	return '&'; //5
-  case PN_TTUPLE:      	return 'u'; //6 (used)
-  case PN_TSTATE:      	return 's'; //7
-  case PN_TFILE:       	return 'F'; //8
-  case PN_TOBJECT:     	return 'o'; //9  any (used)
-  case PN_TVTABLE:     	return 't'; //10 type (unused)
-  case PN_TSOURCE:     	return 'a'; //11 ast or code (used in source_compile)
-  case PN_TBYTES:      	return 'b'; //12 aio (used)
-  case PN_TPROTO:      	return 'P'; //13
-  case PN_TLOBBY:      	return 'l'; //14
-  case PN_TTABLE:      	return 'T'; //15 (used)
-  case PN_TLICK:       	return 'k'; //16
-  case PN_TFLEX:       	return 'f'; //17
-  case PN_TSTRINGS:    	return 'x'; //18
-  case PN_TERROR:      	return 'r'; //19
-  case PN_TCONT:       	return 'c'; //20
-  case PN_TDOUBLE:    	return 'D'; //21
-  case PN_TINTEGER:	return 'I'; //22
+  case PN_TINTEGER:	return 'I'; //3
+  case PN_TDOUBLE:    	return 'D'; //4
+  case PN_TSTRING:	return 'S'; //5 String
+  case PN_TWEAK:       	return 0;   //6 (illegal)
+  case PN_TCLOSURE:    	return '&'; //7
+  case PN_TTUPLE:      	return 'u'; //8 (used)
+  case PN_TSTATE:      	return 's'; //9
+  case PN_TFILE:       	return 'F'; //10
+  case PN_TOBJECT:     	return 'o'; //11 any (used)
+  case PN_TVTABLE:     	return 't'; //12 type (unused)
+  case PN_TSOURCE:     	return 'a'; //13 ast or code (used in source_compile)
+  case PN_TBYTES:      	return 'b'; //14 aio (used)
+  case PN_TPROTO:      	return 'P'; //15
+  case PN_TLOBBY:      	return 'l'; //16
+  case PN_TTABLE:      	return 'T'; //17 (used)
+  case PN_TLICK:       	return 'k'; //18
+  case PN_TFLEX:       	return 'f'; //19
+  case PN_TSTRINGS:    	return 'x'; //20
+  case PN_TERROR:      	return 'r'; //21
+  case PN_TCONT:       	return 'c'; //22
   case PN_TUSER:       	return 'm'; //23 generated mixins (unused)
   default:       	return 'm'; //23++
   }
