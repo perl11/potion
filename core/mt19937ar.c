@@ -1,5 +1,5 @@
 /**\file mt19937ar.c
-   random numbers (mersenne twister). As Lobby (global long) or PNNumber (0-1.0)
+   random numbers (mersenne twister). As Lobby (global long) or PNInteger (0-1.0)
 
    A C-program for MT19937, with initialization improved 2002/2/10.
    Coded by Takuji Nishimura and Makoto Matsumoto.
@@ -157,7 +157,7 @@ double potion_rand_double(void) {
 } 
 /**\memberof Lobby
   "srand" initialize random seed
- \param seed PNNumber
+ \param seed PNInteger
  \return Lobby (usually unused)
  \sa potion_rand. */
 PN potion_srand(Potion *P, PN cl, PN self, PN seed) {
@@ -174,7 +174,7 @@ PN potion_rand(Potion *P, PN cl, PN self) {
   return PN_NUM(potion_rand_int());
 }
 
-/**\memberof PNNumber
+/**\memberof PNInteger
   "rand" generate random float number
   \code 1 rand #=> 0.xxxxxx \endcode
  \return PNDouble in [0.0,0.1]-interval

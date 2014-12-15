@@ -130,7 +130,7 @@ PN potion_table_set(Potion *P, PN self, PN key, PN value) {
 
 ///\memberof PNTable
 /// "length" method. count keys
-///\return PNNumber
+///\return PNInteger
 PN potion_table_length(Potion *P, PN cl, PN self) {
   vPN(Table) t = (vPN(Table))potion_fwd(self);
   DBG_CHECK_TYPE(t,PN_TTABLE);
@@ -304,7 +304,7 @@ PN_SIZE potion_tuple_push_unless(Potion *P, PN tuple, PN value) {
        t(1)  #=> 1
        t(-1) #=> 2
  \endcode
- \param index PNNumber. If negative, count from end. If too large, return nil.
+ \param index PNInteger. If negative, count from end. If too large, return nil.
  \return tuple element at index */
 PN potion_tuple_at(Potion *P, PN cl, PN self, PN index) {
   DBG_CHECK_TUPLE(self);
@@ -340,8 +340,8 @@ PN potion_tuple_clone(Potion *P, PN cl, PN self) {
        (0,1,2) slice(2,-1)  #=> (2)
        (0,1,2) slice(-1,-2) #=> (0,1)
  \endcode
- \param start PNNumber. Default 0. If negative, count from end. If too large, return nil.
- \param end   PNNumber. Optional, default last index. If negative, count from end. If too large, return nil.
+ \param start PNInteger. Default 0. If negative, count from end. If too large, return nil.
+ \param end   PNInteger. Optional, default last index. If negative, count from end. If too large, return nil.
  \return new PNTuple */
 static
 PN potion_tuple_slice(Potion *P, PN cl, PN self, PN start, PN end) {
@@ -460,7 +460,7 @@ PN potion_tuple_pop(Potion *P, PN cl, PN self) {
 ///\memberof PNTuple
 /// \c "put" method. write value at index key
 /// Note: If the key is not a number converts the tuple to a table
-///\param key PNNumber index
+///\param key PNInteger index
 ///\param value PN
 ///\return self PNTuple
 PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
@@ -524,7 +524,7 @@ PN potion_tuple_print(Potion *P, PN cl, PN self) {
 
 ///\memberof PNTuple
 /// "length" of a list. Number of elements
-///\return PNNumber
+///\return PNInteger
 PN potion_tuple_length(Potion *P, PN cl, PN self) {
   DBG_CHECK_TYPE(self,PN_TTUPLE);
   return PN_NUM(PN_TUPLE_LEN(self));
@@ -812,7 +812,7 @@ PN potion_tuple_cmp(Potion *P, PN cl, PN self, PN value) {
 
 ///\memberof Lobby
 /// global "list" method. return a new empty list
-///\param size PNNumber
+///\param size PNInteger
 ///\return PNTuple
 PN potion_lobby_list(Potion *P, PN cl, PN self, PN size) {
   return potion_tuple_with_size(P, PN_INT(size));

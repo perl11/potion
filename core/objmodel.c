@@ -60,14 +60,14 @@ PN potion_closure_string(Potion *P, PN cl, PN self, PN maxlen) {
 }
 /**\memberof PNClosure
  "arity" method, optional args do count.
- \return number of args as PNNumber */
+ \return number of args as PNInteger */
 PN potion_closure_arity(Potion *P, PN cl, PN self) {
   /// closure_new aka PN_FUNC sets arity, always use the cached value
   return PN_NUM(PN_CLOSURE(self)->arity);
 }
 /**\memberof PNClosure
  Number of mandatory arguments, without optional args.
- \return number of args as PNNumber */
+ \return number of args as PNInteger */
 PN potion_closure_minargs(Potion *P, PN cl, PN self) {
   /// closure_new aka PN_FUNC sets arity, always use the cached value
   return PN_NUM(PN_CLOSURE(self)->minargs);
@@ -666,24 +666,26 @@ void potion_lobby_init(Potion *P) {
   potion_init_class_reference(P, potion_str(P, "Lick"),         PN_VTABLE(PN_TLICK));
   potion_init_class_reference(P, potion_str(P, "Error"),        PN_VTABLE(PN_TERROR));
   potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
+  potion_init_class_reference(P, potion_str(P, "Integer"),      PN_VTABLE(PN_TINTEGER));
+  potion_init_class_reference(P, potion_str(P, "Double"),       PN_VTABLE(PN_TDOUBLE));
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
   
   PN mixin_vt = PN_VTABLE(PN_TVTABLE);
   potion_type_call_is(mixin_vt, PN_FUNC(potion_object_new, 0));
-  potion_method(mixin_vt, "meta", potion_get_metaclass, 0);
+  potion_method(mixin_vt, "meta",  potion_get_metaclass, 0);
   
   potion_method(P->lobby, "about", potion_about, 0);
 #ifndef DISABLE_CALLCC
-  potion_method(P->lobby, "here", potion_callcc, 0);
+  potion_method(P->lobby, "here",  potion_callcc, 0);
 #endif
-  potion_method(P->lobby, "exit", potion_exit, 0);
-  potion_method(P->lobby, "kind", potion_lobby_kind, 0);
+  potion_method(P->lobby, "exit",  potion_exit, 0);
+  potion_method(P->lobby, "kind",  potion_lobby_kind, 0);
   potion_method(P->lobby, "srand", potion_srand, "seed=N");
-  potion_method(P->lobby, "rand", potion_rand, 0);
-  potion_method(P->lobby, "self", potion_lobby_self, 0);
+  potion_method(P->lobby, "rand",  potion_rand, 0);
+  potion_method(P->lobby, "self",  potion_lobby_self, 0);
   potion_method(P->lobby, "string", potion_lobby_string, 0);
-  potion_method(P->lobby, "can", potion_lobby_can, "method=S");
+  potion_method(P->lobby, "can",   potion_lobby_can, "method=S");
   potion_method(P->lobby, "print", potion_lobby_print, 0);
-  potion_method(P->lobby, "say", potion_lobby_say, 0);
+  potion_method(P->lobby, "say",   potion_lobby_say, 0);
 }

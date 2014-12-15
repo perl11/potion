@@ -168,7 +168,7 @@ static PN aio_error(Potion *P, char *name, int status) {
     fprintf(stderr, "** Invalid type %s, expected %s",                  \
             PN_IS_PTR(self)? AS_STR(potion_send(PN_VTABLE(self), PN_name)) \
             : PN_IS_NIL(self) ? NIL_NAME                                \
-            : PN_IS_INT(self) ? "Number" : "Boolean", "Aio_"_XSTR(T));  \
+            : PN_IS_INT(self) ? "Integer" : "Boolean", "Aio_"_XSTR(T));  \
     exit(1);                                                            \
   }
 #define FATAL_AIO_STREAM(stream)                             \
@@ -184,7 +184,7 @@ static PN aio_error(Potion *P, char *name, int status) {
         fprintf(stderr, "** Invalid type %s, expected %s",   \
                 PN_IS_PTR(stream)? AS_STR(potion_send(PN_VTABLE(stream), PN_name)) \
                 : PN_IS_NIL(stream) ? NIL_NAME                            \
-                : PN_IS_INT(stream) ? "Number" : "Boolean", "Aio_stream");\
+                : PN_IS_INT(stream) ? "Integer" : "Boolean", "Aio_stream");\
         exit(1);                                                          \
       }                                                                   \
   }
@@ -220,7 +220,7 @@ aio_getaddrinfo_cb(uv_getaddrinfo_t* req, int status, struct addrinfo* res) {
   Potion *P = wrap->P;
   FATAL_AIO_TYPE(data,getaddrinfo);
   if (!PN_IS_INT(status))
-    potion_fatal("status not a Number");
+    potion_fatal("status not a Integer");
   if (cb) cb->method(P, (PN)cb, (PN)data, PN_NUM(status), potion_ref(wrap->P, (PN)res));
 }
 
@@ -663,7 +663,7 @@ aio_connect_cb(uv_connect_t* req, int status) {
     fprintf(stderr, "** Invalid type %s, expected %s",
             PN_IS_PTR(data)? AS_STR(potion_send(PN_VTABLE(data), PN_name))
             : PN_IS_NIL(data) ? NIL_NAME
-            : PN_IS_INT(data) ? "Number" : "Boolean", "Aio_connect");
+            : PN_IS_INT(data) ? "Integer" : "Boolean", "Aio_connect");
     exit(1);
   }
   if (cb) cb->method(P, (PN)cb, data, PN_NUM(status));
@@ -1082,8 +1082,8 @@ aio_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t *buf) {
      -1 if a transmission error was detected.
    \param buf PNBytes with the received data
    \param addr PNString
-   \param port PNNumber
-   \param flags PNNumber, One or more OR'ed AIO_UDP_* constants,
+   \param port PNInteger
+   \param flags PNInteger, One or more OR'ed AIO_UDP_* constants,
       so far only AIO_UDP_PARTIAL is used.
    \see http://nikhilm.github.io/uvbook/networking.html#udp */
 static void

@@ -22,7 +22,7 @@ static PN potion_any_is_nil(Potion *P, PN closure, PN self) {
 /**\memberof Lobby
   "cmp" method. compare given value against argument.
   \param value PN
-  \return PNNumber -1 if less, 0 if equal or 1 if greater */
+  \return PNInteger -1 if less, 0 if equal or 1 if greater */
 PN potion_any_cmp(Potion *P, PN cl, PN self, PN value) {
   return potion_send(self, PN_cmp, value);
 }

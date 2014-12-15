@@ -539,7 +539,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         breg++;
         PN_ASM2(OP_MOVE, breg, reg);
       }
-      PN_ASM2(OP_LOADPN, breg + 1, (PN_S(t,1) | PN_FNUMBER));
+      PN_ASM2(OP_LOADPN, breg + 1, (PN_S(t,1) | PN_FINTEGER));
       PN_ASM2(OP_ADD, breg, breg + 1);
       PN_ASM2(opcode, breg, num);
       PN_REG(f, breg + 1);

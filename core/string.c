@@ -237,8 +237,8 @@ inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
 
 ///\memberof PNString
 /// "slice" method. supports negative indices, and end<start
-///\param start PNNumber
-///\param end   PNNumber
+///\param start PNInteger
+///\param end   PNInteger
 ///\return PNString substring
 static PN potion_str_slice(Potion *P, PN cl, PN self, PN start, PN end) {
   char *str = PN_STR_PTR(self);
@@ -290,7 +290,7 @@ PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
 ///\memberof PNString
 /// default function type_call_is for PNString, returning the character at
 /// the given position.
-///\param index PNNumber
+///\param index PNInteger
 ///\return PNString substring index .. index+1
 static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
   size_t startoffset, endoffset;
@@ -311,7 +311,7 @@ static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
 ///\memberof PNBytes
 /// "ord" method for PNString and PNBytes. return nil on strings longer than 1 char
 ///\param index int (optional, default: 0)
-///\return PNNumber
+///\return PNInteger
 static PN potion_str_ord(Potion *P, PN cl, PN self, PN index) {
   const char *str = PN_STR_PTR(potion_fwd(self));
   if (PN_STR_LEN(self) > 255) goto slow;
@@ -408,7 +408,7 @@ PN potion_bytes_append(Potion *P, PN cl, PN self, PN str) {
 
 ///\memberof PNBytes
 /// "length" method. Number of bytes, not chars.
-///\return PNNumber
+///\return PNInteger
 static PN potion_bytes_length(Potion *P, PN cl, PN self) {
   PN str = potion_fwd(self);
   return PN_NUM(PN_STR_LEN(str));
@@ -456,7 +456,7 @@ static PN potion_bytes_each(Potion *P, PN cl, PN self, PN block) {
 
 ///\memberof PNBytes
 /// type_call_is() for PNBytes. (?)
-///\param index PNNumber
+///\param index PNInteger
 ///\return PNString substring index .. index+1
 static PN potion_bytes_at(Potion *P, PN cl, PN self, PN index) {
   char c;
@@ -474,7 +474,7 @@ static PN potion_bytes_at(Potion *P, PN cl, PN self, PN index) {
    \code "a" cmp "a" #=>  0 \endcode
    \code "z" cmp "a" #=>  1 \endcode
  \param str PN string compared to
- \return PNNumber (positive, negative or 0)
+ \return PNInteger (positive, negative or 0)
  \sa potion_tuple_sort. */
 static PN potion_str_cmp(Potion *P, PN cl, PN self, PN str) {
   if (PN_IS_STR(str)) {

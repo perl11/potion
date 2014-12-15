@@ -346,7 +346,10 @@ Anything which is not @nil@ or @false@ is considered a positive value. (Which me
 
 h3. Numbers
 
-Basic numbers take up no memory and are passed as plain (32-bit or 64-bit, depending on your processor) integers.
+Basic numbers take up no memory and are passed as plain (32-bit or
+64-bit, depending on your processor) integers, but we loose one bit of
+precision for a tag bit. Arithmetic methods accept the type Number,
+which is Integer or Double and converts them as it fits.
 
 <pre>
 <code>

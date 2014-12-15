@@ -65,6 +65,7 @@ the x86 and x86_64 jit.
 #define TAG_PREP(tag)    tag = (*asmp)->len + 1
 #define TAG_LABEL(tag)   (*asmp)->ptr[tag] = ((*asmp)->len - tag - 1)
 // TODO refactor to use named TAGs
+// TODO optimize into seperate int and dbl variants
 // math binop for 2 numbers, int (inlined) or double (via call)
 #define X86_MATH(two, func, ops) ({ \
         int asmpos = 0; \
@@ -92,6 +93,7 @@ the x86 and x86_64 jit.
 // iop: jl, jg, jle, jge, je, jne for normal cmp comparisons
 // xop: jb, jbe", jae, ja, ... for SSE ucomisd comparisons.
 // TODO we also need to check jp for PF (parity) if one number is nan, to force false.
+// TODO optimize into seperate int and dbl variants
 #define X86_CMP(iop, xop, xmms)                                         \
         int dbl_a, dbl_b, cmp_dbl, true_1, true_2, false_;			\
         X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55,op.a)	/* mov -A(%rbp) %rdx */ \
@@ -613,7 +615,7 @@ void potion_x86_pow(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
   X86_ARGO(start - 3, 0);
   X86_ARGO(op.a, 2);
   X86_ARGO(op.b, 3);
-  X86_PRE(); ASM(0xB8); ASMN(potion_pow);// mov &potion_pow %rax
+  X86_PRE(); ASM(0xB8); ASMN(potion_num_pow);// mov &potion_num_pow %rax
   ASM(0xFF); ASM(0xD0); 		 // callq %rax
   X86_MOV_RBP(0x89, op.a); 		 // mov %rax local
 }

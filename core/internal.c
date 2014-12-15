@@ -16,7 +16,7 @@ PN PN_allocate, PN_break, PN_call, PN_class, PN_compile, PN_continue, PN_def,
    PN_return, PN_self, PN_string, PN_while;
 PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
-PN PN_extern;
+PN PN_extern, PN_integer;
 #ifdef P2
 PN PN_use, PN_no;
 #endif
@@ -82,6 +82,7 @@ static void potion_init(Potion *P) {
   PN_number = PN_STRN("number", 6);
   PN_extern = PN_STRN("extern", 6);
   PN_compile = PN_STRN("compile", 7);
+  PN_integer = PN_STRN("integer", 7);
   PN_allocate = PN_STRN("allocate", 8);
   PN_continue = PN_STRN("continue", 8);
   PN_delegated = PN_STRN("delegated", 9);
@@ -200,7 +201,7 @@ PNType potion_kind_of(PN obj) {
 char potion_type_char(PNType type) {
   switch (type) {
   case PN_TNIL:  	return 'n'; //0 nil?  (unused)
-  case PN_TNUMBER:	return 'N'; //1 Number
+  case PN_TNUMBER:	return 'N'; //1 Number = Integer or Double
   case PN_TBOOLEAN:	return 'B'; //2 Boolean (unused)
   case PN_TSTRING:	return 'S'; //3 String
   case PN_TWEAK:       	return 0;   //4 (illegal)
@@ -221,8 +222,9 @@ char potion_type_char(PNType type) {
   case PN_TERROR:      	return 'r'; //19
   case PN_TCONT:       	return 'c'; //20
   case PN_TDOUBLE:    	return 'D'; //21
-  case PN_TUSER:       	return 'm'; //22 generated mixins (unused)
-  default:       	return 'm'; //22++
+  case PN_TINTEGER:	return 'I'; //22
+  case PN_TUSER:       	return 'm'; //23 generated mixins (unused)
+  default:       	return 'm'; //23++
   }
 }
 
@@ -259,7 +261,7 @@ static inline char *potion_type_name(Potion *P, PN obj) {
   return PN_IS_PTR(obj)
     ? AS_STR(potion_send(PN_VTABLE(PN_TYPE(obj)), PN_string))
     : PN_IS_NIL(obj) ? "nil"
-      : PN_IS_INT(obj) ? "Number"
+      : PN_IS_INT(obj) ? "Integer"
         : "Boolean";
 }
 

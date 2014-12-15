@@ -65,7 +65,7 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
 
 /**\memberof PNFile
   \c "fd" class method.
-  \param fd PNNumber
+  \param fd PNInteger
   \return a new PNFile object for the already opened file descriptor (sorry, empty path). */
 PN potion_file_with_fd(Potion *P, PN cl, PN self, PN fd) {
   struct PNFile *file = (struct PNFile *)potion_object_new(P, PN_NIL, PN_VTABLE(PN_TFILE));
@@ -93,7 +93,7 @@ PN potion_file_close(Potion *P, PN cl, pn_file self) {
 
 /**\memberof PNFile
  \c "read" n PNBytes from the file
- \param n PNNumber
+ \param n PNInteger
  \return n PNBytes or nil or PNError */
 PN potion_file_read(Potion *P, PN cl, pn_file self, PN n) {
   n = PN_INT(n);
@@ -112,8 +112,8 @@ PN potion_file_read(Potion *P, PN cl, pn_file self, PN n) {
 
 /**\memberof PNFile
  \c "write" a binary representation of obj to the file handle.
- \param obj PNString, PNBytes, PNNumber (long or double), PNBoolean (char 0 or 1)
- \return PNNumber written bytes or PN_NIL */
+ \param obj PNString, PNBytes, PNInteger (long or double), PNBoolean (char 0 or 1)
+ \return PNInteger written bytes or PN_NIL */
 PN potion_file_write(Potion *P, PN cl, pn_file self, PN obj) {
   long len = 0;
   char *ptr = NULL;

@@ -125,13 +125,13 @@ PN potion_buffile_fmemopen(Potion *P, PN cl, PN buf, PN modestr) {
 
 /**\memberof PNBufFile
   \c flush and \c close a PNBufFile.
-  \return PNNumber (0 or EOF) */
+  \return PNInteger (0 or EOF) */
 PN potion_buffile_fclose(Potion *P, PN cl, pn_ffile self) {
   return PN_NUM(fclose(self->file));
 }
 /**\memberof PNBufFile
   \c read the next character from a PNBufFile
-  \return PNNumber */
+  \return PNInteger */
 PN potion_buffile_fgetc(Potion *P, PN cl, pn_ffile self) {
   return PN_NUM(fgetc(self->file));
 }
@@ -148,9 +148,9 @@ PN potion_buffile_fgets(Potion *P, PN cl, pn_ffile self) {
 /**\memberof PNBufFile
   \c read nitems of size from the stream into the PNBytes buf
   \param buf PNBytes
-  \param size PNNumber
-  \param nitems PNNumber
-  \return PNNumber of read items or PNError */
+  \param size PNInteger
+  \param nitems PNInteger
+  \return PNInteger of read items or PNError */
 PN potion_buffile_fread(Potion *P, PN cl, pn_ffile self, PN buf, PN size, PN nitems) {
   int r = fread(PN_STR_PTR(buf), PN_INT(size), PN_INT(nitems), self->file);
   if (r < PN_INT(nitems))
@@ -160,9 +160,9 @@ PN potion_buffile_fread(Potion *P, PN cl, pn_ffile self, PN buf, PN size, PN nit
 /**\memberof PNBufFile
   \c write nitems of size starting at the pointer pointing to buf to the stream.
   \param buf PNBytes or PNString
-  \param size PNNumber or if PN_NIL the length of buf
-  \param nitems PNNumber, default 1
-  \return PNNumber of written items or PNError */
+  \param size PNInteger or if PN_NIL the length of buf
+  \param nitems PNInteger, default 1
+  \return PNInteger of written items or PNError */
 PN potion_buffile_fwrite(Potion *P, PN cl, pn_ffile self, PN buf, PN size, PN nitems) {
   if (!size && (!nitems || PN_INT(nitems) == 1)) {
     size = potion_send(buf, PN_STR("length"));
@@ -181,15 +181,15 @@ PN potion_buffile_fwrite(Potion *P, PN cl, pn_ffile self, PN buf, PN size, PN ni
 }
 /**\memberof PNBufFile
   \c write the byte (0-255) to a PNBufFile
-  \param byte PNNumber
-  \return PNNumber */
+  \param byte PNInteger
+  \return PNInteger */
 PN potion_buffile_fputc(Potion *P, PN cl, pn_ffile self, PN byte) {
   return PN_NUM(fputc(PN_INT(byte), self->file));
 }
 /**\memberof PNBufFile
   \c write line to PNBufFile
   \param str PNString or PNBytes
-  \return PNNumber or PNError */
+  \return PNInteger or PNError */
 PN potion_buffile_fputs(Potion *P, PN cl, pn_ffile self, PN str) {
   int r;
   if (!(r=fputs(PN_STR_PTR(str), self->file)))
@@ -206,8 +206,8 @@ PN potion_buffile_fflush(Potion *P, PN cl, pn_ffile self) {
 }
 /**\memberof PNBufFile
    \c "fseek" set the file-position indicator for the stream.
-  \param offset PNNumber
-  \param whence PNNumber
+  \param offset PNInteger
+  \param whence PNInteger
   \return true or PNError */
 PN potion_buffile_fseek(Potion *P, PN cl, pn_ffile self, PN offset, PN whence) {
   if (fseek(self->file, PN_INT(offset), PN_INT(whence)))
@@ -217,7 +217,7 @@ PN potion_buffile_fseek(Potion *P, PN cl, pn_ffile self, PN offset, PN whence) {
 /**\memberof PNBufFile
    \c "ftell" returns the file-position indicator for the stream measured in bytes from the
    beginning of the file.
-  \return PNNumber */
+  \return PNInteger */
 PN potion_buffile_ftell(Potion *P, PN cl, pn_ffile self) {
   long r = ftell(self->file);
   if (r == -1)

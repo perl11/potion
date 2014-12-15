@@ -105,28 +105,29 @@ struct PNVtable;
 #endif
 
 #define PN_TNIL         0x250000    /// NIL is magic 0x250000 (type 0)
-#define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a Num (TDouble)
+#define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a TDouble
 #define PN_TBOOLEAN     (2+PN_TNIL)
-#define PN_TSTRING      (3+PN_TNIL)
-#define PN_TWEAK        (4+PN_TNIL)
-#define PN_TCLOSURE     (5+PN_TNIL)
-#define PN_TTUPLE       (6+PN_TNIL)
-#define PN_TSTATE       (7+PN_TNIL)
-#define PN_TFILE        (8+PN_TNIL)
-#define PN_TOBJECT      (9+PN_TNIL)
-#define PN_TVTABLE      (10+PN_TNIL) //0a
-#define PN_TSOURCE      (11+PN_TNIL) //0b
-#define PN_TBYTES       (12+PN_TNIL) //0c
-#define PN_TPROTO       (13+PN_TNIL) //0d
-#define PN_TLOBBY       (14+PN_TNIL) //0e
-#define PN_TTABLE       (15+PN_TNIL) //0f
-#define PN_TLICK        (16+PN_TNIL) //10
-#define PN_TFLEX        (17+PN_TNIL) //11
-#define PN_TSTRINGS     (18+PN_TNIL) //12
-#define PN_TERROR       (19+PN_TNIL) //13
-#define PN_TCONT        (20+PN_TNIL) //14
-#define PN_TDOUBLE      (21+PN_TNIL) //15 Num, i.e. double. no arbitrary prec. num yet
-#define PN_TUSER        (22+PN_TNIL) //16
+#define PN_TINTEGER     (3+PN_TNIL) //is a Number
+#define PN_TDOUBLE      (4+PN_TNIL) //is a Number, no arbitrary prec. yet
+#define PN_TSTRING      (5+PN_TNIL)
+#define PN_TWEAK        (6+PN_TNIL)
+#define PN_TCLOSURE     (7+PN_TNIL)
+#define PN_TTUPLE       (8+PN_TNIL)
+#define PN_TSTATE       (9+PN_TNIL)
+#define PN_TFILE        (10+PN_TNIL) //0a
+#define PN_TOBJECT      (11+PN_TNIL) //0b
+#define PN_TVTABLE      (12+PN_TNIL) //0c
+#define PN_TSOURCE      (13+PN_TNIL) //0d
+#define PN_TBYTES       (14+PN_TNIL) //0e
+#define PN_TPROTO       (15+PN_TNIL) //0f
+#define PN_TLOBBY       (16+PN_TNIL) //10
+#define PN_TTABLE       (17+PN_TNIL) //11
+#define PN_TLICK        (18+PN_TNIL) //12
+#define PN_TFLEX        (19+PN_TNIL) //13
+#define PN_TSTRINGS     (20+PN_TNIL) //14
+#define PN_TERROR       (21+PN_TNIL) //15
+#define PN_TCONT        (22+PN_TNIL) //16
+#define PN_TUSER        (23+PN_TNIL) //17
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -136,8 +137,7 @@ struct PNVtable;
 #define PN_TYPECHECK(t) (PN_TYPE_ID(t) >= 0 && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
 
 #define PN_NIL          ((PN)0)
-//i.e. PN_NUM(0)
-#define PN_ZERO         ((PN)1)
+#define PN_ZERO         ((PN)1)   //i.e. PN_NUM(0)
 #define PN_FALSE        ((PN)2)
 #define PN_TRUE         ((PN)6)
 #define PN_PRIMITIVE    7
@@ -149,7 +149,7 @@ struct PNVtable;
 #define NIL_NAME        "nil" // "undef" in p2
 #define NILKIND_NAME    "NilKind"
 
-#define PN_FNUMBER      1
+#define PN_FINTEGER     1
 #define PN_FBOOLEAN     2
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 //Beware: TEST1(PN_NUM(0)) vs TEST(0<1) i.e. test1(1) vs test(1)
@@ -160,7 +160,7 @@ struct PNVtable;
 #define PN_IS_PTR(v)    (!PN_IS_INT(v) && ((PN)(v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)
-#define PN_IS_INT(v)    ((PN)(v) & PN_FNUMBER) // TODO: => PN_IS_INT
+#define PN_IS_INT(v)    ((PN)(v) & PN_FINTEGER)
 #define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
@@ -190,12 +190,12 @@ struct PNVtable;
 #define DBG_CHECK_TUPLE(obj)
 #endif
 
-///\class PNNumber
+///\class PNInteger
 /// Either a PN_INT immediate object (no struct) 0x...1
 ///        Integer: 31bit/63bit shifted off the last 1 bit
 /// or a PNDouble double.
 ///\see PN_NUM (int to obj), PN_INT (obj to int), PN_IS_INT (is num obj?)
-#define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
+#define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FINTEGER))
 #define PN_INT(x)       ((long)((long)(x))>>1)
 #define PN_DBL(num)     (PN_IS_INT(num) ? (double)PN_INT(num) : ((struct PNDouble *)num)->value)
 typedef _PN (*PN_F)(Potion *, PN, PN, ...);
@@ -767,12 +767,13 @@ extern PN PN_allocate, PN_break, PN_call, PN_class, PN_compile,
   PN_while;
 extern PN PN_add, PN_sub, PN_mult, PN_div, PN_rem, PN_bitn, PN_bitl, PN_bitr;
 extern PN PN_cmp, PN_number, PN_name, PN_length, PN_size, PN_STR0;
-extern PN PN_extern;
+extern PN PN_extern, PN_integer;
 extern PN pn_filenames;
 
 /// zero values per type
 static inline PN potion_type_default(char type) {
   return type == 'N' ? PN_ZERO
+       : type == 'I' ? PN_ZERO
        : type == 'S' ? PN_STR0
                      : PN_NIL;
 }
@@ -831,12 +832,12 @@ PN potion_callcc(Potion *, PN, PN);
 PN potion_ref(Potion *, PN);
 PN potion_sig(Potion *, char *);
 int potion_sig_find(Potion *, PN, PN);
+PN potion_double(Potion *, double);
 PN potion_strtod(Potion *, char *, int);
-PN potion_pow(Potion *, PN, PN, PN);
+PN potion_num_pow(Potion *, PN, PN, PN);
+PN potion_num_rand(Potion *, PN, PN);
 PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);
-PN potion_num_rand(Potion *, PN, PN);
-PN potion_double(Potion *, double);
 PN potion_sig_at(Potion *, PN, int);
 PN potion_sig_name_at(Potion *, PN, int);
 int potion_sig_arity(Potion *, PN);
