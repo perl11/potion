@@ -57,3 +57,4 @@
 /frama-c*
 /cover_db
 /xx.[Scp]
+/*.patch

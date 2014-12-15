@@ -275,6 +275,8 @@ PN potion_num_string(Potion *P, PN cl, PN self) {
  \sa potion_num_to */
 static PN potion_int_times(Potion *P, PN cl, PN self, PN block) {
   long i, j = PN_INT(self);
+  PN_CHECK_INT(self);
+  //PN_CHECK_CLOSURE(block);
   if (PN_TYPE(block) != PN_TCLOSURE)
     potion_fatal("block argument for times is not a closure");
   for (i = 0; i < j; i++)
@@ -290,6 +292,8 @@ static PN potion_int_times(Potion *P, PN cl, PN self, PN block) {
  \sa potion_num_times, potion_num_step */
 static PN potion_int_to(Potion *P, PN cl, PN self, PN end, PN block) {
   long i, s = 1, j = PN_INT(self), k = PN_INT(end);
+  PN_CHECK_INT(self);
+  PN_CHECK_INT(end);
   if (k < j) s = -1;
   if (PN_TYPE(block) != PN_TCLOSURE)
     potion_fatal("block argument for to is not a closure");
@@ -306,6 +310,11 @@ static PN potion_int_to(Potion *P, PN cl, PN self, PN end, PN block) {
  \sa potion_num_to. */
 static PN potion_int_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) {
   long i, j = PN_INT(end), k = PN_INT(step);
+  PN_CHECK_INT(self);
+  PN_CHECK_INT(end);
+  PN_CHECK_INT(step);
+  if (PN_TYPE(block) != PN_TCLOSURE)
+    potion_fatal("block argument for step is not a closure");
   for (i = PN_INT(self); i <= j; i += k) {
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   }
@@ -313,11 +322,18 @@ static PN potion_int_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) 
 }
 
 /**\memberof PNNumber
-  "chr" of int only, no UTF-8 multi-byte sequence
+  "chr" of int only, no UTF-8 multi-byte sequence yet.
  \return PNString one char <255 */
 static PN potion_int_chr(Potion *P, PN cl, PN self) {
   char c = PN_INT(self);
+  PN_CHECK_INT(self);
   return PN_STRN(&c, 1);
+}
+/**\memberof PNNumber
+  "number?"
+ \return PNBoolean true or false */
+static PN potion_num_is_number(Potion *P, PN cl, PN self) {
+  return (PN_IS_INT(self) || PN_IS_DOUBLE(self)) ? PN_TRUE : PN_FALSE;
 }
 /**\memberof PNNumber
   "integer?"
@@ -348,6 +364,7 @@ static PN potion_num_abs(Potion *P, PN cl, PN self) {
   "abs"
  \return PNInteger */
 static PN potion_int_abs(Potion *P, PN cl, PN self) {
+  PN_CHECK_INT(self);
   return PN_NUM(labs(PN_INT(self)));
 }
 /**\memberof PNDouble
@@ -389,7 +406,7 @@ static PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
  \return PNInteger -1, 0 or 1 */
 static PN potion_dbl_cmp(Potion *P, PN cl, PN self, PN n) {
   double d1 = ((struct PNDouble *)self)->value;
-  double d2 = PN_DBL(potion_send(PN_number, n));
+  double d2 = PN_DBL(n);
   return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_ZERO : PN_NUM(1);
 }
 /**\memberof PNInteger
@@ -402,8 +419,10 @@ static PN potion_dbl_cmp(Potion *P, PN cl, PN self, PN n) {
  \sa potion_tuple_sort. */
 static PN potion_int_cmp(Potion *P, PN cl, PN self, PN n) {
   long n1, n2;
+  PN_CHECK_INT(self);
+  PN_CHECK_INT(n);
   n1 = PN_INT(self);
-  n2 = PN_IS_INT(n) ? PN_INT(n) : PN_INT(potion_send(PN_integer, n));
+  n2 = PN_INT(n);
   return n1 < n2 ? PN_NUM(-1) : n1 == n2 ? PN_ZERO : PN_NUM(1);
 }
 
@@ -422,14 +441,16 @@ void potion_num_init(Potion *P) {
   potion_method(num_vt, "**", potion_num_pow, "value=N");
   potion_method(num_vt, "abs", potion_num_abs, 0);
   potion_method(num_vt, "sqrt", potion_num_sqrt, 0);
-  potion_method(num_vt, "rand", potion_num_rand, 0);
   potion_method(num_vt, "cmp", potion_num_cmp, "value=o");
+  potion_method(num_vt, "chr", potion_int_chr, 0);
   potion_method(num_vt, "string", potion_num_string, 0);
   potion_method(num_vt, "number", potion_num_number, 0);
   potion_method(num_vt, "integer", potion_num_integer, 0);
   potion_method(num_vt, "double", potion_num_double, 0);
+  potion_method(num_vt, "number?", potion_num_is_number, 0);
   potion_method(num_vt, "integer?", potion_num_is_integer, 0);
   potion_method(num_vt, "double?", potion_num_is_double, 0);
+  potion_method(num_vt, "rand", potion_num_rand, 0);
   // optimized double-only methods, for both operands
   potion_method(dbl_vt, "string", potion_dbl_string, 0);
   potion_method(dbl_vt, "+", potion_dbl_add, "value=D");
@@ -437,7 +458,7 @@ void potion_num_init(Potion *P) {
   potion_method(dbl_vt, "*", potion_dbl_mult, "value=D");
   potion_method(dbl_vt, "/", potion_dbl_div, "value=D");
   potion_method(dbl_vt, "abs", potion_dbl_abs, 0);
-  potion_method(dbl_vt, "cmp", potion_dbl_cmp, "value=o");
+  potion_method(dbl_vt, "cmp", potion_dbl_cmp, "value=D");
   //potion_method(dbl_vt, "rand", potion_dbl_rand, 0);
   // optimized integer-only methods, for both operands
   potion_method(int_vt, "+", potion_int_add, "value=I");
@@ -445,14 +466,14 @@ void potion_num_init(Potion *P) {
   potion_method(int_vt, "*", potion_int_mult, "value=I");
   potion_method(int_vt, "/", potion_int_div, "value=I");
   potion_method(int_vt, "%", potion_int_rem, "value=I");
-  potion_method(int_vt, "~", potion_int_bitn, 0);
   potion_method(int_vt, "<<", potion_int_bitl, "value=I");
   potion_method(int_vt, ">>", potion_int_bitr, "value=I");
+  potion_method(int_vt, "~", potion_int_bitn, 0);
   potion_method(int_vt, "chr", potion_int_chr, 0);
   potion_method(int_vt, "abs", potion_int_abs, 0);
-  potion_method(int_vt, "cmp", potion_int_cmp, "value=o");
+  potion_method(int_vt, "cmp", potion_int_cmp, "value=I");
   //potion_method(int_vt, "rand", potion_int_rand, 0);
-  potion_method(int_vt, "step", potion_int_step, "end=N,step=N,block=&");
-  potion_method(int_vt, "times", potion_int_times, "block=&");
-  potion_method(int_vt, "to",   potion_int_to, "end=N,block=&");
+  potion_method(num_vt, "step", potion_int_step, "end=N,step=N,block=&");
+  potion_method(num_vt, "times", potion_int_times, "block=&");
+  potion_method(num_vt, "to",   potion_int_to, "end=N,block=&");
 }

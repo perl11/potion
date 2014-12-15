@@ -41,9 +41,9 @@
     (,(potion-match-symbol 
        "%" "*" "**" "+" "+" "-" "/" "<<" ">>" "about" "abs" "append" "arity"
        "at" "attr" "bytes" "call" "chr" "clone" "close" "code" "compile"
-       "each" "eval" "exit" "first" "float?" "forward" "here" "integer"
-       "integer?" "join" "kind" "last" "length" "licks" "list" "load" "meta"
-       "name" "nil?" "number" "ord" "pop" "print" "push" "put" "rand" "read"
+       "double" "double?" "each" "eval" "exit" "first" "float?" "forward" "here"
+       "integer" "integer?" "join" "kind" "last" "length" "licks" "list" "load" "meta"
+       "name" "nil?" "number" "number?" "ord" "pop" "print" "push" "put" "rand" "read"
        "remove" "reverse" "self" "send" "slice" "sqrt" "srand" "step" "string"
        "text" "times" "to" "tree" "write" "~") . font-lock-builtin-face)
     )

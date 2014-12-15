@@ -40,8 +40,8 @@
 
 #define YY_NAME(N) potion_code_##N
 
-#define YY_TNUM 3
-#define YY_TDEC 13
+#define YY_TINT 3
+#define YY_TDBL 13
 #ifdef DEBUG
 # define YYDEBUG_PARSE   DEBUG_PARSE
 # define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
@@ -195,7 +195,7 @@ immed = nil   { $$ = PN_NIL; }
       | true  { $$ = PN_TRUE; }
       | false { $$ = PN_FALSE; }
       | hex   { $$ = PN_NUM(PN_ATOI(yytext, yyleng, 16)) }
-      | dec   { if ($$ == YY_TNUM) {
+      | dec   { if ($$ == YY_TINT) {
                   $$ = PN_NUM(PN_ATOI(yytext, yyleng, 10));
                 } else {
                   $$ = potion_strtod(P, yytext, yyleng);
@@ -262,9 +262,9 @@ false = "false" !utfw
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
 # wrong x-1 parsing precedence, whitespace #75
-dec = < ('0' | '-'? [1-9][0-9]*) { $$ = YY_TNUM; }
-        ('.' [0-9]+ { $$ = YY_TDEC; })?
-        ('e' [-+] [0-9]+ { $$ = YY_TDEC })? >
+dec = < ('0' | '-'? [1-9][0-9]*) { $$ = YY_TINT; }
+        ('.' [0-9]+ { $$ = YY_TDBL; })?
+        ('e' [-+] [0-9]+ { $$ = YY_TDBL })? >
 
 q1 = [']   # ' emacs highlight problems
 c1 = < (!q1 utf8)+ > { P->pbuf = potion_asm_write(P, P->pbuf, yytext, yyleng) }
