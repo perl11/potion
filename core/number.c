@@ -1,7 +1,10 @@
 ///\file number.c
-/// simple math. PNNumber is either a immediate PN_NUM integer or double PNDouble
+/// simple arithmetic.
+/// PNNumber is either an immediate PN_INT integer (with one bit for a tag, range 2^30/2^62)
+/// or a boxed full-precision double PNDouble.
 //
 // (c) 2008 why the lucky stiff, the freelance professor
+// (c) 2013-2014 perel11.org
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +21,7 @@ PN potion_real(Potion *P, double v) {
 }
 
 /// strtod
-PN potion_decimal(Potion *P, char *str, int len) {
+PN potion_double(Potion *P, char *str, int len) {
   char *ptr = str + len;
   return potion_real(P, strtod(str, &ptr));
 }

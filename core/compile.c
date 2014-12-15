@@ -1089,7 +1089,7 @@ PN potion_proto_clone(Potion *P, PN cl, PN self) {
     if (PN_IS_PTR(val)) { \
       if (val & 2) { \
         size_t len = ((val ^ 2) >> 4) - 1; \
-        val = potion_decimal(P, (char *)ptr, len); \
+        val = potion_double(P, (char *)ptr, len); \
         ptr += len; \
       } else { \
         size_t len = (val >> 4) - 1; \

@@ -340,7 +340,7 @@ struct PNBytes {
 #define PN_MANTISSA(d, n) d->real[1 + n]
 
 ///
-/// decimals are floating point numbers
+/// doubles are floating point numbers
 /// stored as binary data. immutable.
 ///
 struct PNDouble {
@@ -628,7 +628,7 @@ struct Potion_State {
   Potion_Flags flags;      ///< vm flags: execution model and debug flags
   struct PNMemory *mem;    ///< allocator/gc
   PN call, callset;        ///< generic call and setter
-  int prec;                ///< decimal precision
+  int prec;                ///< double precision
 
   //parser-only:
   PN input, source;        ///< parser input and output (AST)
@@ -831,7 +831,7 @@ PN potion_callcc(Potion *, PN, PN);
 PN potion_ref(Potion *, PN);
 PN potion_sig(Potion *, char *);
 int potion_sig_find(Potion *, PN, PN);
-PN potion_decimal(Potion *, char *, int);
+PN potion_double(Potion *, char *, int);
 PN potion_pow(Potion *, PN, PN, PN);
 PN potion_srand(Potion *, PN, PN, PN);
 PN potion_rand(Potion *, PN, PN);

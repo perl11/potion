@@ -125,7 +125,7 @@ static PN potion_str_number(Potion *P, PN cl, PN self) {
     return PN_NUM(sign * PN_ATOI(str, i, 10));
   }
 
-  return potion_decimal(P, PN_STR_PTR(self), PN_STR_LEN(self));
+  return potion_double(P, PN_STR_PTR(self), PN_STR_LEN(self));
 }
 
 ///\memberof PNString
@@ -181,7 +181,7 @@ static size_t potion_utf8char_nextchar(const char *s, size_t offset) {
   3 unused transitions for padding reasons. When the automaton en-
   ters state zero, it has found a complete valid utf-8 code point;
   if it enters state one then the input sequence is not utf-8. The
-  start state is state nine. Note the mixture of octal and decimal
+  start state is state nine. Note the mixture of octal and double
   for stylistic reasons.
   The state is ignored in this code,  since slice already ensures
   that the utf8 codepoint is not malformed. */
