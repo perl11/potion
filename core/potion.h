@@ -157,10 +157,10 @@ struct PNVtable;
 ///\class PNBoolean
 /// From cmp (x<y) to immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
 #define PN_BOOL(v)      (PN_TEST(v) ? PN_TRUE : PN_FALSE)
-#define PN_IS_PTR(v)    (!PN_IS_NUM(v) && ((PN)(v) & PN_REF_MASK))
+#define PN_IS_PTR(v)    (!PN_IS_INT(v) && ((PN)(v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)
-#define PN_IS_NUM(v)    ((PN)(v) & PN_FNUMBER) // TODO: => PN_IS_INT
+#define PN_IS_INT(v)    ((PN)(v) & PN_FNUMBER) // TODO: => PN_IS_INT
 #define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
@@ -174,7 +174,7 @@ struct PNVtable;
 
 #define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "String")
 #define PN_CHECK_STRB(obj)  if (!PN_IS_STR(obj) || (PN_TYPE(obj) != PN_TBYTES)) return potion_type_error_want(P, ""#obj, (PN)obj, "String or Bytes")
-#define PN_CHECK_INT(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Integer")
+#define PN_CHECK_INT(obj)  if (!PN_IS_INT(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Integer")
 #define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Bool")
 #define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Tuple")
 #define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Closure")
@@ -194,10 +194,10 @@ struct PNVtable;
 /// Either a PN_INT immediate object (no struct) 0x...1
 ///        Integer: 31bit/63bit shifted off the last 1 bit
 /// or a PNDouble double.
-///\see PN_NUM (int to obj), PN_INT (obj to int), PN_IS_NUM (is num obj?)
+///\see PN_NUM (int to obj), PN_INT (obj to int), PN_IS_INT (is num obj?)
 #define PN_NUM(i)       ((PN)((((long)(i))<<1) + PN_FNUMBER))
 #define PN_INT(x)       ((long)((long)(x))>>1)
-#define PN_DBL(num)     (PN_IS_NUM(num) ? (double)PN_INT(num) : ((struct PNDouble *)num)->value)
+#define PN_DBL(num)     (PN_IS_INT(num) ? (double)PN_INT(num) : ((struct PNDouble *)num)->value)
 typedef _PN (*PN_F)(Potion *, PN, PN, ...);
 #define PN_PREC 16
 #define PN_RAND()       PN_NUM(potion_rand_int())
@@ -515,7 +515,7 @@ static inline PN potion_fwd(PN);
 
 /// either immediate (NUM,BOOL,NIL) or a fwd
 static inline PNType potion_type(PN obj) {
-  if (PN_IS_NUM(obj))  return PN_TNUMBER;
+  if (PN_IS_INT(obj))  return PN_TNUMBER;
   if (PN_IS_BOOL(obj)) return PN_TBOOLEAN;
   if (PN_IS_NIL(obj))  return PN_TNIL;
 #if 1

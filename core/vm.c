@@ -268,7 +268,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
     for (i=0; i < t->len; i++) {
       PN v = (PN)t->set[i];
       // arg names, except string default
-      if (PN_IS_STR(v) && !(i>0 && PN_IS_NUM(t->set[i-1]) && t->set[i-1] == PN_NUM(':'))) {
+      if (PN_IS_STR(v) && !(i>0 && PN_IS_INT(t->set[i-1]) && t->set[i-1] == PN_NUM(':'))) {
         PN_SIZE num = PN_GET(f->locals, v);
         if (num != PN_NONE)
           target->local(P, f, &asmb, regs + num, argx);
@@ -362,13 +362,13 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
 }
 
 #define PN_VM_MATH(name, oper)					  \
-  if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b]))		  \
+  if (PN_IS_INT(reg[op.a]) && PN_IS_INT(reg[op.b]))		  \
     reg[op.a] = PN_NUM(PN_INT(reg[op.a]) oper PN_INT(reg[op.b])); \
   else								  \
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);
 
 #define PN_VM_NUMCMP(cmp)					  \
-  if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b]))		  \
+  if (PN_IS_INT(reg[op.a]) && PN_IS_INT(reg[op.b]))		  \
     reg[op.a] = PN_BOOL(reg[op.a] cmp reg[op.b]);		  \
   else							          \
     reg[op.a] = PN_BOOL(PN_DBL(reg[op.a]) cmp PN_DBL(reg[op.b])); \
@@ -712,7 +712,7 @@ reentry:
 	   DBG_t("\t; %s>=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
 	   PN_VM_NUMCMP(>=))
       CASE(BITN,
-	   reg[op.a] = PN_IS_NUM(reg[op.b]) ? PN_NUM(~PN_INT(reg[op.b])) : potion_obj_bitn(P, reg[op.b]))
+	   reg[op.a] = PN_IS_INT(reg[op.b]) ? PN_NUM(~PN_INT(reg[op.b])) : potion_obj_bitn(P, reg[op.b]))
       CASE(BITL, PN_VM_MATH(bitl, <<))
       CASE(BITR, PN_VM_MATH(bitr, >>))
       CASE(DEF,

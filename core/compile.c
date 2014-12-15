@@ -64,7 +64,7 @@ PN potion_sig_string(Potion *P, PN cl, PN sig) {
       PN_SIZE i, comma=0;
       for (i = 0; i < t->len; i++) {
 	PN v = (PN)t->set[i];
-	if (PN_IS_NUM(v)) {
+	if (PN_IS_INT(v)) {
           // currently types are still encoded as NUM, TODO: support VTABLE also
 	  int c = PN_INT(v); comma=0;
 	  if (c == '.')      // is end
@@ -377,7 +377,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         } else { // a[0] constant, could to be optimized in jit
           assert(PN_VTYPE(key) == PN_TSOURCE && PN_PART(key) == AST_VALUE);
           PN k = PN_S(key, 0);
-          if (PN_IS_NUM(k)) {
+          if (PN_IS_INT(k)) {
             if (PN_INT(k) >= ASM_TPL_IMM || PN_INT(k) < 0) {
               num = PN_PUT(f->values, k);
               PN_ASM2(OP_LOADK, reg+1, num);
@@ -535,7 +535,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         PN_ASM2(OP_GETUPVAL, reg, num);
        else if (opcode == OP_SETLOCAL)
         PN_ASM2(OP_GETLOCAL, reg, num);
-      if (PN_IS_NUM(PN_S(t,1))) {
+      if (PN_IS_INT(PN_S(t,1))) {
         breg++;
         PN_ASM2(OP_MOVE, breg, reg);
       }

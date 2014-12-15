@@ -464,7 +464,7 @@ PN potion_tuple_pop(Potion *P, PN cl, PN self) {
 ///\param value PN
 ///\return self PNTuple
 PN potion_tuple_put(Potion *P, PN cl, PN self, PN key, PN value) {
-  if (PN_IS_NUM(key)) {
+  if (PN_IS_INT(key)) {
     DBG_CHECK_TUPLE(self);
     long i = PN_INT(key), len = PN_TUPLE_LEN(self);
     if (i < 0) i += len;

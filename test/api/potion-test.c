@@ -33,7 +33,7 @@ void potion_test_bool(CuTest *T) {
 void potion_test_int1(CuTest *T) {
   PN zero = PN_ZERO;
   CuAssert(T, "zero isn't zero", PN_INT(zero) == 0);
-  CuAssert(T, "zero isn't a number", PN_IS_NUM(zero));
+  CuAssert(T, "zero isn't a number", PN_IS_INT(zero));
   CuAssert(T, "zero is a ref", !PN_IS_PTR(zero));
   CuAssert(T, "zero bad add",
     490 == PN_INT(potion_send(zero, potion_str(P, "+"), num)));
@@ -42,7 +42,7 @@ void potion_test_int1(CuTest *T) {
 void potion_test_int2(CuTest *T) {
   PN pos = PN_NUM(10891);
   CuAssert(T, "positive numbers invalid", PN_INT(pos) == 10891);
-  CuAssert(T, "positive not a number", PN_IS_NUM(pos));
+  CuAssert(T, "positive not a number", PN_IS_INT(pos));
   CuAssert(T, "positive is a ref", !PN_IS_PTR(pos));
   CuAssert(T, "positive bad add",
     11381 == PN_INT(potion_send(pos, potion_str(P, "+"), num)));
@@ -51,7 +51,7 @@ void potion_test_int2(CuTest *T) {
 void potion_test_int3(CuTest *T) {
   PN neg = PN_NUM(-4343);
   CuAssert(T, "negative numbers invalid", PN_INT(neg) == -4343);
-  CuAssert(T, "negative not a number", PN_IS_NUM(neg));
+  CuAssert(T, "negative not a number", PN_IS_INT(neg));
   CuAssert(T, "negative is a ref", !PN_IS_PTR(neg));
   CuAssert(T, "negative bad add",
     -3853 == PN_INT(potion_send(neg, potion_str(P, "+"), num)));

@@ -259,7 +259,7 @@ static inline char *potion_type_name(Potion *P, PN obj) {
   return PN_IS_PTR(obj)
     ? AS_STR(potion_send(PN_VTABLE(PN_TYPE(obj)), PN_string))
     : PN_IS_NIL(obj) ? "nil"
-      : PN_IS_NUM(obj) ? "Number"
+      : PN_IS_INT(obj) ? "Number"
         : "Boolean";
 }
 

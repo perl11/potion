@@ -90,7 +90,7 @@ int potion_sig_arity(Potion *P, PN sig) {
 	PN v = (PN)t->set[i];
 	if (PN_IS_STR(v)) count++; // names
 	// but not string default values
-	if (PN_IS_NUM(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
+	if (PN_IS_INT(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
       }
     }
     return count;
@@ -113,8 +113,8 @@ int potion_sig_minargs(Potion *P, PN sig) {
       for (i = 0; i < t->len; i++) {
 	PN v = (PN)t->set[i];
 	if (PN_IS_STR(v)) count++; // count only names
-	if (PN_IS_NUM(v) && v == PN_NUM('|')) break;
-	if (PN_IS_NUM(v) && v == PN_NUM(':')) { count--; break; }
+	if (PN_IS_INT(v) && v == PN_NUM('|')) break;
+	if (PN_IS_INT(v) && v == PN_NUM(':')) { count--; break; }
       }
     }
     return count;
@@ -138,10 +138,10 @@ PN potion_sig_at(Potion *P, PN sig, int index) {
       for (i = 0; i < t->len; i++) {
 	PN v = (PN)t->set[i];
 	if (PN_IS_STR(v)) count++;
-	if (PN_IS_NUM(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
+	if (PN_IS_INT(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
 	if (count == index) {
 	  result = potion_tuple_new(P, v);
-	  if (i+1 < t->len && PN_IS_NUM((PN)t->set[i+1])) {
+	  if (i+1 < t->len && PN_IS_INT((PN)t->set[i+1])) {
 	    PN typ = (PN)t->set[i+1];
 	    result = potion_tuple_push(P, result, typ);
 	    if (i+2 < t->len && typ == PN_NUM(':'))
@@ -171,7 +171,7 @@ PN potion_sig_name_at(Potion *P, PN sig, int index) {
       for (i = 0; i < t->len; i++) {
 	PN v = (PN)t->set[i];
 	if (PN_IS_STR(v)) count++;
-	if (PN_IS_NUM(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
+	if (PN_IS_INT(v) && v == PN_NUM(':') && PN_IS_STR((PN)t->set[i+1])) count--;
 	if (count == index)
 	  return v;
       }

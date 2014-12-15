@@ -33,7 +33,7 @@ PN potion_strtod(Potion *P, char *str, int len) {
 PN potion_pow(Potion *P, PN cl, PN self, PN sup) {
   double x = PN_DBL(self), y = PN_DBL(sup);
   double z = pow(x, y);
-  if (PN_IS_NUM(self) && PN_IS_NUM(sup) && abs(z) < INT_MAX)
+  if (PN_IS_INT(self) && PN_IS_INT(sup) && abs(z) < INT_MAX)
     return PN_NUM((int)z);
   return potion_double(P, z);
 }
@@ -45,7 +45,7 @@ static PN potion_sqrt(Potion *P, PN cl, PN self) {
 }
 
 #define PN_NUM_MATH(int_math) \
-  if (PN_IS_NUM(self) && PN_IS_NUM(num)) \
+  if (PN_IS_INT(self) && PN_IS_INT(num)) \
     return PN_NUM(PN_INT(self) int_math PN_INT(num)); \
   return potion_double(P, PN_DBL(self) int_math PN_DBL(num));
 
@@ -86,7 +86,7 @@ static PN potion_div(Potion *P, PN cl, PN self, PN num) {
  \param num PN_INT or PNDouble
  \return PNNumber (if both are INT) or PNDouble */
 static PN potion_rem(Potion *P, PN cl, PN self, PN num) {
-  if (PN_IS_NUM(self) && PN_IS_NUM(num))
+  if (PN_IS_INT(self) && PN_IS_INT(num))
     return PN_NUM(PN_INT(self) % PN_INT(num));
   double x = PN_DBL(self), y = PN_DBL(num);
   int z = (int)(x / y);
@@ -97,7 +97,7 @@ static PN potion_rem(Potion *P, PN cl, PN self, PN num) {
   "~" method, bitwise negation  \code ~ 0 #=> -1 \endcode
  \return PNNumber or 0.0 for PNDouble argument */
 static PN potion_bitn(Potion *P, PN cl, PN self) {
-  if (PN_IS_NUM(self))
+  if (PN_IS_INT(self))
     return PN_NUM(~PN_INT(self));
   return (PN)potion_double(P, 0.0);
 }
@@ -107,7 +107,7 @@ static PN potion_bitn(Potion *P, PN cl, PN self) {
  \param num PN_INT or PNDouble
  \return PNNumber or 0.0 for a PNDouble argument */
 static PN potion_bitl(Potion *P, PN cl, PN self, PN num) {
-  if (PN_IS_NUM(self) && PN_IS_NUM(num))
+  if (PN_IS_INT(self) && PN_IS_INT(num))
     return PN_NUM(PN_INT(self) << PN_INT(num));
   return (PN)potion_double(P, 0.0);
 }
@@ -117,7 +117,7 @@ static PN potion_bitl(Potion *P, PN cl, PN self, PN num) {
  \param num PN_INT or PNDouble
  \return PNNumber or 0.0 for a PNDouble argument */
 static PN potion_bitr(Potion *P, PN cl, PN self, PN num) {
-  if (PN_IS_NUM(self) && PN_IS_NUM(num))
+  if (PN_IS_INT(self) && PN_IS_INT(num))
     return PN_NUM(PN_INT(self) >> PN_INT(num));
   return (PN)potion_double(P, 0.0);
 }
@@ -132,7 +132,7 @@ static PN potion_num_number(Potion *P, PN cl, PN self) {
  \return PNString */
 PN potion_num_string(Potion *P, PN cl, PN self) {
   char ints[40];
-  if (PN_IS_NUM(self)) {
+  if (PN_IS_INT(self)) {
     sprintf(ints, "%ld", PN_INT(self));
   } else {
     int len = sprintf(ints, "%.16f", ((struct PNDouble *)self)->value);
@@ -210,7 +210,7 @@ static PN potion_num_chr(Potion *P, PN cl, PN self) {
   "integer?"
  \return PNBoolean true or false */
 static PN potion_num_is_integer(Potion *P, PN cl, PN self) {
-  return PN_IS_NUM(self) ? PN_TRUE : PN_FALSE;
+  return PN_IS_INT(self) ? PN_TRUE : PN_FALSE;
 }
 /**\memberof PNNumber
   "float?"
@@ -222,7 +222,7 @@ static PN potion_num_is_float(Potion *P, PN cl, PN self) {
   "integer" cast
  \return floor rounded PNNumber */
 static PN potion_num_integer(Potion *P, PN cl, PN self) {
-  if (PN_IS_NUM(self))
+  if (PN_IS_INT(self))
     return self;
   else
     return PN_NUM(floor(((struct PNDouble *)self)->value));
@@ -256,7 +256,7 @@ static PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
   } else {
     long n1, n2;
     n1 = PN_INT(self);
-    n2 = PN_IS_NUM(n) ? PN_INT(n) : PN_INT(potion_send(PN_number, n));
+    n2 = PN_IS_INT(n) ? PN_INT(n) : PN_INT(potion_send(PN_number, n));
     return n1 < n2 ? PN_NUM(-1) : n1 == n2 ? PN_ZERO : PN_NUM(1);
   }
 }

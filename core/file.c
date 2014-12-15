@@ -120,7 +120,7 @@ PN potion_file_write(Potion *P, PN cl, pn_file self, PN obj) {
   //TODO: maybe extract ptr+len to seperate function
   if (!PN_IS_PTR(obj)) {
     if (!obj) return PN_NIL; //silent
-    else if (PN_IS_NUM(obj)) {
+    else if (PN_IS_INT(obj)) {
       long tmp = PN_NUM(obj); len = sizeof(tmp); ptr = (char *)&tmp;
     }
     else if (PN_IS_BOOL(obj)) {
@@ -153,7 +153,7 @@ PN potion_file_write(Potion *P, PN cl, pn_file self, PN obj) {
   \return "" or PNError */
 PN potion_file_print(Potion *P, PN cl, pn_file self, PN obj) {
   PN r = potion_file_write(P, cl, self, potion_send(obj, PN_string));
-  return PN_IS_NUM(r) ? PN_STR0 : r;
+  return PN_IS_INT(r) ? PN_STR0 : r;
 }
 
 /**\memberof PNFile

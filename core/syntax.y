@@ -47,7 +47,7 @@
 # define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
 # define YY_SET(G, text, count, thunk, P) \
   yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
-    PN_IS_NUM(yy)||PN_IS_PTR(yy) ? PN_STR_PTR(potion_send(yy, PN_string)) : "")); \
+    PN_IS_INT(yy)||PN_IS_PTR(yy) ? PN_STR_PTR(potion_send(yy, PN_string)) : "")); \
   G->val[count]= yy;
 #endif
 
@@ -479,7 +479,7 @@ int potion_sig_find(Potion *P, PN cl, PN name)
     PN prev = PN_NIL;
     if (v == name) return idx;
     // count names, not string default values
-    if (PN_IS_STR(v) && !(PN_IS_NUM(prev) && prev == PN_NUM(':')))
+    if (PN_IS_STR(v) && !(PN_IS_INT(prev) && prev == PN_NUM(':')))
       idx++;
     prev = v;
   });
