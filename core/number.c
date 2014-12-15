@@ -333,7 +333,7 @@ static PN potion_int_chr(Potion *P, PN cl, PN self) {
   "number?"
  \return PNBoolean true or false */
 static PN potion_num_is_number(Potion *P, PN cl, PN self) {
-  return (PN_IS_INT(self) || PN_IS_DOUBLE(self)) ? PN_TRUE : PN_FALSE;
+  return (PN_IS_INT(self) || PN_IS_DBL(self)) ? PN_TRUE : PN_FALSE;
 }
 /**\memberof PNNumber
   "integer?"
@@ -342,16 +342,16 @@ static PN potion_num_is_integer(Potion *P, PN cl, PN self) {
   return PN_IS_INT(self) ? PN_TRUE : PN_FALSE;
 }
 /**\memberof PNNumber
-  "float?"
+  "double?"
  \return PNBoolean true or false */
 static PN potion_num_is_double(Potion *P, PN cl, PN self) {
-  return PN_IS_DOUBLE(self) ? PN_TRUE : PN_FALSE;
+  return PN_IS_DBL(self) ? PN_TRUE : PN_FALSE;
 }
 /**\memberof PNNumber
   "abs"
  \return PNInteger or PNDouble */
 static PN potion_num_abs(Potion *P, PN cl, PN self) {
-  if (PN_IS_DOUBLE(self)) {
+  if (PN_IS_DBL(self)) {
     double d = PN_DBL(self);
     if (d < 0.0)
       return (PN) potion_double(P, -d);
@@ -386,7 +386,7 @@ static PN potion_dbl_abs(Potion *P, PN cl, PN self) {
  \return PNInteger -1, 0 or 1
  \sa potion_tuple_sort. */
 static PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
-  if (PN_IS_DOUBLE(self)) {
+  if (PN_IS_DBL(self)) {
     double d1 = ((struct PNDouble *)self)->value;
     double d2 = PN_DBL(potion_send(PN_number, n));
     return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_ZERO : PN_NUM(1);

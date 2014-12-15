@@ -41,7 +41,7 @@
     (,(potion-match-symbol 
        "%" "*" "**" "+" "+" "-" "/" "<<" ">>" "about" "abs" "append" "arity"
        "at" "attr" "bytes" "call" "chr" "clone" "close" "code" "compile"
-       "double" "double?" "each" "eval" "exit" "first" "float?" "forward" "here"
+       "double" "double?" "each" "eval" "exit" "first" "forward" "here"
        "integer" "integer?" "join" "kind" "last" "length" "licks" "list" "load" "meta"
        "name" "nil?" "number" "number?" "ord" "pop" "print" "push" "put" "rand" "read"
        "remove" "reverse" "self" "send" "slice" "sqrt" "srand" "step" "string"
