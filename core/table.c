@@ -229,6 +229,43 @@ PN potion_table_values(Potion *P, PN cl, PN self) {
   return (PN)t2;
 }
 
+static
+PN potion_table_cmp(Potion *P, PN cl, PN self, PN value) {
+  DBG_CHECK_TYPE(self,PN_TTABLE);
+  switch (potion_type(value)) {
+  case PN_TBOOLEAN: // false < () < true
+    return value == PN_FALSE ? PN_NUM(-1) : PN_NUM(1);
+  case PN_TNIL:
+    return PN_NUM(-1); //nil < () < (...)
+  case PN_TTABLE: { // recurse. compare all keys and values
+    vPN(Table) t0 = (vPN(Table))potion_fwd(self);
+    vPN(Table) t1 = (vPN(Table))potion_fwd(value);
+    unsigned k;
+    PN cmp = PN_NUM(-1);
+    if (kh_size(t0) != kh_size(t1))
+      return kh_size(t0) < kh_size(t1) ? PN_NUM(-1) : PN_NUM(1);
+    for (k = kh_begin(t0); k != kh_end(t0); ++k) {
+      if (kh_exist(PN, t0, k) && kh_exist(PN, t1, k)) {
+        cmp = potion_send(kh_val(PN, t0, k), PN_cmp, kh_val(PN, t1, k));
+        if (cmp != PN_ZERO)
+          return cmp;
+      }
+    }
+    return cmp;
+  }
+  default:
+    potion_fatal("Invalid table cmp type");
+    return 0;
+  }
+}
+
+static
+PN potion_table_equal(Potion *P, PN cl, PN self, PN value) {
+  if (PN_IS_TUPLE(self)) self = potion_table_cast(P, self);
+  DBG_CHECK_TYPE(self,PN_TTABLE);
+  return (PN_ZERO == potion_table_cmp(P, cl, self, value)) ? PN_TRUE : PN_FALSE;
+}
+
 // TUPLE - ordered lists, i.e. arrays in consecutive memory
 // not autovivifying
 
@@ -775,9 +812,9 @@ PN potion_tuple_cmp(Potion *P, PN cl, PN self, PN value) {
   DBG_CHECK_TYPE(self,PN_TTUPLE);
   switch (potion_type(value)) {
   case PN_TBOOLEAN: // false < () < true
-    return value == PN_FALSE ? -1 : 1;
+    return value == PN_FALSE ? PN_NUM(-1) : PN_NUM(1);
   case PN_TNIL:
-    return -1; //nil < () < (...)
+    return PN_NUM(-1); //nil < () < (...)
   case PN_TTUPLE: // recurse
     if(PN_TUPLE_LEN(self) && PN_TUPLE_LEN(value)) {
       PN cmp;
@@ -796,14 +833,21 @@ PN potion_tuple_cmp(Potion *P, PN cl, PN self, PN value) {
       }
     }
     else {
-      if (PN_TUPLE_LEN(value)) return -1;
-      else if (PN_TUPLE_LEN(self)) return 1;
-      else return 0;
+      if (PN_TUPLE_LEN(value)) return PN_NUM(-1);
+      else if (PN_TUPLE_LEN(self)) return PN_NUM(1);
+      else return PN_ZERO;
     }
   default:
     potion_fatal("Invalid tuple cmp type");
     return 0;
   }
+}
+
+static
+PN potion_tuple_equal(Potion *P, PN cl, PN self, PN value) {
+  //if (PN_IS_TABLE(self)) self = potion_tuple_cast(P, self);
+  DBG_CHECK_TYPE(self,PN_TTUPLE);
+  return (PN_ZERO == potion_tuple_cmp(P, cl, self, value)) ? PN_TRUE : PN_FALSE;
 }
 
 #undef SWAP
@@ -833,6 +877,7 @@ void potion_table_init(Potion *P) {
   potion_method(tbl_vt, "slice", potion_table_slice, "|keys=u");
   potion_method(tbl_vt, "keys", potion_table_keys, 0);
   potion_method(tbl_vt, "values", potion_table_values, 0);
+  potion_method(tbl_vt, "equal", potion_table_equal, "value=o");
 
   potion_type_call_is(tpl_vt, PN_FUNC(potion_tuple_at, "index=N"));
   potion_type_callset_is(tpl_vt, PN_FUNC(potion_tuple_put, "index=N,value=o"));
@@ -859,6 +904,7 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "sort", potion_tuple_sort, "|block=&");
   potion_method(tpl_vt, "ins_sort", potion_tuple_ins_sort, "|block=&");
   potion_method(tpl_vt, "cmp", potion_tuple_cmp, "value=o");
+  potion_method(tbl_vt, "equal", potion_tuple_equal, "value=o");
   potion_method(tpl_vt, "string", potion_tuple_string, 0);
   potion_method(P->lobby, "list", potion_lobby_list, "length=N");
 }

@@ -162,6 +162,7 @@ struct PNVtable;
 #define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)
 #define PN_IS_INT(v)    ((PN)(v) & PN_FINTEGER)
 #define PN_IS_DBL(v)    (PN_IS_PTR(v) && (PN_TYPE(v) == PN_TNUMBER || PN_TYPE(v) == PN_TDOUBLE))
+#define PN_IS_NUM(v)    (PN_IS_INT(v) || PN_IS_DBL(v))
 #define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
@@ -557,7 +558,7 @@ typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; unsigned char ptr[]
 ///
 /// the jit
 ///
-#define OP_MAX 50 // OP_DEBUG+1 was 64, statically allocated in Potion interpreter
+#define OP_MAX 51 // OP_DEBUG+1 was 64, statically allocated in Potion interpreter
 
 typedef void (*OP_F)(Potion *P, struct PNProto *, PNAsm * volatile *, ...);
 
@@ -854,6 +855,7 @@ PN potion_obj_rem(Potion *, PN, PN);
 PN potion_obj_bitn(Potion *, PN);
 PN potion_obj_bitl(Potion *, PN, PN);
 PN potion_obj_bitr(Potion *, PN, PN);
+PN potion_any_equal(Potion *, PN, PN, PN);
 PN potion_any_cmp(Potion *, PN, PN, PN);
 
 PN potion_tuple_empty(Potion *);

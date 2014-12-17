@@ -627,6 +627,16 @@ void potion_x86_neq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 	  ); // TODO false if jp (parity) or jne (not equal)
 }
 
+void potion_x86_equal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+  PN_OP op = PN_OP_AT(f->asmb, pos);
+  X86_ARGO(start - 3, 0); 			// mov &P 0(%esp)
+  X86_ARGO(op.a, 2); 	  			// mov A  2(%esp)
+  X86_ARGO(op.b, 3); 	  			// mov B  3(%esp)
+  X86_PRE(); ASM(0xB8); ASMN(potion_any_equal);	// mov &potion_any_equal %rax
+  ASM(0xFF); ASM(0xD0); 			// callq %rax
+  X86_MOV_RBP(0x89, op.a); 			// mov %rax local
+}
+
 void potion_x86_eq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_CMP(0x74, 0x74, 		 // je, je

@@ -4,11 +4,12 @@ v0.3
 	also for table with a string literal: table["key"]
         * Fixed comparison of numbers. checking now also double values, before only int.
         The jit now requires at least a x86 with sse2 (Pentium 4)
+        * Added new `equal` op to test deeper structural equivalence, compared to `eq`
         * Changed the name Decimal in the API to Double
         * Added seperate Double and Integer vtables, which are both of kind Number.
         Added specialized methods.
-        * Added isa? and subclass? methods, re-enabled test/classes/creature.pn
-        * string: improve performance of at and ord
+        * Added `isa?` and `subclass?` methods, re-enabled test/classes/creature.pn
+        * string: improve performance of `at` and `ord`
         * Added more examples
 	* Updated libuv from 0.11.23 to 1.0.0
 

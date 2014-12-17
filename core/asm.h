@@ -56,6 +56,7 @@ typedef struct {
       (OP_F)potion_##arch##_pow, \
       (OP_F)potion_##arch##_not, \
       (OP_F)potion_##arch##_cmp, \
+      (OP_F)potion_##arch##_equal, \
       (OP_F)potion_##arch##_eq, \
       (OP_F)potion_##arch##_neq, \
       (OP_F)potion_##arch##_lt, \

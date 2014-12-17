@@ -16,6 +16,6 @@ Rabbit = Creature class (b):
 
 c = Creature(45, 65, 27, 89)
 r = Rabbit(3)
-(c traits, r traits, r /bombs)
 
-#=> ((45, 65, 27, 89), (10, 44, 44, 4), 3)
+(c traits, r traits, r /bombs, r isa?(Rabbit), r subclass?(Creature), r subclass?(Object))
+#=> ((45, 65, 27, 89), (10, 44, 44, 4), 3, true, true, true)

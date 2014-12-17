@@ -60,7 +60,7 @@ the powerpc jit (32-bit only), unfinished!
   PPC(31, b, a, (b << 3) | 0x3, 0x78); // or rA,rB,rB
 #define PPC_UNBOX() \
   PPC(31, REG(op.a), REG(op.a), 0x0e, 0x70); /* srawi rA,rA,1 */ \
-  PPC(31, REG(op.b), REG(op.b), 0x0e, 0x70) /* srawi rB,rB,1 */
+  PPC(31, REG(op.b), REG(op.b), 0x0e, 0x70)  /* srawi rB,rB,1 */
 #define PPC_MATH(do) \
   PPC_UNBOX(); \
   do; /* add, sub, ... */ \
@@ -167,8 +167,8 @@ void potion_ppc_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 void potion_ppc_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
-void potion_ppc_search(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
-}
+//void potion_ppc_search(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+//}
 
 void potion_ppc_gettable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
@@ -309,6 +309,9 @@ void potion_ppc_not(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 void potion_ppc_cmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
 }
 
+void potion_ppc_equal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+}
+
 void potion_ppc_testjmp(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, PN_OP *start, PNJumps *jmps, size_t *offs, int *jmpc) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC(11, 7 << 2, REG(op.a), 0, PN_FALSE); // cmpwi cr7,rA,0x0
@@ -335,10 +338,10 @@ void potion_ppc_tailcall(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 
 void potion_ppc_return(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  PPC_MOV(3, REG(op.a)); // or r3,rA,rA
-  PPC3(32, 1, 1, 0); // lwz r1,(r1)
-  PPC3(46, 30, 1, 0xFFF8); // lmw r30,-8(r1)
-  ASMI(0x4e800020); // blr
+  PPC_MOV(3, REG(op.a)); 	// or r3,rA,rA
+  PPC3(32, 1, 1, 0); 		// lwz r1,(r1)
+  PPC3(46, 30, 1, 0xFFF8); 	// lmw r30,-8(r1)
+  ASMI(0x4e800020); 		// blr
 }
 
 void potion_ppc_method(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_OP **pos, long lregs, long start, long regs) {

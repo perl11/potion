@@ -339,6 +339,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(TEST, (P, f, &asmb, pos))		// if not (R[a] <=> C) then PC++
       CASE_OP(NOT, (P, f, &asmb, pos))		// a = not b
       CASE_OP(CMP, (P, f, &asmb, pos))
+      CASE_OP(EQUAL, (P, f, &asmb, pos))      // call any_equal
       CASE_OP(TESTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(NOTJMP, (P, f, &asmb, pos, jmps, offs, &jmpc))
       CASE_OP(NAMED, (P, f, &asmb, pos, need))	// assign named args before a CALL
@@ -618,7 +619,7 @@ reentry:
       &&L(GETTUPLE), &&L(SETTUPLE), &&L(GETLOCAL), &&L(SETLOCAL), &&L(GETUPVAL),
       &&L(SETUPVAL), &&L(GLOBAL), &&L(GETTABLE), &&L(SETTABLE), &&L(NEWLICK),
       &&L(GETPATH), &&L(SETPATH), &&L(ADD), &&L(SUB), &&L(MULT), &&L(DIV), &&L(REM),
-      &&L(POW), &&L(NOT), &&L(CMP), &&L(EQ), &&L(NEQ), &&L(LT), &&L(LTE), &&L(GT),
+      &&L(POW), &&L(NOT), &&L(CMP), &&L(EQUAL), &&L(EQ), &&L(NEQ), &&L(LT), &&L(LTE), &&L(GT),
       &&L(GTE), &&L(BITN), &&L(BITL), &&L(BITR), &&L(DEF), &&L(BIND), &&L(MSG), &&L(JMP),
       &&L(TEST), &&L(TESTJMP), &&L(NOTJMP), &&L(NAMED), &&L(CALL), &&L(CALLSET),
       &&L(TAILCALL), &&L(RETURN), &&L(PROTO), &&L(CLASS), &&L_DEBUG
@@ -698,12 +699,19 @@ reentry:
       CASE(NOT, reg[op.a] = PN_BOOL(!PN_TEST(reg[op.a])))
 #endif
       CASE(CMP, reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a])))
-      CASE(NEQ,
-           DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   PN_VM_NUMCMP(!=))
+      CASE(EQUAL,
+           DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+           if (PN_IS_NUM(reg[op.a]) && PN_IS_NUM(reg[op.b])) {
+             PN_VM_NUMCMP(==)
+           } else {
+             reg[op.a] = (PN_ZERO == potion_send(reg[op.a], PN_cmp, reg[op.b])) ? PN_TRUE : PN_FALSE;
+           })
       CASE(EQ,
            DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
 	   PN_VM_NUMCMP(==))
+      CASE(NEQ,
+           DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
+	   PN_VM_NUMCMP(!=))
       CASE(LT,
            DBG_t("\t; %s<%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
 	   PN_VM_NUMCMP(<))

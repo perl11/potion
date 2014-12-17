@@ -1,0 +1,17 @@
+# compile-time
+(1, x) = (1, 2) #=> (x=2)
+(1, x) = (2, 3) #=> false
+1 = 2           #=> false
+
+# compile-time
+#(_, x, 2)   = (0, 1, 2)   and say x #=> 1
+#[_, x]      = [0, [1, 2]] and say x #=> [1, 2]
+#[_ | x]     = [0, 1, 2]   and say x #=> [1, 2]
+#[_, [x, 1]] = [0, [1, 2]]           #=> (x=1)
+
+# run-time
+fun = (a, b): [0, [a, b]].
+[_ | [x, 1]] = fun(2, x)  #=> (x=2)
+
+# compile-time, quoted msg in lick
+#[_(x, y)] = [fun(1, 2)]   #=> (x=1, y=2)

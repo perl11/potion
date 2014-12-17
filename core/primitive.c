@@ -20,6 +20,20 @@ static PN potion_any_is_nil(Potion *P, PN closure, PN self) {
 }
 
 /**\memberof Lobby
+   \returns true or false if the two objects or primitives are equal */
+PN potion_any_equal(Potion *P, PN cl, PN self, PN other) {
+  if (PN_IS_NUM(self) && PN_IS_NUM(other)) {
+    if (PN_IS_INT(self) && PN_IS_INT(other)) {
+      return PN_BOOL(self == other);
+    } else {
+      double d = PN_DBL(self) - PN_DBL(other);
+      return PN_BOOL(d > 0 ? d < 1e-6 : d > -1e-6);
+    }
+  } else {
+    return (PN_ZERO == potion_send(self, PN_cmp, other)) ? PN_TRUE : PN_FALSE;
+  }
+}
+/**\memberof Lobby
   "cmp" method. compare given value against argument.
   \param value PN
   \return PNInteger -1 if less, 0 if equal or 1 if greater */
@@ -33,7 +47,7 @@ PN potion_any_cmp(Potion *P, PN cl, PN self, PN value) {
 static PN potion_nil_cmp(Potion *P, PN cl, PN self, PN value) {
   switch (potion_type(value)) {
   case PN_TNIL:
-    return 0;
+    return PN_ZERO;
   case PN_TNUMBER:
     return potion_send(PN_ZERO, PN_cmp, value);
   case PN_TBOOLEAN:
@@ -49,13 +63,13 @@ static PN potion_nil_cmp(Potion *P, PN cl, PN self, PN value) {
 static PN potion_bool_cmp(Potion *P, PN cl, PN self, PN value) {
   switch (potion_type(value)) {
   case PN_TBOOLEAN:
-    return self < value ? -1 : self == value ? 0 : 1;
+    return self < value ? PN_NUM(-1) : self == value ? PN_ZERO : PN_NUM(1);
   case PN_TNUMBER:
     return potion_send(PN_NUM(PN_TEST1(self)), PN_cmp, value);
   case PN_TNIL:
   case PN_TSTRING: // false < ".." < true
   default:
-    return value == PN_FALSE ? -1 : 1; //false < any < true
+    return value == PN_FALSE ? PN_NUM(-1) : PN_NUM(1); //false < any < true
   }
 }
 
@@ -84,6 +98,7 @@ void potion_primitive_init(Potion *P) {
   potion_method(boo_vt, "number", potion_bool_number, 0);
   potion_method(boo_vt, "string", potion_bool_string, 0);
   potion_method(P->lobby, "cmp",  potion_any_cmp, "value=o");
+  potion_method(P->lobby, "equal", potion_any_equal, "value=o");
   potion_method(nil_vt, "cmp",    potion_nil_cmp, "value=o");
   potion_method(boo_vt, "cmp",    potion_bool_cmp, "value=o");
 }
