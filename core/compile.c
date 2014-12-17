@@ -35,7 +35,7 @@ const struct {
   {"getupval", 2}, {"setupval", 2}, {"global", 2}, {"gettable", 2},
   {"settable", 2}, {"newlick", 2}, {"getpath", 2}, {"setpath", 2},
   {"add", 2}, {"sub", 2}, {"mult", 2}, {"div", 2}, {"mod", 2}, {"pow", 2},
-  {"not", 1}, {"cmp", 2}, {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2},
+  {"not", 1}, {"cmp", 2}, {"equal", 2}, {"eq", 2}, {"neq", 2}, {"lt", 2}, {"lte", 2},
   {"gt", 2}, {"gte", 2}, {"bitn", 2}, {"bitl", 2}, {"bitr", 2}, {"def", 2},
   {"bind", 2}, {"msg", 2}, {"jump", 1}, {"test", 2}, {"testjmp", 2},
   {"notjmp", 2}, {"named", 2}, {"call", 2}, {"callset", 2}, {"tailcall", 2},
@@ -318,7 +318,7 @@ void potion_arg_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *loop
   }
 }
 
-typedef PN (*PN_WCB)(Potion *, struct PNSource *, PN);
+typedef PN (*PN_WCB)(Potion *, struct PNSource *, PN *);
 
 /* walk the ast and call the callback function for each entry.
    callback first and then descent. */
@@ -333,25 +333,30 @@ static PN potion_source_walk(Potion *P, struct PNSource * volatile t,
   case AST_LIST:
     if (PN_S(t,0) != PN_NIL) {
       PN_TUPLE_EACH(PN_S(t,0), i, v, {
-	potion_source_walk(P, PN_SRC(v), walkcb, &d);
+          DBG_c("walk list %d %s\n", i, AS_STR(v));
+          potion_source_walk(P, PN_SRC(v), walkcb, data);
       });
     }
     break;
   case AST_VALUE:
+    DBG_c("walk value %s\n", AS_STR(PN_S(t,0)));
     break;
   case AST_MSG:
   case AST_QUERY:
   case AST_LICK:
     if (PN_S(t,0) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,0), d);
+      d = walkcb(P, PN_S_(t,0), data);
+      DBG_c("walk msg/q/lick 0 %s => %ld\n", AS_STR(PN_S(t,0)), d);
       potion_source_walk(P, PN_S_(t,0), walkcb, &d);
     }
     if (PN_S(t,1) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,1), d);
+      d = walkcb(P, PN_S_(t,1), data);
+      DBG_c("walk msg/q/lick 1 %s => %ld\n", AS_STR(PN_S(t,1)), d);
       potion_source_walk(P, PN_S_(t,1), walkcb, &d);
     }
     if (PN_S(t,2) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,2), d);
+      d = walkcb(P, PN_S_(t,2), data);
+      DBG_c("walk msg/q/lick 2 %s => %ld\n", AS_STR(PN_S(t,2)), d);
       potion_source_walk(P, PN_S_(t,2), walkcb, &d);
     }
     break;
@@ -359,11 +364,13 @@ static PN potion_source_walk(Potion *P, struct PNSource * volatile t,
   case AST_ASSIGN:
   //case AST_INC:
     if (PN_S(t,0) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,0), d);
+      d = walkcb(P, PN_S_(t,0), data);
+      DBG_c("walk proto/assign 0 %s => %ld\n", AS_STR(PN_S(t,0)), d);
       potion_source_walk(P, PN_S_(t,0), walkcb, &d);
     }
     if (PN_S(t,1) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,1), d);
+      d = walkcb(P, PN_S_(t,1), data);
+      DBG_c("walk proto/assign 1 %s => %ld\n", AS_STR(PN_S(t,1)), d);
       potion_source_walk(P, PN_S_(t,1), walkcb, &d);
     }
     break;
@@ -373,27 +380,29 @@ static PN potion_source_walk(Potion *P, struct PNSource * volatile t,
   return d;
 }
 
-/** check if the subtree (assign rhs) contains a msg, return the true.
+/** check if the subtree (assign rhs) contains a msg, set data and return true.
     but if it's inside a lick quote msg's, set to false. */
-static PN potion_source_walk_msg(Potion *P, struct PNSource * volatile t, PN data)
+static PN source_walk_contains_msg(Potion *P, struct PNSource * volatile t, PN *data)
 {
-  if (data == PN_TRUE)
-    return data;
-
+  PN d = *data;
+  if (d == PN_TRUE) 	// found: pass thru
+    return d;
   switch (t->part) {
   case AST_MSG:
     DBG_c("assign rhs walk: msg\n");
-    if (data != PN_FALSE) // quoted msg inside LICK
+    if (d != PN_NIL)      // quoted msg inside LICK
       return PN_TRUE;     // msg found
     break;
   case AST_LICK:
     DBG_c("assign rhs walk: lick\n");
-    if (data != PN_TRUE)
-      data = PN_FALSE;
+    if (d != PN_TRUE) {
+      *data = PN_NIL;
+      return PN_NIL;
+    }
   default:
     break;
   }
-  return data;
+  return d;
 }
 
 
@@ -512,27 +521,38 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 	PN nomsg = PN_NIL;
 	DBG_c("match %s\n", AS_STR(lhs));
 	vPN(Source) rhs = t->a[1];
-	potion_source_walk(P, rhs, potion_source_walk_msg, &nomsg);
-	if (nomsg) {
-	  DBG_c("match rhs compile-time matchable\n");
+	potion_source_walk(P, rhs, source_walk_contains_msg, &nomsg);
+	if (!nomsg) {
+	  DBG_c("assign: rhs no msg, compile-time matchable\n");
+          // assign sequentially l[i] = r[i] entries (no match, no bind)
+          c = PN_TUPLE_LEN(PN_S(lhs,0)) - 1;
+          if (c > 0) {
+            DBG_c("assign expr [%lu]\n", (_PN)c);
+            for (i = 0; i < c; i++) {
+              potion_source_asmb(P, f, loop, i, SRC_TUPLE_AT(lhs, i), reg);
+            };
+          }
+          lhs = SRC_TUPLE_AT(lhs, c);
 	} else {
-	  DBG_c("match rhs run-time\n");
+	  DBG_c("match rhs run-time TODO\n");
+          // XXX ignore _ and accept |
+          // XXX return false or table
 	}
-	// XXX ignore _ and accept |
-	// XXX return false or table
-#if 1
-	// assign sequentially l[i] = r[i] entries (no match, no bind)
-	c = PN_TUPLE_LEN(PN_S(lhs,0)) - 1;
-	DBG_c("assign expr [%lu]\n", (_PN)c);
-	for (i = 0; i < c; i++) {
-	  potion_source_asmb(P, f, loop, i, SRC_TUPLE_AT(lhs, i), reg);
-	};
-	lhs = SRC_TUPLE_AT(lhs, c);
-#endif
 	PN_ASM_DEBUG(reg, lhs);
       }
 
-      if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
+      if (lhs->part == AST_VALUE) {
+        // replace 1 = x with cmp
+        vPN(Source) rhs = t->a[1];
+        num = PN_PUT(f->values, PN_S(lhs,0));
+        DBG_c("values %d %s => %d\n", reg, AS_STR(lhs->a[0]), (int)num);
+        PN_ASM2(OP_LOADK, reg, num);
+        DBG_c("assign value %s = %s\n", AS_STR(lhs->a[0]), AS_STR(rhs->a[0]));
+        // XXX: need to lookahead to rhs for constant folding
+        potion_source_asmb(P, f, loop, 0, rhs, ++breg);
+        PN_ASM2(OP_EQUAL, reg, breg);  break;
+      }
+      else if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
         char first_letter = PN_STR_PTR(PN_S(lhs,0))[0];
 	DBG_c("assign %s '%s'\n", lhs->part == AST_MSG?"msg":"query",
 	      AS_STR(PN_S(lhs,0)));
