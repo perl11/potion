@@ -1,7 +1,9 @@
 /** \file compile.c
- * ast to bytecode.
+ * transform the ast to simple two-address lua-like bytecode.
+ * A full three-address VM with possible SSA form is not needed.
+ * This is for highly dynamic languages, and the typed parts can be optimized differently.
  *
- * implement PNSource (AST) and PNProto (closure) methods,
+ * implement the PNSource (AST) and PNProto (closure) methods,
  * special signature handling (parsed extra) and compile, bytecode load and dump methods.
  * Some special control methods are handled here and not in the parser. We do not need 
  * lexed keywords, and are free to extend everything dynamically.

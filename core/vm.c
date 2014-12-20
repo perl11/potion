@@ -1,13 +1,18 @@
 /**\file vm.c
 the vm execution loop, the "bytecode interpreter". correct but slower than the jit.
 
-usage: -B or automatically when no jit is available for your architecture.
+usage: -B, -Dt or automatically when no jit is available for your architecture.
 
-Potion uses a register-based bytecode VM that is nearly a
+Potion uses a two-address register-based bytecode VM that is nearly a
 word-for-word copy of Lua's. The code is all different, but the
 bytecode is nearly identical.  See
 http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf
 or http://www.lua.org/doc/jucs05.pdf
+
+It is even more space-efficient than a simple stack-based VM, and of course faster.
+Each 32-bit op word contains the op and its two arguments. I.e. the first address R(A)
+is always modified, as in a stack vm. A full non-destructive three-address scheme
+R(D) = OP R(A), R(B) is not needed.
 
   - MOVE (pos)		 	copy value between registers R(A)=R(B)
   - LOADK (pos, need)  	 	load a constant into a register R(A)=value[B]
