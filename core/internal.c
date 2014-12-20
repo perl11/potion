@@ -261,9 +261,9 @@ static inline char *potion_type_name(Potion *P, PN obj) {
   obj = potion_fwd(obj);
   return PN_IS_PTR(obj)
     ? AS_STR(potion_send(PN_VTABLE(PN_TYPE(obj)), PN_string))
-    : PN_IS_NIL(obj) ? "nil"
-      : PN_IS_INT(obj) ? "Integer"
-        : "Boolean";
+    : PN_IS_NIL(obj) ? "NilKind"
+    : PN_IS_INT(obj) ? "Integer"
+                     : "Boolean";
 }
 
 PN potion_type_error(Potion *P, PN obj) {

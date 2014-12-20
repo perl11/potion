@@ -527,6 +527,37 @@ PN potion_object_size(Potion *P, PN cl, PN self) {
   vPN(Object) obj = (struct PNObject *)self;
   return sizeof(struct PNObject) + (((struct PNVtable *)PN_VTABLE(obj->vt))->ivlen * sizeof(PN));
 }
+/**\memberof Lobby
+ global \c "isa?" method: kind self == obj kind
+ \return returns TRUE or FALSE if the object has the same type as the class */
+PN potion_lobby_isa(Potion *P, PN cl, PN self, vPN(Vtable) vtable) {
+  PNType t  = PN_TYPE(self);
+  PNType t1 = vtable->type;
+  PN_CHECK_TYPE(vtable, PN_TVTABLE);
+  if (!PN_TYPECHECK(t1)) return potion_type_error(P, (PN)vtable);
+  if (PN_IS_PTR(self) && !PN_TYPECHECK(t)) return potion_type_error(P, self);
+  return t == t1  ? PN_TRUE : PN_FALSE;
+}
+/**\memberof PNObject
+ \c "subclass?" method (only single inheritence yet)
+ TODO: http://www.eecs.berkeley.edu/~jrb/pve/ (fast subclass test via Packed Vector Encoding)
+ \return returns TRUE or FALSE if the object derives from the class */
+PN potion_object_subclass(Potion *P, PN cl, PN self, vPN(Vtable) vtable) {
+  PNType t = PN_TYPE(self);
+  PNType t0, p;
+  if (potion_lobby_isa(P, cl, self, vtable) == PN_TRUE) return PN_TRUE;
+  if (!PN_IS_PTR(self))
+    return vtable->type == PN_TNUMBER
+      ? (t == PN_TINTEGER ? PN_TRUE : PN_FALSE) // Integer is a subclass of Number
+      : PN_FALSE;                               // other primitives have no parents
+  t0 = vtable->type;
+  while ((p = ((struct PNVtable *)PN_VTABLE(t))->parent)) {
+    if (t0 == p) return PN_TRUE;
+    t = p;
+  }
+  return PN_FALSE;
+}
+
 /**\memberof PNVtable
    \return metaclass */
 PN potion_get_metaclass(Potion *P, PN cl, vPN(Vtable) self) {
@@ -641,6 +672,7 @@ void potion_object_init(Potion *P) {
   potion_method(obj_vt, "send", potion_object_send, 0);
   potion_method(obj_vt, "string", potion_object_string, 0);
   potion_method(obj_vt, "size", potion_object_size, 0);
+  potion_method(obj_vt, "subclass?", potion_object_subclass, "value=o");
 }
 
 /**\class Lobby
@@ -681,6 +713,7 @@ void potion_lobby_init(Potion *P) {
 #endif
   potion_method(P->lobby, "exit",  potion_exit, 0);
   potion_method(P->lobby, "kind",  potion_lobby_kind, 0);
+  potion_method(P->lobby, "isa?",  potion_lobby_isa, "value=o");
   potion_method(P->lobby, "srand", potion_srand, "seed=N");
   potion_method(P->lobby, "rand",  potion_rand, 0);
   potion_method(P->lobby, "self",  potion_lobby_self, 0);
