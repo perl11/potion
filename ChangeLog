@@ -7,6 +7,7 @@ v0.3
         * Changed the name Decimal in the API to Double
         * Added seperate Double and Integer vtables, which are both of kind Number.
         Added specialized methods.
+        * Added isa? and subclass? methods, re-enabled test/classes/creature.pn
         * string: improve performance of at and ord
         * Added more examples
 	* Updated libuv from 0.11.23 to 1.0.0
