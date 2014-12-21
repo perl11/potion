@@ -106,28 +106,29 @@ struct PNVtable;
 
 #define PN_TNIL         0x250000    /// NIL is magic 0x250000 (type 0)
 #define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a TDouble
-#define PN_TBOOLEAN     (2+PN_TNIL)
+#define PN_TBOOLEAN     (2+PN_TNIL) //tag 0b010
 #define PN_TINTEGER     (3+PN_TNIL) //is a Number
 #define PN_TDOUBLE      (4+PN_TNIL) //is a Number, no arbitrary prec. yet
 #define PN_TSTRING      (5+PN_TNIL)
-#define PN_TWEAK        (6+PN_TNIL)
-#define PN_TCLOSURE     (7+PN_TNIL)
-#define PN_TTUPLE       (8+PN_TNIL)
-#define PN_TSTATE       (9+PN_TNIL)
-#define PN_TFILE        (10+PN_TNIL) //0a
-#define PN_TOBJECT      (11+PN_TNIL) //0b
-#define PN_TVTABLE      (12+PN_TNIL) //0c
-#define PN_TSOURCE      (13+PN_TNIL) //0d
-#define PN_TBYTES       (14+PN_TNIL) //0e
-#define PN_TPROTO       (15+PN_TNIL) //0f
-#define PN_TLOBBY       (16+PN_TNIL) //10
-#define PN_TTABLE       (17+PN_TNIL) //11
-#define PN_TLICK        (18+PN_TNIL) //12
-#define PN_TFLEX        (19+PN_TNIL) //13
-#define PN_TSTRINGS     (20+PN_TNIL) //14
-#define PN_TERROR       (21+PN_TNIL) //15
-#define PN_TCONT        (22+PN_TNIL) //16
-#define PN_TUSER        (23+PN_TNIL) //17
+#define PN_TSSTRING     (6+PN_TNIL) //word-size string primitive with tag 0b110
+#define PN_TWEAK        (7+PN_TNIL)
+#define PN_TCLOSURE     (8+PN_TNIL)
+#define PN_TTUPLE       (9+PN_TNIL)
+#define PN_TSTATE       (10+PN_TNIL) //0a
+#define PN_TFILE        (11+PN_TNIL) //0b
+#define PN_TOBJECT      (12+PN_TNIL) //0c
+#define PN_TVTABLE      (13+PN_TNIL) //0d
+#define PN_TSOURCE      (14+PN_TNIL) //0e
+#define PN_TBYTES       (15+PN_TNIL) //0f
+#define PN_TPROTO       (16+PN_TNIL) //10
+#define PN_TLOBBY       (17+PN_TNIL) //11
+#define PN_TTABLE       (18+PN_TNIL) //12
+#define PN_TLICK        (19+PN_TNIL) //13
+#define PN_TFLEX        (20+PN_TNIL) //14
+#define PN_TSTRINGS     (21+PN_TNIL) //15
+#define PN_TERROR       (22+PN_TNIL) //16
+#define PN_TCONT        (23+PN_TNIL) //17
+#define PN_TUSER        (24+PN_TNIL) //18
 
 #define vPN(t)          struct PN##t * volatile
 #define PN_TYPE(x)      potion_type((PN)(x))
@@ -138,10 +139,12 @@ struct PNVtable;
 
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)   //i.e. PN_NUM(0)
-#define PN_FALSE        ((PN)2)
-#define PN_TRUE         ((PN)6)
-#define PN_PRIMITIVE    7
-#define PN_REF_MASK     ~7
+#define PN_FALSE        ((PN)2)   //tag 0b010 LE 0b00000010, LE 0b010000000 0x2
+#define PN_TRUE         ((PN)0xA) //          LE 0b00001010, LE 0b010100000 0xA
+//      PN_TSSTRING     // 0xaaaaaaaa aaaaaa06 vs 0xaaaaaa06 (14 or 6 chars) LE 0b0110 0x6
+                        // 0x6aaaaaaa aaaaaaa0 vs 0x6aaaaaa0 (14 or 6 chars) BE
+#define PN_PRIMITIVE    15
+#define PN_REF_MASK     ~15
 #define PN_NONE         ((PN_SIZE)-1)
 #define POTION_FWD      0xFFFFFFFE
 #define POTION_COPIED   0xFFFFFFFF
@@ -324,7 +327,8 @@ struct PNData {
 ///
 /// strings are immutable UTF-8, the ID is
 /// incremental and they may be garbage
-/// collected. (non-volatile)
+/// collected. (non-volatile).
+/// Beware of primitive short strings, with tag 0x6, and no len.
 ///
 struct PNString {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
