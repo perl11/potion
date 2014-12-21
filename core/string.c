@@ -1,9 +1,10 @@
 ///\file string.c
-/// internals of utf-8 and byte strings
+/// internals of utf-8 and byte strings, also primitive short strings.
 ///\see PNString class members
 ///\see PNBytes class members
 //
 // (c) 2008 why the lucky stiff, the freelance professor
+// (c) 2014 perl11 org
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,13 +14,27 @@
 #include "khash.h"
 #include "table.h"
 
+#if PN_SIZE_T == 8
+#define SSTR_LEN 14  // 0xaaaaaaaa aaaaaa06 LE 0b0110 tag
+#else                // 0x6aaaaaaa aaaaaaa0 BE 0b0110 tag
+#define SSTR_LEN 6   // 0x6aaaaaa0 / 0xaaaaaa06
+#endif
 #define BYTES_FACTOR 1 / 8 * 9
 #define BYTES_CHUNK  32
 #define BYTES_ALIGN(len) PN_ALIGN(len + sizeof(struct PNBytes), BYTES_CHUNK) - sizeof(struct PNBytes)
 
 void potion_add_str(Potion *P, PN s) {
   int ret;
-  kh_put(str, P->strings, s, &ret);
+  if (PN_IS_SSTR(s))
+    kh_put(PN, P->strings, s, &ret);
+  else
+    kh_put(str, P->strings, s, &ret);
+  PN_QUICK_FWD(struct PNTable *, P->strings);
+}
+
+void potion_add_sstr(Potion *P, PN s) {
+  int ret;
+  kh_put(PN, P->strings, s, &ret);
   PN_QUICK_FWD(struct PNTable *, P->strings);
 }
 
@@ -34,29 +49,49 @@ PN potion_str(Potion *P, const char *str) {
   PN val = potion_lookup_str(P, str);
   if (val == PN_NIL) {
     size_t len = strlen(str);
-    vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
-    s->len = (PN_SIZE)len;
-    PN_MEMCPY_N(s->chars, str, char, len);
-    s->chars[len] = '\0';
-    potion_add_str(P, (PN)s);
-    val = (PN)s;
+    if (len <= SSTR_LEN) {
+#ifdef PN_LITTLE_ENDIAN
+      val = *str | PN_FSSTRING;
+#else
+      val = PN_FSSTRING | (*str >> 8);
+#endif
+      potion_add_sstr(P, val);
+    } else {
+      vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
+      s->len = (PN_SIZE)len;
+      PN_MEMCPY_N(s->chars, str, char, len);
+      s->chars[len] = '\0';
+      potion_add_str(P, (PN)s);
+      val = (PN)s;
+    }
   }
   return val;
 }
 
 PN potion_str2(Potion *P, char *str, size_t len) {
   PN exist = PN_NIL;
-
-  vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
-  s->len = (PN_SIZE)len;
-  assert(len < 0x10000000);
-  PN_MEMCPY_N(s->chars, str, char, len);
-  s->chars[len] = '\0';
-
-  exist = potion_lookup_str(P, s->chars);
-  if (exist == PN_NIL) {
-    potion_add_str(P, (PN)s);
-    exist = (PN)s;
+  if (len <= SSTR_LEN) {
+#ifdef PN_LITTLE_ENDIAN
+    PN s = *str | PN_FSSTRING;
+#else
+    PN s = PN_FSSTRING | (*str >> 8);
+#endif
+    exist = potion_lookup_str(P, str);
+    if (exist == PN_NIL) {
+      potion_add_sstr(P, s);
+      exist = s;
+    }
+  } else {
+    vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
+    s->len = (PN_SIZE)len;
+    assert(len < 0x10000000);
+    PN_MEMCPY_N(s->chars, str, char, len);
+    s->chars[len] = '\0';
+    exist = potion_lookup_str(P, s->chars);
+    if (exist == PN_NIL) {
+      potion_add_str(P, (PN)s);
+      exist = (PN)s;
+    }
   }
   return exist;
 }
@@ -65,15 +100,28 @@ PN potion_strcat(Potion *P, char *str, char *str2) {
   PN exist = PN_NIL;
   int len = strlen(str);
   int len2 = strlen(str2);
-  vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len+len2+1);
-  PN_MEMCPY_N(s->chars, str,  char, len);
-  PN_MEMCPY_N(s->chars+len, str2, char, len2);
-  s->chars[len+len2] = '\0';
-  s->len = len+len2;
-  exist = potion_lookup_str(P, s->chars);
-  if (exist == PN_NIL) {
-    potion_add_str(P, (PN)s);
-    exist = (PN)s;
+  if (len + len2 <= SSTR_LEN) {
+#ifdef PN_LITTLE_ENDIAN
+    PN s = *str | (*str2 >> len) | PN_FSSTRING;
+#else
+    PN s = PN_FSSTRING | (*str >> 8) | (*str2 >> 8+(len/8));
+#endif
+    exist = potion_lookup_str(P, (char *)s);
+    if (exist == PN_NIL) {
+      potion_add_sstr(P, s);
+      exist = s;
+    }
+  } else {
+    vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len+len2+1);
+    PN_MEMCPY_N(s->chars, str,  char, len);
+    PN_MEMCPY_N(s->chars+len, str2, char, len2);
+    s->chars[len+len2] = '\0';
+    s->len = len+len2;
+    exist = potion_lookup_str(P, s->chars);
+    if (exist == PN_NIL) {
+      potion_add_str(P, (PN)s);
+      exist = (PN)s;
+    }
   }
   return exist;
 }
@@ -86,13 +134,26 @@ PN potion_str_format(Potion *P, const char *format, ...) {
   va_start(args, format);
   len = (PN_SIZE)vsnprintf(NULL, 0, format, args);
   va_end(args);
-  s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
 
   va_start(args, format);
-  vsnprintf(s->chars, len + 1, format, args);
-  va_end(args);
-  s->len = len;
-  return (PN)s;
+  if (len <= SSTR_LEN) {
+    s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
+    vsnprintf(s->chars, len + 1, format, args);
+    s->len = len;
+    va_end(args);
+    return (PN)s;
+  }
+  else {
+    PN s1;
+    vsnprintf((char*)s1, len + 1, format, args);
+#ifdef PN_LITTLE_ENDIAN
+    s1 |= PN_FSSTRING;
+#else
+    s1 = PN_FSSTRING | (*s >> 8);
+#endif
+    va_end(args);
+    return s1;
+  }
 }
 
 ///\memberof PNString

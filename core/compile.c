@@ -1179,7 +1179,7 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
   u8 *ptr;
   vPN(BHeader) h = (struct PNBHeader *)PN_STR_PTR(buf);
   // check for compiled binary first
-  if ((size_t)PN_STR_LEN(buf) <= sizeof(struct PNBHeader) ||
+  if ((size_t)PN_STR_LLEN(buf) <= sizeof(struct PNBHeader) ||
       strncmp((char *)h->sig, POTION_SIG, 4) != 0)
     return PN_NIL;
 
@@ -1192,16 +1192,16 @@ PN potion_source_load(Potion *P, PN cl, PN buf) {
 #define WRITE_PN(pn, ptr) ({*(PN *)ptr = pn; ptr += sizeof(PN);})
 #define WRITE_CONST(val, ptr) ({ \
     if (PN_IS_STR(val)) { \
-      PN count = (PN_STR_LEN(val)+1) << 4; \
+      PN count = (PN_STR_LLEN(val)+1) << 4; \
       WRITE_PN(count, ptr); \
-      PN_MEMCPY_N(ptr, PN_STR_PTR(val), char, PN_STR_LEN(val)); \
-      ptr += PN_STR_LEN(val); \
+      PN_MEMCPY_N(ptr, PN_STR_PTR(val), char, PN_STR_LLEN(val)); \
+      ptr += PN_STR_LLEN(val); \
     } else if (PN_IS_DBL(val)) { \
       PN str = potion_num_string(P, PN_NIL, val); \
-      PN count = ((PN_STR_LEN(str)+1) << 4) | 2; \
+      PN count = ((PN_STR_LLEN(str)+1) << 4) | 2; \
       WRITE_PN(count, ptr); \
-      PN_MEMCPY_N(ptr, PN_STR_PTR(str), char, PN_STR_LEN(str)); \
-      ptr += PN_STR_LEN(str); \
+      PN_MEMCPY_N(ptr, PN_STR_PTR(str), char, PN_STR_LLEN(str)); \
+      ptr += PN_STR_LLEN(str); \
     } else { \
       PN cval = (PN_IS_PTR(val) ? PN_NIL : val); \
       WRITE_PN(cval, ptr); \
@@ -1258,7 +1258,7 @@ PN potion_source_dumpbc(Potion *P, PN cl, PN proto, PN options) {
   h.vmid = POTION_VMID;
   h.pn = (u8)sizeof(PN);
   PN_MEMCPY(PN_STR_PTR(pnb), &h, struct PNBHeader); // coverity[uninit_use_in_call:FALSE]
-  PN_STR_LEN(pnb) = (long)sizeof(struct PNBHeader) +
+  PN_STR_LLEN(pnb) = (long)sizeof(struct PNBHeader) +
     potion_proto_dumpbc(P, proto, pnb, sizeof(struct PNBHeader));
   return pnb;
 }

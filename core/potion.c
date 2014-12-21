@@ -211,8 +211,9 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
       else if (!strcmp(compile, "exe"))
 	printf("** run it with: ./%s\n", outpath);
     } else {
+      unsigned int len = code ? PN_STR_LEN(code) : 0;
       fprintf(stderr, "** could not write all %s compiled code (%u/%u) to %s\n",
-	      compile?compile:"bytecode", written, code?PN_STR_LEN(code):0, outpath);
+	      compile?compile:"bytecode", written, len, outpath);
     }
     fclose(pnb);
   }
