@@ -45,12 +45,18 @@ static PN potion_num_sqrt(Potion *P, PN cl, PN self) {
 }
 
 #define PN_NUM_MATH(math_op) \
+  DBG_CHECK_NUM(self); \
+  DBG_CHECK_NUM(num); \
   if (PN_IS_INT(self) && PN_IS_INT(num)) \
     return PN_NUM(PN_INT(self) math_op PN_INT(num)); \
   return potion_double(P, PN_DBL(self) math_op PN_DBL(num));
 #define PN_INT_MATH(math_op) \
+  DBG_CHECK_INT(self); \
+  DBG_CHECK_INT(num); \
   return PN_NUM(PN_INT(self) math_op PN_INT(num));
 #define PN_DBL_MATH(math_op) \
+  DBG_CHECK_NUM(self); \
+  DBG_CHECK_NUM(num); \
   return potion_double(P, PN_DBL(self) math_op PN_DBL(num));
 
 /**\memberof PNNumber
@@ -326,7 +332,7 @@ static PN potion_int_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) 
  \return PNString one char <255 */
 static PN potion_int_chr(Potion *P, PN cl, PN self) {
   char c = PN_INT(self);
-  PN_CHECK_INT(self);
+  DBG_CHECK_INT(self);
   return PN_STRN(&c, 1);
 }
 /**\memberof PNNumber
@@ -351,6 +357,7 @@ static PN potion_num_is_double(Potion *P, PN cl, PN self) {
   "abs"
  \return PNInteger or PNDouble */
 static PN potion_num_abs(Potion *P, PN cl, PN self) {
+  DBG_CHECK_NUM(self);
   if (PN_IS_DBL(self)) {
     double d = PN_DBL(self);
     if (d < 0.0)
@@ -372,6 +379,7 @@ static PN potion_int_abs(Potion *P, PN cl, PN self) {
  \return PNDouble */
 static PN potion_dbl_abs(Potion *P, PN cl, PN self) {
   double d = PN_DBL(self);
+  DBG_CHECK_NUM(self);
   if (d < 0.0)
     return (PN) potion_double(P, -d);
   else
@@ -407,6 +415,8 @@ static PN potion_num_cmp(Potion *P, PN cl, PN self, PN n) {
 static PN potion_dbl_cmp(Potion *P, PN cl, PN self, PN n) {
   double d1 = ((struct PNDouble *)self)->value;
   double d2 = PN_DBL(n);
+  DBG_CHECK_DBL(self);
+  PN_CHECK_NUM(n);
   return d1 < d2 ? PN_NUM(-1) : d1 == d2 ? PN_ZERO : PN_NUM(1);
 }
 /**\memberof PNInteger
@@ -419,8 +429,8 @@ static PN potion_dbl_cmp(Potion *P, PN cl, PN self, PN n) {
  \sa potion_tuple_sort. */
 static PN potion_int_cmp(Potion *P, PN cl, PN self, PN n) {
   long n1, n2;
-  PN_CHECK_INT(self);
-  PN_CHECK_INT(n);
+  DBG_CHECK_INT(self);
+  DBG_CHECK_INT(n);
   n1 = PN_INT(self);
   n2 = PN_INT(n);
   return n1 < n2 ? PN_NUM(-1) : n1 == n2 ? PN_ZERO : PN_NUM(1);

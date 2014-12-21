@@ -162,6 +162,7 @@ struct PNVtable;
 #define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)
 #define PN_IS_INT(v)    ((PN)(v) & PN_FINTEGER)
 #define PN_IS_DBL(v)    (PN_IS_PTR(v) && (PN_TYPE(v) == PN_TNUMBER || PN_TYPE(v) == PN_TDOUBLE))
+#define PN_IS_NUM(v)    (PN_IS_INT(v) || PN_IS_DBL(v))
 #define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
 #define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
@@ -174,7 +175,9 @@ struct PNVtable;
 
 #define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "String")
 #define PN_CHECK_STRB(obj)  if (!PN_IS_STR(obj) || (PN_TYPE(obj) != PN_TBYTES)) return potion_type_error_want(P, ""#obj, (PN)obj, "String or Bytes")
+#define PN_CHECK_NUM(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Number")
 #define PN_CHECK_INT(obj)  if (!PN_IS_INT(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Integer")
+#define PN_CHECK_DBL(obj)  if (!PN_IS_DBL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Double")
 #define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Bool")
 #define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Tuple")
 #define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Closure")
@@ -182,11 +185,15 @@ struct PNVtable;
 #define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, (PN)obj)
 #ifdef DEBUG
 #define DBG_CHECK_TYPE(obj,type) PN_CHECK_TYPE(obj,type)
+#define DBG_CHECK_NUM(obj) PN_CHECK_NUM(obj)
 #define DBG_CHECK_INT(obj) PN_CHECK_INT(obj)
+#define DBG_CHECK_DBL(obj) PN_CHECK_DBL(obj)
 #define DBG_CHECK_TUPLE(obj) PN_CHECK_TUPLE(obj)
 #else
 #define DBG_CHECK_TYPE(obj,type)
+#define DBG_CHECK_NUM(obj)
 #define DBG_CHECK_INT(obj)
+#define DBG_CHECK_DBL(obj)
 #define DBG_CHECK_TUPLE(obj)
 #endif
 
