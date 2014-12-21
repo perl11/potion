@@ -139,8 +139,8 @@ struct PNVtable;
 
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)   //i.e. PN_NUM(0)
-#define PN_FALSE        ((PN)2)   //tag 0b010 LE 0b00000010, LE 0b010000000 0x2
-#define PN_TRUE         ((PN)0xA) //          LE 0b00001010, LE 0b010100000 0xA
+#define PN_FALSE        ((PN)2)   //tag 0b010 LE 0b00000010, BE 0b010000000 0x2
+#define PN_TRUE         ((PN)0xA) //          LE 0b00001010, BE 0b010100000 0xA
 //      PN_TSSTRING     // 0xaaaaaaaa aaaaaa06 vs 0xaaaaaa06 (14 or 6 chars) LE 0b0110 0x6
                         // 0x6aaaaaaa aaaaaaa0 vs 0x6aaaaaa0 (14 or 6 chars) BE
 #define PN_PRIMITIVE    15
@@ -153,7 +153,8 @@ struct PNVtable;
 #define NILKIND_NAME    "NilKind"
 
 #define PN_FINTEGER     1
-#define PN_FBOOLEAN     2
+#define PN_FBOOLEAN     2 // 0b0010 or 0b1010
+#define PN_FSSTRING     6 // 0b0110
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 //Beware: TEST1(PN_NUM(0)) vs TEST(0<1) i.e. test1(1) vs test(1)
 #define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
@@ -162,7 +163,8 @@ struct PNVtable;
 #define PN_BOOL(v)      (PN_TEST(v) ? PN_TRUE : PN_FALSE)
 #define PN_IS_PTR(v)    (!PN_IS_INT(v) && ((PN)(v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
-#define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)
+#define PN_IS_BOOL(v)   (((PN)(v) == PN_TRUE) || ((PN)(v) == PN_FALSE)) // TODO (((PN)(v) & 0xe) == 0x2 or 0xa)
+#define PN_IS_SSTR(v)   ((PN)(v) & PN_FSSTRING)
 #define PN_IS_INT(v)    ((PN)(v) & PN_FINTEGER)
 #define PN_IS_DBL(v)    (PN_IS_PTR(v) && (PN_TYPE(v) == PN_TNUMBER || PN_TYPE(v) == PN_TDOUBLE))
 #define PN_IS_NUM(v)    (PN_IS_INT(v) || PN_IS_DBL(v))
@@ -215,7 +217,12 @@ typedef _PN (*PN_F)(Potion *, PN, PN, ...);
 #define PN_STRN(x, l)   potion_str2(P, x, l)
 #define PN_STRCAT(a, b) potion_strcat(P, (a), (b))
 #define PN_STR_PTR(x)   potion_str_ptr(x)                     ///<\memberof PNString \memberof PNBytes
-#define PN_STR_LEN(x)   ((struct PNString *)(x))->len         ///<\memberof PNString
+#define PN_STR_LLEN(x)  ((struct PNString *)(x))->len         ///<\memberof PNString
+#ifdef PN_LITTLE_ENDIAN
+#define PN_STR_LEN(x)   PN_IS_SSTR(x) ? strlen((char*)(x)) : PN_STR_LLEN(x)
+#else
+#define PN_STR_LEN(x)   PN_IS_SSTR(x) ? strlen((char*)((x)>>4)) : PN_STR_LLEN(x)
+#endif
 #define PN_STR_B(x)     potion_bytes_string(P, PN_NIL, x)     ///<\memberof PNBytes
 #define PN_CLOSURE(x)   ((struct PNClosure *)(x))             ///<\memberof PNClosure
 #define PN_CLOSURE_F(x) ((struct PNClosure *)(x))->method     ///<\memberof PNClosure
@@ -555,6 +562,13 @@ static inline PN potion_fwd(PN obj) {
 
 /// quick access to either PNString or PNByte pointer
 static inline char *potion_str_ptr(PN s) {
+  if (PN_IS_SSTR(s))
+    return
+#ifdef PN_LITTLE_ENDIAN
+      (char*)s;
+#else
+      (char*)(s>>4);
+#endif
   if (((struct PNString *)s)->vt == PN_TSTRING)
     return ((struct PNString *)s)->chars;
   s = potion_fwd(s);

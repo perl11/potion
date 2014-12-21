@@ -1,6 +1,6 @@
 /**\file vm-ppc.c
-the powerpc jit (32-bit only), unfinished!
-\see core/vm.c and doc/INTERNALS.md
+the powerpc jit (32-bit only, big-endian), unfinished!
+\see core/vm.c, core/vm-x86.c and doc/INTERNALS.md
 
 (c) 2008 why the lucky stiff, the freelance professor */
 #include <stdio.h>
@@ -167,8 +167,8 @@ void potion_ppc_gettuple(Potion *P, struct PNProto * volatile f, PNAsm * volatil
 void potion_ppc_settuple(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
 
-void potion_ppc_search(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
-}
+//void potion_ppc_search(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
+//}
 
 void potion_ppc_gettable(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
 }
@@ -234,6 +234,9 @@ void potion_ppc_pow(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
   });
 }
 
+void potion_ppc_equal(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+}
+ 
 void potion_ppc_neq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
   PPC_CMP(0x419E0000); // beq
