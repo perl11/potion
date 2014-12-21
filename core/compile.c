@@ -326,13 +326,16 @@ static PN potion_source_walk(Potion *P, struct PNSource * volatile t,
 			     PN_WCB walkcb, PN *data)
 {
   PN d = *data;
+  struct PNSource * volatile tmp;
+  assert(t->vt == PN_TSOURCE);
   switch (t->part) {
   case AST_CODE:
   case AST_BLOCK:
   case AST_EXPR:
   case AST_LIST:
-    if (PN_S(t,0) != PN_NIL) {
-      PN_TUPLE_EACH(PN_S(t,0), i, v, {
+    tmp = PN_S_(t,0);
+    if (tmp && tmp->vt == PN_TSOURCE) {
+      PN_TUPLE_EACH((PN)tmp, i, v, {
           DBG_c("walk list %d %s\n", i, AS_STR(v));
           potion_source_walk(P, PN_SRC(v), walkcb, data);
       });
@@ -344,34 +347,44 @@ static PN potion_source_walk(Potion *P, struct PNSource * volatile t,
   case AST_MSG:
   case AST_QUERY:
   case AST_LICK:
-    if (PN_S(t,0) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,0), data);
-      DBG_c("walk msg/q/lick 0 %s => %ld\n", AS_STR(PN_S(t,0)), d);
-      potion_source_walk(P, PN_S_(t,0), walkcb, &d);
+    tmp = PN_S_(t,0);
+    if (tmp && tmp->vt == PN_TSOURCE) {
+      DBG_c("walk msg/q/lick 0 %s =>", AS_STR((PN)tmp));
+      d = walkcb(P, tmp, data);
+      DBG_c("%ld\n", d);
+      potion_source_walk(P, tmp, walkcb, &d);
     }
-    if (PN_S(t,1) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,1), data);
-      DBG_c("walk msg/q/lick 1 %s => %ld\n", AS_STR(PN_S(t,1)), d);
-      potion_source_walk(P, PN_S_(t,1), walkcb, &d);
+    tmp = PN_S_(t,1);
+    if (tmp && tmp->vt == PN_TSOURCE) {
+      DBG_c("walk msg/q/lick 1 %s =>", AS_STR((PN)tmp));
+      d = walkcb(P, tmp, data);
+      DBG_c("%ld\n", d);
+      potion_source_walk(P, tmp, walkcb, &d);
     }
-    if (PN_S(t,2) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,2), data);
-      DBG_c("walk msg/q/lick 2 %s => %ld\n", AS_STR(PN_S(t,2)), d);
-      potion_source_walk(P, PN_S_(t,2), walkcb, &d);
+    tmp = PN_S_(t,2);
+    if (tmp && tmp->vt == PN_TSOURCE) {
+      DBG_c("walk msg/q/lick 2 %s =>", AS_STR((PN)tmp));
+      d = walkcb(P, tmp, data);
+      DBG_c("%ld\n", d);
+      potion_source_walk(P, tmp, walkcb, &d);
     }
     break;
   case AST_PROTO:
   case AST_ASSIGN:
   //case AST_INC:
-    if (PN_S(t,0) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,0), data);
-      DBG_c("walk proto/assign 0 %s => %ld\n", AS_STR(PN_S(t,0)), d);
-      potion_source_walk(P, PN_S_(t,0), walkcb, &d);
+    tmp = PN_S_(t,0);
+    if (tmp && tmp->vt == PN_TSOURCE) {
+      DBG_c("walk proto/assign 0 %s => ", AS_STR((PN)tmp));
+      d = walkcb(P, tmp, data);
+      DBG_c("%ld\n", d);
+      potion_source_walk(P, tmp, walkcb, &d);
     }
-    if (PN_S(t,1) != PN_NIL) {
-      d = walkcb(P, PN_S_(t,1), data);
-      DBG_c("walk proto/assign 1 %s => %ld\n", AS_STR(PN_S(t,1)), d);
-      potion_source_walk(P, PN_S_(t,1), walkcb, &d);
+    tmp = PN_S_(t,1);
+    if (tmp && tmp->vt == PN_TSOURCE) {
+      DBG_c("walk proto/assign 1 %s => ", AS_STR((PN)tmp));
+      d = walkcb(P, tmp, data);
+      DBG_c("%ld\n", d);
+      potion_source_walk(P, tmp, walkcb, &d);
     }
     break;
   default:
