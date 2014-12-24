@@ -45,5 +45,52 @@ struct PNTable {
 
 KHASH_MAP_INIT_PN(PN, struct PNTable)
 KHASH_MAP_INIT_STR(str, struct PNTable)
+KHASH_MAP_INIT_SSTR(sstr, struct PNTable)
+
+#if 0
+static inline khint_t kh_get_str(Potion *P, struct PNTable *h, const char * key)
+{
+  if (h->n_buckets) {
+    khint_t inc, k, i, last, mask;
+    mask = h->n_buckets - 1;
+    k = kh_str_hash_func(key);
+    i = k & mask;
+    inc = __ac_inc(k) & mask;
+    last = i;
+    while (!__kh_isempty(str, h, i) &&
+           (__kh_isdel(str, h, i)
+            || !(strcmp(PN_STR_PTR(kh_key_str(h, i)), key) == 0))) {
+      i = (i + inc) & mask;
+      if (i == last)
+        return h->n_buckets;
+    }
+    return __kh_iseither(str, h, i) ? h->n_buckets : i;
+  } else {
+    return 0;
+  }
+}
+
+static inline khint_t kh_get_PN(Potion *P, struct PNTable *h, _PN key)
+{
+  if (h->n_buckets) {
+    khint_t inc, k, i, last, mask;
+    mask = h->n_buckets - 1;
+    k = kh_pn_hash_func(key);
+    i = k & mask;
+    inc = __ac_inc(k) & mask;
+    last = i;
+    while (!__kh_isempty(PN, h, i) &&
+           (__kh_isdel(PN, h, i)
+            || !kh_pn_hash_equal(kh_key_PN(h, i), key))) {
+      i = (i + inc) & mask;
+      if (i == last)
+        return h->n_buckets;
+    }
+    return __kh_iseither(PN, h, i) ? h->n_buckets : i;
+  } else {
+    return 0;
+  }
+}
+#endif
 
 #endif

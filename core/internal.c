@@ -63,8 +63,8 @@ static void potion_init(Potion *P) {
   PN_bitl = PN_STRN("<<", 2);
   PN_bitr = PN_STRN(">>", 2);
   PN_if   = PN_STRN("if", 2);
-  PN_def = PN_STRN("def", 3);
-  PN_cmp = PN_STRN("cmp", 3);
+  PN_def  = PN_STRN("def", 3);
+  PN_cmp  = PN_STRN("cmp", 3);
   PN_call = PN_STRN("call", 4);
   PN_else = PN_STRN("else", 4);
   PN_loop = PN_STRN("loop", 4);
