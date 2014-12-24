@@ -183,6 +183,7 @@ static inline khint_t __kh_X31_hash_string(const char *s)
   if (h) for (++s ; *s; ++s) h = (h << 5) - h + *s;
   return h;
 }
+/* TODO: use iSCSI SSE4.2 crc32 intrinsic */
 static inline khint_t __luaS_hash_string(const char *s)
 {
   size_t len = strlen(s);
@@ -197,6 +198,8 @@ static inline khint_t __luaS_hash_string(const char *s)
 #define kh_pnstr_hash_equal(a, b) (strcmp(PN_STR_PTR(a), PN_STR_PTR(b)) == 0)
 #define kh_str_hash_func(key) __luaS_hash_string(key)
 #define kh_str_hash_equal(a, b) (strcmp(PN_STR_PTR(a), b) == 0)
+#define kh_sstr_hash_func(key) (uint32_t)PN_NUMHASH(key)
+#define kh_sstr_hash_equal(a, b) (a == b)
 #define kh_pn_hash_func(key) (uint32_t)PN_UNIQ(key)
 #define kh_pn_hash_equal(a, b) (a == b)
 
@@ -234,6 +237,10 @@ static inline khint_t __ac_Wang_hash(khint_t key)
 #define KHASH_MAP_INIT_STR(name, t)					\
   KHASH_INIT(name, t, _PN, PNUniq, const char *, 0, kh_pnstr_hash_func, \
 	     kh_pnstr_hash_equal, kh_str_hash_func, kh_str_hash_equal)
+
+#define KHASH_MAP_INIT_SSTR(name, t)					\
+  KHASH_INIT(name, t, _PN, _PN, _PN, 0, kh_sstr_hash_func,              \
+	     kh_sstr_hash_equal, kh_sstr_hash_func, kh_sstr_hash_equal)
 
 #define KHASH_MAP_INIT_PN(name, t)					\
   KHASH_INIT(name, t, _PN, _PN, _PN, 1, kh_pn_hash_func,		\

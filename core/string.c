@@ -15,9 +15,9 @@
 #include "table.h"
 
 #if PN_SIZE_T == 8
-#define SSTR_LEN 14  // 0xaaaaaaaa aaaaaa06 LE 0b0110 tag
-#else                // 0x6aaaaaaa aaaaaaa0 BE 0b0110 tag
-#define SSTR_LEN 6   // 0x6aaaaaa0 / 0xaaaaaa06
+#  define SSTR_LEN 6   // 0xaaaaaaaa aaaa0006 LE 0b0110 tag (very short, word-size string)
+#else                  // 0x06aaaaaa aaaaaa00 BE 0b0110 tag
+#  define SSTR_LEN 2   // 0x06aaaa00 / 0xaaaa0006
 #endif
 #define BYTES_FACTOR 1 / 8 * 9
 #define BYTES_CHUNK  32
@@ -26,7 +26,7 @@
 void potion_add_str(Potion *P, PN s) {
   int ret;
   if (PN_IS_SSTR(s))
-    kh_put(PN, P->strings, s, &ret);
+    kh_put(sstr, P->strings, s, &ret);
   else
     kh_put(str, P->strings, s, &ret);
   PN_QUICK_FWD(struct PNTable *, P->strings);
@@ -34,14 +34,32 @@ void potion_add_str(Potion *P, PN s) {
 
 void potion_add_sstr(Potion *P, PN s) {
   int ret;
-  kh_put(PN, P->strings, s, &ret);
+  kh_put(sstr, P->strings, s, &ret);
   PN_QUICK_FWD(struct PNTable *, P->strings);
 }
 
 PN potion_lookup_str(Potion *P, const char *str) {
   vPN(Table) t = P->strings;
-  unsigned k = kh_get(str, t, str);
-  if (k != kh_end(t)) return kh_key(str, t, k);
+  const size_t len = strlen(str);
+  unsigned k;
+  if (len <= SSTR_LEN) {
+    k = kh_get(sstr, t, (_PN)str);
+    if (k != kh_end(t)) {
+      PN s = kh_key(sstr, t, k);
+      if (s) {
+#ifdef PN_LITTLE_ENDIAN
+        return (s << 8) | PN_FSSTRING;
+#else
+        return PN_FSSTRING | (s >> 8);
+#endif
+      }
+    }
+  }
+  else {
+    k = kh_get(str, t, str);
+    if (k != kh_end(t))
+      return kh_key(str, t, k);
+  }
   return PN_NIL;
 }
 
@@ -51,9 +69,9 @@ PN potion_str(Potion *P, const char *str) {
     size_t len = strlen(str);
     if (len <= SSTR_LEN) {
 #ifdef PN_LITTLE_ENDIAN
-      val = *str | PN_FSSTRING;
+      val = (*(long*)str << 8) | PN_FSSTRING;
 #else
-      val = PN_FSSTRING | (*str >> 8);
+      val = PN_FSSTRING | (*(long*)str >> 8);
 #endif
       potion_add_sstr(P, val);
     } else {
@@ -72,9 +90,9 @@ PN potion_str2(Potion *P, char *str, size_t len) {
   PN exist = PN_NIL;
   if (len <= SSTR_LEN) {
 #ifdef PN_LITTLE_ENDIAN
-    PN s = *str | PN_FSSTRING;
+    PN s = (*(long*)str << 8) | PN_FSSTRING;
 #else
-    PN s = PN_FSSTRING | (*str >> 8);
+    PN s = PN_FSSTRING | (*(long*)str >> 8);
 #endif
     exist = potion_lookup_str(P, str);
     if (exist == PN_NIL) {
@@ -98,13 +116,13 @@ PN potion_str2(Potion *P, char *str, size_t len) {
 
 PN potion_strcat(Potion *P, char *str, char *str2) {
   PN exist = PN_NIL;
-  int len = strlen(str);
+  int len  = strlen(str);
   int len2 = strlen(str2);
-  if (len + len2 <= SSTR_LEN) {
+  if (100 + len + len2 <= SSTR_LEN) {
 #ifdef PN_LITTLE_ENDIAN
-    PN s = *str | (*str2 >> len) | PN_FSSTRING;
+    PN s = (*(long*)str << 8) | (*(long*)str2 << (len-8)) | PN_FSSTRING; /* ?? */
 #else
-    PN s = PN_FSSTRING | (*str >> 8) | (*str2 >> 8+(len/8));
+    PN s = PN_FSSTRING | (*(long*)str >> 8) | (*(long*)str2 >> 8+(len/8));
 #endif
     exist = potion_lookup_str(P, (char *)s);
     if (exist == PN_NIL) {
@@ -144,12 +162,12 @@ PN potion_str_format(Potion *P, const char *format, ...) {
     return (PN)s;
   }
   else {
-    PN s1;
+    PN s1 = 0;
     vsnprintf((char*)s1, len + 1, format, args);
 #ifdef PN_LITTLE_ENDIAN
-    s1 |= PN_FSSTRING;
+    s1 = (s1 << 8) | PN_FSSTRING;
 #else
-    s1 = PN_FSSTRING | (*s >> 8);
+    s1 = PN_FSSTRING | (s1 >> 8);
 #endif
     va_end(args);
     return s1;
