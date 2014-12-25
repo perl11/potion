@@ -51,8 +51,9 @@ PN potion_closure_code(Potion *P, PN cl, PN self) {
  \return rough protoype as string. "function(arg1, arg2)"  */
 PN potion_closure_string(Potion *P, PN cl, PN self, PN maxlen) {
   PN out = potion_byte_str(P, "function");
+  char *tmp;
   if (PN_CLOSURE(self)->name)
-    pn_printf(P, out, " %s", PN_STR_PTR(PN_CLOSURE(self)->name));
+    pn_printf(P, out, " %s", PN_STR_PTR(PN_CLOSURE(self)->name, tmp));
   pn_printf(P, out, "(");
   potion_bytes_obj_string(P, out, potion_sig_string(P,cl,PN_CLOSURE(self)->sig));
   pn_printf(P, out, ")");
@@ -482,9 +483,10 @@ PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
  \return PNString representation of self: \<name ptr> if named or \<object> */
 PN potion_object_string(Potion *P, PN cl, vPN(Object) self) {
   struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(self->vt);
+  char *tmp;
   if (vt->name != PN_NIL) {
     PN str = potion_byte_str2(P, NULL, 0);
-    pn_printf(P, str, "<%s %lx>", PN_STR_PTR(vt->name), (PN)self);
+    pn_printf(P, str, "<%s %lx>", PN_STR_PTR(vt->name, tmp), (PN)self);
     return potion_send(str, PN_string);
   }
   
@@ -612,9 +614,10 @@ PN potion_lobby_say(Potion *P, PN cl, PN self) {
 
 static void potion_init_class_reference(Potion *P, PN name, PN vt) {
   char meta_str[strlen("<metaclass: >") + PN_STR_LEN(name) + 1];
+  char *tmp;
   potion_send(P->lobby, PN_def, name, vt);
   ((struct PNVtable *)vt)->name = name;
-  sprintf(meta_str, "<metaclass: %s>", PN_STR_PTR(name));
+  sprintf(meta_str, "<metaclass: %s>", PN_STR_PTR(name, tmp));
   ((struct PNVtable *)vt)->meta->name = potion_str(P, meta_str);
 }
 

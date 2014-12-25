@@ -93,16 +93,16 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
       int len = strlen(addcode);
       size += len;
       buf = potion_bytes(P, size);
-      bufptr = PN_STR_PTR(buf);
+      bufptr = PN_STR_PTR(buf, bufptr);
       PN_MEMCPY_N(bufptr, addcode, char, len);
       bufptr += len;
     } else {
       buf = potion_bytes(P, size);
-      bufptr = PN_STR_PTR(buf);
+      bufptr = PN_STR_PTR(buf, bufptr);
     }
     // TODO: mmap instead of read all
     if (read(fd, bufptr, stats.st_size) == stats.st_size) {
-      PN_STR_PTR(buf)[size] = '\0';
+      PN_STR_PTR(buf, bufptr)[size] = '\0';
     } else {
       fprintf(stderr, "** could not read entire file.");
       goto done;
@@ -194,7 +194,7 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
 				potion_str(P, compile),
 				opts ? opts : PN_NIL);
     if (code &&
-	(written = fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code))) {
+	(written = fwrite(PN_STR_PTR(code, c_opts), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code))) {
       printf("** compiled code saved to %s\n", outpath);
       fclose(pnb);
 
@@ -258,7 +258,7 @@ char * addmodule(Potion *P, char *result, char *prefix, char *name) {
     pn_printf(P, out, "%s(%s)\n", name, args);
   else
     pn_printf(P, out, "%s()\n", name);
-  return PN_STR_PTR(out);
+  return PN_STR_PTR(out, args);
 }
 
 int main(int argc, char *argv[]) {
@@ -270,6 +270,7 @@ int main(int argc, char *argv[]) {
   char *compile = NULL;
   char *fn = NULL;
   char *addmodules = NULL;
+  char *tmp;
 
 #if defined(STATIC) || defined(SANDBOX)
   Potion_Init_readline(P);
@@ -327,7 +328,7 @@ int main(int argc, char *argv[]) {
     if (argv[i][0] == '-' && argv[i][1] == 'd') {
       if (argv[i][2] == '=')
 	addmodules = addmodule(P, addmodules, NULL,
-			       PN_STR_PTR(PN_STRCAT("debug=", &argv[i][3])));
+			       PN_STR_PTR(PN_STRCAT("debug=", &argv[i][3]), tmp));
       else
 	addmodules = addmodule(P, addmodules, "debug", &argv[i][2]);
       exec = EXEC_DEBUG; continue; }

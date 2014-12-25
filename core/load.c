@@ -18,6 +18,7 @@ static PN potion_load_code(Potion *P, const char *filename) {
   struct stat stats;
   int fd = -1;
   PN result = PN_NIL;
+  char *tmp;
   if (stat(filename, &stats) == -1) {
     fprintf(stderr, "** %s does not exist.", filename);
     return PN_NIL;
@@ -28,8 +29,8 @@ static PN potion_load_code(Potion *P, const char *filename) {
     return PN_NIL;
   }
   buf = potion_bytes(P, stats.st_size);
-  if (read(fd, PN_STR_PTR(buf), stats.st_size) == stats.st_size) {
-    PN_STR_PTR(buf)[stats.st_size] = '\0';
+  if (read(fd, PN_STR_PTR(buf, tmp), stats.st_size) == stats.st_size) {
+    PN_STR_PTR(buf, tmp)[stats.st_size] = '\0';
     code = potion_source_load(P, PN_NIL, buf);
     if (!PN_IS_PROTO(code)) {
       result = potion_run(P, potion_send(
@@ -124,7 +125,7 @@ char *potion_find_file(Potion *P, char *str, PN_SIZE str_len) {
       dirname[sizeof(dirname) - 1] = '\0';
     else
       *dot = '\0';
-    memcpy(dirname, PN_STR_PTR(prefix), prefix_len);
+    memcpy(dirname, PN_STR_PTR(prefix, dot), prefix_len);
     dirname[prefix_len] = '/';
     if (stat(dirname, &st) == 0 && S_ISREG(st.st_mode)) {
       if (asprintf(&r, "%s", dirname) == -1) potion_allocation_error();
@@ -153,13 +154,14 @@ char *potion_find_file(Potion *P, char *str, PN_SIZE str_len) {
 }
 
 PN potion_load(Potion *P, PN cl, PN self, PN file) {
+  char *tmp;
   if (!file && PN_IS_STR(self))
     file = self;
-  char *filename = potion_find_file(P, PN_STR_PTR(file), PN_STR_LEN(file));
+  char *filename = potion_find_file(P, PN_STR_PTR(file, tmp), PN_STR_LEN(file));
   char *file_ext;
   PN result = PN_NIL;
   if (filename == NULL) {
-    fprintf(stderr, "** can't find %s\n", PN_STR_PTR(file));
+    fprintf(stderr, "** can't find %s\n", PN_STR_PTR(file, tmp));
     return PN_NIL;
   }
   file_ext = filename + strlen(filename);

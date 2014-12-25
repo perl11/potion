@@ -113,7 +113,7 @@ extern const struct {
   const u8 args;
 } potion_ops[];
 
-#define STRINGIFY(_obj) ({PN str=potion_send(_obj,PN_string);str?PN_STR_PTR(str):"";})
+#define STRINGIFY(_obj) ({char *tmp; PN str=potion_send(_obj,PN_string);str?PN_STR_PTR(str,tmp):"";})
 #endif
 
 #ifdef POTION_JIT_TARGET
@@ -227,9 +227,10 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   PNAsm * volatile asmb = potion_asm_new(P);
   u8 *fn;
   PNTarget *target = &P->target;
+  char *tmp;
+  
   target->setup(P, f, &asmb);
   DBG_t("-- run-time --\n");
-
   // calculate needed stackspace. nested protos may need more.
   if (PN_TUPLE_LEN(f->protos) > 0) {
     PN_SIZE j;
@@ -380,6 +381,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
 
 static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
   if (numargs > 0) {  //allow fun() to return the closure
+    char *tmp;
     if (numargs < cl->minargs)
       return potion_error
 	(P, (cl->minargs == arity
@@ -398,6 +400,7 @@ static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numar
 
 PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* stack) {
   if (P->flags & EXEC_DEBUG) {
+    char *tmp;
     PN ast;
     //PN *upvals;
     //PN *locals;
@@ -447,13 +450,13 @@ PN potion_debug(Potion *P, struct PNProto *f, PN self, PN_OP op, PN* reg, PN* st
     if (t) {
       if (t->line) {
 	PN fn = PN_TUPLE_AT(pn_filenames, t->loc.fileno);
-	if (fn) printf("(%s:%d):\t%s\n", PN_STR_PTR(fn), t->loc.lineno, PN_STR_PTR(t->line));
-	else    printf("(:%d):\t%s\n", t->loc.lineno, PN_STR_PTR(t->line));
+	if (fn) printf("(%s:%d):\t%s\n", PN_STR_PTR(fn, tmp), t->loc.lineno, PN_STR_PTR(t->line, tmp));
+	else    printf("(:%d):\t%s\n", t->loc.lineno, PN_STR_PTR(t->line, tmp));
       }
       while (loop) {
 	PN str = pn_readline(P, self, self, PN_STRN("> ", 2));
-	if (str && potion_cp_strlen_utf8(PN_STR_PTR(str)) > 1
-	    && PN_STR_PTR(str)[0] == ':')
+	if (str && potion_cp_strlen_utf8(PN_STR_PTR(str, tmp)) > 1
+	    && PN_STR_PTR(str, tmp)[0] == ':')
 	{
 	  if (str == PN_STR(":c"))         { break; }
 	  else if (str == PN_STR(":q"))    { P->flags -= EXEC_DEBUG; break; }

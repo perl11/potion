@@ -178,11 +178,11 @@ struct PNVtable;
 #define PN_IS_FFIPTR(p)  ((PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->birth_hi)) \
 			  || (!PN_IS_PTR(p) && p > (_PN)P->mem->birth_hi))
 
-#define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "String")
-#define PN_CHECK_STRB(obj)  if (!PN_IS_STR(obj) || (PN_TYPE(obj) != PN_TBYTES)) return potion_type_error_want(P, ""#obj, (PN)obj, "String or Bytes")
-#define PN_CHECK_NUM(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Number")
-#define PN_CHECK_INT(obj)  if (!PN_IS_INT(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Integer")
-#define PN_CHECK_DBL(obj)  if (!PN_IS_DBL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Double")
+#define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Str")
+#define PN_CHECK_STRB(obj) if (!PN_IS_STR(obj) || (PN_TYPE(obj) != PN_TBYTES)) return potion_type_error_want(P, ""#obj, (PN)obj, "Str or Bytes")
+#define PN_CHECK_NUM(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Num")
+#define PN_CHECK_INT(obj)  if (!PN_IS_INT(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Int")
+#define PN_CHECK_DBL(obj)  if (!PN_IS_DBL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Dbl")
 #define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Bool")
 #define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Tuple")
 #define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Closure")
@@ -216,7 +216,7 @@ typedef _PN (*PN_F)(Potion *, PN, PN, ...);
 #define PN_STR(x)       potion_str(P, x)
 #define PN_STRN(x, l)   potion_str2(P, x, l)
 #define PN_STRCAT(a, b) potion_strcat(P, (a), (b))
-#define PN_STR_PTR(x)   potion_str_ptr(x) 		      ///<\memberof PNString \memberof PNBytes
+#define PN_STR_PTR(x, buf) potion_str_ptr(x, buf) 	      ///<\memberof PNString \memberof PNBytes
 #define PN_STR_LLEN(x)  ((struct PNString *)(x))->len         ///<\memberof PNString
 #ifdef PN_LITTLE_ENDIAN
 #define PN_STR_LEN(x)   PN_IS_SSTR(x) ? PN_SSTR_LEN(x) : PN_STR_LLEN(x)
@@ -274,7 +274,7 @@ static inline size_t count_bits_to_0(_PN x) {
 #endif
 #define PN_UNIQ(x)      (PN_IS_PTR(x) ? ((struct PNObject *)(x))->uniq : PN_NUMHASH(x))
 
-#define AS_STR(x)       PN_STR_PTR(potion_send(x, PN_string))
+#define AS_STR(x)       PN_STR_PTR(potion_send(x, PN_string), tmp)
 #ifdef DEBUG
 #define DBG_t(...) \
   if (P->flags & DEBUG_TRACE) fprintf(stderr, __VA_ARGS__)
@@ -587,13 +587,13 @@ static inline PN potion_fwd(PN obj) {
 }
 
 /// quick access to either PNString or PNByte pointer
-static inline char *potion_str_ptr(PN s) {
+static inline char *potion_str_ptr(PN s, char *tmp) {
   if (PN_IS_SSTR(s)) {
-    char *p = (char*)s; /* use return address of local variable on the stack */
+    tmp = (char*)&s;
 #ifdef PN_LITTLE_ENDIAN
-    return (char *)&p;
+    return tmp;
 #else
-    return (char *)&p[1];
+    return &tmp[1];
 #endif
   }
   if (((struct PNString *)s)->vt == PN_TSTRING)

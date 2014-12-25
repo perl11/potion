@@ -430,6 +430,7 @@ PN potion_tuple_last(Potion *P, PN cl, PN self) {
 ///\return PNString
 PN potion_tuple_string(Potion *P, PN cl, PN self) {
   DBG_CHECK_TUPLE(self);
+  char *tmp;
   int licks = 0;
   PN out = potion_byte_str(P, "(");
   PN_TUPLE_EACH(self, i, v, {
@@ -439,7 +440,7 @@ PN potion_tuple_string(Potion *P, PN cl, PN self) {
   });
 
   licks = (licks > 0 && licks == PN_TUPLE_LEN(self));
-  if (licks) PN_STR_PTR(out)[0] = '[';
+  if (licks) PN_STR_PTR(out, tmp)[0] = '[';
   pn_printf(P, out, licks ? "]" : ")");
   return PN_STR_B(out);
 }

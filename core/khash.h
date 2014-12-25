@@ -60,6 +60,7 @@ static const double __kh_HASH_UPPER = 0.77;
   }									\
   static inline khint_t xxkh_get_##name(Potion *P, kh_t *h, khkey_t2 key) \
   {									\
+    char *tmp;                                                          \
     if (h->n_buckets) {							\
       khint_t inc, k, i, last, mask;					\
       mask = h->n_buckets - 1;						\
@@ -89,6 +90,7 @@ static const double __kh_HASH_UPPER = 0.77;
       }									\
     }									\
     if (j) {								\
+      char *tmp;                                                        \
       for (j = 0; j != h->n_buckets; ++j) {				\
         if (__kh_iseither(name, h, j) == 0) {				\
           khkey_t key = KHASH_KEY(name, h, j);				\
@@ -135,6 +137,7 @@ static const double __kh_HASH_UPPER = 0.77;
     }									\
     {									\
       khint_t inc, k, i, site, last, mask = h->n_buckets - 1;		\
+      char *tmp;                                                        \
       x = site = h->n_buckets; k = __hash_func(key); i = k & mask;	\
       if (__kh_isempty(name, h, i)) x = i;				\
       else {								\
@@ -194,10 +197,10 @@ static inline khint_t __luaS_hash_string(const char *s)
     h = h ^ ((h << 5) + (h >> 2) + (unsigned char)s[l1 - 1]);
   return h;
 }
-#define kh_pnstr_hash_func(key) __luaS_hash_string(PN_STR_PTR(key))
-#define kh_pnstr_hash_equal(a, b) (strcmp(PN_STR_PTR(a), PN_STR_PTR(b)) == 0)
+#define kh_pnstr_hash_func(key) __luaS_hash_string(PN_STR_PTR(key, tmp))
+#define kh_pnstr_hash_equal(a, b) (strcmp(PN_STR_PTR(a, tmp), PN_STR_PTR(b, tmp)) == 0)
 #define kh_str_hash_func(key) __luaS_hash_string(key)
-#define kh_str_hash_equal(a, b) (strcmp(PN_STR_PTR(a), b) == 0)
+#define kh_str_hash_equal(a, b) (strcmp(PN_STR_PTR(a, tmp), b) == 0)
 #define kh_sstr_hash_func(key) (uint32_t)PN_NUMHASH(key)
 #define kh_sstr_hash_equal(a, b) (a == b)
 #define kh_pn_hash_func(key) (uint32_t)PN_UNIQ(key)

@@ -153,7 +153,8 @@ PN potion_str_format(Potion *P, const char *format, ...) {
 ///\memberof PNString
 /// "length" method. number of chars
 static PN potion_str_length(Potion *P, PN cl, PN self) {
-  return PN_NUM(potion_cp_strlen_utf8(PN_STR_PTR(self)));
+  char *tmp;
+  return PN_NUM(potion_cp_strlen_utf8(PN_STR_PTR(self, tmp)));
 }
 
 ///\memberof PNString
@@ -165,7 +166,8 @@ static PN potion_str_eval(Potion *P, PN cl, PN self) {
 ///\memberof PNString
 /// "number" method. as atoi/atof
 static PN potion_str_number(Potion *P, PN cl, PN self) {
-  char *str = PN_STR_PTR(self);
+  char *tmp;
+  char *str = PN_STR_PTR(self, tmp);
   int i = 0, dec = 0, sign = 0, len = PN_STR_LEN(self);
   if (len < 1) return PN_ZERO;
 
@@ -180,7 +182,7 @@ static PN potion_str_number(Potion *P, PN cl, PN self) {
     return PN_NUM(sign * PN_ATOI(str, i, 10));
   }
 
-  return potion_strtod(P, PN_STR_PTR(self), PN_STR_LEN(self));
+  return potion_strtod(P, PN_STR_PTR(self, tmp), PN_STR_LEN(self));
 }
 
 ///\memberof PNString
@@ -199,7 +201,8 @@ static PN potion_str_clone(Potion *P, PN cl, PN self) {
 /// "print" method. fwrite to stdout
 ///\returns nil
 static PN potion_str_print(Potion *P, PN cl, PN self) {
-  if (fwrite(PN_STR_PTR(self), 1, PN_STR_LEN(self), stdout))
+  char *tmp;
+  if (fwrite(PN_STR_PTR(self, tmp), 1, PN_STR_LEN(self), stdout))
     return PN_STR0;
   else
     return PN_NIL;
@@ -296,7 +299,8 @@ inline static PN potion_str_slice_index(PN index, size_t len, int nilvalue) {
 ///\param end   PNInteger
 ///\return PNString substring
 static PN potion_str_slice(Potion *P, PN cl, PN self, PN start, PN end) {
-  char *str = PN_STR_PTR(self);
+  char *tmp;
+  char *str = PN_STR_PTR(self, tmp);
   size_t len = potion_cp_strlen_utf8(str);
   size_t endoffset;
   if (!start)
@@ -324,7 +328,8 @@ static PN potion_str_slice(Potion *P, PN cl, PN self, PN start, PN end) {
 ///\memberof PNString
 /// "bytes" method. Convert PNString to PNBytes
 static PN potion_str_bytes(Potion *P, PN cl, PN self) {
-  return potion_byte_str2(P, PN_STR_PTR(self), PN_STR_LEN(self));
+  char *tmp;
+  return potion_byte_str2(P, PN_STR_PTR(self, tmp), PN_STR_LEN(self));
 }
 
 ///\memberof PNString
@@ -333,10 +338,11 @@ static PN potion_str_bytes(Potion *P, PN cl, PN self) {
 ///\return concat PNString
 PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
   char *s = malloc(PN_STR_LEN(self) + PN_STR_LEN(x));
+  char *tmp;
   PN str;
   if (s == NULL) potion_allocation_error();
-  PN_MEMCPY_N(s, PN_STR_PTR(self), char, PN_STR_LEN(self));
-  PN_MEMCPY_N(s + PN_STR_LEN(self), PN_STR_PTR(x), char, PN_STR_LEN(x));
+  PN_MEMCPY_N(s, PN_STR_PTR(self, tmp), char, PN_STR_LEN(self));
+  PN_MEMCPY_N(s + PN_STR_LEN(self), PN_STR_PTR(x, tmp), char, PN_STR_LEN(x));
   str = potion_str2(P, s, PN_STR_LEN(self) + PN_STR_LEN(x));
   free(s);
   return str;
@@ -350,7 +356,9 @@ PN potion_str_add(Potion *P, PN cl, PN self, PN x) {
 static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
   size_t startoffset, endoffset;
   ssize_t start;
-  char *str  = PN_STR_PTR(potion_fwd(self));
+  char *tmp;
+  char *str = PN_IS_SSTR(self) ? PN_STR_PTR(self, tmp)
+                               : PN_STR_PTR(potion_fwd(self), tmp);
   DBG_CHECK_TYPE(index, PN_TNUMBER);
   start = PN_INT(index);
   if (start < 0) {
@@ -368,7 +376,8 @@ static PN potion_str_at(Potion *P, PN cl, PN self, PN index) {
 ///\param index int (optional, default: 0)
 ///\return PNInteger
 static PN potion_str_ord(Potion *P, PN cl, PN self, PN index) {
-  const char *str = PN_STR_PTR(potion_fwd(self));
+  char *tmp;
+  const char *str = PN_STR_PTR(PN_IS_PTR(self) ? potion_fwd(self) : self, tmp);
   if (PN_STR_LEN(self) > 255) goto slow;
   else {
     long len = potion_cp_strlen_utf8(str);
@@ -377,8 +386,8 @@ static PN potion_str_ord(Potion *P, PN cl, PN self, PN index) {
     }
     else {
     slow:
-      return PN_NUM(potion_utf8char_decode(
-               &str[potion_utf8char_offset(str, PN_INT(index))]));
+      return PN_NUM(potion_utf8char_decode
+                    (&str[potion_utf8char_offset(str, PN_INT(index))]));
     }
   }
 }
@@ -448,6 +457,7 @@ PN potion_bytes_append(Potion *P, PN cl, PN self, PN str) {
   vPN(Bytes) s = (struct PNBytes *)potion_fwd(self);
   PN fstr = potion_fwd(str);
   PN_SIZE len = PN_STR_LEN(fstr);
+  char *tmp;
 
   if (s->len + len + 1 > s->siz) {
     size_t siz = BYTES_ALIGN(((s->len + len) * BYTES_FACTOR) + 1);
@@ -455,7 +465,7 @@ PN potion_bytes_append(Potion *P, PN cl, PN self, PN str) {
     s->siz = (PN_SIZE)siz;
   }
 
-  PN_MEMCPY_N(s->chars + s->len, PN_STR_PTR(fstr), char, len);
+  PN_MEMCPY_N(s->chars + s->len, PN_STR_PTR(fstr, tmp), char, len);
   s->len += len;
   s->chars[s->len] = '\0';
   return self;
@@ -473,12 +483,13 @@ static PN potion_bytes_length(Potion *P, PN cl, PN self) {
 /// "string" method.
 // TODO: ensure it's UTF-8 data
 PN potion_bytes_string(Potion *P, PN cl, PN self) {
-  PN exist = potion_lookup_str(P, PN_STR_PTR(self = potion_fwd(self)));
+  char *tmp;
+  PN exist = potion_lookup_str(P, PN_STR_PTR(self = potion_fwd(self), tmp));
   if (exist == PN_NIL) {
     PN_SIZE len = PN_STR_LEN(self);
     vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
     s->len = len;
-    PN_MEMCPY_N(s->chars, PN_STR_PTR(self), char, len + 1);
+    PN_MEMCPY_N(s->chars, PN_STR_PTR(self, tmp), char, len + 1);
     potion_add_str(P, (PN)s);
     exist = (PN)s;
   }
@@ -488,8 +499,9 @@ PN potion_bytes_string(Potion *P, PN cl, PN self) {
 ///\memberof PNBytes
 /// "print" method.
 static PN potion_bytes_print(Potion *P, PN cl, PN self) {
+  char *tmp;
   self = potion_fwd(self);
-  if (fwrite(PN_STR_PTR(self), 1, PN_STR_LEN(self), stdout))
+  if (fwrite(PN_STR_PTR(self, tmp), 1, PN_STR_LEN(self), stdout))
     return PN_STR0;
   else
     return PN_NIL;
@@ -500,8 +512,9 @@ static PN potion_bytes_print(Potion *P, PN cl, PN self) {
 ///\param block=&
 ///\return PN_NIL
 static PN potion_bytes_each(Potion *P, PN cl, PN self, PN block) {
+  char *tmp;
   self = potion_fwd(self);
-  char *s = PN_STR_PTR(self);
+  char *s = PN_STR_PTR(self, tmp);
   int i;
   for (i = 0; i < PN_STR_LEN(self); i++) {
     PN_CLOSURE(block)->method(P, block, P->lobby, potion_byte_str2(P, &s[i], 1));
@@ -515,11 +528,12 @@ static PN potion_bytes_each(Potion *P, PN cl, PN self, PN block) {
 ///\return PNString substring index .. index+1
 static PN potion_bytes_at(Potion *P, PN cl, PN self, PN index) {
   char c;
+  char *tmp;
   self = potion_fwd(self);
   index = PN_INT(index);
   if (index >= PN_STR_LEN(self) || (signed long)index < 0)
     return PN_NIL;
-  c = PN_STR_PTR(self)[index];
+  c = PN_STR_PTR(self, tmp)[index];
   return potion_byte_str2(P, &c, 1);
 }
 
@@ -532,10 +546,14 @@ static PN potion_bytes_at(Potion *P, PN cl, PN self, PN index) {
  \return PNInteger (positive, negative or 0)
  \sa potion_tuple_sort. */
 static PN potion_str_cmp(Potion *P, PN cl, PN self, PN str) {
-  if (PN_IS_STR(str)) {
-    return strcmp(PN_STR_PTR(self), PN_STR_PTR(str));
+  if (PN_IS_SSTR(str))
+    return self == str ? 0 : (self < str ? -1 : 1);
+  else if (PN_IS_STR(str)) {
+    char *tmp, *tmp1;
+    return strcmp(PN_STR_PTR(self, tmp), PN_STR_PTR(str, tmp1));
   } else {
-    return strcmp(PN_STR_PTR(self), PN_STR_PTR(potion_send(PN_string, str)));
+    char *tmp, *tmp1;
+    return strcmp(PN_STR_PTR(self, tmp), PN_STR_PTR(potion_send(PN_string, str), tmp));
   }
 }
 
