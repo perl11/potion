@@ -27,10 +27,10 @@
 
 #define YY_INPUT(buf, result, max) { \
   YY_XTYPE P = G->data; \
-  if (P->yypos < PN_STR_LEN(P->input)) { \
+  if (P->yypos < PN_STR_LLEN(P->input)) { \
     result = max; \
-    if (P->yypos + max > PN_STR_LEN(P->input)) \
-      result = (PN_STR_LEN(P->input) - P->yypos); \
+    if (P->yypos + max > PN_STR_LLEN(P->input)) \
+      result = (PN_STR_LLEN(P->input) - P->yypos); \
     PN_MEMCPY_N(buf, PN_STR_PTR(P->input) + P->yypos, char, result + 1); \
     P->yypos += max; \
   } else { \

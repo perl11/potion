@@ -109,8 +109,8 @@ struct PNVtable;
 #define PN_TBOOLEAN     (2+PN_TNIL) //tag 0b010
 #define PN_TINTEGER     (3+PN_TNIL) //is a Number
 #define PN_TDOUBLE      (4+PN_TNIL) //is a Number, no arbitrary prec. yet
-#define PN_TSTRING      (5+PN_TNIL)
-#define PN_TSSTRING     (6+PN_TNIL) //word-size string primitive with tag 0b110
+#define PN_TSSTRING     (5+PN_TNIL) //word-size string primitive with tag 0b110
+#define PN_TSTRING      (6+PN_TNIL)
 #define PN_TWEAK        (7+PN_TNIL)
 #define PN_TCLOSURE     (8+PN_TNIL)
 #define PN_TTUPLE       (9+PN_TNIL)
@@ -140,10 +140,10 @@ struct PNVtable;
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)   //i.e. PN_NUM(0)
 #define PN_FALSE        ((PN)2)   //tag 0b010 LE 0b00000010, BE 0b010000000 0x2
-#define PN_TRUE         ((PN)0xA) //          LE 0b00001010, BE 0b010100000 0xA
-//      PN_TSSTRING     // 0xaaaaaaaa aaaaaa06 vs 0xaaaaaa06 (14 or 6 chars) LE 0b0110 0x6
-                        // 0x6aaaaaaa aaaaaaa0 vs 0x6aaaaaa0 (14 or 6 chars) BE
-#define PN_PRIMITIVE    15
+#define PN_TRUE         ((PN)6)   //          LE 0b00000110, BE 0b011000000 0xA
+//      PN_TSSTRING     // 0xaaaaaaaa aaaa000A vs 0xaaaa000A (6 or 2 chars) LE 0b1010 0xA
+                        // 0xA0aaaaaa aaaaaa00 vs 0xA0aaaa00 (6 or 2 chars) BE
+#define PN_PRIMITIVE    7
 #define PN_REF_MASK     ~15
 #define PN_NONE         ((PN_SIZE)-1)
 #define POTION_FWD      0xFFFFFFFE
@@ -153,15 +153,15 @@ struct PNVtable;
 #define NILKIND_NAME    "NilKind"
 
 #define PN_FINTEGER     1
-#define PN_FBOOLEAN     2 // 0b0010 or 0b1010
-#define PN_FSSTRING     6 // 0b0110
+#define PN_FBOOLEAN     2   // 0b0010 or 0b0110
+#define PN_FSSTRING     0xa // 0b1010
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 //Beware: TEST1(PN_NUM(0)) vs TEST(0<1) i.e. test1(1) vs test(1)
 #define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 ///\class PNBoolean
 /// From cmp (x<y) to immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
 #define PN_BOOL(v)      (PN_TEST(v) ? PN_TRUE : PN_FALSE)
-#define PN_IS_PTR(v)    (!PN_IS_INT(v) && ((PN)(v) & PN_REF_MASK))
+#define PN_IS_PTR(v)    (!PN_IS_INT(v) && (char)((PN)(v) & PN_REF_MASK))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   (((PN)(v) == PN_TRUE) || ((PN)(v) == PN_FALSE)) // TODO (((PN)(v) & 0xe) == 0x2 or 0xa)
 #define PN_IS_SSTR(v)   ((PN)(v) & PN_FSSTRING)
@@ -169,7 +169,7 @@ struct PNVtable;
 #define PN_IS_DBL(v)    (PN_IS_PTR(v) && (PN_TYPE(v) == PN_TNUMBER || PN_TYPE(v) == PN_TDOUBLE))
 #define PN_IS_NUM(v)    (PN_IS_INT(v) || PN_IS_DBL(v))
 #define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
-#define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
+#define PN_IS_STR(v)    (PN_IS_SSTR(v) || (PN_TYPE(v) == PN_TSTRING))
 #define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
 #define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
 #define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
@@ -216,12 +216,12 @@ typedef _PN (*PN_F)(Potion *, PN, PN, ...);
 #define PN_STR(x)       potion_str(P, x)
 #define PN_STRN(x, l)   potion_str2(P, x, l)
 #define PN_STRCAT(a, b) potion_strcat(P, (a), (b))
-#define PN_STR_PTR(x)   potion_str_ptr(x)                     ///<\memberof PNString \memberof PNBytes
+#define PN_STR_PTR(x)   potion_str_ptr(x) 		      ///<\memberof PNString \memberof PNBytes
 #define PN_STR_LLEN(x)  ((struct PNString *)(x))->len         ///<\memberof PNString
 #ifdef PN_LITTLE_ENDIAN
-#define PN_STR_LEN(x)   PN_IS_SSTR(x) ? strlen((char*)(x)) : PN_STR_LLEN(x)
+#define PN_STR_LEN(x)   PN_IS_SSTR(x) ? PN_SSTR_LEN(x) : PN_STR_LLEN(x)
 #else
-#define PN_STR_LEN(x)   PN_IS_SSTR(x) ? strlen((char*)((x)>>4)) : PN_STR_LLEN(x)
+#define PN_STR_LEN(x)   PN_IS_SSTR(x) ? PN_SSTR_LEN((x)>>16) : PN_STR_LLEN(x)
 #endif
 #define PN_STR_B(x)     potion_bytes_string(P, PN_NIL, x)     ///<\memberof PNBytes
 #define PN_CLOSURE(x)   ((struct PNClosure *)(x))             ///<\memberof PNClosure
@@ -240,6 +240,32 @@ typedef _PN (*PN_F)(Potion *, PN, PN, ...);
 #define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[]; } N
 #define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
 #define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
+
+// find first \0 in one word. http://www.strchr.com/sse2_optimised_strlen
+static inline size_t count_bits_to_0(_PN x) {
+  static const unsigned char table[256] = {
+    7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+    4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
+  };
+  if ((unsigned char)x)
+    return table[(unsigned char)x];
+  return table[x >> 8] + 8; // t[x / 256] + 8
+}
+#define PN_SSTR_LEN(s) count_bits_to_0((_PN)s)
 
 #if PN_SIZE_T == 4
 #define PN_NUMHASH(x)   x
@@ -335,7 +361,7 @@ struct PNData {
 /// strings are immutable UTF-8, the ID is
 /// incremental and they may be garbage
 /// collected. (non-volatile).
-/// Beware of primitive short strings, with tag 0x6, and no len.
+/// Beware of primitive short strings, with tag 0xA, and no len.
 ///
 struct PNString {
   PN_OBJECT_HEADER;  ///< PNType vt; PNUniq uniq
@@ -562,13 +588,14 @@ static inline PN potion_fwd(PN obj) {
 
 /// quick access to either PNString or PNByte pointer
 static inline char *potion_str_ptr(PN s) {
-  if (PN_IS_SSTR(s))
-    return
+  if (PN_IS_SSTR(s)) {
+    char *p = (char*)s; /* use return address of local variable on the stack */
 #ifdef PN_LITTLE_ENDIAN
-      (char*)s;
+    return (char *)&p;
 #else
-      (char*)(s>>4);
+    return (char *)&p[1];
 #endif
+  }
   if (((struct PNString *)s)->vt == PN_TSTRING)
     return ((struct PNString *)s)->chars;
   s = potion_fwd(s);
@@ -648,6 +675,7 @@ struct Potion_State {
   PN_OBJECT_HEADER;        ///< PNType vt; PNUniq uniq
   PNTarget target;         ///< the jit
   struct PNTable *strings; ///< table of all strings
+  struct PNTable *sstrings;///< table of all short strings
   PN lobby;                ///< root namespace
   PNFlex * volatile vts;   ///< built in types
   Potion_Flags flags;      ///< vm flags: execution model and debug flags
@@ -819,7 +847,7 @@ void potion_syntax_error(Potion *, const char *, ...)
 PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
-PN potion_str2(Potion *, char *, size_t);
+PN potion_str2(Potion *, const char *, size_t);
 PN potion_strcat(Potion *P, char *str, char *str2);
 PN potion_str_add(Potion *P, PN, PN, PN);
 PN potion_str_format(Potion *, const char *, ...)
@@ -949,5 +977,31 @@ PN_F potion_jit_proto(Potion *, PN);
 
 PN potion_class_find(Potion *, PN);
 PNType potion_class_type(Potion *, PN);
+
+#if defined(__APPLE__)
+#  include <libkern/OSByteOrder.h>
+#  if PN_SIZE_T == 8
+#    define wordswap(w) OSSwapInt32((w))
+#  else
+#    define wordswap(w) OSSwapInt64((w))
+#  endif
+#elif defined(__MSC_VER)
+#  if PN_SIZE_T == 8
+#     define wordswap(x) _byteswap_ulong(x)
+#  else
+#     define wordswap(x) _byteswap_uint64(x)
+#  endif
+#else /* endian: bsd or linux */
+#  if defined(__linux__)
+#    include <endian.h>
+#  elif (__bsdi__)
+#    include <sys/endian.h>
+#  endif
+#  if PN_SIZE_T == 8
+#    define wordswap(w) __bswap_64((w))
+#  else
+#    define wordswap(w) __bswap_32((w))
+#  endif
+#endif
 
 #endif
