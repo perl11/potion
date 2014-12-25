@@ -26,12 +26,14 @@
 #define YY_XVAR P
 
 #define YY_INPUT(buf, result, max) { \
+  char *tmp; \
   YY_XTYPE P = G->data; \
-  if (P->yypos < PN_STR_LLEN(P->input)) { \
+  const size_t len = PN_STR_LEN(P->input); \
+  if (P->yypos < len) { \
     result = max; \
-    if (P->yypos + max > PN_STR_LLEN(P->input)) \
-      result = (PN_STR_LLEN(P->input) - P->yypos); \
-    PN_MEMCPY_N(buf, PN_STR_PTR(P->input) + P->yypos, char, result + 1); \
+    if (P->yypos + max > len) \
+      result = (len - P->yypos); \
+    PN_MEMCPY_N(buf, PN_STR_PTR(P->input, tmp) + P->yypos, char, result + 1); \
     P->yypos += max; \
   } else { \
     result = 0; \
@@ -45,10 +47,11 @@
 #ifdef DEBUG
 # define YYDEBUG_PARSE   DEBUG_PARSE
 # define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
-# define YY_SET(G, text, count, thunk, P) \
-  yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy,\
-    PN_IS_INT(yy)||PN_IS_PTR(yy) ? PN_STR_PTR(potion_send(yy, PN_string)) : "")); \
-  G->val[count]= yy;
+# define YY_SET(G, text, count, thunk, P) ({ \
+  char *tmp; \
+  yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy, \
+    PN_IS_INT(yy)||PN_IS_PTR(yy) ? PN_STR_PTR(potion_send(yy, PN_string), tmp) : "")); \
+  G->val[count]= yy;})
 #endif
 
 #define SRC_TPL1(x)       P->source = PN_PUSH(P->source, x)
@@ -395,8 +398,9 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   G->filename = filename;
   P->fileno = PN_PUT(pn_filenames, PN_STR(filename));
   if (!YY_NAME(parse)(G)) {
+    char *tmp;
     YY_ERROR("** Syntax error");
-    fprintf(stderr, "%s", PN_STR_PTR(code));
+    fprintf(stderr, "%s", PN_STR_PTR(code, tmp));
   }
   YY_NAME(parse_free)(G);
 

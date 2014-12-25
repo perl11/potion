@@ -244,7 +244,7 @@ static void Node_compile_c_ko(Node *node, int ko)
       {
 	pindent();
 	char *tmp = yyqq((char*)node->cclass.value);
-	fprintf(output, "  if (!yymatchClass(G, (unsigned char *)\"%s\", \"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), tmp, ko);
+	fprintf(output, "  if (!yymatchClass(G, (const unsigned char *)\"%s\", \"%s\")) goto l%d;\n", makeCharClass(node->cclass.value), tmp, ko);
 	if (tmp != (char*)node->cclass.value) YY_FREE(tmp);
       }
       break;
@@ -726,7 +726,7 @@ YY_LOCAL(int) yymatchString(GREG *G, const char *s)\n\
   return 1;\n\
 }\n\
 \n\
-YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, char *cclass)\n\
+YY_LOCAL(int) yymatchClass(GREG *G, const unsigned char *bits, char *cclass)\n\
 {\n\
   int c;\n\
   if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
@@ -865,19 +865,18 @@ typedef int (*yyrule)(GREG *G);\n\
 YY_PARSE(int) YY_NAME(parse_from)(GREG *G, yyrule yystart)\n\
 {\n\
   int yyok;\n\
-  if (!G->buflen)\n\
-    {\n\
-      G->buflen= YY_BUFFER_START_SIZE;\n\
-      G->buf= (char*)YY_ALLOC(G->buflen, G->data);\n\
-      G->textlen= YY_BUFFER_START_SIZE;\n\
-      G->text= (char*)YY_ALLOC(G->textlen, G->data);\n\
-      G->thunkslen= YY_STACK_SIZE;\n\
-      G->thunks= (yythunk*)YY_ALLOC(sizeof(yythunk) * G->thunkslen, G->data);\n\
-      G->valslen= YY_STACK_SIZE;\n\
-      G->vals= (YYSTYPE*)YY_ALLOC(sizeof(YYSTYPE) * G->valslen, G->data);\n\
-      G->begin= G->end= G->pos= G->limit= G->thunkpos= 0;\n\
-    }\n\
-  G->pos = 0;\n\
+  if (!G->buflen) {\n\
+    G->buflen= YY_BUFFER_START_SIZE;\n\
+    G->buf= (char*)YY_ALLOC(G->buflen, G->data);\n\
+    G->textlen= YY_BUFFER_START_SIZE;\n\
+    G->text= (char*)YY_ALLOC(G->textlen, G->data);\n\
+    G->thunkslen= YY_STACK_SIZE;\n\
+    G->thunks= (yythunk*)YY_ALLOC(sizeof(yythunk) * G->thunkslen, G->data);\n\
+    G->valslen= YY_STACK_SIZE;\n\
+    G->vals= (YYSTYPE*)YY_ALLOC(sizeof(YYSTYPE) * G->valslen, G->data);\n\
+    G->begin= G->end= G->pos= G->limit= G->thunkpos= 0;\n\
+  }\n\
+  G->pos= 0;\n\
   G->begin= G->end= G->pos;\n\
   G->thunkpos= 0;\n\
   G->val= G->vals;\n\
@@ -885,6 +884,7 @@ YY_PARSE(int) YY_NAME(parse_from)(GREG *G, yyrule yystart)\n\
   if (yyok) yyDone(G);\n\
   yyCommit(G);\n\
   return yyok;\n\
+  \n\
   (void)yyrefill;\n\
   (void)yymatchDot;\n\
   (void)yymatchChar;\n\
