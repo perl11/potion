@@ -1003,6 +1003,7 @@ void potion_x86_call(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
       for (i = argc+1; i <= arity+1; i++) { //2: [0,1],2,3
 	PN sig = potion_sig_at(P, c->sig, i-2);
 	if (sig && PN_TUPLE_LEN(sig) == 3) {
+          char *tmp;
 	  DBG_t(":=*%s[%d] ", AS_STR(PN_TUPLE_AT(sig, 2)), i+1);
 	  X86_ARGO_IMM(PN_TUPLE_AT(sig, 2), i+1); 	// mov $value, i(%esp) - default
 	} else if (sig) {

@@ -165,6 +165,7 @@ static PN aio_error(Potion *P, char *name, int status) {
 //if (PN_VTYPE(self) != aio_##T##_type) {
 #define FATAL_AIO_TYPE(self, T) \
   if (!potion_bind(P, self, PN_STR("Aio_"_XSTR(T)))) {                  \
+    char *tmp;                                                          \
     fprintf(stderr, "** Invalid type %s, expected %s",                  \
             PN_IS_PTR(self)? AS_STR(potion_send(PN_VTABLE(self), PN_name)) \
             : PN_IS_NIL(self) ? NIL_NAME                                \
@@ -179,8 +180,9 @@ static PN aio_error(Potion *P, char *name, int status) {
         _t != aio_udp_type &&                                \
         _t != aio_pipe_type &&                               \
         _t != aio_tty_type &&                                \
-        !potion_bind(P, stream, PN_STR("listen")))           \
+        !potion_bind(P, stream, PN_STRN("listen", 6)))       \
       {                                                      \
+        char *tmp;                                           \
         fprintf(stderr, "** Invalid type %s, expected %s",   \
                 PN_IS_PTR(stream)? AS_STR(potion_send(PN_VTABLE(stream), PN_name)) \
                 : PN_IS_NIL(stream) ? NIL_NAME                            \
@@ -279,10 +281,11 @@ static PN aio_udp_new(Potion *P, PN cl, PN self, PN loop) {
    \see http://nikhilm.github.io/uvbook/networking.html#udp */
 static PN aio_udp_get(Potion *P, PN cl, PN self, PN key, PN value) {
   CHECK_AIO_TYPE(self,udp);
+  char *tmp;
   PN_CHECK_STR(key);
   PN v = potion_obj_get(P, 0, self, key);
   return v ? v :  potion_error(P, potion_str_format(P, "Invalid key %s",
-                                                    PN_STR_PTR(key)),
+                                                    PN_STR_PTR(key, tmp)),
                                0, 0, 0);
 }
 /**\memberof Aio_udp
@@ -292,10 +295,11 @@ static PN aio_udp_get(Potion *P, PN cl, PN self, PN key, PN value) {
    \see http://nikhilm.github.io/uvbook/networking.html#udp */
 static PN aio_udp_set(Potion *P, PN cl, PN self, PN key, PN value) {
   uv_udp_t *udp;
+  char *tmp;
   udp = (uv_udp_t*)PN_DATA(potion_fwd(self));
   CHECK_AIO_TYPE(self,udp);
   PN_CHECK_STR(key);
-  char *k = PN_STR_PTR(key);
+  char *k = PN_STR_PTR(key, tmp);
   if (!strcmp(k, "broadcast")) {
     PN_CHECK_BOOL(value);
     if (!uv_udp_set_broadcast(udp, value == PN_TRUE ? 1 : 0))
@@ -322,14 +326,14 @@ static PN aio_udp_set(Potion *P, PN cl, PN self, PN key, PN value) {
     PN_CHECK_STR(t->set[0]);
     PN_CHECK_STR(t->set[1]);
     PN_CHECK_INT(t->set[2]);
-    if (!uv_udp_set_membership(udp, PN_STR_PTR(PN_TUPLE_AT(t, 0)),
-			       PN_STR_PTR(PN_TUPLE_AT(t, 1)),
+    if (!uv_udp_set_membership(udp, PN_STR_PTR(PN_TUPLE_AT(t, 0), tmp),
+			       PN_STR_PTR(PN_TUPLE_AT(t, 1), tmp),
 			       (uv_membership)PN_INT(PN_TUPLE_AT(t, 2)))) //0 or 1
       potion_obj_set(P, 0, self, key, value);
   }
   else {
     return potion_error(P, potion_str_format(P, "Invalid key %s",
-					     PN_STR_PTR(key)),
+					     PN_STR_PTR(key, tmp)),
 			0, 0, 0);
   }
   return (PN)self;
@@ -499,10 +503,11 @@ static PN aio_fs_event_new(Potion *P, PN cl, PN self, PN loop) {
    \param flags INT */
 static PN aio_fs_event_start(Potion *P, PN cl, PN self, PN cb, PN filename, PN flags) {
   aio_fs_event_t *handle = AIO_DATA(fs_event,self);
+  char *tmp;
   AIO_CB_SET(fs_event,handle);
   PN_CHECK_STR(filename);
   PN_CHECK_INT(flags);
-  int r = uv_fs_event_start(&handle->r, fs_event_cb, PN_STR_PTR(filename), PN_NUM(flags));
+  int r = uv_fs_event_start(&handle->r, fs_event_cb, PN_STR_PTR(filename, tmp), PN_NUM(flags));
   return r ? aio_error(P, "fs_event start", r) : self;
 }
 ///\memberof Aio_fs_event
@@ -545,8 +550,9 @@ static PN aio_getaddrinfo_new(Potion *P, PN cl, PN self,
   DEF_AIO_NEW_LOOP(getaddrinfo);
   AIO_CB_SET_CAST(getaddrinfo,handle);
 
-  const char *node_c = PN_IS_STR(node) ? PN_STR_PTR(node) : NULL;
-  const char *service_c = PN_IS_STR(service) ? PN_STR_PTR(service) : NULL;
+  char *tmp;
+  const char *node_c = PN_IS_STR(node) ? PN_STR_PTR(node, tmp) : NULL;
+  const char *service_c = PN_IS_STR(service) ? PN_STR_PTR(service, tmp) : NULL;
   struct addrinfo* hints_c = (struct addrinfo*)PN_DATA(hints);
   if (!node_c && !service_c) {
     return potion_type_error_want(P, "node or service", !node_c ? node : service, "String");
@@ -660,6 +666,7 @@ aio_connect_cb(uv_connect_t* req, int status) {
   Potion *P = wrap->P;
   //FATAL_AIO_TYPE(data,connect); //=>
   if (!potion_bind(P, data, PN_STR("Aio_connect"))) {
+    char *tmp;
     fprintf(stderr, "** Invalid type %s, expected %s",
             PN_IS_PTR(data)? AS_STR(potion_send(PN_VTABLE(data), PN_name))
             : PN_IS_NIL(data) ? NIL_NAME
@@ -843,13 +850,14 @@ aio_tcp_simultaneous_accepts(Potion *P, PN cl, PN tcp, PN enable) {
 static PN
 aio_tcp_bind(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
+  char *tmp;
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
   struct sockaddr_in ip4;
   //detect ip6
-  if (uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port), &ip4)) {
+  if (uv_ip4_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip4)) {
     struct sockaddr_in6 ip6;
-    if (uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port), &ip6))
+    if (uv_ip6_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip6))
       return aio_error(P, "ip_addr", 89); //EDESTADDRREQ
     else {
       int r = uv_tcp_bind(&handle->r, (const struct sockaddr*) &ip6, 1);
@@ -863,10 +871,11 @@ aio_tcp_bind(Potion *P, PN cl, PN tcp, PN addr, PN port) {
 static PN
 aio_tcp_bind6(Potion *P, PN cl, PN tcp, PN addr, PN port) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
+  char *tmp;
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
   struct sockaddr_in6 ip6;
-  if (uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port), &ip6))
+  if (uv_ip6_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip6))
     return aio_error(P, "ip6_addr", 89); //EDESTADDRREQ
   int r = uv_tcp_bind(&handle->r, (const struct sockaddr*) &ip6, 1);
   return r ? aio_error(P, "tcp bind6", r) : tcp;
@@ -892,12 +901,13 @@ static PN
 aio_tcp_connect(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
   aio_connect_t *request = (aio_connect_t*)PN_DATA(potion_fwd(req));
+  char *tmp;
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
   struct sockaddr_in ip4;
-  if (uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port), &ip4)) {
+  if (uv_ip4_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip4)) {
     struct sockaddr_in6 ip6;
-    if (uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port), &ip6))
+    if (uv_ip6_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip6))
       return aio_error(P, "ip_addr", 89); //EDESTADDRREQ
     else {
       AIO_CB_SET(connect,request);
@@ -914,10 +924,11 @@ static PN
 aio_tcp_connect6(Potion *P, PN cl, PN tcp, PN req, PN addr, PN port, PN cb) {
   aio_tcp_t *handle = AIO_DATA(tcp,tcp);
   aio_connect_t *request = (aio_connect_t*)PN_DATA(potion_fwd(req));
+  char *tmp;
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
   struct sockaddr_in6 ip6;
-  if (uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port), &ip6))
+  if (uv_ip6_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip6))
     return aio_error(P, "ip6_addr", 89); //EDESTADDRREQ
   AIO_CB_SET(connect,request);
   int r = uv_tcp_connect(&request->r, &handle->r, (const struct sockaddr*) &ip6, connect_cb);
@@ -938,12 +949,13 @@ static PN
 aio_udp_bind(Potion *P, PN cl, PN udp, PN addr, PN port, PN flags) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
   struct sockaddr_in ip4;
+  char *tmp;
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
   PN_CHECK_INT(flags);
-  if (uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port), &ip4)) {
+  if (uv_ip4_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip4)) {
     struct sockaddr_in6 ip6;
-    if (uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port), &ip6))
+    if (uv_ip6_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip6))
       return aio_error(P, "ip_addr", 89); //EDESTADDRREQ
     else {
       int r = uv_udp_bind(&handle->r, (const struct sockaddr*) &ip6, PN_INT(flags));
@@ -958,10 +970,11 @@ static PN
 aio_udp_bind6(Potion *P, PN cl, PN udp, PN addr, PN port, PN flags) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
   struct sockaddr_in6 ip6;
+  char *tmp;
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
   PN_CHECK_INT(flags);
-  if (uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port), &ip6))
+  if (uv_ip6_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip6))
     return aio_error(P, "ip6_addr", 89); //EDESTADDRREQ
   int r = uv_udp_bind(&handle->r, (const struct sockaddr*) &ip6, PN_INT(flags));
   return r ? aio_error(P, "udp bind6", r) : udp;
@@ -978,12 +991,13 @@ aio_udp_getsockname(Potion *P, PN cl, PN udp) {
 static PN
 aio_udp_set_membership(Potion *P, PN cl, PN udp, PN mcaddr, PN ifaddr, PN membership) {
   aio_udp_t *handle = AIO_DATA(udp,udp);
+  char *tmp;
   PN_CHECK_STR(mcaddr);
   PN_CHECK_STR(ifaddr);
   PN_CHECK_INT(membership);
   potion_obj_set(P, cl, udp, PN_STR("membership"),
 		 PN_PUSH(PN_PUSH(PN_PUSH(PN_TUP0(), mcaddr), ifaddr), membership));
-  int r = uv_udp_set_membership(&handle->r, PN_STR_PTR(mcaddr), PN_STR_PTR(ifaddr),
+  int r = uv_udp_set_membership(&handle->r, PN_STR_PTR(mcaddr, tmp), PN_STR_PTR(ifaddr, tmp),
                                 (uv_membership)PN_NUM(membership));
   return r ? aio_error(P, "udp set_membership", r) : udp;
 }
@@ -1033,13 +1047,14 @@ aio_udp_send(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN po
   aio_udp_send_t *request = AIO_DATA(udp_send,req);
   aio_buf_t bufs;
   struct sockaddr_in ip4;
+  char *tmp;
   PN_CHECK_STRB(buf);
-  bufs.base = PN_STR_PTR(buf);
+  bufs.base = PN_STR_PTR(buf, tmp);
   bufs.len = PN_STR_LEN(buf);
   PN_CHECK_INT(bufcnt);
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
-  if (uv_ip4_addr(PN_STR_PTR(addr), PN_INT(port), &ip4))
+  if (uv_ip4_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip4))
     return aio_error(P, "ip_addr", 89); //EDESTADDRREQ
   AIO_CB_SET(udp_send,request);
   int r = uv_udp_send(&request->r, &handle->r, &bufs, bufcnt, (const struct sockaddr*) &ip4, udp_send_cb);
@@ -1053,13 +1068,14 @@ aio_udp_send6(Potion *P, PN cl, PN udp, PN req, PN buf, PN bufcnt, PN addr, PN p
   aio_udp_send_t *request = (aio_udp_send_t*)PN_DATA(potion_fwd(req));
   aio_buf_t bufs;
   struct sockaddr_in6 ip6;
+  char *tmp;
   PN_CHECK_STRB(buf);
-  bufs.base = PN_STR_PTR(buf);
+  bufs.base = PN_STR_PTR(buf, tmp);
   bufs.len = PN_STR_LEN(buf);
   PN_CHECK_INT(bufcnt);
   PN_CHECK_STR(addr);
   PN_CHECK_INT(port);
-  if (uv_ip6_addr(PN_STR_PTR(addr), PN_INT(port), &ip6))
+  if (uv_ip6_addr(PN_STR_PTR(addr, tmp), PN_INT(port), &ip6))
     return aio_error(P, "ip6_addr", 89); //EDESTADDRREQ
   AIO_CB_SET(udp_send,request);
   int r = uv_udp_send(&request->r, &handle->r, &bufs, bufcnt, (const struct sockaddr*) &ip6, udp_send_cb);
@@ -1217,8 +1233,9 @@ aio_pipe_open(Potion *P, PN cl, PN pipe, PN file) {
 static PN
 aio_pipe_bind(Potion *P, PN cl, PN pipe, PN name) {
   aio_pipe_t *handle = AIO_DATA(pipe,pipe);
+  char *tmp;
   PN_CHECK_STR(name);
-  int r = uv_pipe_bind(&handle->r, PN_STR_PTR(name));
+  int r = uv_pipe_bind(&handle->r, PN_STR_PTR(name, tmp));
   return r ? aio_error(P, "pipe bind", r) : pipe;
 }
 ///\memberof Aio_pipe
@@ -1226,9 +1243,10 @@ static PN
 aio_pipe_connect(Potion *P, PN cl, PN pipe, PN req, PN name, PN cb) {
   aio_pipe_t *handle = AIO_DATA(pipe,pipe);
   aio_connect_t *request = AIO_DATA(connect,req);
+  char *tmp;
   AIO_CB_SET(connect,request);
   PN_CHECK_STR(name);
-  uv_pipe_connect(&request->r, &handle->r, PN_STR_PTR(name), connect_cb);
+  uv_pipe_connect(&request->r, &handle->r, PN_STR_PTR(name, tmp), connect_cb);
   return pipe;
 }
 ///\memberof Aio_pipe
@@ -1260,8 +1278,9 @@ aio_write(Potion *P, PN cl, PN stream, PN req, PN buf, PN bufcnt, PN cb) {
   aio_stream_t *stm = AIO_DATA(stream,stream);
   aio_write_t *request = AIO_DATA(write,req);
   aio_buf_t bufs;
+  char *tmp;
   PN_CHECK_STRB(buf);
-  bufs.base = PN_STR_PTR(buf);
+  bufs.base = PN_STR_PTR(buf, tmp);
   bufs.len = PN_STR_LEN(buf);
   AIO_CB_SET(write,request);
   int r = uv_write(&request->r, &stm->r, &bufs, PN_INT(bufcnt), write_cb);
@@ -1329,9 +1348,10 @@ aio_write2(Potion *P, PN cl, PN stream, PN req, PN buf, PN bufcnt, PN send_handl
   aio_write_t *request = AIO_DATA(write,req);
   aio_stream_t *handle = AIO_STREAM(send_handle);
   aio_buf_t bufs;
+  char *tmp;
   PN_CHECK_INT(bufcnt);
   PN_CHECK_STRB(buf);
-  bufs.base = PN_STR_PTR(buf);
+  bufs.base = PN_STR_PTR(buf, tmp);
   bufs.len = PN_STR_LEN(buf);
   AIO_CB_SET(write,request);
   int r = uv_write2(&request->r, &stm->r, &bufs, PN_INT(bufcnt), &handle->r, write_cb);
@@ -1491,10 +1511,11 @@ aio_signal_stop(Potion *P, PN cl, PN self) {
    \see http://nikhilm.github.io/uvbook/networking.html#process_options */
 static PN aio_process_options_get(Potion *P, PN cl, PN self, PN key) {
   CHECK_AIO_TYPE(self,process_options);
+  char *tmp;
   PN_CHECK_STR(key);
   PN v = potion_obj_get(P, 0, self, key);
   return v ? v :  potion_error(P, potion_str_format(P, "Invalid key %s",
-                                                    PN_STR_PTR(key)),
+                                                    PN_STR_PTR(key, tmp)),
                                0, 0, 0);
 }
 /**\memberof Aio_process_options
@@ -1505,8 +1526,9 @@ static PN aio_process_options_get(Potion *P, PN cl, PN self, PN key) {
    \see http://nikhilm.github.io/uvbook/processes.html#spawning-child-processes */
 static PN aio_process_options_set(Potion *P, PN cl, PN self, PN key, PN value) {
   CHECK_AIO_TYPE(self,process_options);
+  char *tmp;
   PN_CHECK_STR(key);
-  char *k = PN_STR_PTR(key);
+  char *k = PN_STR_PTR(key, tmp);
   if (!strcmp(k, "file")) { PN_CHECK_STR(value); }
   else if (!strcmp(k, "cwd")) { PN_CHECK_STR(value); }
   else if (!strcmp(k, "gid")) { PN_CHECK_INT(value); } //fails on windows!
@@ -1529,7 +1551,7 @@ static PN aio_process_options_set(Potion *P, PN cl, PN self, PN key, PN value) {
   }
   else {
     return potion_error(P, potion_str_format(P, "Invalid key %s",
-					     PN_STR_PTR(key)),
+					     PN_STR_PTR(key, tmp)),
 			0, 0, 0);
   }
   potion_obj_set(P, 0, self, key, value);
@@ -1552,12 +1574,13 @@ static PN aio_spawn(Potion *P, PN cl, PN self, PN options, PN loop) {
   //"gid", "stdio_count", "stdio", "uid"
   v = potion_obj_get(P, cl, options, PN_STR("args"));
   if (v) { //tuple of strings to char**
+    char *tmp;
     int size = 0;
     vPN(Tuple) t = PN_GET_TUPLE(v);
     PN_TUPLE_EACH(t, i, v, { size += PN_STR_LEN(v) + 1; });
     PN args = potion_bytes(P, size);
     PN_TUPLE_EACH(t, i, v, { args = potion_bytes_append(P, 0, args, v); });
-    opts.args = (char **)PN_STR_PTR(args);
+    opts.args = (char **)PN_STR_PTR(args, tmp);
   }
   if (uv_spawn(l, handle, (const uv_process_options_t*) &opts))
     return potion_io_error(P, "aio_spawn");
@@ -1610,10 +1633,11 @@ static PN aio_fs_close(Potion *P, PN cl, PN self, PN fd, PN cb, PN loop) {
 static PN aio_fs_open(Potion *P, PN cl, PN self, PN path, PN flags, PN mode, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
+  char *tmp;
   PN_CHECK_INT(flags);
   PN_CHECK_INT(mode);
   AIO_CB_SET(fs,req);
-  int r = uv_fs_open(l, &req->r, PN_STR_PTR(path), PN_INT(flags), PN_INT(mode), fs_cb);
+  int r = uv_fs_open(l, &req->r, PN_STR_PTR(path, tmp), PN_INT(flags), PN_INT(mode), fs_cb);
   return r ? aio_error(P, "fs open", r) : self;
 }
 /**\memberof Aio_fs
@@ -1629,9 +1653,10 @@ static PN aio_fs_read(Potion *P, PN cl, PN self, PN fd, PN buf, PN nbufs,
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
   aio_buf_t bufs;
+  char *tmp;
   PN_CHECK_INT(fd);
   PN_CHECK_STRB(buf);
-  bufs.base = PN_STR_PTR(buf);
+  bufs.base = PN_STR_PTR(buf, tmp);
   bufs.len = PN_STR_LEN(buf);
   PN_CHECK_STR(nbufs);
   PN_CHECK_INT(offset);
@@ -1650,9 +1675,10 @@ static PN aio_fs_write(Potion *P, PN cl, PN self, PN fd, PN buf, PN nbufs,
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
   aio_buf_t bufs;
+  char *tmp;
   PN_CHECK_INT(fd);
   PN_CHECK_STRB(buf);
-  bufs.base = PN_STR_PTR(buf);
+  bufs.base = PN_STR_PTR(buf, tmp);
   bufs.len = PN_STR_LEN(buf);
   PN_CHECK_INT(offset);
   AIO_CB_SET(fs,req);
@@ -1666,9 +1692,10 @@ static PN aio_fs_write(Potion *P, PN cl, PN self, PN fd, PN buf, PN nbufs,
 static PN aio_fs_unlink(Potion *P, PN cl, PN self, PN path, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
+  char *tmp;
   PN_CHECK_STR(path);
   AIO_CB_SET(fs,req);
-  int r = uv_fs_unlink(l, &req->r, PN_STR_PTR(path), fs_cb);
+  int r = uv_fs_unlink(l, &req->r, PN_STR_PTR(path, tmp), fs_cb);
   return r ? aio_error(P, "fs open", r) : self;
 }
 /**\memberof Aio_fs
@@ -1679,10 +1706,11 @@ static PN aio_fs_unlink(Potion *P, PN cl, PN self, PN path, PN cb, PN loop) {
 static PN aio_fs_mkdir(Potion *P, PN cl, PN self, PN path, PN mode, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
+  char *tmp;
   PN_CHECK_STR(path);
   PN_CHECK_INT(mode);
   AIO_CB_SET(fs,req);
-  int r = uv_fs_mkdir(l, &req->r, PN_STR_PTR(path), PN_INT(mode), fs_cb);
+  int r = uv_fs_mkdir(l, &req->r, PN_STR_PTR(path, tmp), PN_INT(mode), fs_cb);
   return r ? aio_error(P, "fs mkdir", r) : self;
 }
 /**\memberof Aio_fs
@@ -1692,9 +1720,10 @@ static PN aio_fs_mkdir(Potion *P, PN cl, PN self, PN path, PN mode, PN cb, PN lo
 static PN aio_fs_mkdtemp(Potion *P, PN cl, PN self, PN tpl, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
+  char *tmp;
   PN_CHECK_STR(tpl);
   AIO_CB_SET(fs,req);
-  int r = uv_fs_mkdtemp(l, &req->r, PN_STR_PTR(tpl), fs_cb);
+  int r = uv_fs_mkdtemp(l, &req->r, PN_STR_PTR(tpl, tmp), fs_cb);
   return r ? aio_error(P, "fs mkdtemp", r) : self;
 }
 /**\memberof Aio_fs
@@ -1704,9 +1733,10 @@ static PN aio_fs_mkdtemp(Potion *P, PN cl, PN self, PN tpl, PN cb, PN loop) {
 static PN aio_fs_rmdir(Potion *P, PN cl, PN self, PN path, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
+  char *tmp;
   PN_CHECK_STR(path);
   AIO_CB_SET(fs,req);
-  int r = uv_fs_rmdir(l, &req->r, PN_STR_PTR(path), fs_cb);
+  int r = uv_fs_rmdir(l, &req->r, PN_STR_PTR(path, tmp), fs_cb);
   return r ? aio_error(P, "fs rmdir", r) : self;
 }
 /**\memberof Aio_fs
@@ -1717,10 +1747,11 @@ static PN aio_fs_rmdir(Potion *P, PN cl, PN self, PN path, PN cb, PN loop) {
 static PN aio_fs_scandir(Potion *P, PN cl, PN self, PN path, PN flags, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
+  char *tmp;
   PN_CHECK_STR(path);
   PN_CHECK_INT(flags);
   AIO_CB_SET(fs,req);
-  int r = uv_fs_scandir(l, &req->r, PN_STR_PTR(path), PN_INT(flags), fs_cb);
+  int r = uv_fs_scandir(l, &req->r, PN_STR_PTR(path, tmp), PN_INT(flags), fs_cb);
   return r ? aio_error(P, "fs readdir", r) : self;
 }
 /**\memberof Aio_fs
@@ -1743,9 +1774,10 @@ static PN aio_fs_scandir_next(Potion *P, PN cl, PN self) {
 static PN aio_fs_stat(Potion *P, PN cl, PN self, PN path, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
+  char *tmp;
   PN_CHECK_STR(path);
   AIO_CB_SET(fs,req);
-  int r = uv_fs_stat(l, &req->r, PN_STR_PTR(path), fs_cb);
+  int r = uv_fs_stat(l, &req->r, PN_STR_PTR(path, tmp), fs_cb);
   return r ? aio_error(P, "fs stat", r) : self;
 }
 /**\memberof Aio_fs
@@ -1769,10 +1801,11 @@ static PN aio_fs_fstat(Potion *P, PN cl, PN self, PN fd, PN cb, PN loop) {
 static PN aio_fs_rename(Potion *P, PN cl, PN self, PN path, PN newpath, PN cb, PN loop) {
   DEF_AIO_NEW_LOOP(fs);
   aio_fs_t* req = (aio_fs_t*)handle;
+  char *tmp;
   PN_CHECK_STR(path);
   PN_CHECK_STR(newpath);
   AIO_CB_SET(fs,req);
-  int r = uv_fs_rename(l, &req->r, PN_STR_PTR(path), PN_STR_PTR(newpath), fs_cb);
+  int r = uv_fs_rename(l, &req->r, PN_STR_PTR(path, tmp), PN_STR_PTR(newpath, tmp), fs_cb);
   return r ? aio_error(P, "fs rename", r) : self;
 }
 /**\memberof Aio_fs

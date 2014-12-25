@@ -40,23 +40,24 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   struct PNFile * file = PN_ALLOC(PN_TFILE, struct PNFile);
   int fd;
   mode_t mode;
-  if (strcmp(PN_STR_PTR(modestr), "r") == 0) {
+  char *tmp;
+  if (strcmp(PN_STR_PTR(modestr, tmp), "r") == 0) {
     mode = O_RDONLY;
-  } else if (strcmp(PN_STR_PTR(modestr), "r+") == 0) {
+  } else if (strcmp(PN_STR_PTR(modestr, tmp), "r+") == 0) {
     mode = O_RDWR;
-  } else if (strcmp(PN_STR_PTR(modestr), "w") == 0) {
+  } else if (strcmp(PN_STR_PTR(modestr, tmp), "w") == 0) {
     mode = O_WRONLY | O_TRUNC | O_CREAT;
-  } else if (strcmp(PN_STR_PTR(modestr), "w+") == 0) {
+  } else if (strcmp(PN_STR_PTR(modestr, tmp), "w+") == 0) {
     mode = O_RDWR | O_TRUNC | O_CREAT;
-  } else if (strcmp(PN_STR_PTR(modestr), "a") == 0) {
+  } else if (strcmp(PN_STR_PTR(modestr, tmp), "a") == 0) {
     mode = O_WRONLY | O_CREAT | O_APPEND;
-  } else if (strcmp(PN_STR_PTR(modestr), "a+") == 0) {
+  } else if (strcmp(PN_STR_PTR(modestr, tmp), "a+") == 0) {
     mode = O_RDWR | O_CREAT | O_APPEND;
   } else {
     // invalid mode
     return PN_NIL;
   }
-  if ((fd = open(PN_STR_PTR(path), mode, 0755)) == -1)
+  if ((fd = open(PN_STR_PTR(path, tmp), mode, 0755)) == -1)
     return potion_io_error(P, "open");
   file->fd = fd;
   file->path = path;
@@ -132,9 +133,10 @@ PN potion_file_write(Potion *P, PN cl, pn_file self, PN obj) {
       assert(0 && "Invalid primitive type");
     }
   } else {
+    char *tmp;
     switch (PN_TYPE(obj)) {
-      case PN_TSTRING: len = PN_STR_LEN(obj); ptr = PN_STR_PTR(obj); break;
-      case PN_TBYTES:  len = potion_send(obj, PN_STR("length")); ptr = PN_STR_PTR(obj); break;
+      case PN_TSTRING: len = PN_STR_LEN(obj); ptr = PN_STR_PTR(obj, tmp); break;
+      case PN_TBYTES:  len = potion_send(obj, PN_STR("length")); ptr = PN_STR_PTR(obj, tmp); break;
       case PN_TNUMBER: {
         tmp.d = PN_DBL(obj); len = sizeof(tmp); ptr = (char *)&tmp.d;
         break;
@@ -162,10 +164,10 @@ PN potion_file_print(Potion *P, PN cl, pn_file self, PN obj) {
    "string" method. some internal descr */
 PN potion_file_string(Potion *P, PN cl, pn_file self) {
   int fd = self->fd, rv;
-  char *buf;
+  char *buf, *tmp;
   PN str;
   if (self->path != PN_NIL && fd != -1) {
-    rv = asprintf(&buf, "<file %s fd: %d>", PN_STR_PTR(self->path), fd);
+    rv = asprintf(&buf, "<file %s fd: %d>", PN_STR_PTR(self->path, tmp), fd);
   } else if (fd != -1) {
     rv = asprintf(&buf, "<file fd: %d>", fd);
   } else {

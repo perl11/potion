@@ -246,11 +246,12 @@ PN potion_error_string(Potion *P, PN cl, PN self) {
   vPN(Error) e = (struct PNError *)self;
   if (!e || !e->message)
     return potion_str_format(P, "** Error\n");
+  char *tmp;
   if (e->excerpt == PN_NIL)
-    return potion_str_format(P, "** %s\n", PN_STR_PTR(e->message));
+    return potion_str_format(P, "** %s\n", PN_STR_PTR(e->message, tmp));
   return potion_str_format(P, "** %s\n"
-    "** Where: (line %ld, character %ld) %s\n", PN_STR_PTR(e->message),
-    PN_INT(e->line), PN_INT(e->chr), PN_STR_PTR(e->excerpt));
+    "** Where: (line %ld, character %ld) %s\n", PN_STR_PTR(e->message, tmp),
+    PN_INT(e->line), PN_INT(e->chr), PN_STR_PTR(e->excerpt, tmp));
 }
 
 void potion_error_init(Potion *P) {
@@ -264,6 +265,7 @@ PN potion_io_error(Potion *P, const char *msg) {
 }
 
 static inline char *potion_type_name(Potion *P, PN obj) {
+  char *tmp;
   obj = potion_fwd(obj);
   return PN_IS_PTR(obj)
     ? AS_STR(potion_send(PN_VTABLE(PN_TYPE(obj)), PN_string))
@@ -297,12 +299,19 @@ void potion_fatal(char *message) {
 void potion_syntax_error(Potion *P, struct PNSource *t, const char *fmt, ...) {
   va_list args;
   PN out = potion_bytes(P, 36);
+  char *tmp;
   ((struct PNBytes * volatile)out)->len = 0;
   va_start(args, fmt);
   pn_printf(P, out, fmt, args);
   va_end(args);
+<<<<<<< HEAD
   fprintf(stderr, "** Syntax error: %s at \"%s\", line %d\n", PN_STR_PTR(out),
           AS_STR(t->line), t->loc.lineno);
+||||||| parent of 36822f5 (sso: add 2nd tmp paramater to PN_STR_PTR)
+  fprintf(stderr, "** Syntax error %s\n", PN_STR_PTR(out));
+=======
+  fprintf(stderr, "** Syntax error %s\n", PN_STR_PTR(out, tmp));
+>>>>>>> 36822f5 (sso: add 2nd tmp paramater to PN_STR_PTR)
   exit(PN_EXIT_FATAL);
 }
 
@@ -325,8 +334,9 @@ void potion_esp(void **esp) {
 void potion_dump(Potion *P, PN data) {
   PN pd = potion_send(data, PN_string);
   PN pt = potion_send(PN_VTABLE(PN_TYPE(data)), PN_string);
-  char *d = pd ? PN_STR_PTR(pd) : NIL_NAME;
-  char *t = pt ? PN_STR_PTR(pt) : NILKIND_NAME;
+  char *tmp;
+  char *d = pd ? PN_STR_PTR(pd, tmp) : NIL_NAME;
+  char *t = pt ? PN_STR_PTR(pt, tmp) : NILKIND_NAME;
   printf("%s (%s)\n", d, t);
 }
 #define pdump(data) potion_dump(P, data)
