@@ -712,27 +712,27 @@ void potion_object_init(Potion *P) {
  root namespace, the global environment and parent class of all builtins.
  */
 void potion_lobby_init(Potion *P) {
-  potion_init_class_reference(P, potion_str(P, "Lobby"),        P->lobby);
-  potion_init_class_reference(P, potion_str(P, "Mixin"),        PN_VTABLE(PN_TVTABLE));
-  potion_init_class_reference(P, potion_str(P, "Object"),       PN_VTABLE(PN_TOBJECT));
-  potion_init_class_reference(P, potion_str(P, NILKIND_NAME),   PN_VTABLE(PN_TNIL));
-  potion_init_class_reference(P, potion_str(P, "Number"),       PN_VTABLE(PN_TNUMBER));
-  potion_init_class_reference(P, potion_str(P, "Boolean"),      PN_VTABLE(PN_TBOOLEAN));
-  potion_init_class_reference(P, potion_str(P, "String"),       PN_VTABLE(PN_TSTRING));
-  potion_init_class_reference(P, potion_str(P, "Table"),        PN_VTABLE(PN_TTABLE));
-  potion_init_class_reference(P, potion_str(P, "Function"),     PN_VTABLE(PN_TCLOSURE));
-  potion_init_class_reference(P, potion_str(P, "Tuple"),        PN_VTABLE(PN_TTUPLE));
-  potion_init_class_reference(P, potion_str(P, "File"),         PN_VTABLE(PN_TFILE));
-  potion_init_class_reference(P, potion_str(P, "Potion"),       PN_VTABLE(PN_TSTATE));
-  potion_init_class_reference(P, potion_str(P, "Source"),       PN_VTABLE(PN_TSOURCE));
-  potion_init_class_reference(P, potion_str(P, "Bytes"),        PN_VTABLE(PN_TBYTES));
-  potion_init_class_reference(P, potion_str(P, "Compiled"),     PN_VTABLE(PN_TPROTO));
-  potion_init_class_reference(P, potion_str(P, "Ref"),          PN_VTABLE(PN_TWEAK));
-  potion_init_class_reference(P, potion_str(P, "Lick"),         PN_VTABLE(PN_TLICK));
-  potion_init_class_reference(P, potion_str(P, "Error"),        PN_VTABLE(PN_TERROR));
-  potion_init_class_reference(P, potion_str(P, "Continuation"), PN_VTABLE(PN_TCONT));
-  potion_init_class_reference(P, potion_str(P, "Integer"),      PN_VTABLE(PN_TINTEGER));
-  potion_init_class_reference(P, potion_str(P, "Double"),       PN_VTABLE(PN_TDOUBLE));
+  potion_init_class_reference(P, PN_STRN("Lobby", 5),        P->lobby);
+  potion_init_class_reference(P, PN_STRN("Mixin", 5),        PN_VTABLE(PN_TVTABLE));
+  potion_init_class_reference(P, PN_STRN("Object", 6),       PN_VTABLE(PN_TOBJECT));
+  potion_init_class_reference(P, potion_str(P, NILKIND_NAME),PN_VTABLE(PN_TNIL));
+  potion_init_class_reference(P, PN_STRN("Num", 3),          PN_VTABLE(PN_TNUMBER));
+  potion_init_class_reference(P, PN_STRN("Bool", 4),         PN_VTABLE(PN_TBOOLEAN));
+  potion_init_class_reference(P, PN_STRN("Str", 3),          PN_VTABLE(PN_TSTRING));
+  potion_init_class_reference(P, PN_STRN("Table", 5),        PN_VTABLE(PN_TTABLE));
+  potion_init_class_reference(P, PN_STRN("Function", 8),     PN_VTABLE(PN_TCLOSURE));
+  potion_init_class_reference(P, PN_STRN("Tuple", 5),        PN_VTABLE(PN_TTUPLE));
+  potion_init_class_reference(P, PN_STRN("File", 4),         PN_VTABLE(PN_TFILE));
+  potion_init_class_reference(P, PN_STRN("Potion", 5),       PN_VTABLE(PN_TSTATE));
+  potion_init_class_reference(P, PN_STRN("Source", 6),       PN_VTABLE(PN_TSOURCE));
+  potion_init_class_reference(P, PN_STRN("Bytes", 5),        PN_VTABLE(PN_TBYTES));
+  potion_init_class_reference(P, PN_STRN("Compiled", 8),     PN_VTABLE(PN_TPROTO));
+  potion_init_class_reference(P, PN_STRN("Ref", 3),          PN_VTABLE(PN_TWEAK));
+  potion_init_class_reference(P, PN_STRN("Lick", 4),         PN_VTABLE(PN_TLICK));
+  potion_init_class_reference(P, PN_STRN("Error", 5),        PN_VTABLE(PN_TERROR));
+  potion_init_class_reference(P, PN_STRN("Continuation", 12),PN_VTABLE(PN_TCONT));
+  potion_init_class_reference(P, PN_STRN("Int", 3),          PN_VTABLE(PN_TINTEGER));
+  potion_init_class_reference(P, PN_STRN("Dbl", 3),          PN_VTABLE(PN_TDOUBLE));
 
   P->call = P->callset = PN_FUNC(potion_no_call, 0);
   

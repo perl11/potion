@@ -25,38 +25,36 @@
 
 void potion_add_str(Potion *P, PN s) {
   int ret;
-  if (PN_IS_SSTR(s))
-    kh_put(sstr, P->strings, s, &ret);
-  else
+  if (PN_IS_SSTR(s)) {
+    kh_put(sstr, P->sstrings, s, &ret);
+    PN_QUICK_FWD(struct PNTable *, P->sstrings);
+  }
+  else {
     kh_put(str, P->strings, s, &ret);
-  PN_QUICK_FWD(struct PNTable *, P->strings);
+    PN_QUICK_FWD(struct PNTable *, P->strings);
+  }
 }
 
 void potion_add_sstr(Potion *P, PN s) {
   int ret;
-  kh_put(sstr, P->strings, s, &ret);
-  PN_QUICK_FWD(struct PNTable *, P->strings);
+  kh_put(sstr, P->sstrings, s, &ret);
+  PN_QUICK_FWD(struct PNTable *, P->sstrings);
 }
 
 PN potion_lookup_str(Potion *P, const char *str) {
-  vPN(Table) t = P->strings;
   const size_t len = strlen(str);
-  unsigned k;
   if (len <= SSTR_LEN) {
-    k = kh_get(sstr, t, (_PN)str);
+    vPN(Table) t = P->sstrings;
+    const unsigned k = kh_get(sstr, t, (_PN)str);
     if (k != kh_end(t)) {
       PN s = kh_key(sstr, t, k);
-      if (s) {
-#ifdef PN_LITTLE_ENDIAN
-        return (s << 8) | PN_FSSTRING;
-#else
-        return PN_FSSTRING | (s >> 8);
-#endif
-      }
+      if (s)
+        return (s << 16) | PN_FSSTRING;
     }
   }
   else {
-    k = kh_get(str, t, str);
+    vPN(Table) t = P->strings;
+    const unsigned k = kh_get(str, t, str);
     if (k != kh_end(t))
       return kh_key(str, t, k);
   }
@@ -64,36 +62,22 @@ PN potion_lookup_str(Potion *P, const char *str) {
 }
 
 PN potion_str(Potion *P, const char *str) {
-  PN val = potion_lookup_str(P, str);
-  if (val == PN_NIL) {
-    size_t len = strlen(str);
-    if (len <= SSTR_LEN) {
-#ifdef PN_LITTLE_ENDIAN
-      val = (*(long*)str << 8) | PN_FSSTRING;
-#else
-      val = PN_FSSTRING | (*(long*)str >> 8);
-#endif
-      potion_add_sstr(P, val);
-    } else {
-      vPN(String) s = PN_ALLOC_N(PN_TSTRING, struct PNString, len + 1);
-      s->len = (PN_SIZE)len;
-      PN_MEMCPY_N(s->chars, str, char, len);
-      s->chars[len] = '\0';
-      potion_add_str(P, (PN)s);
-      val = (PN)s;
-    }
-  }
-  return val;
+  return potion_str2(P, str, strlen(str));
 }
 
-PN potion_str2(Potion *P, char *str, size_t len) {
+PN potion_str2(Potion *P, const char *str, size_t len) {
   PN exist = PN_NIL;
   if (len <= SSTR_LEN) {
+    register PN s = *(long*)str;
+    register int b = (PN_SIZE_T - len) * 8; /* how many bits to delete at the end */
 #ifdef PN_LITTLE_ENDIAN
-    PN s = (*(long*)str << 8) | PN_FSSTRING;
-#else
-    PN s = PN_FSSTRING | (*(long*)str >> 8);
+    s = wordswap(s);
 #endif
+    /* unfortunately we need to delete the slack at the end for fast comparisons */
+    /* i.e. call => 0x63616c6c00656c7b, where 656c7b is random slack */
+    s >>= b; /* fastest is via shift right and backshift left */
+    s <<= b;
+    s |= PN_FSSTRING;
     exist = potion_lookup_str(P, str);
     if (exist == PN_NIL) {
       potion_add_sstr(P, s);
@@ -119,11 +103,7 @@ PN potion_strcat(Potion *P, char *str, char *str2) {
   int len  = strlen(str);
   int len2 = strlen(str2);
   if (100 + len + len2 <= SSTR_LEN) {
-#ifdef PN_LITTLE_ENDIAN
-    PN s = (*(long*)str << 8) | (*(long*)str2 << (len-8)) | PN_FSSTRING; /* ?? */
-#else
-    PN s = PN_FSSTRING | (*(long*)str >> 8) | (*(long*)str2 >> 8+(len/8));
-#endif
+    PN s = (*(long*)str << 16) | (*(long*)str2 << (len-8)) | PN_FSSTRING; /* ?? */
     exist = potion_lookup_str(P, (char *)s);
     if (exist == PN_NIL) {
       potion_add_sstr(P, s);
@@ -164,11 +144,7 @@ PN potion_str_format(Potion *P, const char *format, ...) {
   else {
     PN s1 = 0;
     vsnprintf((char*)s1, len + 1, format, args);
-#ifdef PN_LITTLE_ENDIAN
-    s1 = (s1 << 8) | PN_FSSTRING;
-#else
-    s1 = PN_FSSTRING | (s1 >> 8);
-#endif
+    s1 = (s1 << 16) | PN_FSSTRING;
     va_end(args);
     return s1;
   }
@@ -564,7 +540,8 @@ static PN potion_str_cmp(Potion *P, PN cl, PN self, PN str) {
 }
 
 void potion_str_hash_init(Potion *P) {
-  P->strings = PN_CALLOC_N(PN_TSTRINGS, struct PNTable, 0);
+  P->strings  = PN_CALLOC_N(PN_TSTRINGS, struct PNTable, 0);
+  P->sstrings = PN_CALLOC_N(PN_TSTRINGS, struct PNTable, 0);
 }
 
 void potion_str_init(Potion *P) {

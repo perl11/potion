@@ -58,7 +58,7 @@ static const double __kh_HASH_UPPER = 0.77;
       h->size = h->n_occupied = 0;					\
     }									\
   }									\
-  static inline khint_t kh_get_##name(Potion *P, kh_t *h, khkey_t2 key) \
+  static inline khint_t xxkh_get_##name(Potion *P, kh_t *h, khkey_t2 key) \
   {									\
     if (h->n_buckets) {							\
       khint_t inc, k, i, last, mask;					\
