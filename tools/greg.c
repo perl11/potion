@@ -185,8 +185,8 @@ YY_LOCAL(int) yyrefill(GREG *G)
 {
   int yyn;
   while (G->buflen - G->pos < 512) {
-    G->buflen *= 2;
-    G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);
+      G->buflen *= 2;
+      G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);
   }
   YY_INPUT((G->buf + G->pos), yyn, (G->buflen - G->pos));
   if (!yyn) return 0;
