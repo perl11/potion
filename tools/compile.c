@@ -619,11 +619,10 @@ typedef struct _GREG {\n\
 YY_LOCAL(int) yyrefill(GREG *G)\n\
 {\n\
   int yyn;\n\
-  while (G->buflen - G->pos < 512)\n\
-    {\n\
-      G->buflen *= 2;\n\
-      G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);\n\
-    }\n\
+  while (G->buflen - G->pos < 512) {\n\
+    G->buflen *= 2;\n\
+    G->buf= (char*)YY_REALLOC(G->buf, G->buflen, G->data);\n\
+  }\n\
   YY_INPUT((G->buf + G->pos), yyn, (G->buflen - G->pos));\n\
   if (!yyn) return 0;\n\
   G->limit += yyn;\n\
@@ -663,23 +662,20 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
 {\n\
   fputs(message, stderr);\n\
   if (G->text[0]) fprintf(stderr, \" near token '%s'\", G->text);\n\
-  if (G->pos < G->limit || !feof(G->input))\n\
-    {\n\
+  if (G->pos < G->limit || !feof(G->input)) {\n\
       G->buf[G->limit]= '\\0';\n\
       fprintf(stderr, \" before text \\\"\");\n\
-      while (G->pos < G->limit)\n\
-	{\n\
-	  if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
-	  fputc(G->buf[G->pos++], stderr);\n\
-	}\n\
-      if (G->pos == G->limit)\n\
-        {\n\
-	  int c;\n\
-	  while (EOF != (c= fgetc(G->input)) && '\\n' != c && '\\r' != c)\n\
-	    fputc(c, stderr);\n\
-	}\n\
+      while (G->pos < G->limit) {\n\
+	if ('\\n' == G->buf[G->pos] || '\\r' == G->buf[G->pos]) break;\n\
+	fputc(G->buf[G->pos++], stderr);\n\
+      }\n\
+      if (G->pos == G->limit) {\n\
+	int c;\n\
+	while (EOF != (c= fgetc(G->input)) && '\\n' != c && '\\r' != c)\n\
+	  fputc(c, stderr);\n\
+      }\n\
       fputc('\\\"', stderr);\n\
-    }\n\
+  }\n\
   fprintf(stderr, \" at %s:%d\\n\", G->filename, G->lineno);\n\
   exit(1);\n\
 }\n\
@@ -687,21 +683,20 @@ YY_LOCAL(void) yyerror(struct _GREG *G, char *message)\n\
 YY_LOCAL(int) yymatchChar(GREG *G, int c)\n\
 {\n\
   if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
-  if ((unsigned char)G->buf[G->pos] == c)\n\
-    {\n\
+  if ((unsigned char)G->buf[G->pos] == c) {\n\
 #ifdef YY_DEBUG\n\
-      if (c) {\n\
-        if (c<32) { yyprintfv((stderr, \"  ok   yymatchChar '0x%x'\", c));}\n\
-        else      { yyprintfv((stderr, \"  ok   yymatchChar '%c'\", c));}\n\
-        yyprintfvGcontext;\n\
-        yyprintfv((stderr, \"\\n\"));\n\
-      } else {\n\
-        yyprintfv((stderr, \"  ok   yymatchChar '0x0' @ \\\"\\\"\\n\"));\n\
-      }\n\
-#endif\n\
-      ++G->pos;\n\
-      return 1;\n\
+    if (c) {\n\
+      if (c<32) { yyprintfv((stderr, \"  ok   yymatchChar '0x%x'\", c));}\n\
+      else      { yyprintfv((stderr, \"  ok   yymatchChar '%c'\", c));}\n\
+      yyprintfvGcontext;\n\
+      yyprintfv((stderr, \"\\n\"));\n\
+    } else {\n\
+      yyprintfv((stderr, \"  ok   yymatchChar '0x0' @ \\\"\\\"\\n\"));\n\
     }\n\
+#endif\n\
+    ++G->pos;\n\
+    return 1;\n\
+  }\n\
   if (c<32) { yyprintfv((stderr, \"  fail yymatchChar '0x%x'\", c));}\n\
   else      { yyprintfv((stderr, \"  fail yymatchChar '%c'\", c));}\n\
   yyprintfvGcontext;\n\
@@ -712,17 +707,15 @@ YY_LOCAL(int) yymatchChar(GREG *G, int c)\n\
 YY_LOCAL(int) yymatchString(GREG *G, const char *s)\n\
 {\n\
   int yysav= G->pos;\n\
-  while (*s)\n\
-    {\n\
-      if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
-      if (G->buf[G->pos] != *s)\n\
-        {\n\
-          G->pos= yysav;\n\
-          return 0;\n\
-        }\n\
-      ++s;\n\
-      ++G->pos;\n\
+  while (*s) {\n\
+    if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
+    if (G->buf[G->pos] != *s) {\n\
+      G->pos= yysav;\n\
+      return 0;\n\
     }\n\
+    ++s;\n\
+    ++G->pos;\n\
+  }\n\
   return 1;\n\
 }\n\
 \n\
@@ -731,20 +724,19 @@ YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, char *cclass)\n\
   int c;\n\
   if (G->pos >= G->limit && !yyrefill(G)) return 0;\n\
   c= (unsigned char)G->buf[G->pos];\n\
-  if (bits[c >> 3] & (1 << (c & 7)))\n\
-    {\n\
+  if (bits[c >> 3] & (1 << (c & 7))) {\n\
 #ifdef YY_DEBUG\n\
-      if (G->buf[G->pos]) {\n\
-        yyprintfv((stderr, \"  ok   yymatchClass [%s]\", cclass));\n\
-        yyprintfvGcontext;\n\
-        yyprintfv((stderr, \"\\n\"));\n\
-      } else {\n\
-        yyprintfv((stderr, \"  ok   yymatchClass [%s] @ \\\"\\\"\\n\", cclass));\n\
-      }\n\
-#endif\n\
-      ++G->pos;\n\
-      return 1;\n\
+    if (G->buf[G->pos]) {\n\
+      yyprintfv((stderr, \"  ok   yymatchClass [%s]\", cclass));\n\
+      yyprintfvGcontext;\n\
+      yyprintfv((stderr, \"\\n\"));\n\
+    } else {\n\
+      yyprintfv((stderr, \"  ok   yymatchClass [%s] @ \\\"\\\"\\n\", cclass));\n\
     }\n\
+#endif\n\
+    ++G->pos;\n\
+    return 1;\n\
+  }\n\
   yyprintfv((stderr, \"  fail yymatchClass [%s]\", cclass));\n\
   yyprintfvGcontext;\n\
   yyprintfv((stderr, \"\\n\"));\n\
@@ -753,11 +745,10 @@ YY_LOCAL(int) yymatchClass(GREG *G, unsigned char *bits, char *cclass)\n\
 \n\
 YY_LOCAL(void) yyDo(GREG *G, yyaction action, int begin, int end, const char *name)\n\
 {\n\
-  while (G->thunkpos >= G->thunkslen)\n\
-    {\n\
-      G->thunkslen *= 2;\n\
-      G->thunks= (yythunk*)YY_REALLOC(G->thunks, sizeof(yythunk) * G->thunkslen, G->data);\n\
-    }\n\
+  while (G->thunkpos >= G->thunkslen) {\n\
+    G->thunkslen *= 2;\n\
+    G->thunks= (yythunk*)YY_REALLOC(G->thunks, sizeof(yythunk) * G->thunkslen, G->data);\n\
+  }\n\
   G->thunks[G->thunkpos].begin=  begin;\n\
   G->thunks[G->thunkpos].end=    end;\n\
   G->thunks[G->thunkpos].action= action;\n\
@@ -770,15 +761,13 @@ YY_LOCAL(int) yyText(GREG *G, int begin, int end)\n\
   int yyleng= end - begin;\n\
   if (yyleng <= 0)\n\
     yyleng= 0;\n\
-  else\n\
-    {\n\
-      while (G->textlen < (yyleng + 1))\n\
-        {\n\
-          G->textlen *= 2;\n\
-          G->text= (char*)YY_REALLOC(G->text, G->textlen, G->data);\n\
-        }\n\
-      memcpy(G->text, G->buf + begin, yyleng);\n\
+  else {\n\
+    while (G->textlen < (yyleng + 1)) {\n\
+      G->textlen *= 2;\n\
+      G->text= (char*)YY_REALLOC(G->text, G->textlen, G->data);\n\
     }\n\
+    memcpy(G->text, G->buf + begin, yyleng);\n\
+  }\n\
   G->text[yyleng]= '\\0';\n\
   return yyleng;\n\
 }\n\
@@ -786,24 +775,22 @@ YY_LOCAL(int) yyText(GREG *G, int begin, int end)\n\
 YY_LOCAL(void) yyDone(GREG *G)\n\
 {\n\
   int pos;\n\
-  for (pos= 0;  pos < G->thunkpos;  ++pos)\n\
-    {\n\
-      yythunk *thunk= &G->thunks[pos];\n\
-      int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;\n\
-      yyprintfv((stderr, \"DO [%d] %s %d\", pos, thunk->name, thunk->begin));\n\
-      yyprintfvTcontext(G->text);\n\
-      yyprintfv((stderr, \"\\n\"));\n\
-      thunk->action(G, G->text, yyleng, thunk, G->data);\n\
-    }\n\
+  for (pos= 0;  pos < G->thunkpos;  ++pos) {\n\
+    yythunk *thunk= &G->thunks[pos];\n\
+    int yyleng= thunk->end ? yyText(G, thunk->begin, thunk->end) : thunk->begin;\n\
+    yyprintfv((stderr, \"DO [%d] %s %d\", pos, thunk->name, thunk->begin));\n\
+    yyprintfvTcontext(G->text);\n\
+    yyprintfv((stderr, \"\\n\"));\n\
+    thunk->action(G, G->text, yyleng, thunk, G->data);\n\
+  }\n\
   G->thunkpos= 0;\n\
 }\n\
 \n\
 YY_LOCAL(void) yyCommit(GREG *G)\n\
 {\n\
-  if ((G->limit -= G->pos))\n\
-    {\n\
-      memmove(G->buf, G->buf + G->pos, G->limit);\n\
-    }\n\
+  if ((G->limit -= G->pos)) {\n\
+    memmove(G->buf, G->buf + G->pos, G->limit);\n\
+  }\n\
   G->offset += G->pos;\n\
   G->begin -= G->pos;\n\
   G->end -= G->pos;\n\
@@ -812,16 +799,14 @@ YY_LOCAL(void) yyCommit(GREG *G)\n\
 \n\
 YY_LOCAL(int) yyAccept(GREG *G, int tp0)\n\
 {\n\
-  if (tp0)\n\
-    {\n\
-      fprintf(stderr, \"accept denied at %d\\n\", tp0);\n\
-      return 0;\n\
-    }\n\
-  else\n\
-    {\n\
-      yyDone(G);\n\
-      yyCommit(G);\n\
-    }\n\
+  if (tp0) {\n\
+    fprintf(stderr, \"accept denied at %d\\n\", tp0);\n\
+    return 0;\n\
+  }\n\
+  else {\n\
+    yyDone(G);\n\
+    yyCommit(G);\n\
+  }\n\
   return 1;\n\
 }\n\
 \n\
