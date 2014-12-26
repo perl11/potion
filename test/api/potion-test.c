@@ -3,7 +3,7 @@
 // tests of the Potion C api
 //
 // (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2013 perl11 org
+// (c) 2013-2014 perl11 org
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,34 +90,35 @@ void potion_test_tuple(CuTest *T) {
 
 void potion_test_sig(CuTest *T) {
   // test the simple parser entry point yy_sig, not the compiler transformation potion_sig_compile
+  char *tmp;
   PN sig = potion_sig(P, "num1=N,num2=N");
   CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
   CuAssertIntEquals(T, "len=2", 2, PN_INT(PN_TUPLE_LEN(sig)));
   CuAssertIntEquals(T, "arity=2", 2, potion_sig_arity(P, sig));
   CuAssertStrEquals(T, "num1=N,num2=N", //roundtrip
-		    PN_STR_PTR(potion_sig_string(P,0,sig)));
+		    PN_STR_PTR(potion_sig_string(P,0,sig), tmp));
   CuAssertStrEquals(T, "(num1, 78, num2, 78)",
-		    PN_STR_PTR(potion_send(sig, PN_string)));
+		    PN_STR_PTR(potion_send(sig, PN_string), tmp));
   CuAssertStrEquals(T, "num1",
-		    PN_STR_PTR(potion_send(PN_TUPLE_AT(sig,0), PN_string)));
+		    PN_STR_PTR(potion_send(PN_TUPLE_AT(sig,0), PN_string), tmp));
   CuAssertIntEquals(T, "num1=N", 'N',
 		    PN_INT(PN_TUPLE_AT(sig,1)));
   CuAssertStrEquals(T, "num2",
-		    PN_STR_PTR(potion_send(PN_TUPLE_AT(sig,2), PN_string)));
+		    PN_STR_PTR(potion_send(PN_TUPLE_AT(sig,2), PN_string), tmp));
   CuAssertIntEquals(T, "num2=N", 'N',
 		    PN_INT(PN_TUPLE_AT(sig,3)));
 
   sig = potion_sig(P, "x=N|y=N");
   CuAssertStrEquals(T, "(x, 78, 124, y, 78)",
-		    PN_STR_PTR(potion_send(sig, PN_string)));
+		    PN_STR_PTR(potion_send(sig, PN_string), tmp));
   CuAssertIntEquals(T, "arity=2", 2, potion_sig_arity(P, sig));
 
   sig = potion_sig(P, "x=N,y=N|r=N");
   CuAssert(T, "signature isn't a tuple", PN_IS_TUPLE(sig));
   CuAssertStrEquals(T, "(x, 78, y, 78, 124, r, 78)",
-		    PN_STR_PTR(potion_send(sig, PN_string)));
+		    PN_STR_PTR(potion_send(sig, PN_string), tmp));
   CuAssertStrEquals(T, "x=N,y=N|r=N",
-		    PN_STR_PTR(potion_sig_string(P,0,sig)));
+		    PN_STR_PTR(potion_sig_string(P,0,sig), tmp));
   CuAssertIntEquals(T, "arity=3", 3, potion_sig_arity(P, sig));
   {
     // roundtrips
@@ -131,7 +132,7 @@ void potion_test_sig(CuTest *T) {
     int i;
     for (i=0; i< size; i++) {
       CuAssertStrEquals(T, sigs[i],
-			PN_STR_PTR(potion_sig_string(P,0,potion_sig(P, sigs[i]))));
+			PN_STR_PTR(potion_sig_string(P,0,potion_sig(P, sigs[i])), tmp));
     }
   }
   CuAssertIntEquals(T, "arity nil", 0, potion_sig_arity(P, PN_NIL));
@@ -145,15 +146,16 @@ void potion_test_sig(CuTest *T) {
 void potion_test_proto(CuTest *T) {
   // test compiler transformation potion_sig_compile, not just yy_sig
   PN p2;
+  char *tmp;
   vPN(Closure) f2;
   vPN(Closure) f1 = PN_CLOSURE(potion_eval(P, potion_str(P, "(x,y):x+y.")));
   CuAssertIntEquals(T, "arity f1", 2, potion_sig_arity(P, f1->sig));
-  CuAssertStrEquals(T, "x,y", PN_STR_PTR(potion_sig_string(P,0,f1->sig)));
+  CuAssertStrEquals(T, "x,y", PN_STR_PTR(potion_sig_string(P,0,f1->sig), tmp));
 
   p2 = PN_FUNC(PN_CLOSURE_F(f1), "x=N,y=N");
   f2 = PN_CLOSURE(p2);
   CuAssertIntEquals(T, "sig arity f2", 2, potion_sig_arity(P, f2->sig));
-  CuAssertStrEquals(T, "x=N,y=N", PN_STR_PTR(potion_sig_string(P,0,f2->sig)));
+  CuAssertStrEquals(T, "x=N,y=N", PN_STR_PTR(potion_sig_string(P,0,f2->sig), tmp));
   CuAssertIntEquals(T, "cl arity f2", 2, PN_INT(potion_closure_arity(P,0,p2)));
 }
 
@@ -219,6 +221,7 @@ void potion_test_eval(CuTest *T) {
 void potion_test_allocated(CuTest *T) {
   struct PNMemory *M = P->mem;
   void *prev = NULL;
+  char *tmp;
   void *scanptr = (void *)((char *)M->birth_lo + PN_ALIGN(sizeof(struct PNMemory), 8));
   while ((PN)scanptr < (PN)M->birth_cur) {
     if (((struct PNFwd *)scanptr)->fwd != POTION_FWD && ((struct PNFwd *)scanptr)->fwd != POTION_COPIED) {

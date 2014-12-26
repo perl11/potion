@@ -4,7 +4,8 @@
 #include "linenoise.h"
 
 PN pn_readline(Potion *P, PN cl, PN self, PN start) {
-  char *line = linenoise(PN_STR_PTR(start));
+  char *tmp;
+  char *line = linenoise(PN_STR_PTR(start, tmp));
   PN r;
   if (line == NULL) return PN_NIL;
 

@@ -144,7 +144,7 @@ struct PNVtable;
 //      PN_TSSTRING     // 0xaaaaaaaa aaaa000A vs 0xaaaa000A (6 or 2 chars) LE 0b1010 0xA
                         // 0xA0aaaaaa aaaaaa00 vs 0xA0aaaa00 (6 or 2 chars) BE
 #define PN_PRIMITIVE    7
-#define PN_REF_MASK     ~15
+#define PN_REF_MASK     ~7
 #define PN_NONE         ((PN_SIZE)-1)
 #define POTION_FWD      0xFFFFFFFE
 #define POTION_COPIED   0xFFFFFFFF
@@ -154,17 +154,17 @@ struct PNVtable;
 
 #define PN_FINTEGER     1
 #define PN_FBOOLEAN     2   // 0b0010 or 0b0110
-#define PN_FSSTRING     0xa // 0b1010
+#define PN_FSSTRING     0xA // 0b1010
 #define PN_TEST(v)      ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 //Beware: TEST1(PN_NUM(0)) vs TEST(0<1) i.e. test1(1) vs test(1)
 #define PN_TEST1(v)     ((PN)(v) != PN_FALSE && (PN)(v) != PN_NIL)
 ///\class PNBoolean
 /// From cmp (x<y) to immediate object (no struct) 0x...2. PN_TRUE (0x6) or PN_FALSE (0x2)
 #define PN_BOOL(v)      (PN_TEST(v) ? PN_TRUE : PN_FALSE)
-#define PN_IS_PTR(v)    (!PN_IS_INT(v) && (char)((PN)(v) & PN_REF_MASK))
+#define PN_IS_PTR(v)    (!PN_IS_INT(v) && (short)((PN)(v) & PN_REF_MASK) && !PN_IS_SSTR(v))
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   (((PN)(v) == PN_TRUE) || ((PN)(v) == PN_FALSE)) // TODO (((PN)(v) & 0xe) == 0x2 or 0xa)
-#define PN_IS_SSTR(v)   ((PN)(v) & PN_FSSTRING)
+#define PN_IS_SSTR(v)   (((PN)(v) & 0xffff) == PN_FSSTRING)
 #define PN_IS_INT(v)    ((PN)(v) & PN_FINTEGER)
 #define PN_IS_DBL(v)    (PN_IS_PTR(v) && (PN_TYPE(v) == PN_TNUMBER || PN_TYPE(v) == PN_TDOUBLE))
 #define PN_IS_NUM(v)    (PN_IS_INT(v) || PN_IS_DBL(v))
