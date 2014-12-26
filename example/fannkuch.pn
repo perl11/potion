@@ -15,7 +15,8 @@ fannkuch = (n):
     #  perml join print, "\n" print
     #  check++.
     while (r != 1):
-      count (r-1) = r
+      x = r - 1
+      count(x) = r
       r--.
 
     if (perml (0) != 0 and perml (m) != m):
