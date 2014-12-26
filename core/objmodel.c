@@ -84,7 +84,7 @@ int potion_sig_arity(Potion *P, PN sig) {
   if (PN_IS_TUPLE(sig)) {
     //return PN_TUPLE_LEN(PN_CLOSURE(closure)->sig) / 2;
     int count = 0;
-    struct PNTuple * volatile t = (struct PNTuple *)potion_fwd(sig);
+    vPN(Tuple) t = (struct PNTuple *)potion_fwd(sig);
     if (t->len != 0) {
       PN_SIZE i;
       for (i = 0; i < t->len; i++) {
@@ -353,8 +353,8 @@ PN potion_def_method(Potion *P, PN closure, PN self, PN key, PN method) {
   PN_QUICK_FWD(struct PNTable *, vt->methods);
   PN_TOUCH(vt->methods);
 
-  if (!PN_IS_CLOSURE(method)) {
-    if (PN_IS_PROTO(method)) {
+  if (!PN_IS_PTR(method) || !PN_IS_CLOSURE(method)) {
+    if (PN_IS_PTR(method) && PN_IS_PROTO(method)) {
       cl = potion_closure_new(P, (PN_F)potion_proto_method, PN_PROTO(method)->sig, 1);
       PN_PROTO(method)->name = key;
     }
@@ -496,15 +496,15 @@ PN potion_ref_string(Potion *P, PN cl, PN self, PN len) {
 /**\memberof PNObject
  "string" method
  \return PNString representation of self: \<name ptr> if named or \<object> */
-PN potion_object_string(Potion *P, PN cl, vPN(Object) self) {
-  struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(self->vt);
+PN potion_object_string(Potion *P, PN cl, PN self) {
+  vPN(Object) obj = potion_fwd(self);
+  struct PNVtable *vt = (struct PNVtable *)PN_VTABLE(obj->vt);
   char *tmp;
   if (vt->name != PN_NIL) {
     PN str = potion_byte_str2(P, NULL, 0);
     pn_printf(P, str, "<%s %lx>", PN_STR_PTR(vt->name, tmp), (PN)self);
     return potion_send(str, PN_string);
   }
-  
   return potion_str(P, "<object>");
 }
 

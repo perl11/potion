@@ -49,8 +49,13 @@
 # define YYDEBUG_VERBOSE DEBUG_PARSE_VERBOSE
 # define YY_SET(G, text, count, thunk, P) ({ \
   char *tmp; \
-  yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy, \
-    PN_IS_INT(yy)||PN_IS_PTR(yy) ? PN_STR_PTR(potion_send(yy, PN_string), tmp) : "")); \
+  if (yydebug & YYDEBUG_PARSE) { \
+      if (PN_IS_INT(yy)) \
+          yyprintf((stderr, "%s %d %p:<%d>\n", thunk->name, count,(int)PN_INT(yy))); \
+      else \
+          yyprintf((stderr, "%s %d %p:<%s>\n", thunk->name, count,(void*)yy, \
+                    PN_IS_PTR(yy) ? PN_STR_PTR(potion_send(yy, PN_string), tmp) : "")); \
+  } \
   G->val[count]= yy;})
 #endif
 
@@ -362,7 +367,7 @@ arg-set = arg (comma - arg)*
 arg-name = < utff utfw* > -    { $$ = PN_STRN(yytext, yyleng) }
 # not with :=, const '-' would make sense, \ and * not
 arg-modifier = < ('-' | '\\' | '*' ) >  { $$ = PN_NUM(yytext[0]); }
-# for FFIs, map to potion and C types. See potion_type_char()
+# signature types: for FFIs, map to potion and C types. See potion_type_char()
 arg-type = < [NBIDS&oTaubnsFPlkftxrcdm] > - { $$ = PN_NUM(yytext[0]) }
 arg = m:arg-modifier n:arg-name assign t:arg-type
                         { SRC_TPL3(n,t,m) }
@@ -442,11 +447,11 @@ PN potion_parse(Potion *P, PN code, char *filename) {
     arity: number of any non-default-value strings
  */
 PN potion_sig(Potion *P, char *fmt) {
-  PN out = PN_NIL;
   if (fmt == NULL) return PN_NIL; // no signature, arg check off
   if (fmt[0] == '\0') return PN_FALSE; // empty signature, no args
 
   GREG *G = YY_NAME(parse_new)(P);
+  PN out;
   int oldyypos = P->yypos;
   PN oldinput = P->input;
   PN oldsource = P->source;
