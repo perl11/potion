@@ -51,7 +51,7 @@ static PN potion_bool_cmp(Potion *P, PN cl, PN self, PN value) {
   case PN_TBOOLEAN:
     return self < value ? -1 : self == value ? 0 : 1;
   case PN_TNUMBER:
-    return potion_send(PN_NUM(PN_TEST1(self)), PN_cmp, value);
+    return potion_send(PN_NUM(PN_TEST(self)), PN_cmp, value);
   case PN_TNIL:
   case PN_TSTRING: // false < ".." < true
   default:
@@ -63,14 +63,14 @@ static PN potion_bool_cmp(Potion *P, PN cl, PN self, PN value) {
 /// "number" method
 ///\return 0 or 1
 static PN potion_bool_number(Potion *P, PN closure, PN self) {
-  return PN_NUM(PN_TEST1(self));
+  return PN_NUM(PN_TEST(self));
 }
 
 ///\memberof PNBoolean
 /// "string" method
 ///\return "true" or "false" as PNString
 static PN potion_bool_string(Potion *P, PN closure, PN self) {
-  if (PN_TEST1(self)) return potion_str(P, "true");
+  if (PN_TEST(self)) return potion_str(P, "true");
   return potion_str(P, "false");
 }
 

@@ -729,11 +729,11 @@ reentry:
       CASE(JMP,
 	   pos += op.a)
       CASE(TEST,
-	   reg[op.a] = PN_BOOL(PN_TEST1(reg[op.a])))
+	   reg[op.a] = PN_BOOL(PN_TEST(reg[op.a])))
       CASE(TESTJMP,
-	   if (PN_TEST1(reg[op.a])) pos += op.b)
+	   if (PN_TEST(reg[op.a])) pos += op.b)
       CASE(NOTJMP,
-	   if (!PN_TEST1(reg[op.a])) pos += op.b)
+	   if (!PN_TEST(reg[op.a])) pos += op.b)
       CASE(NAMED,  {
         int x = potion_sig_find(P, reg[op.a], reg[op.b - 1]);
         if (x >= 0) reg[op.a + x + 2] = reg[op.b];
