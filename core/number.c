@@ -33,7 +33,7 @@ PN potion_strtod(Potion *P, char *str, int len) {
 PN potion_num_pow(Potion *P, PN cl, PN self, PN sup) {
   double x = PN_DBL(self), y = PN_DBL(sup);
   double z = pow(x, y);
-  if (PN_IS_INT(self) && PN_IS_INT(sup) && abs(z) < INT_MAX)
+  if (PN_IS_INT(self) && PN_IS_INT(sup) && fabs(z) < INT_MAX)
     return PN_NUM((int)z);
   return potion_double(P, z);
 }
@@ -305,7 +305,7 @@ static PN potion_int_to(Potion *P, PN cl, PN self, PN end, PN block) {
     potion_fatal("block argument for to is not a closure");
   for (i = j; i != k + s; i += s)
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
-  return PN_NUM(abs(i - j));
+  return PN_NUM(labs(i - j));
 }
 /**\memberof PNNumber
   from "step" end step: block. call block on each number from self to end
@@ -324,7 +324,7 @@ static PN potion_int_step(Potion *P, PN cl, PN self, PN end, PN step, PN block) 
   for (i = PN_INT(self); i <= j; i += k) {
     PN_CLOSURE(block)->method(P, block, P->lobby, PN_NUM(i));
   }
-  return PN_NUM(abs(i - j) / k);
+  return PN_NUM(labs(i - j) / k);
 }
 
 /**\memberof PNNumber
