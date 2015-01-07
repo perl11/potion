@@ -362,7 +362,7 @@ PN potion_tuple_slice(Potion *P, PN cl, PN self, PN start, PN end) {
     DBG_CHECK_INT(end);
     if (e < 0) e = t1->len + e;
     l = e - i;
-    if (l < 0) { i = e; l = abs(l) + 1; }
+    if (l < 0) { i = e; l = labs(l) + 1; }
     else l++;
     if (l > t1->len) l = t1->len; // permit overshoots
   }
