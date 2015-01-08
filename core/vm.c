@@ -383,6 +383,11 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
     PN_CHECK_NUM(reg[op.b]);                                      \
     reg[op.a] = PN_BOOL(PN_DBL(reg[op.a]) cmp PN_DBL(reg[op.b])); \
   }
+#define PN_VM_CMP(cmp)                                            \
+  if (PN_IS_DBL(reg[op.a]) && PN_IS_DBL(reg[op.b]))               \
+    reg[op.a] = PN_BOOL(PN_DBL(reg[op.a]) cmp PN_DBL(reg[op.b])); \
+  else                                                            \
+    reg[op.a] = PN_BOOL(reg[op.a] cmp reg[op.b]);                 \
 
 static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
   if (numargs > 0) {  //allow fun() to return the closure
@@ -706,10 +711,10 @@ reentry:
       CASE(CMP, reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a])))
       CASE(NEQ,
            DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   PN_VM_NUMCMP(!=))
+	   PN_VM_CMP(!=))
       CASE(EQ,
            DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   PN_VM_NUMCMP(==))
+	   PN_VM_CMP(==))
       CASE(LT,
            DBG_t("\t; %s<%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
 	   PN_VM_NUMCMP(<))

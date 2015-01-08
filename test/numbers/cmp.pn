@@ -34,7 +34,7 @@ x print
 x = 0.0 != 1
 x print
 " dbl-int\n" print
-#=> falsefalsetruetruefalsefalsetruetrue dbl-int
+#=> falsefalsetruetruefalsefalsefalsetrue dbl-int
 
 x = 1 < 0.0
 x print
@@ -53,7 +53,7 @@ x print
 x = 0 != 1.0 #
 x print
 " int-dbl\n" print
-#=> falsefalsetruetruefalsefalsetruetrue int-dbl
+#=> falsefalsetruetruefalsefalsefalsetrue int-dbl
 
 x = 1.0 < 0.0
 x print

@@ -100,6 +100,8 @@ the x86 and x86_64 jit.
 // TODO check num type for the dbl case
 // TODO optimize j? true, set false, jmp true, set true
 //   => movzbl %al,edx;lea 0x2(,%rdx,4),%rdx;mov %rdx,-A(%rbp)
+// TODO with eq and neq accept all types. only if both dbl, compare dbl then, else just compare the atom ptr.
+//      use EQUAL instead. i.e. do not convert int to double for int == dbl (0 == 0.0 => false)
 #define X86_CMP(iop, xop, xmms)                                         \
         int dbl_a, dbl_b, cmp_dbl, true_1, true_2, false_;			\
         X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55,op.a)	/* mov -A(%rbp) %rdx */ \
