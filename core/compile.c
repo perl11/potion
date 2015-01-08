@@ -597,23 +597,33 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       int call = (PN_S(t,2) != PN_NIL || arg);
       if (t->part == AST_MSG && PN_S(t,0) == PN_if) {
         int jmp; breg++;
+        if (!t->a[1])
+          potion_fatal("Syntax error: Missing if clause");
         PN_ARG_TABLE(PN_S(t,1), breg, 0);
         jmp = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
+        if (!t->a[2])
+          potion_fatal("Syntax error: Missing if body");
         potion_source_asmb(P, f, loop, 0, t->a[2], reg);
         PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_elsif) {
         int jmp1 = PN_OP_LEN(f->asmb), jmp2; breg++;
         PN_ASM2(OP_TESTJMP, breg, 0);
+        if (!t->a[1])
+          potion_fatal("Syntax error: Missing elsif clause");
         PN_ARG_TABLE(PN_S(t,1), breg, 0);
         jmp2 = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
+        if (!t->a[1])
+          potion_fatal("Syntax error: Missing elsif body");
         potion_source_asmb(P, f, loop, 0, t->a[2], reg);
         PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
         PN_OP_AT(f->asmb, jmp2).b = (PN_OP_LEN(f->asmb) - jmp2) - 1;
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_else) {
         int jmp = PN_OP_LEN(f->asmb); breg++;
         PN_ASM2(OP_TESTJMP, breg, 0);
+        if (!t->a[1])
+          potion_fatal("Syntax error: Missing else body");
         potion_source_asmb(P, f, loop, 0, t->a[2], reg);
         PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_class) {
