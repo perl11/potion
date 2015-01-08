@@ -107,8 +107,8 @@ struct PNVtable;
 #define PN_TNIL         0x250000    /// NIL is magic 0x250000 (type 0)
 #define PN_TNUMBER      (1+PN_TNIL) /// TNumber is Int, or if fwd'd a TDouble
 #define PN_TBOOLEAN     (2+PN_TNIL)
-#define PN_TINTEGER     (3+PN_TNIL) //is a Number
-#define PN_TDOUBLE      (4+PN_TNIL) //is a Number, no arbitrary prec. yet
+#define PN_TDOUBLE      (3+PN_TNIL) //is a Number, no arbitrary prec. yet
+#define PN_TINTEGER     (4+PN_TNIL) //is a Number
 #define PN_TSTRING      (5+PN_TNIL)
 #define PN_TWEAK        (6+PN_TNIL)
 #define PN_TCLOSURE     (7+PN_TNIL)
@@ -160,25 +160,25 @@ struct PNVtable;
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)
 #define PN_IS_INT(v)    ((PN)(v) & PN_FINTEGER)
-#define PN_IS_DBL(v)    (PN_IS_PTR(v) && (PN_TYPE(v) == PN_TNUMBER || PN_TYPE(v) == PN_TDOUBLE))
+#define PN_IS_DBL(v)    (PN_IS_PTR(v) && ({PNType _t = potion_ptr_type((PN)v); _t == PN_TNUMBER || _t == PN_TDOUBLE;}))
 #define PN_IS_NUM(v)    (PN_IS_INT(v) || PN_IS_DBL(v))
-#define PN_IS_TUPLE(v)  (PN_TYPE(v) == PN_TTUPLE)
-#define PN_IS_STR(v)    (PN_TYPE(v) == PN_TSTRING)
-#define PN_IS_TABLE(v)  (PN_TYPE(v) == PN_TTABLE)
-#define PN_IS_CLOSURE(v) (PN_TYPE(v) == PN_TCLOSURE)
-#define PN_IS_PROTO(v)   (PN_TYPE(v) == PN_TPROTO)
-#define PN_IS_REF(v)     (PN_TYPE(v) == PN_TWEAK)
+#define PN_IS_TUPLE(v)  (PN_IS_PTR(v) && (potion_ptr_type((PN)v) == PN_TTUPLE))
+#define PN_IS_STR(v)    (PN_IS_PTR(v) && (potion_ptr_type((PN)v) == PN_TSTRING))
+#define PN_IS_TABLE(v)  (PN_IS_PTR(v) && (potion_ptr_type((PN)v) == PN_TTABLE))
+#define PN_IS_CLOSURE(v) (PN_IS_PTR(v) && (potion_ptr_type((PN)v) == PN_TCLOSURE))
+#define PN_IS_PROTO(v)   (PN_IS_PTR(v) && (potion_ptr_type((PN)v) == PN_TPROTO))
+#define PN_IS_REF(v)     (PN_IS_PTR(v) && (potion_ptr_type((PN)v) == PN_TWEAK))
 #define PN_IS_METACLASS(v) (((struct PNVtable *)v)->meta == PN_NIL)
 #define PN_IS_FFIPTR(p)  ((PN_IS_PTR(p) && !(p >= (_PN)P->mem && p <= (_PN)P->mem->birth_hi)) \
 			  || (!PN_IS_PTR(p) && p > (_PN)P->mem->birth_hi))
 
 #define PN_CHECK_STR(obj)  if (!PN_IS_STR(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "String")
-#define PN_CHECK_STRB(obj)  if (!PN_IS_STR(obj) || (PN_TYPE(obj) != PN_TBYTES)) return potion_type_error_want(P, ""#obj, (PN)obj, "String or Bytes")
+#define PN_CHECK_STRB(obj) if (!PN_IS_STR(obj) || (PN_TYPE(obj) != PN_TBYTES)) return potion_type_error_want(P, ""#obj, (PN)obj, "String or Bytes")
 #define PN_CHECK_NUM(obj)  if (!PN_IS_NUM(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Number")
 #define PN_CHECK_INT(obj)  if (!PN_IS_INT(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Integer")
 #define PN_CHECK_DBL(obj)  if (!PN_IS_DBL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Double")
 #define PN_CHECK_BOOL(obj) if (!PN_IS_BOOL(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Bool")
-#define PN_CHECK_TUPLE(obj) if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Tuple")
+#define PN_CHECK_TUPLE(obj)   if (!PN_IS_TUPLE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Tuple")
 #define PN_CHECK_CLOSURE(obj) if (!PN_IS_CLOSURE(obj)) return potion_type_error_want(P, ""#obj, (PN)obj, "Closure")
 //exact only. TODO check derived types, parents and mixins via bind
 #define PN_CHECK_TYPE(obj,type) if (type != PN_TYPE(obj)) return potion_type_error(P, (PN)obj)
@@ -534,6 +534,16 @@ static inline PNType potion_type(PN obj) {
 #else
   return ((struct PNObject *)potion_fwd(obj))->vt;
 #endif
+}
+
+/// if obj is guaranteed to be a PTR
+static inline PNType potion_ptr_type(PN obj) {
+  while (1) {
+    struct PNFwd *o = (struct PNFwd *)obj;
+    if (o->fwd != POTION_FWD)
+      return ((struct PNObject *)o)->vt;
+    obj = o->ptr;
+  }
 }
 
 /// PN_QUICK_FWD - doing a single fwd check after a possible realloc
