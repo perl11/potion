@@ -293,7 +293,7 @@ void potion_syntax_error(Potion *P, struct PNSource *t, const char *fmt, ...) {
   va_start(args, fmt);
   pn_printf(P, out, fmt, args);
   va_end(args);
-  fprintf(stderr, "** Syntax error %s at %s:%d\n", PN_STR_PTR(out),
+  fprintf(stderr, "** Syntax error: %s at \"%s\", line %d\n", PN_STR_PTR(out),
           AS_STR(t->line), t->loc.lineno);
   exit(PN_EXIT_FATAL);
 }

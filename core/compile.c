@@ -708,6 +708,12 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
 	  //fprintf(stderr, "* loop takes no args, just a block");
 	  goto loopfunc;
 	}
+        if (!t->a[2]) {
+          if (PN_S(t,0) == PN_while)
+            return potion_syntax_error(P, t, "Missing while body");
+          else
+            return potion_syntax_error(P, t, "Missing loop body");
+        }
         potion_source_asmb(P, f, &l, 0, t->a[2], reg);
         PN_ASM1(OP_JMP, (jmp2 - PN_OP_LEN(f->asmb)) - 1);
         if (PN_S(t,0) == PN_while) {
@@ -720,6 +726,8 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           PN_OP_AT(f->asmb, l.cjmps[i]).a = (jmp2 - l.cjmps[i]) - 1;
         }
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_return) {
+        //if (!t->a[1])
+        //    return potion_syntax_error(P, t, "Missing return value");
         PN_ARG_TABLE(PN_S(t,1), reg, 0);
         PN_ASM1(OP_RETURN, reg);
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_break) {
