@@ -795,8 +795,8 @@ void potion_allocation_error(void);
 PN potion_io_error(Potion *, const char *);
 PN potion_type_error(Potion *, PN);
 PN potion_type_error_want(Potion *, const char *, PN, const char *);
-void potion_syntax_error(Potion *, const char *, ...)
-  __attribute__ ((format (printf, 2, 3)));
+void potion_syntax_error(Potion *, struct PNSource *, const char *, ...)
+  __attribute__ ((format (printf, 3, 4)));
 PNType potion_kind_of(PN);
 void potion_p(Potion *, PN);
 PN potion_str(Potion *, const char *);
