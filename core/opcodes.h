@@ -6,29 +6,6 @@
 #ifndef POTION_OPCODES_H
 #define POTION_OPCODES_H
 
-#if defined(__GNUC__)
-#pragma pack(1)
-#else
-#pragma pack(push, 1)
-#endif
-
-/// PN_OP - a compressed three-address op (as 32bit int bitfield)
-/// TODO: expand to 64bit, check jit then
-typedef struct {
-  u8 code:8; ///< the op. See vm.c http://www.lua.org/doc/jucs05.pdf
-  int a:12;  ///< the data (i.e the register)
-  int b:12;  ///< optional arg, the message
-} PN_OP;
-
-#if defined(__GNUC__)
-#pragma pack()
-#else
-#pragma pack(pop)
-#endif
-
-#define PN_OP_AT(asmb, n) ((PN_OP *)((PNFlex *)asmb)->ptr)[n]
-#define PN_OP_LEN(asmb)   (PN_FLEX_SIZE(asmb) / sizeof(PN_OP))
-
 enum PN_OPCODE {
   OP_NONE,
   OP_MOVE,
@@ -81,5 +58,28 @@ enum PN_OPCODE {
   OP_CLASS,
   OP_DEBUG
 };
+
+#if defined(__GNUC__)
+#pragma pack(1)
+#else
+#pragma pack(push, 1)
+#endif
+
+/// PN_OP - a compressed three-address op (as 32bit int bitfield)
+/// TODO: expand to 64bit, check jit then
+typedef struct {
+  enum PN_OPCODE code:8; ///< the op. See vm.c http://www.lua.org/doc/jucs05.pdf
+  int a:12;  ///< the data (i.e the register)
+  int b:12;  ///< optional arg, the message
+} PN_OP;
+
+#if defined(__GNUC__)
+#pragma pack()
+#else
+#pragma pack(pop)
+#endif
+
+#define PN_OP_AT(asmb, n) ((PN_OP *)((PNFlex *)asmb)->ptr)[n]
+#define PN_OP_LEN(asmb)   (PN_FLEX_SIZE(asmb) / sizeof(PN_OP))
 
 #endif

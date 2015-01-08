@@ -66,6 +66,7 @@ the x86 and x86_64 jit.
 #define TAG_LABEL(tag)   (*asmp)->ptr[tag] = ((*asmp)->len - tag - 1)
 // TODO refactor to use named TAGs
 // TODO optimize into seperate int and dbl variants
+// TODO check num type for the dbl case
 // math binop for 2 numbers, int (inlined) or double (via call)
 #define X86_MATH(two, func, ops) ({ \
         int asmpos = 0; \
@@ -94,6 +95,11 @@ the x86 and x86_64 jit.
 // xop: jb, jbe", jae, ja, ... for SSE ucomisd comparisons.
 // TODO we also need to check jp for PF (parity) if one number is nan, to force false.
 // TODO optimize into seperate int and dbl variants
+// TODO probe cpu for sse2 at init, and fallback to math calls if not.
+//      maybe create seperate so's with and without sse. and load the best at init
+// TODO check num type for the dbl case
+// TODO optimize j? true, set false, jmp true, set true
+//   => movzbl %al,edx;lea 0x2(,%rdx,4),%rdx;mov %rdx,-A(%rbp)
 #define X86_CMP(iop, xop, xmms)                                         \
         int dbl_a, dbl_b, cmp_dbl, true_1, true_2, false_;			\
         X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55,op.a)	/* mov -A(%rbp) %rdx */ \
@@ -132,8 +138,6 @@ the x86 and x86_64 jit.
         ASM(0xEB); ASM(X86C(7,14, 1,op.a));		/* jmp [+true] */ \
         TAG_LABEL(true_1); TAG_LABEL(true_2); \
         X86_MOVQ(op.a, PN_TRUE);      			/* true: -A(%rbp) = TRUE */
-//TODO: optimize j? true, set false, jmp true, set true
-//   => movzbl %al,edx;lea 0x2(,%rdx,4),%rdx;mov %rdx,-A(%rbp)
 
 #define X86_ARGO(regn, argn) potion_x86_c_arg(P, asmp, 1, regn, argn)
 #define X86_ARGO_IMM(regn, argn) potion_x86_c_arg(P, asmp, 2, regn, argn)

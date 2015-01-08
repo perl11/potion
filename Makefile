@@ -57,9 +57,9 @@ OBJ_TEST = test/api/potion-test.o test/api/CuTest.o
 OBJ_GC_TEST = test/api/gc-test.o test/api/CuTest.o
 OBJ_GC_BENCH = test/api/gc-bench.o
 PNLIB = lib/libpotion${DLL}
-EXTLIBS = -Llib -luv
+EXTLIBS = -Llib -luv -lpthread
 ifeq (${WIN32},1)
-LIBUV = lib/libuv-11.dll lib/libuv.dll.a
+LIBUV = lib/libuv-1.dll lib/libuv.dll.a
 EXTLIBS += /usr/i686-w64-mingw32/lib/libws2_32.a
 else
 LIBUV = lib/libuv${DLL}

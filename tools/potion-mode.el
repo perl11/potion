@@ -39,13 +39,13 @@
      . font-lock-keyword-face)
     ;; core functions (XXX some overlap with operators)
     (,(potion-match-symbol 
-       "%" "*" "**" "+" "+" "-" "/" "<<" ">>" "about" "abs" "append" "arity"
+       "%" "*" "**" "+" "++" "-" "--" "/" "<<" ">>" "about" "abs" "append" "arity"
        "at" "attr" "bytes" "call" "chr" "clone" "close" "code" "compile"
        "double" "double?" "each" "eval" "exit" "first" "forward" "here"
        "integer" "integer?" "join" "kind" "last" "length" "licks" "list" "load" "meta"
-       "name" "nil?" "number" "number?" "ord" "pop" "print" "push" "put" "rand" "read"
-       "remove" "reverse" "self" "send" "slice" "sqrt" "srand" "step" "string"
-       "text" "times" "to" "tree" "write" "~") . font-lock-builtin-face)
+       "name" "nil" "nil?" "number" "number?" "ord" "pop" "print" "push" "put" "rand"
+       "read" "remove" "reverse" "self" "send" "slice" "sqrt" "srand" "step" "string"
+       "string?" "text" "times" "to" "tree" "write" "~") . font-lock-builtin-face)
     )
   '("\\.pn$")                           ;file extension
   '((lambda ()                          ;other setup work
