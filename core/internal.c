@@ -284,14 +284,17 @@ void potion_fatal(char *message) {
   exit(PN_EXIT_FATAL);
 }
 
-void potion_syntax_error(Potion *P, const char *fmt, ...) {
+// TODO: syntax errors should be collected and emitted at the end of the
+// full compilation
+void potion_syntax_error(Potion *P, struct PNSource *t, const char *fmt, ...) {
   va_list args;
   PN out = potion_bytes(P, 36);
   ((struct PNBytes * volatile)out)->len = 0;
   va_start(args, fmt);
   pn_printf(P, out, fmt, args);
   va_end(args);
-  fprintf(stderr, "** Syntax error %s\n", PN_STR_PTR(out));
+  fprintf(stderr, "** Syntax error %s at %s:%d\n", PN_STR_PTR(out),
+          AS_STR(t->line), t->loc.lineno);
   exit(PN_EXIT_FATAL);
 }
 

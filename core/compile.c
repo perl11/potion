@@ -598,32 +598,32 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       if (t->part == AST_MSG && PN_S(t,0) == PN_if) {
         int jmp; breg++;
         if (!t->a[1])
-          potion_fatal("Syntax error: Missing if clause");
+          return potion_syntax_error(P, t, "Missing if clause");
         PN_ARG_TABLE(PN_S(t,1), breg, 0);
         jmp = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
         if (!t->a[2])
-          potion_fatal("Syntax error: Missing if body");
+          return potion_syntax_error(P, t, "Missing if body");
         potion_source_asmb(P, f, loop, 0, t->a[2], reg);
         PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_elsif) {
         int jmp1 = PN_OP_LEN(f->asmb), jmp2; breg++;
         PN_ASM2(OP_TESTJMP, breg, 0);
         if (!t->a[1])
-          potion_fatal("Syntax error: Missing elsif clause");
+          return potion_syntax_error(P, t, "Missing elsif clause");
         PN_ARG_TABLE(PN_S(t,1), breg, 0);
         jmp2 = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
-        if (!t->a[1])
-          potion_fatal("Syntax error: Missing elsif body");
+        if (!t->a[2])
+          return potion_syntax_error(P, t, "Missing elsif body");
         potion_source_asmb(P, f, loop, 0, t->a[2], reg);
         PN_OP_AT(f->asmb, jmp1).b = (PN_OP_LEN(f->asmb) - jmp1) - 1;
         PN_OP_AT(f->asmb, jmp2).b = (PN_OP_LEN(f->asmb) - jmp2) - 1;
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_else) {
         int jmp = PN_OP_LEN(f->asmb); breg++;
         PN_ASM2(OP_TESTJMP, breg, 0);
-        if (!t->a[1])
-          potion_fatal("Syntax error: Missing else body");
+        if (!t->a[2])
+          potion_syntax_error(P, t, "Missing else body");
         potion_source_asmb(P, f, loop, 0, t->a[2], reg);
         PN_OP_AT(f->asmb, jmp).b = (PN_OP_LEN(f->asmb) - jmp) - 1;
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_class) {
@@ -727,14 +727,14 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           loop->bjmps[loop->bjmpc++] = PN_OP_LEN(f->asmb);
           PN_ASM1(OP_JMP, 0);
         } else {
-          potion_syntax_error(P, "'break' outside of loop");
+          potion_syntax_error(P, t, "'break' outside of loop");
         }
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_continue) {
         if (loop != NULL) {
           loop->cjmps[loop->cjmpc++] = PN_OP_LEN(f->asmb);
           PN_ASM1(OP_JMP, 0);
         } else {
-          potion_syntax_error(P, "'continue' outside of loop");
+          potion_syntax_error(P, t, "'continue' outside of loop");
         }
       } else if (t->part == AST_MSG && PN_S(t,0) == PN_self) {
         PN_ASM1(OP_SELF, reg);
@@ -953,7 +953,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 	  DBG_c("locals %s\n", PN_STR_PTR(v));
 	  sig = PN_PUSH(sig, v);
 	} else {
-	  potion_syntax_error(P, "in signature: value %s as argument name", AS_STR(v));
+	  potion_syntax_error(P, t, "in signature: value %s as argument name", AS_STR(v));
 	}
       } else if (expr->part == AST_PIPE) { //x|y => (pipe (expm x) (expm y))
 	vPN(Source) lhs = expr->a[0];
@@ -978,7 +978,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 	  rhs = lhs->a[1];
 	  DBG_c("; (%s | ", AS_STR(name));
 	} else {
-	  potion_syntax_error(P, "in signature: unexpected AST %s", AS_STR(lhs));
+	  potion_syntax_error(P, t, "in signature: unexpected AST %s", AS_STR(lhs));
 	}
 	if (rhs->part == AST_EXPR && PN_TUPLE_LEN(rhs->a[0]) == 1) {
 	  rhs = SRC_TUPLE_AT(rhs, 0);
@@ -1009,7 +1009,7 @@ PN potion_sig_compile(Potion *P, vPN(Proto) f, PN src) {
 	  DBG_c(": %s)\n", AS_STR(v));
 	  sig = PN_PUSH(PN_PUSH(sig, PN_NUM(':')), v);
 	} else {
-	  potion_syntax_error(P, "in signature: unexpected AST %s", AS_STR(expr));
+	  potion_syntax_error(P, t, "in signature: unexpected AST %s", AS_STR(expr));
 	}
       }
     }}}
