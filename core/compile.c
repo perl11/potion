@@ -482,7 +482,9 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         num = ++breg;
       }
 
-      if (lhs->a[1] != PN_NIL) {
+      if (num == PN_NONE)
+        potion_syntax_error(P, t, "Assignment to illegal variable");
+      else if (lhs->a[1] != PN_NIL) {
         breg = reg;
         PN_ASM2(opcode, ++breg, num);
         DBG_c("; callset %d %d ASSIGN\n", reg, breg);
@@ -773,7 +775,7 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
           }
           PN_ASM2(OP_LOADK, reg, num);
           if (PN_S(t,2) != PN_NIL && (PN_PART(PN_S(t,2)) == AST_MSG)) {
-            vPN(Source) t2 = PN_S_(t,2); //typed message (MSG LIST|NIL MSG)
+            vPN(Source) t2 = PN_S_(t,2); //typed message (MSG LIST|NIL TYPE)
             DBG_c("typed %s %s\n", AS_STR(t->a[0]), AS_STR(t2));
             //TODO type should already exist at compile-time. check native or user type
             num = PN_PUT(f->values, PN_S(t2,0));
