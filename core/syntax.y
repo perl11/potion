@@ -394,9 +394,13 @@ PN potion_parse(Potion *P, PN code, char *filename) {
 
   G->filename = filename;
   P->fileno = PN_PUT(pn_filenames, PN_STR(filename));
-  if (!YY_NAME(parse)(G)) {
+
+  if (!YY_NAME(parse)(G) || ((struct PNSource *)(P->source))->part != AST_CODE) {
+    vPN(Bytes) s = (vPN(Bytes)) code;
     YY_ERROR("** Syntax error");
-    fprintf(stderr, "%s", PN_STR_PTR(code));
+    if (s->len > 80) s->chars[80] = '\0';
+    fprintf(stderr, "%s", s->chars);
+    P->source = PN_NIL;
   }
   YY_NAME(parse_free)(G);
 
