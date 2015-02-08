@@ -1,0 +1,16 @@
+version: 1.0.{build}
+skip_tags: true
+os: MinGW
+clone_depth: 1
+build_script:
+- gmake Makefile
+test_script:
+- gmake test
+notifications:
+- provider: Email
+  to:
+  - rurban@x-ray.at
+  subject: potion windows build
+  on_build_success: true
+  on_build_failure: true
+  on_build_status_changed: false
