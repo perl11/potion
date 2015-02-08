@@ -1,11 +1,14 @@
-version: 1.0.{build}
+version: 0.3.{build}
 skip_tags: true
 os: MinGW
+platform:
+  - x86
+  - x64
 clone_depth: 1
 build_script:
-- gmake Makefile
+- make Makefile
 test_script:
-- gmake test
+- make test
 notifications:
 - provider: Email
   to:
