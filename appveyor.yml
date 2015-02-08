@@ -8,9 +8,12 @@ clone_depth: 1
 init:
   - git config --global core.autocrlf input
 install:
+  - mingw-get install mingw-developer-toolkit
   - cinst make
+  - git submodule init --update
 build_script:
-  - make config
+  - mkdir bin
+  - make -f config.mak
   - make
 test_script:
   - make test
