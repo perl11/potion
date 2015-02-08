@@ -7,11 +7,13 @@ platform:
 clone_depth: 1
 init:
   - git config --global core.autocrlf input
+install:
   - cinst make
 build_script:
-- make
+  - make config
+  - make
 test_script:
-- make test
+  - make test
 notifications:
 - provider: Email
   to:
