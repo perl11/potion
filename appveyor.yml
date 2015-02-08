@@ -5,10 +5,12 @@ platform:
   - x86
   - x64
 clone_depth: 1
+init:
+  - git config --global core.autocrlf input
 build_script:
-- make Makefile
+- mingw32-make
 test_script:
-- make test
+- mingw32-make test
 notifications:
 - provider: Email
   to:
