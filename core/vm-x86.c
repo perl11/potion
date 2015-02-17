@@ -683,8 +683,9 @@ void potion_x86_bitl(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 	   "\xD1\xFA" 		// sar %edx
 	   "\x89\xD1" 		// mov %edx %ecx
 	   "\x89\xC2" 		// mov %eax %edx
-	   "\xD3\xE0" 		// sal %cl %eax
-	   "\x8D\x44\x00\x01"); // lea 0x1(%eax,%eax,1),%eax
+	   "\xD3\xE0"); 	// sal %cl %eax
+      ASM(0x70); ASM(6);        // jo +6
+      ASMS("\x8D\x44\x00\x01"); // lea 0x1(%eax,%eax,1),%eax
   });
 }
 
@@ -695,8 +696,9 @@ void potion_x86_bitr(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
 	 "\xD1\xFA"		// sar %edx
 	 "\x89\xD1"		// mov %edx %ecx
 	 "\x89\xC2"		// mov %eax %edx
-	 "\xD3\xF8"		// sar %cl %eax
-	 "\x8D\x44\x00\x01");	// lea 0x1(%eax,%eax,1),%eax
+	 "\xD3\xF8");		// sar %cl %eax
+    ASM(0x70); ASM(6);          // jo +6
+    ASMS("\x8D\x44\x00\x01");	// lea 0x1(%eax,%eax,1),%eax
   });
 }
 
