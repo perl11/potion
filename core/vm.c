@@ -67,7 +67,7 @@ R(D) = OP R(A), R(B) is not needed.
   - DEBUG (pos)	                set ast to lineno
 
 (c) 2008 why the lucky stiff, the freelance professor
-(c) 2013-2014 by perl11 org
+(c) 2013-2015 by perl11 org
 */
 #include <stdio.h>
 #include <stdarg.h>
