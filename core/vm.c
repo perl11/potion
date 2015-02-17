@@ -376,11 +376,12 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   }
 
 #if defined(__GNUC__) || defined(__clang__)
-/* integer op overflow promotes to double, not bigint yet */
+/* integer op overflow promotes to double, not bigint yet. */
 # define PN_VM_MATH3(name, oper, ov)				  \
   if (PN_IS_INT(reg[op.a]) && PN_IS_INT(reg[op.b])) {		  \
     if (__builtin_##ov##_overflow(PN_INT(reg[op.a]), PN_INT(reg[op.b]), (long*)&val) \
-        || ((long)val > PN_INT(LONG_MAX)))                        \
+        || ((long)val > PN_INT(LONG_MAX))                         \
+        || ((long)val < PN_INT(LONG_MIN)))                        \
       reg[op.a] = potion_double(P, PN_DBL(reg[op.a]) oper PN_DBL(reg[op.b])); \
     else                                                          \
       reg[op.a] = PN_NUM((long)val);                              \
@@ -391,7 +392,8 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);       \
   }
 #else
-/* overflow detection only with gcc or clang builtins, or jit */
+/* overflow detection only with gcc or clang builtins, or jit.
+   or super slow as in perl5 */
 # define PN_VM_MATH3(name, oper, ov)  PN_VM_MATH2(name, oper)
 #endif
 
