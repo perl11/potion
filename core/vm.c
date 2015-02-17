@@ -366,7 +366,7 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
   return f->jit = (PN_F)fn;
 }
 
-#define PN_VM_MATH(name, oper)					  \
+#define PN_VM_MATH2(name, oper)                                   \
   if (PN_IS_INT(reg[op.a]) && PN_IS_INT(reg[op.b]))		  \
     reg[op.a] = PN_NUM(PN_INT(reg[op.a]) oper PN_INT(reg[op.b])); \
   else {                                                          \
@@ -374,6 +374,26 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
     PN_CHECK_NUM(reg[op.b]);                                      \
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);       \
   }
+
+#if defined(__GNUC__) || defined(__clang__)
+/* integer op overflow promotes to double, not bigint yet */
+# define PN_VM_MATH3(name, oper, ov)				  \
+  if (PN_IS_INT(reg[op.a]) && PN_IS_INT(reg[op.b])) {		  \
+    if (__builtin_##ov##_overflow(PN_INT(reg[op.a]), PN_INT(reg[op.b]), (long*)&val) \
+        || ((long)val > PN_INT(LONG_MAX)))                        \
+      reg[op.a] = potion_double(P, PN_DBL(reg[op.a]) oper PN_DBL(reg[op.b])); \
+    else                                                          \
+      reg[op.a] = PN_NUM((long)val);                              \
+  }                                                               \
+  else {                                                          \
+    PN_CHECK_NUM(reg[op.a]);                                      \
+    PN_CHECK_NUM(reg[op.b]);                                      \
+    reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);       \
+  }
+#else
+/* overflow detection only with gcc or clang builtins, or jit */
+# define PN_VM_MATH3(name, oper, ov)  PN_VM_MATH2(name, oper)
+#endif
 
 #define PN_VM_NUMCMP(cmp)					  \
   if (PN_IS_INT(reg[op.a]) && PN_IS_INT(reg[op.b]))		  \
@@ -696,11 +716,11 @@ reentry:
            reg[op.a] = potion_obj_get(P, PN_NIL, reg[op.a], reg[op.b]))
       CASE(SETPATH,
            potion_obj_set(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]))
-      CASE(ADD, PN_VM_MATH(add, +))
-      CASE(SUB, PN_VM_MATH(sub, -))
-      CASE(MULT,PN_VM_MATH(mult, *))
-      CASE(DIV, PN_VM_MATH(div, /))
-      CASE(REM, PN_VM_MATH(rem, %))
+      CASE(ADD, PN_VM_MATH3(add, +, saddl))
+      CASE(SUB, PN_VM_MATH3(sub, -, ssubl))
+      CASE(MULT,PN_VM_MATH3(mult, *, smull))
+      CASE(DIV, PN_VM_MATH2(div, /))
+      CASE(REM, PN_VM_MATH2(rem, %))
       CASE(POW, reg[op.a] = PN_NUM((int)pow((double)PN_INT(reg[op.a]),
 					    (double)PN_INT(reg[op.b]))))
 #ifdef P2
@@ -729,8 +749,8 @@ reentry:
 	   PN_VM_NUMCMP(>=))
       CASE(BITN,
 	   reg[op.a] = PN_IS_INT(reg[op.b]) ? PN_NUM(~PN_INT(reg[op.b])) : potion_obj_bitn(P, reg[op.b]))
-      CASE(BITL, PN_VM_MATH(bitl, <<))
-      CASE(BITR, PN_VM_MATH(bitr, >>))
+      CASE(BITL, PN_VM_MATH2(bitl, <<))
+      CASE(BITR, PN_VM_MATH2(bitr, >>))
       CASE(DEF,
 	   reg[op.a] = potion_def_method(P, PN_NIL, reg[op.a], reg[op.a + 1], reg[op.b]))
       CASE(BIND,
