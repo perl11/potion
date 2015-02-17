@@ -3,7 +3,7 @@ the x86 and x86_64 jit.
 \see core/vm.c and doc/INTERNALS.md
 
 (c) 2008 why the lucky stiff, the freelance professor
-(c) 2013-2014 perl11 org */
+(c) 2013-2015 perl11 org */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -68,26 +68,23 @@ the x86 and x86_64 jit.
 // TODO optimize into seperate int and dbl variants
 // TODO check num type for the dbl case
 // math binop for 2 numbers, int (inlined) or double (via call)
-#define X86_MATH(two, func, ops) ({ \
-        int asmpos = 0; \
+#define X86_MATH(two, dbl_func, ops) ({ \
+        int dbl_a, dbl_a1, end_b;			\
         X86_MOV_RBP(0x8B, op.a); 					/* mov -A(%rbp) %eax */ \
         if (two) { X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55,op.b) }	/* mov -B(%rbp) %edx */	\
         ASM(0xF6); ASM(0xC0); ASM(0x01); 				/* test 0x1 %al */ \
-        asmpos = (*asmp)->len; \
-        ASM(0x74); ASM(0); 						/* je [a] */ \
+        TAG_PREP(dbl_a); ASM(0x74); ASM(0); 				/* je [a] */ \
         if (two) { ASM(0xF6); ASM(0xC2); ASM(0x01); }			/* test 0x1 %dl */ \
-        if (two) { ASM(0x74); ASM(0); 					/* je [a] */ } \
+        if (two) { TAG_PREP(dbl_a1); ASM(0x74); ASM(0); 		/* je [a] */ } \
         ops; /* add, sub, ... */ \
-        (*asmp)->ptr[asmpos + 1] = ((*asmp)->len - asmpos);		\
-        if (two) { (*asmp)->ptr[asmpos + 6] = ((*asmp)->len - asmpos) - 5; } \
-        asmpos = (*asmp)->len;						\
-        ASM(0xEB); ASM(0); 						/*  jmp [b] */ \
+        TAG_PREP(end_b); ASM(0xEB); ASM(0); 				/* jmp [b] */ \
+        TAG_LABEL(dbl_a); if (two) { TAG_LABEL(dbl_a1); }               \
         X86_ARGO(start - 3, 0); 				   /* [a]: mov &P  0(%esp) */ \
         X86_ARGO(op.a, 1);  					        /* mov &CL 1(%esp) */ \
         X86_ARGO(op.b, 2);  					        /* mov B   2(%esp) */ \
-        X86_PRE(); ASM(0xB8); ASMN(func); 				/* mov &func %rax */ \
+        X86_PRE(); ASM(0xB8); ASMN(dbl_func); 				/* mov &dbl_func %rax */ \
         ASM(0xFF); ASM(0xD0); 						/* callq %rax */ \
-        (*asmp)->ptr[asmpos + 1] = ((*asmp)->len - asmpos) - 2; \
+        TAG_LABEL(end_b); \
         X86_MOV_RBP(0x89, op.a) 				   /* [b]: mov -B(%rbp) %eax */ \
 	  })
 // cmp 2 numbers, int or double. eq/neq/gt/ge/lt/le, both inlined (requires SSE)
@@ -569,6 +566,7 @@ void potion_x86_add(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MATH(1, potion_obj_add, {
     X86_PRE(); ASMS("\x8D\x44\x10\xFF"); // lea -1(%eax,%edx,1),%eax
+    ASM(0x70); ASM(2);                   // jo +2
   });
 }
 
@@ -576,6 +574,7 @@ void potion_x86_sub(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
   PN_OP op = PN_OP_AT(f->asmb, pos);
   X86_MATH(1, potion_obj_sub, {
     X86_PRE(); ASM(0x29); ASM(0xD0); // sub %edx %eax
+    ASM(0x70); ASM(X86_PRE_T + 4);   // jo +4
     X86_PRE(); ASM(0xFF); ASM(0xC0); // inc %eax
   });
 }
@@ -586,6 +585,7 @@ void potion_x86_mult(Potion *P, struct PNProto * volatile f, PNAsm * volatile *a
     X86_PRE(); ASMS("\xD1\xFA"); 	// sar %rdx
     X86_PRE(); ASMS("\xFF\xC8"); 	// dec %rax
     X86_PRE(); ASMS("\x0F\xAF\xC2"); 	// imul %rdx %rax
+    ASM(0x70); ASM(X86_PRE_T + 4);      // jo +4
     X86_PRE(); ASMS("\xFF\xC0"); 	// inc %rax
   });
 }
