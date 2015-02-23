@@ -55,3 +55,18 @@ typefun
 subtype
 param
 
+Links
+-----
+http://www.typescriptlang.org/Content/TypeScript%20Language%20Specification.pdf  (microsoft's javascript with types)
+https://code.facebook.com/posts/1505962329687926/flow-a-new-static-type-checker-for-javascript/ (facebook's javascript with types)
+https://github.com/rwaldron/tc39-notes/blob/master/es6/2015-01/JSExperimentalDirections.pdf Soundscript, google's javascript with types
+https://www.python.org/dev/peps/pep-0484/  (planned python with types)
+http://www.mypy-lang.org/ (existing python with types)
+https://news.ycombinator.com/item?id=8620129 (ruby 3.0 planned with types)
+http://crystal-lang.org/ (a good existing ruby with types)
+http://hacklang.org/ (facebook's php with types)
+http://blog.pascal-martin.fr/post/in-favor-of-rfc-scalar-type-hints.html (php 7 types overview)
+https://wiki.php.net/rfc/scalar_type_hints (php 7)
+https://wiki.php.net/rfc/return_types (php 7)
+https://github.com/Microsoft/TypeScript/issues/1265 (Comparison with Facebook Flow Type System)
+
