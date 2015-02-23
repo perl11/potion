@@ -160,7 +160,7 @@ struct PNVtable;
 #define PN_IS_NIL(v)    ((PN)(v) == PN_NIL)
 #define PN_IS_BOOL(v)   ((PN)(v) & PN_FBOOLEAN)
 #define PN_IS_INT(v)    ((PN)(v) & PN_FINTEGER)
-#define PN_IS_DBL(v)    (PN_IS_PTR(v) && ({PNType _t = potion_ptr_type((PN)v); _t == PN_TNUMBER || _t == PN_TDOUBLE;}))
+#define PN_IS_DBL(v)    (PN_IS_PTR(v) && ({PNType _t = potion_qptr_type((PN)v); _t == PN_TNUMBER || _t == PN_TDOUBLE;}))
 #define PN_IS_NUM(v)    (PN_IS_INT(v) || PN_IS_DBL(v))
 #define PN_IS_TUPLE(v)  (PN_IS_PTR(v) && (potion_ptr_type((PN)v) == PN_TTUPLE))
 #define PN_IS_STR(v)    (PN_IS_PTR(v) && (potion_ptr_type((PN)v) == PN_TSTRING))
@@ -545,11 +545,17 @@ static inline PNType potion_ptr_type(PN obj) {
     obj = o->ptr;
   }
 }
-
 /// PN_QUICK_FWD - doing a single fwd check after a possible realloc
 #define PN_QUICK_FWD(t, obj) \
   if (((struct PNFwd *)obj)->fwd == POTION_FWD) \
     obj = (t)(((struct PNFwd *)obj)->ptr);
+
+/// if obj is guaranteed to be a PTR
+/// fwd only once, no loop.
+static inline PNType potion_qptr_type(PN obj) {
+  PN_QUICK_FWD(PN, obj);
+  return ((struct PNObject *)obj)->vt;
+}
 
 /// resolve forwarding pointers for mutable types (PNTuple, PNBytes, etc.)
 static inline PN potion_fwd(PN obj) {
