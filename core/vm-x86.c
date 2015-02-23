@@ -64,11 +64,27 @@ the x86 and x86_64 jit.
 #endif
 #define TAG_PREP(tag)    tag = (*asmp)->len + 1
 #define TAG_LABEL(tag)   (*asmp)->ptr[tag] = ((*asmp)->len - tag - 1)
-// jump back to tag
+#define TAG_JMPTO(tag)   TAG_LABEL(tag)
+// cond jump fwd to tag, fill with TAG_JMPTO
+#define TAG_JMPF(insn, tag)                                   \
+        TAG_PREP(tag);                                        \
+        ASM(insn);                                            \
+        ASM(0);                                               \
+// cond jump fwd wide to tag, fill with TAG_JMPTOW
+#if PN_SIZE_T == 8
+#define TAG_JMPFW(insn, tag)                                  \
+        ASM(0x0f); ASM(insn);                                 \
+        TAG_PREP4(tag); ASMI(0);
+#define TAG_JMPTOW(tag) TAG_LABEL4(tag)
+#else
+#define TAG_JMPFW(insn, tag) TAG_JMPF(insn, tag)
+#define TAG_JMPTOW(tag)      TAG_LABEL(tag)
+#endif
+// cond jump back to tag, mark with TAG_JMPTOB
 #define TAG_JMPB(insn, tag)                                   \
         if (tag > (*asmp)->len) {                             \
           potion_fatal("jmp fw");                             \
-        } else if ((*asmp)->len - tag > 255)  { /* jx long */ \
+        } else if ((*asmp)->len - tag > 127)  { /* jx long */ \
           ASM(0x0f);                                          \
           ASM(insn + 0x10);                                   \
           ASMI(tag - (*asmp)->len - 2);                       \
@@ -76,6 +92,7 @@ the x86 and x86_64 jit.
           ASM(insn);                                          \
           ASM(tag - (*asmp)->len - 2);                        \
         }
+#define TAG_JMPTOB(tag)  tag = (*asmp)->len
 #define TAG_PREP4(tag)   tag = (*asmp)->len
 #define TAG_LABEL4(tag)  ({ int* ptr = (int*)((*asmp)->ptr + tag); \
                             *ptr = (*asmp)->len - tag - 4; })
@@ -153,81 +170,79 @@ the x86 and x86_64 jit.
         X86_MOVQ(op.a, PN_TRUE);      			/* true: -A(%rbp) = TRUE */
 
 // eq/neq: cmp 2 atoms. cmp the dbl value if both are double or the immediate words.
-// XXX 64bit only!
-//#define X86_CMP(iop, wop)
-//void X86_CMP(Potion P, PNAsm * asmp, unsigned char iop, unsigned char wop);
-void x86_cmp(Potion *P, PNAsm * volatile * asmp, PN_OP op, unsigned char iop, unsigned char wop) {
-  int a_int1,a_int2, l50, true_1, /*ret_false,*/ le0, cont;             \
+void x86_cmp(Potion *P, PNAsm * volatile * asmp, PN_OP op, unsigned char iop, unsigned char nop) {
+        int l23,l2,l5,l7,l8,l9,l12,l14,l16,l24,_end,_end1;
         X86_MOV_RBP(0x8B, op.a); 			/* mov -A(%rbp) %rax */ \
         ASMS("\xA8\x01");		 		/* testb $1, %al */ \
-        TAG_PREP(a_int1); ASM(0x75);ASM(0); 		/* jne [a_int] */ \
-        X86_MOV_RBP(0x8B, op.a); 			/* mov -a(%rbp) %rax */ \
-        ASMS("\x48\xa9\xf8\xff\xff\xff");		/* testq $-8, %rax (32 incompat!) */ \
-        TAG_PREP(l50); ASM(0x75);ASM(0); 		/* jne [l50] */ \
-        TAG_LABEL(a_int1);TAG_PREP(a_int2); 		/* l30: */      \
-        /* a is int, so b must also be int */                           \
+        TAG_JMPF(0x74, l23); 				/* je l23 */  \
+      TAG_JMPTOB(l2);                                                 \
         X86_PRE(); ASM(0x8B); ASM_MOV_EBP(0x55,op.a)	/* mov -A(%rbp) %rdx */ \
         X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %rax */ \
         X86_PRE(); ASM(0x39); ASM(0xC2);                /* cmpq %rax, %rdx */ \
-/*3a*/  ASM(0x0f); ASM(wop); TAG_PREP4(true_1); ASMS("\x0\x0\x0\x0"); /* j? [true] wide e0 */ \
-        /* false: */                                                      \
-/*43*/  /*TAG_LABEL(ret_false);*/ X86_MOVQ(op.a, PN_FALSE); /* movl FALSE, -A(%rbp) */ \
-        TAG_PREP(cont); ASM(0xE9); ASMI(0);		/* jmp [cont] eda */ \
-                                                                        \
-        TAG_LABEL(l50);                                                 \
+        TAG_JMPF(0x74, l12); 				/* je l12 */    \
+      TAG_JMPTOB(l9);                                                   \
+        X86_MOVQ(op.a, PN_FALSE); 			/* movl FALSE, -A(%rbp) */ \
+        TAG_PREP(_end); ASM(0xE9); ASMI(0);		/* jmp [_end] */ \
+      TAG_JMPTO(l23);                                                    \
+        X86_MOV_RBP(0x8B, op.a); 			/* mov -A(%rbp) %rax */ \
+        X86_PRE(); ASM(0xa9), ASMI(-8);		        /* testq $-8, %rax */ \
+        TAG_JMPB(0x74, l2); 				/* je l2 */    \
         X86_MOV_RBP(0x8B, op.a); 			/* mov -A(%rbp) %rax */ \
         ASMS("\x83\x38\xfe");                           /* cmpl $-2, (%rax) (is_ptr?) */ \
-        ASM(0x0f); ASM(0x84); TAG_PREP4(le0); ASMS("\x0\x0\x0\x0"); /* je [le0] wide */ \
-                                                                        \
+        TAG_JMPF(0x75, l14); 				/* jne l14 */  \
+        X86_PRE();ASMS("\x8b\x40");ASM(PN_SIZE_T);	/* movl	8(%rax), %rax */ \
+      TAG_JMPTO(l14);                                                  \
 	ASMS("\x8b\x00"					/* movl	(%rax), %eax */ \
              "\x83\xe0\xfd"				/* andl $-0x3, %eax */ \
              "\x3d\x01\x00\x25\x00");      		/* cmpl	$0x250001, %eax */ \
-/*68*/  TAG_JMPB(0x75, a_int2);			        /* jne [a_int] */ \
+        TAG_JMPB(0x75, l2); 				/* jne l2 */     \
         X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %rax */ \
-        ASM(0xa8); ASM(0x01);            		/* testb	$0x1, %al */ \
-/*71*/  TAG_JMPB(0x75, a_int2);				/* jne [a_int] */ \
+        ASMS("\xA8\x01");		 		/* testb $1, %al */ \
+        TAG_JMPB(0x75, l2); 				/* jne l2 */     \
         X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %rax */ \
-        ASMS("\x48\xa9\xf8\xff\xff\xff");  		/* testq	$-0x8, %al */   \
-/*7e*/  TAG_JMPB(0x74, a_int2);				/* je [a_int] */ \
+        X86_PRE(); ASM(0xa9), ASMI(-8);		        /* testq $-8, %rax */ \
+        TAG_JMPB(0x74, l2); 				/* je l2 */    \
         X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %rax */ \
-        ASMS("\x83\x38\xfe"  				/* cmpl	$-0x2, (%rax) */   \
-/*88*/       "\x74\x5f"			                /* je [e9] */ \
-/*8a*/       "\x8b\x00"  				/* movl	(%rax), %eax */ \
-             "\x83\xe0\xfd"  				/* andl	$-0x3, %eax */   \
-             "\x3d\x01\x00\x25\x00");  			/* cmpl	$0x25001, %eax */ \
-/*94*/  TAG_JMPB(0x75, a_int2);				/* jne [a_int] */ \
-        X86_MOV_RBP(0x8B, op.a); 			/* mov -a(%rbp) %rax */ \
-        ASMS("\xa8\x01");  				/* testb $0x1, %al */ \
-        X86_MOV_RBP(0x8B, op.a); 			/* mov -a(%rbp) %rax */ \
-/*a2*/  ASMS("\x74\x52");  				/* je [f6] */ \
-/*a4*/  ASMS("\x48\xd1\xf8"  				/* sarq %rax */ \
-             "\x66\x0f\xef\xc9");                       /* pxor %xmm1, %xmm1 */ \
+        ASMS("\x83\x38\xfe");                           /* cmpl $-2, (%rax) (is_ptr?) */ \
+        TAG_JMPF(0x75, l16); 				/* jne l16 */  \
+        X86_PRE();ASMS("\x8b\x40");ASM(PN_SIZE_T);	/* movl	8(%rax), %rax */ \
+      TAG_JMPTO(l16);                                                  \
+	ASMS("\x8b\x00"					/* movl	(%rax), %eax */ \
+             "\x83\xe0\xfd"				/* andl $-0x3, %eax */ \
+             "\x3d\x01\x00\x25\x00");      		/* cmpl	$0x250001, %eax */ \
+        TAG_JMPB(0x75, l2); 				/* jne l2 */     \
+        X86_MOV_RBP(0x8B, op.a); 			/* mov -A(%rbp) %rax */ \
+        ASMS("\xA8\x01");		 		/* testb $1, %al */ \
+        X86_MOV_RBP(0x8B, op.a); 			/* mov -A(%rbp) %rax */ \
+        TAG_JMPF(0x74, l5); 				/* je l5 */  \
+        ASMS("\x66\x0f\xef\xc9");                       /* pxor %xmm1, %xmm1 */ \
+        X86_PRE();ASMS("\xd1\xf8");			/* sarq %rax */ \
 	ASM(0xF2);X86_PRE();ASMS("\x0f\x2a\xc8");	/* cvtsi2sd %rax, %xmm1 [a] */ \
         X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %rax */ \
-        ASMS("\xa8\x01");  				/* testb $0x1, %al */ \
+        ASMS("\xA8\x01");		 		/* testb $1, %al */ \
         X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %rax */ \
-/*bc*/  ASMS("\x74\x31");  				/* je [ef] */ \
-             \
-/*be*/  ASMS("\x48\xd1\xf8"  				/* sarq %rax */ \
-             "\x66\x0f\xef\xc0");                       /* pxor %xmm0, %xmm0 */ \
-	ASM(0xF2);X86_PRE();ASMS("\x0f\x2a\xc0");	/* cvtsi2sd %rax, %xmm0 [a] */ \
-/*ca*/	/*TAG_LABEL(cmp_dbl);*/                                 \
-        ASMS("\x66\x0f\x2e\xc8"				/* ucomisd xmm0, xmm1; */ \
-/*ce*/       "\x0f\x8a\x6f\xff\xff\xff"  		/* jp [ret_false] wide */ \
-/*d4*/       "\x0f\x85\x69\xff\xff\xff");  		/* jne [ret_false] wide */ \
-                                                                        \
-        TAG_LABEL4(true_1);                                             \
+        TAG_JMPF(0x74, l7); 				/* je l7 */  \
+      TAG_JMPTOB(l24);                                                \
+        ASMS("\x66\x0f\xef\xc0");                       /* pxor %xmm0, %xmm0 */ \
+        X86_PRE();ASMS("\xd1\xf8");			/* sarq %rax */ \
+	ASM(0xF2);X86_PRE();ASMS("\x0f\x2a\xc0");	/* cvtsi2sd %rax, %xmm0 [b] */ \
+      TAG_JMPTOB(l8);                                                \
+        ASMS("\x66\x0f\x2e\xc8");			/* ucomisd xmm0, xmm1; */ \
+        TAG_JMPB(0x7a, l9);  		                /* jp [ret_false] # wide */ \
+        TAG_JMPB(nop, l9);                              /* jne [ret_false] # wide (negated iop) */ \
+      TAG_JMPTO(l12); /* true */                                        \
         X86_MOVQ(op.a, PN_TRUE);      			/* true: -A(%rbp) = TRUE */ \
-        TAG_LABEL4(le0); \
-/*e0*/  ASMS("\x48\x8b\x40\x08"  			/* movq 0x8(%rax), %rax */ \
-             "\xe9\x75\xff\xff\xff"			/* jmp [5e] w */ \
-/*e9*/       "\x48\x8b\x40\x08"  			/* movq 0x8(%rax), %rax */ \
-             "\xeb\x97"  				/* jmp [8a] */ \
-/*ef*/       "\xf2\x0f\x10\x40\x08"  			/* movsd 0x8(%rax), %xmm0 */ \
-             "\xeb\xcc"  				/* jmp [cmp_dbl] */ \
-/*f6*/       "\xf2\x0f\x10\x48\x08"  			/* movsd 0x8(%rax), %xmm1 */ \
-             "\xeb\xb3");  				/* jmp [b0] */  \
-        TAG_LABEL4(cont);
+        TAG_PREP(_end1); ASM(0xEB); ASM(0);		/* jmp [_end] */ \
+      TAG_JMPTO(l5);                                                    \
+        ASMS("\xf2\x0f\x10\x48\x08");  			/* movsd 0x8(%rax), %xmm1 */ \
+        X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %rax */ \
+        ASMS("\xA8\x01");		 		/* testb $1, %al */ \
+        X86_MOV_RBP(0x8B, op.b); 			/* mov -B(%rbp) %rax */ \
+        TAG_JMPB(0x75, l24); 				/* je l24 */  \
+      TAG_JMPTO(l7);                                                    \
+        ASMS("\xf2\x0f\x10\x40\x08");  			/* movsd 0x8(%rax), %xmm0 */ \
+        TAG_JMPB(0xeb, l8); 			        /* jmp l8 */    \
+      TAG_JMPTOW(_end); TAG_JMPTO(_end1);
 }
 
 #define X86_ARGO(regn, argn) potion_x86_c_arg(P, asmp, 1, regn, argn)
@@ -719,13 +734,13 @@ void potion_x86_pow(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
 
 void potion_x86_neq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  x86_cmp(P, asmp, op, 0x75, 0x85);	 // jne
+  x86_cmp(P, asmp, op, 0x75, 0x74);	 // jne
   //X86_CMP(0x75, 0x85);	 	 // jne
 }
 
 void potion_x86_eq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  x86_cmp(P, asmp, op, 0x74, 0x84);	 // je
+  x86_cmp(P, asmp, op, 0x74, 0x75);	 // je
   //X86_CMP(0x74, 0x84);		 // je
 }
 

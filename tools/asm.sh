@@ -26,14 +26,14 @@ b=`echo $1|sed 's,\.c,,'`
 
 case `uname -s` in
      Linux|*bsd|CYGWIN*)
-         gcc -m64 -Icore -S -g -fverbose-asm -O3 -finline $1 -o $b.64.s && as -64 -almhnd $b.64.s > $b.64.lst
-         gcc -m32 -Icore -S -g -fverbose-asm -O3 -finline $1 -o $b.32.s && as -32 -almhnd $b.32.s > $b.32.lst
+         gcc -m64 -Icore -S -fverbose-asm -O3 -finline $1 -o $b.64.s && as -64 -acdlhnd $b.64.s > $b.64.lst
+         gcc -m32 -msse4 -Icore -S -fverbose-asm -O3 -finline $1 -o $b.32.s && as -32 -acdlhnd $b.32.s > $b.32.lst
          ;;
      Darwin)
          gcc-mp-5 -m64 -Icore -S -fverbose-asm -O3 -g -finline $1 -o $b.64.s && \
          gcc-mp-5 -m64 -Icore -C -O3 -g -finline $1 -o $b.64.o && \
              otool -tVj $b.64.o | tee $b.64.lst
-         gcc-mp-5 -m32 -Icore -S -fverbose-asm -O3 -g -finline $1 -o $b.32.s && \
-         gcc-mp-5 -m32 -Icore -C -O3 -g -finline $1 -o $b.32.o && \
+         gcc-mp-5 -msse4 -m32 -Icore -S -fverbose-asm -O3 -g -finline $1 -o $b.32.s && \
+         gcc-mp-5 -msse4 -m32 -Icore -C -O3 -g -finline $1 -o $b.32.o && \
              otool -tVj $b.32.o | tee $b.32.lst
 esac
