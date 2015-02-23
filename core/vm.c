@@ -409,9 +409,13 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
 #define PN_VM_CMP(cmp)                                            \
   if (PN_IS_DBL(reg[op.a]) && PN_IS_DBL(reg[op.b]))               \
     reg[op.a] = PN_BOOL(PN_DBL(reg[op.a]) cmp PN_DBL(reg[op.b])); \
-  else if (PN_IS_PTR(a))                                          \
-    reg[op.a] = PN_BOOL(PN_QUICK_FWD(reg[op.a]) cmp PN_QUICK_FWD(reg[op.b]));\
-  else                                                            \
+  else if (PN_IS_PTR(reg[op.a])) {                                \
+    PN a = reg[op.a];                                             \
+    PN b = reg[op.b];                                             \
+    PN_QUICK_FWD(PN,a);                                           \
+    PN_QUICK_FWD(PN,b);                                           \
+    reg[op.a] = PN_BOOL(a cmp b);                                 \
+  } else                                                          \
     reg[op.a] = PN_BOOL(reg[op.a] cmp reg[op.b]);                 \
 
 static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
