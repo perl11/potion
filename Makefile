@@ -307,6 +307,7 @@ CROSSHOST = --host=$(subst -gcc,,${CC})
 else
 PATCH_PHLPAPI2 = echo
 CROSSHOST =
+PWD = $(shell pwd)
 endif
 
 3rd/libuv/Makefile: 3rd/libuv/Makefile.am
@@ -314,7 +315,7 @@ endif
 	@${PATCH_PHLPAPI2}
 	cd 3rd/libuv && ./autogen.sh
 	-grep "libuv 1." 3rd/libuv/configure && sed -i -e's,libuv 1.,libuv-1.,' 3rd/libuv/configure
-	cd 3rd/libuv && CC="${CC}" ./configure --enable-shared --prefix="$(shell pwd)" \
+	cd 3rd/libuv && CC="${CC}" ./configure --enable-shared --prefix="${PWD}" \
 	  "${CROSSHOST}"
 
 lib/libuv.a: config.inc 3rd/libuv/Makefile
