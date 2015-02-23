@@ -392,11 +392,12 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);       \
   }
 #else
-/* overflow detection only with gcc or clang builtins, or jit.
+/* overflow detection only with gcc-5 or clang-3.6 builtins, or jit.
    or super slow as in perl5 */
 # define PN_VM_MATH3(name, oper, ov)  PN_VM_MATH2(name, oper)
 #endif
 
+// TODO: support str1 < str2, or list1 < list2? (i.e. call the cmp method)
 #define PN_VM_NUMCMP(cmp)					  \
   if (PN_IS_INT(reg[op.a]) && PN_IS_INT(reg[op.b]))		  \
     reg[op.a] = PN_BOOL(reg[op.a] cmp reg[op.b]);		  \
@@ -408,6 +409,8 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
 #define PN_VM_CMP(cmp)                                            \
   if (PN_IS_DBL(reg[op.a]) && PN_IS_DBL(reg[op.b]))               \
     reg[op.a] = PN_BOOL(PN_DBL(reg[op.a]) cmp PN_DBL(reg[op.b])); \
+  else if (PN_IS_PTR(a))                                          \
+    reg[op.a] = PN_BOOL(PN_QUICK_FWD(reg[op.a]) cmp PN_QUICK_FWD(reg[op.b]));\
   else                                                            \
     reg[op.a] = PN_BOOL(reg[op.a] cmp reg[op.b]);                 \
 
