@@ -136,4 +136,8 @@ __attribute__ ((noinline)) void potion_esp(void **);
 
 #define GC_PROTECT(P) P->mem->protect = (void *)P->mem->birth_cur
 
+/* for the jit and bytecode, too large to be inlined into the jit */
+PN potion_vm_eq(Potion *, PN, PN);
+PN potion_vm_neq(Potion *, PN, PN);
+
 #endif

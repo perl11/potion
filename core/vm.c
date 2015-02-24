@@ -322,8 +322,8 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
       CASE_OP(DIV, (P, f, &asmb, pos, need))
       CASE_OP(REM, (P, f, &asmb, pos, need))
       CASE_OP(POW, (P, f, &asmb, pos, need))
-      CASE_OP(NEQ, (P, f, &asmb, pos))
-      CASE_OP(EQ, (P, f, &asmb, pos))		// if ((RK[b] == RK[c]) ~= a) then PC++
+      CASE_OP(NEQ, (P, f, &asmb, pos, need))
+      CASE_OP(EQ, (P, f, &asmb, pos, need))	// if ((RK[b] == RK[c]) ~= a) then PC++
       CASE_OP(LT, (P, f, &asmb, pos))		// if ((RK[b] <  RK[c]) ~= a) then PC++
       CASE_OP(LTE, (P, f, &asmb, pos))		// if ((RK[b] <= RK[c]) ~= a) then PC++
       CASE_OP(GT, (P, f, &asmb, pos))
@@ -406,17 +406,32 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
     PN_CHECK_NUM(reg[op.b]);                                      \
     reg[op.a] = PN_BOOL(PN_DBL(reg[op.a]) cmp PN_DBL(reg[op.b])); \
   }
-#define PN_VM_CMP(cmp)                                            \
-  if (PN_IS_DBL(reg[op.a]) && PN_IS_DBL(reg[op.b]))               \
-    reg[op.a] = PN_BOOL(PN_DBL(reg[op.a]) cmp PN_DBL(reg[op.b])); \
-  else if (PN_IS_PTR(reg[op.a])) {                                \
-    PN a = reg[op.a];                                             \
-    PN b = reg[op.b];                                             \
-    PN_QUICK_FWD(PN,a);                                           \
-    PN_QUICK_FWD(PN,b);                                           \
-    reg[op.a] = PN_BOOL(a cmp b);                                 \
-  } else                                                          \
-    reg[op.a] = PN_BOOL(reg[op.a] cmp reg[op.b]);                 \
+
+#define PN_VM_CMP(cmp) reg[op.a] = cmp ? potion_vm_eq(P,  reg[op.a], reg[op.b]) \
+                                       : potion_vm_neq(P, reg[op.a], reg[op.b]);
+
+/* we need that for the jit, too large to be inlined there */
+PN potion_vm_eq(Potion *P, PN a, PN b) {
+  if (PN_IS_DBL(a) && PN_IS_DBL(b)) {
+    return PN_BOOL(PN_DBL(a) == PN_DBL(b));
+  } else if (PN_IS_PTR(a)) {
+    PN_QUICK_FWD(PN, a);
+    return PN_BOOL(a == potion_fwd(b));
+  } else {
+    return PN_BOOL(a == b);
+  }
+}
+
+PN potion_vm_neq(Potion *P, PN a, PN b) {
+  if (PN_IS_DBL(a) && PN_IS_DBL(b)) {
+    return PN_BOOL(((struct PNDouble *)a)->value != ((struct PNDouble *)b)->value);
+  } else if (PN_IS_PTR(a)) {
+    PN_QUICK_FWD(PN, a);
+    return PN_BOOL(a != potion_fwd(b));
+  } else {
+    return PN_BOOL(a != b);
+  }
+}
 
 static PN potion_sig_check(Potion *P, struct PNClosure *cl, int arity, int numargs) {
   if (numargs > 0) {  //allow fun() to return the closure
@@ -740,10 +755,10 @@ reentry:
       CASE(CMP, reg[op.a] = PN_NUM(PN_INT(reg[op.b]) - PN_INT(reg[op.a])))
       CASE(NEQ,
            DBG_t("\t; %s!=%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   PN_VM_CMP(!=))
+	   PN_VM_CMP(0))
       CASE(EQ,
            DBG_t("\t; %s==%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
-	   PN_VM_CMP(==))
+	   PN_VM_CMP(1))
       CASE(LT,
            DBG_t("\t; %s<%s", STRINGIFY(reg[op.a]), STRINGIFY(reg[op.b]));
 	   PN_VM_NUMCMP(<))
