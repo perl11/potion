@@ -375,7 +375,9 @@ PN_F potion_jit_proto(Potion *P, PN proto) {
     reg[op.a] = potion_obj_##name(P, reg[op.a], reg[op.b]);       \
   }
 
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__clang__) && ((__clang_major__ > 3) \
+                         || (__clang_major__ == 3 && __clang_minor__ >= 4))) \
+ || (defined(__GNUC__) && __GNUC__ >= 5)
 /* integer op overflow promotes to double, not bigint yet. */
 # define PN_VM_MATH3(name, oper, ov)				  \
   if (PN_IS_INT(reg[op.a]) && PN_IS_INT(reg[op.b])) {		  \
