@@ -169,6 +169,7 @@ the x86 and x86_64 jit.
         TAG_LABEL(true_1); TAG_LABEL(true_2); \
         X86_MOVQ(op.a, PN_TRUE);      			/* true: -A(%rbp) = TRUE */
 
+#if 0
 // eq/neq: cmp 2 atoms. cmp the dbl value if both are double or the immediate words.
 void x86_cmp(Potion *P, PNAsm * volatile * asmp, PN_OP op, unsigned char iop, unsigned char nop) {
         int l23,l2,l5,l7,l8,l9,l12,l14,l16,l24,_end,_end1;
@@ -244,6 +245,7 @@ void x86_cmp(Potion *P, PNAsm * volatile * asmp, PN_OP op, unsigned char iop, un
         TAG_JMPB(0xeb, l8); 			        /* jmp l8 */    \
       TAG_JMPTOW(_end); TAG_JMPTO(_end1);
 }
+#endif
 
 #define X86_ARGO(regn, argn) potion_x86_c_arg(P, asmp, 1, regn, argn)
 #define X86_ARGO_IMM(regn, argn) potion_x86_c_arg(P, asmp, 2, regn, argn)
@@ -732,15 +734,27 @@ void potion_x86_pow(Potion *P, struct PNProto * volatile f, PNAsm * volatile *as
   X86_MOV_RBP(0x89, op.a); 		 // mov %rax local
 }
 
-void potion_x86_neq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_x86_neq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  x86_cmp(P, asmp, op, 0x75, 0x74);	 // jne
+  X86_ARGO(start - 3, 0); 			// mov &P 0(%esp)
+  X86_ARGO(op.a, 1); 	  			// mov A  1(%esp)
+  X86_ARGO(op.b, 2); 	  			// mov B  2(%esp)
+  X86_PRE(); ASM(0xB8); ASMN(potion_vm_neq); 	// mov &potion_vm_neq %rax
+  ASM(0xFF); ASM(0xD0); 			// callq %rax
+  X86_MOV_RBP(0x89, op.a); 			// mov %rax local
+  //x86_cmp(P, asmp, op, 0x75, 0x74);	 // jne
   //X86_CMP(0x75, 0x85);	 	 // jne
 }
 
-void potion_x86_eq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos) {
+void potion_x86_eq(Potion *P, struct PNProto * volatile f, PNAsm * volatile *asmp, PN_SIZE pos, long start) {
   PN_OP op = PN_OP_AT(f->asmb, pos);
-  x86_cmp(P, asmp, op, 0x74, 0x75);	 // je
+  X86_ARGO(start - 3, 0); 			// mov &P 0(%esp)
+  X86_ARGO(op.a, 1); 	  			// mov A  1(%esp)
+  X86_ARGO(op.b, 2); 	  			// mov B  2(%esp)
+  X86_PRE(); ASM(0xB8); ASMN(potion_vm_eq); 	// mov &potion_vm_eq %rax
+  ASM(0xFF); ASM(0xD0); 			// callq %rax
+  X86_MOV_RBP(0x89, op.a); 			// mov %rax local
+  //x86_cmp(P, asmp, op, 0x74, 0x75);	 // je
   //X86_CMP(0x74, 0x84);		 // je
 }
 
