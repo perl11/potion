@@ -2,10 +2,13 @@ v0.3
 
 	* Added new syntax tuple[index] for fast, unsafe array access,
 	also for table with a string literal: table["key"]
-	* Fixed comparison of numbers. Check now also double values, before only int.
+	* Fixed comparison and equalness esp. for numbers. Check now also double
+        values, before only int. All values are now compared strictly, numeric types
+        are not promoted to match. i.e 0 != 0.0
 	The jit now requires at least a x86 with sse2 (Pentium 4).
 	* Changed the name Decimal in the API to Double
-	* Promote integer to double on arithmetic overflow (single jo insn)
+	* Promote integer to double on arithmetic overflow (gcc-5, clang-3.6 or a
+        single jo insn in the jit)
 	* Added seperate Double and Integer vtables, which are both of kind Number.
 	Added specialized methods.
 	* Added isa? and subclass? methods, re-enabled test/classes/creature.pn
