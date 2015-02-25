@@ -601,9 +601,11 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
         int jmp; breg++;
         if (!t->a[1])
           return potion_syntax_error(P, t, "Missing if clause");
+        //TODO: constant fold (cond as value) from p2
         PN_ARG_TABLE(PN_S(t,1), breg, 0);
         jmp = PN_OP_LEN(f->asmb);
         PN_ASM2(OP_NOTJMP, breg, 0);
+        //TODO: allow this in p2 mode, rhs if expr
         if (!t->a[2])
           return potion_syntax_error(P, t, "Missing if body");
         potion_source_asmb(P, f, loop, 0, t->a[2], reg);
