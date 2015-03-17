@@ -1,0 +1,66 @@
+# The prime factors of 13195 are 5, 7, 13 and 29.
+# What is the largest prime factor of the number 600851475143 ?
+# L<https://projecteuler.net/problem=3>
+
+# NOT YET finished! Syntax error
+
+#n = 13195
+n = 600851475143
+#n = 151
+
+bitarray = class(size=N):
+  /bits = size
+  w = size / 32
+  i = size % 32
+  if (i > 0): w++
+  /a = array( w )
+.
+
+bitarray at = (i=N):
+  if (i > /size): "bitarray out of bounds" say, exit.
+  w = /array(i / 32)
+  w % 32
+.  
+
+bitarray set = (n=N,v):
+  if (i > /size): "bitarray out of bounds" say, exit.
+  pos = n / 32
+  i = n % 32
+  w = /array(pos)
+  if (v): /array(pos) = w | i.
+  else: /array(pos) = w & ~i.
+.
+
+primes = (n):
+  notprime = bitarray(n), result = (2), max = n sqrt integer
+  i = 3
+  while (i < n):
+    if (notprime at(i)): i++, i++, continue.
+    if (i <= max):
+      m = i * i
+      while (m < n):
+        notprime set(m, true)
+        m += i
+        m += i
+      .
+    .
+    result push(i)
+    i++, i++
+  .
+  result
+.
+
+i = n / 2 integer
+l = primes(i)
+is_prime = (i): l bsearch(i) >= 0.
+
+if (i%2 == 0): i--.
+while (i > 1): # and now iterate downwards
+  if (n%i == 0):
+    if (is_prime(i)):
+      i say
+      #exit
+    .
+  .
+  i--, i--
+.
