@@ -1,0 +1,23 @@
+# very slow potion, compared to ruby.
+# 6m30s in the jit, compared to 30s with ruby
+# written by Kokizzu
+# https://stackoverflow.com/questions/29091475/printing-odd-prime-every-100k-primes-found/
+last = 3 
+res = (last) # create array
+loop:
+   last += 2
+   prime = true 
+   len = res length
+   i = 0
+   while(i<len):
+      v = res at(i)
+      if(v*v > last): break.
+      if(last%v == 0): prime = false, break.
+      i += 1
+   .
+   if(prime):
+          res append(last)
+          if(res length % 100000 == 0): last say.
+          if(last>9999999): break.
+   .
+.
