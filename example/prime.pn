@@ -1,0 +1,22 @@
+# See e.g. http://digitalbush.com/2010/02/26/sieve-of-eratosthenes-in-csharp/
+
+primes = (n):
+  notprime = array(n), result = (2), max = n sqrt integer
+  i = 3
+  while (i < n):
+    if (notprime(i)): i++, i++, continue.
+    if (i <= max):
+      m = i * i
+      while (m < n):
+        notprime(m) = true
+        m += i
+        m += i
+      .
+    .
+    result push(i)
+    i++, i++
+  .
+  result
+.
+
+primes(20) say
