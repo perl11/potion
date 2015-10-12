@@ -255,8 +255,8 @@ PN potion_tuple_push(Potion *P, PN tuple, PN value) {
   vPN(Tuple) t = PN_GET_TUPLE(tuple);
   DBG_CHECK_TUPLE(t);
   if (t->len >= t->alloc) {
-    PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->alloc + 3)); // overalloc by 2
-    t->alloc += 3;
+    PN_REALLOC(t, PN_TTUPLE, struct PNTuple, sizeof(PN) * (t->len * 2)); // overalloc by 2 times
+    t->alloc = t->len * 2;
   }
   t->set[t->len] = value;
   t->len++;
