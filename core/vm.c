@@ -645,7 +645,8 @@ reentry:
     }
     if (args != NULL) {
       long argx;
-      for (argx = 0; argx < potion_sig_arity(P, f->sig); argx++) {
+      int arity = potion_sig_arity(P, f->sig);
+      for (argx = 0; argx < arity; argx++) {
         PN s = potion_sig_name_at(P, f->sig, argx);
         PN_SIZE num = PN_GET(f->locals, s);
         if (num != PN_NONE)
