@@ -427,6 +427,20 @@ PN potion_message(Potion *P, PN rcv, PN msg) {
   return cl;
 }
 
+PN potion_lobby_methods(Potion *P, PN closure, PN self) {
+  PNType t = PN_TYPE(self);
+  if (!PN_TYPECHECK(t)) return PN_NIL;
+  if (t == PN_TVTABLE && !PN_IS_METACLASS(self)) {
+    //self = (PN)((struct PNVtable *)self)->meta;
+  } else {
+    self = PN_VTABLE(t);
+  }
+  vPN(Vtable) vt = (struct PNVtable *)self;
+  if(vt->methods != NULL)
+    return (PN)vt->methods;
+  return PN_NIL;
+}
+
 PN potion_obj_add(Potion *P, PN a, PN b) {
   return potion_send(a, PN_add, b);
 }
@@ -591,6 +605,18 @@ PN potion_lobby_kind(Potion *P, PN cl, PN self) {
 }
 
 /**\memberof Lobby
+ global \c "parent" method
+ \return the parent of self */
+PN potion_lobby_parent(Potion *P, PN cl, PN self) {
+  if (!PN_IS_PTR(self) || self == P->lobby)
+    self = potion_lobby_kind(P, cl, self);
+  PNType t = ((struct PNVtable *)self)->parent;
+  if(!PN_TYPECHECK(t))
+    return PN_VTABLE(PN_TLOBBY);
+  return PN_VTABLE(((struct PNVtable *)self)->parent);
+}
+
+/**\memberof Lobby
  \c "can" the object call the named method?
  \return true or false */
 PN potion_lobby_can(Potion *P, PN cl, PN self, PN method) {
@@ -722,4 +748,6 @@ void potion_lobby_init(Potion *P) {
   potion_method(P->lobby, "can",   potion_lobby_can, "method=S");
   potion_method(P->lobby, "print", potion_lobby_print, 0);
   potion_method(P->lobby, "say",   potion_lobby_say, 0);
+  potion_method(P->lobby, "methods", potion_lobby_methods, 0);
+  potion_method(P->lobby, "parent", potion_lobby_parent, 0);
 }
