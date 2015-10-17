@@ -1,4 +1,4 @@
-v0.3
+v0.3	Sat Oct 17 10:42:49 CEST 2015 rurban v0.3-g7963cbc-1264
 
 	* Added new syntax tuple[index] for fast, unsafe array access,
 	also for table with a string literal: table["key"]
