@@ -15,6 +15,9 @@ v0.3
 	* string: improve performance of at and ord
 	* Added more examples
 	* Updated libuv from 0.11.23 to 1.0.0
+        * New syntax error: Call empty message
+	* Fixed size method for objects and primitives
+	* Added parent and methods methods to the Lobby (Peter Arthur)
 
 v0.2	Thu Sep 11 10:28:32 CDT 2014 rurban v0.2-0-ga280506-1153
 
