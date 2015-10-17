@@ -537,10 +537,16 @@ PN potion_object_new(Potion *P, PN cl, PN self) {
     potion_type_size(P, (struct PNObject *)self) - sizeof(struct PNObject) + vt->ivlen * sizeof(PN));
 }
 /**\memberof PNObject
-   \returns potion object size in bytes for the gc */
+   \returns potion object size in as number for the gc
+   Note that older versions just returned a raw integer, which made it unusable as method. */
 PN potion_object_size(Potion *P, PN cl, PN self) {
   vPN(Object) obj = (struct PNObject *)self;
-  return sizeof(struct PNObject) + (((struct PNVtable *)PN_VTABLE(obj->vt))->ivlen * sizeof(PN));
+  if (!PN_TYPECHECK(PN_VTYPE(obj)))
+    return PN_ZERO;
+  if (!PN_IS_PTR(obj))
+    return PN_NUM(sizeof(PN));
+  return PN_NUM(sizeof(struct PNObject)
+                + (((struct PNVtable *)PN_VTABLE(obj->vt))->ivlen * sizeof(PN)));
 }
 /**\memberof Lobby
  global \c "isa?" method: kind self == obj kind
