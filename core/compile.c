@@ -437,9 +437,14 @@ void potion_source_asmb(Potion *P, struct PNProto * volatile f, struct PNLoop *l
       }
 
       if (lhs->part == AST_MSG || lhs->part == AST_QUERY) {
-        char first_letter = PN_STR_PTR(PN_S(lhs,0))[0];
+        char first_letter;
+        if (!PN_S(lhs,0)) { // nil() = v
+          DBG_c("assign nil()=\n");
+          potion_syntax_error(P, lhs, "Call empty message");
+        }
 	DBG_c("assign %s '%s'\n", lhs->part == AST_MSG?"msg":"query",
 	      AS_STR(PN_S(lhs,0)));
+        first_letter = PN_STR_PTR(PN_S(lhs,0))[0];
         if ((first_letter & 0x80) == 0 && isupper((unsigned char)first_letter)) {
           num = PN_PUT(f->values, PN_S(lhs,0));
 	  DBG_c("values %d %s => %d\n", breg, AS_STR(lhs->a[0]), (int)num);
