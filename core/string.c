@@ -104,7 +104,7 @@ static PN potion_str_length(Potion *P, PN cl, PN self) {
 ///\memberof PNString
 /// "eval" a string.
 static PN potion_str_eval(Potion *P, PN cl, PN self) {
-  return potion_eval(P, self);
+  return potion_cl_eval(P, cl, self);
 }
 
 ///\memberof PNString

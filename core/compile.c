@@ -1312,6 +1312,39 @@ PN potion_eval(Potion *P, PN bytes) {
   return potion_run(P, code, P->flags & EXEC_JIT);
 }
 
+/* run with existing closure */
+PN potion_cl_run(Potion *P, PN cl, PN code, int jit) {
+#ifndef POTION_JIT_TARGET
+  if (jit) {
+    fprintf(stderr, "** potion not compiled with JIT\n");
+    jit = 0;
+  }
+#endif
+  if (jit) {
+    /*PN cl = potion_closure_new(P, (PN_F)potion_jit_proto(P, code), PN_NIL, 1);*/
+    PN_CLOSURE(cl)->method = (PN_F)potion_jit_proto(P, code);
+    PN_CLOSURE(cl)->data[0] = code;
+    PN_CLOSURE(cl)->sig = PN_NIL;
+    PN_CLOSURE(cl)->arity = 0;
+    PN_CLOSURE(cl)->minargs = 0;
+    return PN_PROTO(code)->jit(P, cl, P->lobby);
+  } else {
+    PN_SIZE upc = 0;
+    PN *upargs = PN_NIL; /* TODO: extract upargs from cl, or just use cl as lobby */
+    return potion_vm(P, code, cl, PN_NIL, upc, upargs);
+  }
+}
+
+/* eval with existing closure */
+PN potion_cl_eval(Potion *P, PN cl, PN bytes) {
+  PN code = (PN_TYPE(bytes) == PN_TSOURCE)
+    ? bytes
+    : potion_parse(P, bytes, "<eval>");
+  if (PN_TYPE(code) != PN_TSOURCE) return code;
+  code = potion_source_compile(P, cl, code, PN_NIL, PN_NIL);
+  return potion_cl_run(P, cl, code, P->flags & EXEC_JIT);
+}
+
 void potion_compiler_init(Potion *P) {
   PN pro_vt = PN_VTABLE(PN_TPROTO);
   PN src_vt = PN_VTABLE(PN_TSOURCE);

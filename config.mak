@@ -1,7 +1,7 @@
 # -*- makefile -*-
 # create config.inc and core/config.h
 POTION_MAJOR = 0
-POTION_MINOR = 3
+POTION_MINOR = 4
 PREFIX = /usr/local
 CC     = $(shell tools/config.sh compiler)
 PWD    = $(shell pwd)

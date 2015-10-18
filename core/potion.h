@@ -942,6 +942,8 @@ PN potion_vm_class(Potion *, PN, PN);
 PN potion_vm(Potion *, PN, PN, PN, PN_SIZE, PN * volatile);
 PN potion_eval(Potion *, PN);
 PN potion_run(Potion *, PN, int);
+PN potion_cl_eval(Potion *, PN, PN);
+PN potion_cl_run(Potion *, PN, PN, int);
 PN_F potion_jit_proto(Potion *, PN);
 
 PN potion_class_find(Potion *, PN);
