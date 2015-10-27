@@ -142,6 +142,10 @@ PN potion_delegated(Potion *P, PN closure, PN self) {
 
 PN potion_call(Potion *P, PN cl, PN_SIZE argc, PN * volatile argv) {
   vPN(Closure) c = PN_CLOSURE(cl);
+  if (!c || !c->method) {
+    //return PN_NIL;
+    return potion_error(P, PN_STR("Error: Empty closure or method"), 0, 0, 0);
+  }
   switch (argc) {
     case 0:
     return c->method(P, cl, cl);
@@ -240,6 +244,8 @@ PN potion_error(Potion *P, PN msg, long lineno, long charno, PN excerpt) {
 
 PN potion_error_string(Potion *P, PN cl, PN self) {
   vPN(Error) e = (struct PNError *)self;
+  if (!e || !e->message)
+    return potion_str_format(P, "** Error\n");
   if (e->excerpt == PN_NIL)
     return potion_str_format(P, "** %s\n", PN_STR_PTR(e->message));
   return potion_str_format(P, "** %s\n"
