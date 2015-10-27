@@ -24,7 +24,9 @@ static PN potion_any_is_nil(Potion *P, PN closure, PN self) {
   \param value PN
   \return PNInteger -1 if less, 0 if equal or 1 if greater */
 PN potion_any_cmp(Potion *P, PN cl, PN self, PN value) {
-  return potion_send(self, PN_cmp, value);
+  return (self == P->lobby)
+    ? ((value == P->lobby) ? PN_NUM(0) : PN_NUM(1)) // Lobby is greater than anything
+    : potion_send(self, PN_cmp, value);
 }
 /** memberof NilKind
  "cmp" method. nil is 0 or "" or FALSE as cmp context
