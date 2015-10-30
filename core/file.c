@@ -37,6 +37,7 @@ typedef struct PNFile * volatile pn_file;
  \param modestr PNString r,r+,w,w+,a,a+
  \return self or PN_NIL */
 PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
+  struct PNFile * file = (PN)PN_ALLOC_N(PN_TFILE, struct PNFile, 0 * sizeof(PN));
   int fd;
   mode_t mode;
   if (strcmp(PN_STR_PTR(modestr), "r") == 0) {
@@ -57,10 +58,10 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   }
   if ((fd = open(PN_STR_PTR(path), mode, 0755)) == -1)
     return potion_io_error(P, "open");
-  ((struct PNFile *)self)->fd = fd;
-  ((struct PNFile *)self)->path = path;
-  ((struct PNFile *)self)->mode = mode;
-  return self;
+  file->fd = fd;
+  file->path = path;
+  file->mode = mode;
+  return (PN)file;
 }
 
 /**\memberof PNFile
@@ -68,7 +69,7 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   \param fd PNInteger
   \return a new PNFile object for the already opened file descriptor (sorry, empty path). */
 PN potion_file_with_fd(Potion *P, PN cl, PN self, PN fd) {
-  struct PNFile *file = (struct PNFile *)potion_object_new(P, PN_NIL, PN_VTABLE(PN_TFILE));
+  struct PNFile *file = PN_ALLOC_N(PN_TFILE, struct PNFile, 0 * sizeof(PN));
   file->fd = PN_INT(fd);
   file->path = PN_NIL;
 #ifdef F_GETFL
