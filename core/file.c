@@ -37,7 +37,7 @@ typedef struct PNFile * volatile pn_file;
  \param modestr PNString r,r+,w,w+,a,a+
  \return self or PN_NIL */
 PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
-  struct PNFile * file = (PN)PN_ALLOC_N(PN_TFILE, struct PNFile, 0 * sizeof(PN));
+  struct PNFile * file = PN_ALLOC_N(PN_TFILE, struct PNFile, 0 * sizeof(PN));
   int fd;
   mode_t mode;
   if (strcmp(PN_STR_PTR(modestr), "r") == 0) {
