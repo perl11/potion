@@ -40,14 +40,14 @@ PN potion_table_string(Potion *P, PN cl, PN self) {
 /// "empty" method
 ///\return PNTable
 PN potion_table_empty(Potion *P) {
-  return (PN)PN_ALLOC_N(PN_TTABLE, struct PNTable, 0);
+  return (PN)PN_ALLOC(PN_TTABLE, struct PNTable);
 }
 
 ///\return self PNTable
 PN potion_table_cast(Potion *P, PN self) {
   if (PN_IS_TUPLE(self)) {
     int ret; unsigned k;
-    vPN(Table) t = PN_ALLOC_N(PN_TTABLE, struct PNTable, 0);
+    vPN(Table) t = PN_ALLOC(PN_TTABLE, struct PNTable);
     PN_TUPLE_EACH(self, i, v, {
       k = kh_put(PN, t, PN_NUM(i), &ret);
       PN_QUICK_FWD(struct PNTable *, t);
@@ -141,7 +141,7 @@ static
 PN potion_table_clone(Potion *P, PN cl, PN self) {
   vPN(Table) t = (vPN(Table))potion_fwd(self);
   DBG_CHECK_TYPE(t,PN_TTABLE);
-  vPN(Table) t2 = (vPN(Table))PN_ALLOC_N(PN_TTABLE, struct PNTable, 0);
+  vPN(Table) t2 = PN_ALLOC(PN_TTABLE, struct PNTable);
   unsigned k; int ret;
   t2 = kh_resize_PN(P, t2, kh_size(t));
   for (k = kh_begin(t); k != kh_end(t); ++k)
@@ -174,7 +174,7 @@ PN potion_table_slice(Potion *P, PN cl, PN self, PN keys) {
   else {
     DBG_CHECK_TYPE(keys,PN_TTUPLE);
   }
-  vPN(Table) t2 = (vPN(Table))PN_ALLOC_N(PN_TTABLE, struct PNTable, 0);
+  vPN(Table) t2 = PN_ALLOC(PN_TTABLE, struct PNTable);
   t2 = kh_resize_PN(P, t2, PN_TUPLE_LEN(keys)); //ca, could overshoot for dupl and outliers
   PN_TUPLE_EACH(keys, i, v, {
     DBG_vt("%d:%ld ", i, PN_INT(v));
