@@ -1,6 +1,6 @@
 # Doxyfile 1.8.1.2
 PROJECT_NAME           = "potion"
-PROJECT_NUMBER         = 0.2
+PROJECT_NUMBER         = 0.3
 OUTPUT_DIRECTORY       = doc
 CREATE_SUBDIRS         = YES
 FULL_PATH_NAMES        = NO
