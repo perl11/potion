@@ -37,7 +37,7 @@ typedef struct PNFile * volatile pn_file;
  \param modestr PNString r,r+,w,w+,a,a+
  \return self or PN_NIL */
 PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
-  struct PNFile * file = PN_ALLOC_N(PN_TFILE, struct PNFile, 0 * sizeof(PN));
+  struct PNFile * file = PN_ALLOC(PN_TFILE, struct PNFile);
   int fd;
   mode_t mode;
   if (strcmp(PN_STR_PTR(modestr), "r") == 0) {
@@ -69,7 +69,7 @@ PN potion_file_new(Potion *P, PN cl, PN self, PN path, PN modestr) {
   \param fd PNInteger
   \return a new PNFile object for the already opened file descriptor (sorry, empty path). */
 PN potion_file_with_fd(Potion *P, PN cl, PN self, PN fd) {
-  struct PNFile *file = PN_ALLOC_N(PN_TFILE, struct PNFile, 0 * sizeof(PN));
+  struct PNFile *file = PN_ALLOC(PN_TFILE, struct PNFile);
   file->fd = PN_INT(fd);
   file->path = PN_NIL;
 #ifdef F_GETFL

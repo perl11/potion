@@ -15,7 +15,7 @@
 
 /// new PNDouble (double)
 PN potion_double(Potion *P, double v) {
-  vPN(Double) d = PN_ALLOC_N(PN_TNUMBER, struct PNDouble, 0);
+  vPN(Double) d = PN_ALLOC(PN_TNUMBER, struct PNDouble);
   d->value = v;
   return (PN)d;
 }
