@@ -311,8 +311,6 @@ config.inc.echo:
 	@${ECHO} "JIT     = ${JIT}"
 	@test -n ${JIT_TARGET} && ${ECHO} "JIT_${JIT_TARGET} = 1"
 	@${ECHO} "DEBUG   = ${DEBUG}"
-#TODO get rid of git here, read from POTION_REV in core/version.h
-	@${ECHO} "REVISION  = " $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g")
 
 config.h.echo:
 	@${ECHO} "#define POTION_CC     \"${CC}\""
@@ -345,21 +343,10 @@ core/config.h: config.inc core/version.h tools/config.sh config.mak
 	@${CAT} core/version.h > core/config.h
 	@${MAKE} -s -f config.mak config.h.echo >> core/config.h
 
-# TODO: fix when git is not available
+# works now also when when git is not available
 core/version.h: $(shell git show-ref HEAD | ${SED} "s,^.* ,.git/,g")
 	@${ECHO} MAKE $@
-	@${ECHO} "/* created by ${MAKE} -f config.mak */" > core/version.h
-	@${ECHO} "#define POTION_MAJOR ${POTION_MAJOR}" >> core/version.h
-	@${ECHO} "#define POTION_MINOR ${POTION_MINOR}" >> core/version.h
-	@${ECHO} "#define POTION_VERSION \"${POTION_MAJOR}.${POTION_MINOR}\"" >> core/version.h
-	@${ECHO} -n "#define POTION_DATE   \"" >> core/version.h
-	@${ECHO} -n $(shell date +%Y-%m-%d) >> core/version.h
-	@${ECHO} "\"" >> core/version.h
-	@${ECHO} -n "#define POTION_COMMIT \"" >> core/version.h
-	@${ECHO} -n $(shell git rev-list HEAD -1 --abbrev=7 --abbrev-commit) >> core/version.h
-	@${ECHO} "\"" >> core/version.h
-	@${ECHO} -n "#define POTION_REV    " >> core/version.h
-	@${ECHO} -n $(shell git rev-list --abbrev-commit HEAD | wc -l | ${SED} "s/ //g") >> core/version.h
-	@${ECHO} >> core/version.h
+	POTION_MAJOR=${POTION_MAJOR} POTION_MINOR=${POTION_MINOR} SED=${SED} \
+	  tools/version.sh ${ECHO}
 
 .PHONY: config config.inc.echo config.h.echo
