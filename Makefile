@@ -298,8 +298,7 @@ lib/libpotion${DLL}: ${PIC_OBJ} core/config.h core/potion.h
 
 # 3rdparty EXTLIBS statically linked
 3rd/libuv/Makefile.am: .gitmodules
-	git submodule update --init
-	@touch $@
+	test -d .git && git submodule update --init && touch $@
 
 ifeq (${WIN32},1)
 PATCH_PHLPAPI2 = sed -i -e"s,-lphlpapi2,-liphlpapi," 3rd/libuv/Makefile.am
