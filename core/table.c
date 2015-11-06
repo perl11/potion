@@ -4,7 +4,7 @@
 ///\class PNTuple - ordered list (array)
 //
 // (c) 2008 why the lucky stiff, the freelance professor
-// (c) 2013 perl11 org
+// (c) 2013, 2015 perl11 org
 //
 #include <stdio.h>
 #include <stdlib.h>
@@ -232,6 +232,9 @@ PN potion_table_values(Potion *P, PN cl, PN self) {
 // TUPLE - ordered lists, i.e. arrays in consecutive memory
 // not autovivifying
 
+#define GET(i)    t->set[i]
+#define SET(i,v)  t->set[i] = v
+
 PN potion_tuple_empty(Potion *P) {
   //NEW_TUPLE(t, 0);
   NEW_TUPLE(t, 3); // prealloc 3 elems
@@ -247,7 +250,7 @@ PN potion_tuple_with_size(Potion *P, unsigned long size) {
 PN potion_tuple_new(Potion *P, PN value) {
   NEW_TUPLE(t, 3); // overallocate by 2 elems
   t->len = 1;
-  t->set[0] = value;
+  SET(0,value);
   return (PN)t;
 }
 
@@ -378,11 +381,11 @@ PN potion_tuple_slice(Potion *P, PN cl, PN self, PN start, PN end) {
 
 ///\memberof PNTuple
 /// "each" method. call block on each member (linear order)
-///\param block PNClosure
+///\param block PNClosure with one or an optional second index argument.
 ///\return self PNTuple
 PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
-  DBG_CHECK_TUPLE(self);
   int with_index = potion_sig_arity(P, PN_CLOSURE(block)->sig) >= 2;
+  DBG_CHECK_TUPLE(self);
   PN_TUPLE_EACH(self, i, v, {
     if (with_index)
       PN_CLOSURE(block)->method(P, block, P->lobby, v, PN_NUM(i));
@@ -390,6 +393,43 @@ PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
       PN_CLOSURE(block)->method(P, block, P->lobby, v);
   });
   return self;
+}
+
+///\memberof PNTuple
+/// "map" method. Calls the block function on every element, and returns a
+/// list of all results.
+///\param block PNClosure with one argument, the tuple element.
+///\return new PNTuple with the same size.
+PN potion_tuple_map(Potion *P, PN cl, PN self, PN block) {
+  PN_SIZE len = PN_TUPLE_LEN(self);
+  NEW_TUPLE(t, len);
+  PN_TUPLE_EACH(self, i, v, {
+    PN ret = PN_CLOSURE(block)->method(P, block, cl, v);
+    SET(i, ret);
+  });
+  return (PN)t;
+}
+
+///\memberof PNTuple
+/// "filter" method. Calls the block function on every element.
+///\param block PNClosure with one or two args. The first arg is the element,
+/// the optional second the index.
+///\return new PNTuple with all elements that pass the
+/// test implemented by the provided function.
+PN potion_tuple_filter(Potion *P, PN cl, PN self, PN block) {
+  DBG_CHECK_TUPLE(self);
+  int with_index = potion_sig_arity(P, PN_CLOSURE(block)->sig) >= 2;
+  PN ret;
+  PN tuple = potion_tuple_empty(P);
+  PN_TUPLE_EACH(self, i, v, {
+    if (with_index)
+      ret = PN_CLOSURE(block)->method(P, block, cl, v, PN_NUM(i));
+    else
+      ret = PN_CLOSURE(block)->method(P, block, cl, v);
+    if (ret == PN_TRUE)
+      potion_tuple_push(P, tuple, v);
+  });
+  return tuple;
 }
 
 ///\memberof PNTuple
@@ -544,13 +584,11 @@ PN potion_tuple_reverse(Potion *P, PN cl, PN self) {
   return tuple;
 }
 
-#define GET(i)    t->set[i]
-#define SET(i,v)  t->set[i] = v
 //xor swap
-#define SWAP(a,b) if (a != b) { \
-  t->set[a] ^= GET(b); \
-  t->set[b] ^= GET(a); \
-  t->set[a] ^= GET(b); }
+#define SWAP(a,b) if (a != b) {               \
+    t->set[a] ^= GET(b);      \
+    t->set[b] ^= GET(a);      \
+    t->set[a] ^= GET(b); }
 
 /**\memberof PNTuple
   "remove" an element at index from tuple.
@@ -839,6 +877,8 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "append", potion_tuple_append, "value=o");
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "each", potion_tuple_each, "block=&");
+  potion_method(tpl_vt, "map", potion_tuple_map, "block=&");
+  potion_method(tpl_vt, "filter", potion_tuple_filter, "block=&");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
   potion_method(tpl_vt, "first", potion_tuple_first, 0);
   potion_method(tpl_vt, "join", potion_tuple_join, "|sep=S");
