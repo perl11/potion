@@ -393,6 +393,27 @@ PN potion_tuple_each(Potion *P, PN cl, PN self, PN block) {
 }
 
 ///\memberof PNTuple
+/// "where" method. filters the tuple using the block (linear order)
+///\param block PNClosure
+///\return new PNTuple
+PN potion_tuple_where(Potion *P, PN cl, PN self, PN block) {
+  DBG_CHECK_TUPLE(self);
+  int with_index = potion_sig_arity(P, PN_CLOSURE(block)->sig) >= 2;
+  PN ret;
+  PN tuple = potion_tuple_empty(P);
+  PN_TUPLE_EACH(self, i, v, {
+    if (with_index)
+      ret = PN_CLOSURE(block)->method(P, block, P->lobby, v, PN_NUM(i));
+    else
+      ret = PN_CLOSURE(block)->method(P, block, P->lobby, v);
+    if(ret == PN_TRUE) {
+      potion_tuple_push(P, tuple, v);
+    }
+  });
+  return tuple;
+}
+
+///\memberof PNTuple
 /// "first" method.
 ///\return first PN or PN_NIL if the PNTuple is empty
 PN potion_tuple_first(Potion *P, PN cl, PN self) {
@@ -839,6 +860,8 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "append", potion_tuple_append, "value=o");
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "each", potion_tuple_each, "block=&");
+  potion_method(tpl_vt, "where", potion_tuple_where, "block=&");
+  potion_method(tpl_vt, "filter", potion_tuple_where, "block=&");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
   potion_method(tpl_vt, "first", potion_tuple_first, 0);
   potion_method(tpl_vt, "join", potion_tuple_join, "|sep=S");
