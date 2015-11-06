@@ -426,7 +426,7 @@ PN potion_tuple_filter(Potion *P, PN cl, PN self, PN block) {
       ret = PN_CLOSURE(block)->method(P, block, cl, v, PN_NUM(i));
     else
       ret = PN_CLOSURE(block)->method(P, block, cl, v);
-    if (ret == PN_TRUE)
+    if (PN_TEST(ret))
       potion_tuple_push(P, tuple, v);
   });
   return tuple;
