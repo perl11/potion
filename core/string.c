@@ -480,7 +480,7 @@ static PN potion_str_cmp(Potion *P, PN cl, PN self, PN str) {
   if (PN_IS_STR(str)) {
     return strcmp(PN_STR_PTR(self), PN_STR_PTR(str));
   } else {
-    return strcmp(PN_STR_PTR(self), PN_STR_PTR(potion_send(PN_string, str)));
+    return strcmp(PN_STR_PTR(self), PN_STR_PTR(potion_send(str, PN string)));
   }
 }
 
