@@ -478,9 +478,9 @@ static PN potion_bytes_at(Potion *P, PN cl, PN self, PN index) {
  \sa potion_tuple_sort. */
 static PN potion_str_cmp(Potion *P, PN cl, PN self, PN str) {
   if (PN_IS_STR(str)) {
-    return strcmp(PN_STR_PTR(self), PN_STR_PTR(str));
+    return PN_NUM(strcmp(PN_STR_PTR(self), PN_STR_PTR(str)));
   } else {
-    return strcmp(PN_STR_PTR(self), PN_STR_PTR(potion_send(PN_string, str)));
+    return PN_NUM(strcmp(PN_STR_PTR(self), PN_STR_PTR(potion_send(str, PN_string))));
   }
 }
 
