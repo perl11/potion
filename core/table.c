@@ -411,6 +411,23 @@ PN potion_tuple_map(Potion *P, PN cl, PN self, PN block) {
 }
 
 ///\memberof PNTuple
+/// "reduce" method. call block on each member (linear order)
+///\param block PNClosure with two args. The first arg is the accumulator,
+/// the second the current element
+// \param initial PN this is used to seed the initial value, if it is not nil
+///\return initial PN the value of the accumulator at the end of the iterations
+PN potion_tuple_reduce(Potion *P, PN cl, PN self, PN block, PN initial) {
+  DBG_CHECK_TUPLE(self);
+  PN_TUPLE_EACH(self, i, v, {
+    if(i == 0 && initial == PN_NIL)
+      initial = v;
+    else
+      initial = PN_CLOSURE(block)->method(P, block, P->lobby, initial, v);
+  });
+  return initial;
+}
+
+///\memberof PNTuple
 /// "filter" method. Calls the block function on every element.
 ///\param block PNClosure with one or two args. The first arg is the element,
 /// the optional second the index.
@@ -878,6 +895,7 @@ void potion_table_init(Potion *P) {
   potion_method(tpl_vt, "at", potion_tuple_at, "index=N");
   potion_method(tpl_vt, "each", potion_tuple_each, "block=&");
   potion_method(tpl_vt, "map", potion_tuple_map, "block=&");
+  potion_method(tpl_vt, "reduce", potion_tuple_reduce, "block=&,initial:=nil");
   potion_method(tpl_vt, "filter", potion_tuple_filter, "block=&");
   potion_method(tpl_vt, "clone", potion_tuple_clone, 0);
   potion_method(tpl_vt, "first", potion_tuple_first, 0);
