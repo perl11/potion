@@ -58,7 +58,7 @@ PN potion_buffile_tmpfile(Potion *P, PN cl, PN ign) {
   struct PNBufFile *self;
   self = (struct PNBufFile *)potion_data_alloc(P, sizeof(struct PNBufFile));
   self->siz = BufFileSize;
-  self->file = tmpfile();
+  self->file = tmpfile(); // CID 32134
   if (!self->file)
     return potion_io_error(P, "tmpfile");
   self->path = PN_NIL;

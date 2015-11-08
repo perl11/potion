@@ -1257,8 +1257,7 @@ PN potion_source_dumpbc(Potion *P, PN cl, PN proto, PN options) {
   h.minor = POTION_MINOR;
   h.vmid = POTION_VMID;
   h.pn = (u8)sizeof(PN);
-
-  PN_MEMCPY(PN_STR_PTR(pnb), &h, struct PNBHeader);
+  PN_MEMCPY(PN_STR_PTR(pnb), &h, struct PNBHeader); // coverity[uninit_use_in_call:FALSE]
   PN_STR_LEN(pnb) = (long)sizeof(struct PNBHeader) +
     potion_proto_dumpbc(P, proto, pnb, sizeof(struct PNBHeader));
   return pnb;

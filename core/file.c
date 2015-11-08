@@ -118,6 +118,7 @@ PN potion_file_read(Potion *P, PN cl, pn_file self, PN n) {
 PN potion_file_write(Potion *P, PN cl, pn_file self, PN obj) {
   long len = 0;
   char *ptr = NULL;
+  double tmp;
   //TODO: maybe extract ptr+len to seperate function
   if (!PN_IS_PTR(obj)) {
     if (!obj) return PN_NIL; //silent
@@ -135,7 +136,7 @@ PN potion_file_write(Potion *P, PN cl, pn_file self, PN obj) {
       case PN_TSTRING: len = PN_STR_LEN(obj); ptr = PN_STR_PTR(obj); break;
       case PN_TBYTES:  len = potion_send(obj, PN_STR("length")); ptr = PN_STR_PTR(obj); break;
       case PN_TNUMBER: {
-        double tmp = PN_DBL(obj); len = sizeof(tmp); ptr = (char *)&tmp;
+        tmp = PN_DBL(obj); len = sizeof(tmp); ptr = (char *)&tmp;
         break;
       }
       default: return potion_type_error(P, obj);
