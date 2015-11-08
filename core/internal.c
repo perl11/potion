@@ -285,6 +285,7 @@ PN potion_type_error_want(Potion *P, const char *param, PN obj, const char *type
 #define PN_EXIT_ERROR 1
 #define PN_EXIT_FATAL 2
 
+// coverity[+kill]
 void potion_fatal(char *message) {
   fprintf(stderr, "** %s\n", message);
   exit(PN_EXIT_FATAL);
@@ -292,6 +293,7 @@ void potion_fatal(char *message) {
 
 // TODO: syntax errors should be collected and emitted at the end of the
 // full compilation
+// coverity[+kill]
 void potion_syntax_error(Potion *P, struct PNSource *t, const char *fmt, ...) {
   va_list args;
   PN out = potion_bytes(P, 36);
