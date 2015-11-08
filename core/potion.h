@@ -134,7 +134,7 @@ struct PNVtable;
 #define PN_VTYPE(x)     (((struct PNObject *)(x))->vt)
 #define PN_TYPE_ID(t)   ((t)-PN_TNIL)
 #define PN_VTABLE(t)    (PN_FLEX_AT(P->vts, PN_TYPE_ID(t)))
-#define PN_TYPECHECK(t) (PN_TYPE_ID(t) >= 0 && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
+#define PN_TYPECHECK(t) (t >= PN_TNIL && PN_TYPE_ID(t) < PN_FLEX_SIZE(P->vts))
 
 #define PN_NIL          ((PN)0)
 #define PN_ZERO         ((PN)1)   //i.e. PN_NUM(0)
