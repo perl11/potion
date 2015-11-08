@@ -11,7 +11,7 @@ addons:
     notification_email: rurban@cpan.org
     build_command_prepend: "make clean; make config"
     build_command: "make"
-    branch_pattern: master
+    branch_pattern: coverity_scan
 
 os:
   - linux
