@@ -16,7 +16,7 @@
       \../::/
        \/::/
 
-[![Build Status](https://travis-ci.org/perl11/potion.svg?branch=master)](https://travis-ci.org/perl11/potion) [![Coverity Status](https://scan.coverity.com/projects/6934/badge.svg)](https://scan.coverity.com/projects/perl11-potion) [perl11.org/potion/](http://perl11.org/potion/)
+[![Build Status](https://travis-ci.org/perl11/potion.svg)](https://travis-ci.org/perl11/potion) [![Coverity Status](https://scan.coverity.com/projects/6934/badge.svg)](https://scan.coverity.com/projects/perl11-potion) [perl11.org/potion/](http://perl11.org/potion/)
 
 ## ~ potion ~
 
