@@ -397,7 +397,7 @@ void *potion_gc_copy(Potion *P, struct PNObject *ptr) {
   if (!sz) { //external pointer or immediate value
     DBG_G(P,"GC copy: assuming extern pointer or immediate potion value %p: %ld / 0x%lx\n", ptr, *(long*)ptr, *(long*)ptr);
     //return ptr;
-    memcpy(dst, ptr, sizeof(void*));
+    memcpy(dst, ptr, sizeof(void *)); // coverity[suspicious_sizeof::FALSE]
     return dst;
   }
   memcpy(dst, ptr, sz);
