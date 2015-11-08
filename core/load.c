@@ -62,7 +62,7 @@ static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE le
 }
 
 static PN potion_load_dylib(Potion *P, const char *filename) {
-  void *handle = dlopen(filename, RTLD_LAZY);
+  void *handle = dlopen(filename, RTLD_LAZY); // XXX when can we close this?
   void (*func)(Potion *);
   char *err, *init_func_name;
   if (handle == NULL) {

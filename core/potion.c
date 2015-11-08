@@ -78,17 +78,23 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
 
   if (!buf && filename) {
     struct stat stats;
-    if (stat(filename, &stats) == -1) {
-      fprintf(stderr, "** %s does not exist.", filename);
-      goto done;
-    }
+    long size;
+    char *bufptr;
+    // TOCTTOU http://cwe.mitre.org/data/definitions/367.html
     fd = open(filename, O_RDONLY | O_BINARY);
     if (fd == -1) {
-      fprintf(stderr, "** could not open %s. check permissions.", filename);
+      if (stat(filename, &stats) == -1) {
+        fprintf(stderr, "** %s does not exist.", filename);
+      } else {
+        fprintf(stderr, "** could not open %s. check permissions.", filename);
+      }
       goto done;
     }
-    long size = stats.st_size;
-    char *bufptr;
+    if (stat(filename, &stats) == -1) {
+      fprintf(stderr, "** %s vanished!", filename);
+      goto done;
+    }
+    size = stats.st_size;
     if (addcode) {
       int len = strlen(addcode);
       size += len;
@@ -117,7 +123,7 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
     code = potion_parse(P, buf, filename);
     if (!code || PN_TYPE(code) == PN_TERROR) {
       potion_p(P, code);
-      return code;
+      goto done;
     }
     DBG_v("\n-- parsed --\n");
     DBG_Pv(code);
@@ -196,7 +202,6 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
     if (code &&
 	(written = fwrite(PN_STR_PTR(code), 1, PN_STR_LEN(code), pnb) == PN_STR_LEN(code))) {
       printf("** compiled code saved to %s\n", outpath);
-      fclose(pnb);
 
       if (!compile || !strcmp(compile, "bc"))
 	printf("** run it with: potion %s\n", outpath);
@@ -209,6 +214,7 @@ static PN potion_cmd_exec(Potion *P, PN buf, char *filename, char *compile, char
       fprintf(stderr, "** could not write all %s compiled code (%u/%u) to %s\n",
 	      compile?compile:"bytecode", written, code?PN_STR_LEN(code):0, outpath);
     }
+    fclose(pnb);
   }
 
 #if defined(DEBUG)
