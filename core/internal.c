@@ -316,7 +316,7 @@ void potion_p(Potion *P, PN x) {
 
 void potion_esp(void **esp) {
   PN x;
-  *esp = (void *)&x;
+  *esp = (void *)&x; // coverity[escape_local_addr]
 }
 
 #ifdef DEBUG
