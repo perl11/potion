@@ -3,10 +3,25 @@ compiler:
   - clang
   - gcc
 
+addons:
+  coverity_scan:
+    project:
+      name: "perl11/potion"
+      description: "_why the lucky stiff's little language"
+    notification_email: rurban@cpan.org
+    build_command_prepend: "make clean; make config"
+    build_command: "make"
+    branch_pattern: master
+
 os:
   - linux
   - osx
 
+env:
+  global:
+    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+    #   via the "travis encrypt" command using the project repo's public key
+    - secure: "IWKYrGjNWEfm7y65MFnNZ2OaO2XjgA2qeGOw9tUR0cu2Bzam97LhSKvrOi06pCDOteGcCE/gwBxbOnKXtmZ6c1ammhPwlXKTkk9haxSK38CMXb3psezLZrtYHznuyArccZNfSSmjqWGQF55gkTSbE/X2fXuw2RGmmKsk379WC6w="
 env:
   - DEBUG=0
   - DEBUG=1

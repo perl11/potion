@@ -440,18 +440,15 @@ docall: doc GTAGS ${CHM}
 chm: ${CHM}
 DOXY_PRE = doc/footer.sh > doc/footer.inc; \
 	test -f core/syntax.c && mv core/syntax.c core/syntax-c.tmp
-DOXY_POST = test -f core/syntax-c.tmp && mv core/syntax-c.tmp core/syntax.c; \
-	rm README.md
+DOXY_POST = test -f core/syntax-c.tmp && mv core/syntax-c.tmp core/syntax.c
 
 doxygen: ${DOCHTML} doc/html/files.html
 	@${ECHO} DOXYGEN -f core lib
-	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md;
 	@${DOXY_PRE}
 	@doxygen doc/Doxyfile
 	-@${DOXY_POST}
 doc/html/index.hhp: doc/html/files.html doc/Doxyfile.chm
 	@${ECHO} DOXYGEN doc/html/index.hhp
-	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md;
 	@${DOXY_PRE}
 	-rm -rf doc/html/*
 	@doxygen doc/Doxyfile.chm
@@ -461,7 +458,6 @@ doc/html/potion.chm: doc/html/index.hhp
 	-cd doc/html; PATH=/cygdrive/c/Program\ Files/HTML\ Help\ Workshop:$PATH hhc index.hhp
 doc/html/files.html: ${SRC} doc/Doxyfile doc/footer.sh Makefile
 	@${ECHO} DOXYGEN core
-	@perl -pe's/^  //;s/^~ /## ~ /;' README > README.md;
 	@${DOXY_PRE}
 	-rm -rf doc/html/*
 	@doxygen doc/Doxyfile 2>&1 |egrep -v "  parameter 'P|self|cl'"
@@ -503,9 +499,10 @@ clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o core/*.opic core/*.i test/api/*.o core/potion.os
 	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o lib/*.o lib/*.opic
+	@rm -rf bin/potion*.dSYM
 	@rm -rf lib/*/*.bundle.dSYM
 	@rm -f lib/potion/*.pnb lib/potion/*/*.pnb
-	@rm -f ${DOCHTML} README.md doc/footer.inc
+	@rm -f ${DOCHTML} doc/footer.inc
 	@rm -f bin/potion${EXE} bin/potion-s${EXE} \
 	  test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 	@rm -f tools/*.o core/config.h core/version.h
