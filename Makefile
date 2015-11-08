@@ -498,9 +498,9 @@ todo:
 clean:
 	@${ECHO} cleaning
 	@rm -f core/*.o core/*.opic core/*.i test/api/*.o core/potion.os
-	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o lib/*.o lib/*.opic
 	@rm -rf bin/potion*.dSYM
-	@rm -rf lib/*/*.bundle.dSYM
+	@rm -rf lib/*/*.bundle.dSYM lib/lib*.dylib.dSYM
+	@rm -f bin/* lib/libpotion.* lib/potion/*${DLL} lib/*/*${LOADEXT} lib/*/*.o lib/*.o lib/*.opic
 	@rm -f lib/potion/*.pnb lib/potion/*/*.pnb
 	@rm -f ${DOCHTML} doc/footer.inc
 	@rm -f bin/potion${EXE} bin/potion-s${EXE} \
