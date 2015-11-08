@@ -12,7 +12,8 @@
 
 PNAsm *potion_asm_new(Potion *P) {
   int siz = ASM_UNIT - sizeof(PNAsm);
-  PNAsm * volatile asmb = PN_FLEX_NEW(asmb, PN_TBYTES, PNAsm, siz);
+  PNAsm * volatile asmb;
+  PN_FLEX_NEW(asmb, PN_TBYTES, PNAsm, siz);
   return asmb;
 }
 
