@@ -18,13 +18,19 @@ static PN potion_load_code(Potion *P, const char *filename) {
   struct stat stats;
   int fd = -1;
   PN result = PN_NIL;
-  if (stat(filename, &stats) == -1) {
-    fprintf(stderr, "** %s does not exist.", filename);
-    return PN_NIL;
-  }
+  // TOCTTOU http://cwe.mitre.org/data/definitions/367.html
   fd = open(filename, O_RDONLY | O_BINARY);
   if (fd == -1) {
-    fprintf(stderr, "** could not open %s. check permissions.", filename);
+    if (stat(filename, &stats) == -1) {
+      fprintf(stderr, "** %s does not exist.", filename);
+    } else {
+      fprintf(stderr, "** could not open %s. check permissions.", filename);
+    }
+    return PN_NIL;
+  }
+  if (stat(filename, &stats) == -1) {
+    fprintf(stderr, "** %s vanished!", filename);
+    close(fd);
     return PN_NIL;
   }
   buf = potion_bytes(P, stats.st_size);
@@ -61,6 +67,7 @@ static char *potion_initializer_name(Potion *P, const char *filename, PN_SIZE le
   return func_name;
 }
 
+/// \return the handle as mangled int (might be too large)
 static PN potion_load_dylib(Potion *P, const char *filename) {
   void *handle = dlopen(filename, RTLD_LAZY); // XXX when can we close this?
   void (*func)(Potion *);
@@ -81,7 +88,7 @@ static PN potion_load_dylib(Potion *P, const char *filename) {
   }
   free(init_func_name);
   func(P);
-  return PN_TRUE;
+  return PN_INT(handle);
 }
 
 static PN pn_loader_path;
