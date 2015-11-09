@@ -91,6 +91,32 @@ PN potion_table_each(Potion *P, PN cl, PN self, PN block) {
 }
 
 ///\memberof PNTable
+/// "map" method. Calls the block function on every element, and returns a
+/// list of all results in unspecified order.
+///\param block PNClosure with one or two args. The first arg is the key,
+/// the optional second the value.
+///\return self PNTuple
+PN potion_table_map(Potion *P, PN cl, PN self, PN block) {
+  vPN(Table) t = (struct PNTable *)potion_fwd(self);
+  unsigned i = 0, k;
+  int with_val = potion_sig_arity(P, PN_CLOSURE(block)->sig) >= 2;
+  DBG_CHECK_TYPE(t,PN_TTABLE);
+  NEW_TUPLE(t2, kh_size(t));
+  for (k = kh_begin(t); k != kh_end(t); ++k)
+    if (kh_exist(PN, t, k)) {
+      PN ret;
+      if (with_val)
+        ret = PN_CLOSURE(block)->method(P, block, cl, kh_key(PN, t, k),
+                                                      kh_val(PN, t, k));
+      else
+        ret = PN_CLOSURE(block)->method(P, block, cl, kh_key(PN, t, k));
+      t2->set[i++] = ret;
+    }
+  PN_TOUCH(t2);
+  return (PN)t2;
+}
+
+///\memberof PNTable
 /// "put" method. write to the hash
 ///\param key PN
 ///\param value PN
@@ -224,6 +250,33 @@ PN potion_table_values(Potion *P, PN cl, PN self) {
   for (k = kh_begin(t); k != kh_end(t); ++k)
     if (kh_exist(PN, t, k)) {
       PN_TUPLE_AT(t2, i++) = kh_val(PN, t, k);
+    }
+  PN_TOUCH(t2);
+  return (PN)t2;
+}
+
+///\memberof PNTable
+/// "filter" method. Calls the block function on every table element.
+///\param block PNClosure with one or two args. The first arg is the key,
+/// the optional second the value.
+///\return new PNTable with all elements that pass the
+/// test implemented by the provided function.
+PN potion_table_filter(Potion *P, PN cl, PN self, PN block) {
+  vPN(Table) t =  (vPN(Table))potion_fwd(self);
+  DBG_CHECK_TYPE(t,PN_TTABLE);
+  int with_val = potion_sig_arity(P, PN_CLOSURE(block)->sig) >= 2;
+  PN ret;
+  vPN(Table) t2 = (vPN(Table))potion_table_clone(P, cl, self);
+  unsigned k;
+  for (k = kh_begin(t); k != kh_end(t); ++k)
+    if (kh_exist(PN, t, k)) {
+      if (with_val)
+        ret = PN_CLOSURE(block)->method(P, block, cl, kh_key(PN, t, k),
+                                                      kh_val(PN, t, k));
+      else
+        ret = PN_CLOSURE(block)->method(P, block, cl, kh_key(PN, t, k));
+      if (!PN_TEST(ret))
+        kh_del(PN, t2, k);
     }
   PN_TOUCH(t2);
   return (PN)t2;
@@ -888,6 +941,8 @@ void potion_table_init(Potion *P) {
   potion_method(tbl_vt, "slice", potion_table_slice, "|keys=u");
   potion_method(tbl_vt, "keys", potion_table_keys, 0);
   potion_method(tbl_vt, "values", potion_table_values, 0);
+  potion_method(tbl_vt, "map", potion_table_map, "block=&");
+  potion_method(tbl_vt, "filter", potion_table_filter, "block=&");
 
   potion_type_call_is(tpl_vt, PN_FUNC(potion_tuple_at, "index=N"));
   potion_type_callset_is(tpl_vt, PN_FUNC(potion_tuple_put, "index=N,value=o"));
