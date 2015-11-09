@@ -5,8 +5,8 @@
 .NOTPARALLEL: test
 
 SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
-PLIBS = readline buffile aio
-PLIBS_SRC = lib/aio.c lib/buffile.c lib/readline/readline.c lib/readline/linenoise.c
+PLIBS = readline buffile aio database
+PLIBS_SRC = lib/aio.c lib/buffile.c lib/database.c lib/readline/readline.c lib/readline/linenoise.c
 GREGCFLAGS = -O3 -DNDEBUG
 
 # bootstrap config.inc with make -f config.mak
@@ -18,8 +18,8 @@ endif
 ifneq (${SANDBOX},1)
 SRC += core/file.c core/load.c
 else
-PLIBS = readline aio
-PLIBS_SRC = lib/aio.c lib/readline/readline.c lib/readline/linenoise.c
+PLIBS = readline aio database
+PLIBS_SRC = lib/aio.c lib/database.c lib/readline/readline.c lib/readline/linenoise.c
 ifeq ($(WIN32),1)
 PLIBS_SRC += lib/readline/win32fixes.c
 endif
@@ -44,9 +44,9 @@ ifneq (${WIN32},1)
     OPIC = opic
   else
     ifneq (${SANDBOX},1)
-      PLIBS = readline buffile
+      PLIBS = readline buffile database
     else
-      PLIBS = readline
+      PLIBS = readline database
     endif
   endif
 endif
@@ -346,6 +346,14 @@ lib/potion/buffile${LOADEXT}: core/config.h core/potion.h \
 	@${LIBPNA_AWAY}
 	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,potion/buffile,${LDDLLFLAGS}) ${RPATH} \
 	  lib/buffile.${OPIC} ${LIBPTH} -lpotion ${LIBS} > /dev/null
+	@${LIBPNA_BACK}
+
+lib/potion/database${LOADEXT}: core/config.h core/potion.h \
+  lib/database.${OPIC} lib/database.c lib/libpotion${DLL}
+	@${ECHO} LD $@
+	@${LIBPNA_AWAY}
+	@${CC} $(DEBUGFLAGS) -o $@ $(subst libpotion,potion/database,${LDDLLFLAGS}) ${RPATH} \
+	  lib/database.${OPIC} ${LIBPTH} -lpotion -lsqlite3 ${LIBS} > /dev/null
 	@${LIBPNA_BACK}
 
 ifeq ($(HAVE_LIBUV),1)
