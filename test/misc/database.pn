@@ -1,0 +1,28 @@
+load "database"
+load "buffile"
+
+file = "database.db"
+f = fopen(file, "r") # cleanup the left-over
+f unlink
+
+db = Database(file)
+db exec "CREATE TABLE t (id INT, name TEXT)"
+db exec "INSERT INTO t (id,name) VALUES (1,'New name')"
+db close
+db open? say #=> false
+db open(file)
+db open? say #=> true
+db exec "INSERT INTO t (id,name) VALUES (2,'Old name')"
+db exec "SELECT * FROM t" (row): (row('id'), row('name')) say.
+	#=> (1, New name)
+	#=> (2, Old name)
+tpl = db gettable "SELECT * FROM t"
+tpl each(r): r('id') say. #=> 1
+		          #=> 2
+tpl each(r): r('name') say. #=> New name
+		            #=> Old name
+db open? say #=> true
+db close
+db open? say #=> false
+
+# keep database.db for manual inspection?
