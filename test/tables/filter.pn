@@ -1,0 +1,2 @@
+("cheese"=0, "bread"=1, "mayo"=2) filter (k,v): v > 0. map(k): k.
+#=> (bread, mayo)
