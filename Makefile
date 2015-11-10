@@ -272,7 +272,7 @@ bin/potion-s${EXE}: lib/libpotion.a ${PLIBS_OBJS}
 	@${ECHO} LINK $@
 	@${CC} -c ${CFLAGS} ${INCS} -DSTATIC -o core/potion.os core/potion.c
 	@${CC} ${CFLAGS} ${LDFLAGS} core/potion.os -o $@ ${PLIBS_OBJS} \
-	  lib/libpotion.a ${LIBPTH} ${RPATH} ${EXTLIBS} ${LIBS}
+	  lib/libpotion.a ${LIBPTH} ${RPATH} ${EXTLIBS} ${LIBS} -lsqlite3
 	@if [ "${DEBUG}" != "1" ]; then ${ECHO} STRIP $@; ${STRIP} $@; fi
 	@if [ "${SANDBOX}" = "1" ]; then rm bin/potion${EXE}; cd bin; ln -s potion-s${EXE} potion${EXE}; cd ..; fi
 
