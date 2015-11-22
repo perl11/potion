@@ -5,6 +5,8 @@ v0.4
         * Fix installation from source without git
         * Fixed various SEGVs and minor errors and security issues.
         * Fixed cmp for string (Peter Arthur)
+        * Replaced 32bit mersenne twister with pcg.
+        * Added bounds argument for rand and num rand.
 
 v0.3	Sat Oct 17 10:42:49 CEST 2015 rurban v0.3-g7963cbc-1264
 

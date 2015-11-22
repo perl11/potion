@@ -469,7 +469,7 @@ void potion_num_init(Potion *P) {
   potion_method(dbl_vt, "/", potion_dbl_div, "value=D");
   potion_method(dbl_vt, "abs", potion_dbl_abs, 0);
   potion_method(dbl_vt, "cmp", potion_dbl_cmp, "value=D");
-  //potion_method(dbl_vt, "rand", potion_dbl_rand, 0);
+  //potion_method(dbl_vt, "rand", potion_dbl_rand, "|bound=D");
   // optimized integer-only methods, for both operands
   potion_method(int_vt, "+", potion_int_add, "value=I");
   potion_method(int_vt, "-", potion_int_sub, "value=I");
@@ -482,7 +482,7 @@ void potion_num_init(Potion *P) {
   potion_method(int_vt, "chr", potion_int_chr, 0);
   potion_method(int_vt, "abs", potion_int_abs, 0);
   potion_method(int_vt, "cmp", potion_int_cmp, "value=I");
-  //potion_method(int_vt, "rand", potion_int_rand, 0);
+  //potion_method(int_vt, "rand", potion_int_rand, "|bound=I");
   potion_method(num_vt, "step", potion_int_step, "end=N,step=N,block=&");
   potion_method(num_vt, "times", potion_int_times, "block=&");
   potion_method(num_vt, "to",   potion_int_to, "end=N,block=&");

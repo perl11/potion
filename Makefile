@@ -4,7 +4,7 @@
         examples release deploy install grammar doxygen website testable
 .NOTPARALLEL: test
 
-SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
+SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/gc.c core/internal.c core/lick.c core/pcg.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
 PLIBS = readline buffile aio database
 PLIBS_SRC = lib/aio.c lib/buffile.c lib/database.c lib/readline/readline.c lib/readline/linenoise.c
 GREGCFLAGS = -O3 -DNDEBUG
@@ -202,7 +202,7 @@ $(foreach o,${OBJS},core/internal.${o} ): core/internal.c core/potion.h core/con
 $(foreach o,${OBJS},core/lick.${o} ): core/lick.c core/potion.h core/config.h core/internal.h
 $(foreach o,${OBJS},core/load.${o} ): core/load.c core/potion.h core/config.h core/internal.h \
  core/table.h core/khash.h
-$(foreach o,${OBJS},core/mt19937ar.${o} ): core/mt19937ar.c core/potion.h core/config.h
+$(foreach o,${OBJS},core/pcg.${o} ): core/pcg.c core/potion.h core/config.h
 $(foreach o,${OBJS},core/number.${o} ): core/number.c core/potion.h core/config.h core/internal.h
 $(foreach o,${OBJS},core/objmodel.${o} ): core/objmodel.c core/potion.h core/config.h core/internal.h \
  core/khash.h core/table.h core/asm.h
