@@ -87,7 +87,7 @@ static void pcg32_srandom_r(pcg32_random_t* rng, uint64_t initstate, uint64_t in
     pcg32_random_r(rng);
 }
 
-void pcg32_srandom(uint64_t seed, uint64_t seq)
+inline void pcg32_srandom(uint64_t seed, uint64_t seq)
 {
     pcg32_srandom_r(&pcg32_global, seed, seq);
 }
@@ -105,7 +105,7 @@ static uint32_t pcg32_random_r(pcg32_random_t* rng)
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
 
-uint32_t pcg32_random(void)
+inline uint32_t pcg32_random(void)
 {
     return pcg32_random_r(&pcg32_global);
 }
@@ -147,7 +147,7 @@ static uint32_t pcg32_boundedrand_r(pcg32_random_t* rng, uint32_t bound)
     }
 }
 
-uint32_t pcg32_boundedrand(uint32_t bound)
+inline uint32_t pcg32_boundedrand(uint32_t bound)
 {
     return pcg32_boundedrand_r(&pcg32_global, bound);
 }
@@ -161,7 +161,8 @@ unsigned long potion_rand_int(void) {
 
 /** generates a random number on [0, 1.0) with 53-bit resolution*/
 double potion_rand_double(void) {
-  unsigned long a = potion_rand_int()>>5, b = potion_rand_int()>>6; 
+  unsigned long a = pcg32_random_r(&pcg32_global)>>5,
+                b = pcg32_random_r(&pcg32_global)>>6; 
   return(a*67108864.0+b)*(1.0/9007199254740992.0); 
 }
 
@@ -183,7 +184,7 @@ PN potion_srand(Potion *P, PN cl, PN self, PN seed) {
  \sa potion_num_rand for double, potion_srand. */
 PN potion_rand(Potion *P, PN cl, PN self, PN bound) {
   return bound ? PN_NUM(pcg32_boundedrand(PN_INT(bound)))
-               : PN_NUM(potion_rand_int());
+               : PN_NUM(pcg32_random_r(&pcg32_global));
 }
 
 /**\memberof PNNumber
