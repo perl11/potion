@@ -16,6 +16,7 @@ PLATFORM  = $(shell ./tools/config.sh "${CC}" target)
 RELEASE  ?= ${VERSION}.${REVISION}
 PKG       = potion-${RELEASE}
 PKGBIN    = ${PKG}-${PLATFORM}
+PKG_DESC  = "potion language"
 ifeq (${WIN32},1)
 BINDIST   = pkg/${PKGBIN}.zip
 else
@@ -25,6 +26,31 @@ endif
 dist: bin-dist src-dist
 
 release: dist
+
+# sudo gem install fpm
+# pkgin is for BSD, with pkg_create
+# TODO: need a simple one-line windows cmd-line installer from the zip
+
+define EXPAND_DEPLOY
+ifneq ($$(WIN32),1)
+deploy: release
+	rm -rf dist
+	mkdir dist
+	tar xfz pkg/${PKGBIN}.tar.gz       -C dist/
+	tar xfz pkg/${PKGBIN}-devel.tar.gz -C dist/
+ifeq ($$(DLL),.so)
+	fpm  -s dir -t deb -C dist -p pkg --name potion --version $(VERSION) --description $(PKG_DESC)
+	fpm  -s dir -t rpm -C dist -p pkg --name potion --version $(VERSION) --description $(PKG_DESC)
+	-fpm -s dir -t pkgin -C dist -p pkg --name potion --version $(VERSION) --description $(PKG_DESC)
+endif
+ifeq ($$(DLL),.dylib)
+	fpm -s dir -t osxpkg -C dist -p pkg --name potion --version $(VERSION) --description $(PKG_DESC)
+endif
+	rm -rf dist
+endif
+endef
+
+$(eval $(call EXPAND_DEPLOY))
 
 install: bin-dist
 	${SUDO} tar xfz pkg/${PKGBIN}.tar.gz -C $(PREFIX)/
@@ -127,4 +153,4 @@ GTAGS: ${SRC} core/*.h
 	  mv ${PKG}/ref doc/
 	rm -rf ${PKG}
 
-.PHONY: dist release install tarball src-dist bin-dist
+.PHONY: dist release deploy install tarball src-dist bin-dist

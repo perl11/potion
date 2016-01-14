@@ -1,7 +1,7 @@
 # posix (linux, bsd, osx, solaris) + mingw with gcc/clang only
 .SUFFIXES: .y .c .i .o .opic .textile .html
 .PHONY: all default bins libs pn static usage config clean doc rebuild check test bench tarball dist \
-        examples release install grammar doxygen website testable
+        examples release deploy install grammar doxygen website testable
 .NOTPARALLEL: test
 
 SRC = core/asm.c core/ast.c core/compile.c core/contrib.c core/gc.c core/internal.c core/lick.c core/mt19937ar.c core/number.c core/objmodel.c core/primitive.c core/string.c core/syntax.c core/table.c core/vm.c
@@ -421,6 +421,9 @@ tarball:
 	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
 
 release: dist
+	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
+
+deploy: release
 	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
 
 %.html: %.textile
