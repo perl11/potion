@@ -10,7 +10,7 @@ loop:
    len = res length
    i = 0
    while(i<len):
-      v = res at(i)
+      v = res(i)
       if(v*v > last): break.
       if(last%v == 0): prime = false, break.
       i += 1
