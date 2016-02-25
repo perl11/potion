@@ -1,4 +1,4 @@
-# very slow potion, compared to ruby.
+# very slow potion aref method call, compared to ruby.
 # 6m30s in the jit, compared to 30s with ruby
 # written by Kokizzu
 # https://stackoverflow.com/questions/29091475/printing-odd-prime-every-100k-primes-found/
@@ -10,7 +10,9 @@ loop:
    len = res length
    i = 0
    while(i<len):
-      v = res at(i)
+      #v = res at(i) # slow 6m30s
+      #v = res(i)    # 11s
+      v = res[i]     # 7s - no bounds checks
       if(v*v > last): break.
       if(last%v == 0): prime = false, break.
       i += 1
