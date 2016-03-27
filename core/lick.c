@@ -176,10 +176,17 @@ PN potion_list_reverse(Potion *P, PN cl, PN self) {
 
 ///\memberof PNCons
 ///\return PNCons
-//PN potion_list_nreverse(Potion *P, PN cl, PN self) {
-  // TODO
-  //return self;
-//}
+PN potion_list_nreverse(Potion *P, PN cl, PN self) {
+  vPN(Cons) list = (vPN(Cons))self;
+  vPN(Cons) head = NULL;
+  vPN(Cons) next;
+  for (; list; list = next) {
+    next = list->tail;
+    list->tail = head;
+    head = list;
+  }
+  return (PN)head;
+}
 
 void potion_lick_init(Potion *P) {
   PN c_vt = PN_VTABLE(PN_TCONS); // should inherit from nil
@@ -194,7 +201,7 @@ void potion_lick_init(Potion *P) {
   potion_method(c_vt, "append", potion_list_append, "list=o");
   potion_method(c_vt, "member", potion_list_member, "value=o");
   potion_method(c_vt, "reverse", potion_list_reverse, 0);
-  //potion_method(c_vt, "nreverse", potion_list_nreverse, 0);
+  potion_method(c_vt, "nreverse", potion_list_nreverse, 0);
   PN l_vt = PN_VTABLE(PN_TLICK);
   potion_method(l_vt, "attr", potion_lick_attr, 0);
   potion_method(l_vt, "licks", potion_lick_licks, 0);
