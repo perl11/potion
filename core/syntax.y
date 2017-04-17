@@ -261,8 +261,8 @@ true = "true" !utfw
 false = "false" !utfw
 hexl = [0-9A-Fa-f]
 hex = '0x' < hexl+ >
-# wrong x-1 parsing precedence, whitespace #75
-dec = < ('0' | '-'? [1-9][0-9]*) { $$ = YY_TINT; }
+
+dec = < ('0' | [1-9][0-9]*) { $$ = YY_TINT; }
         ('.' [0-9]+ { $$ = YY_TDBL; })?
         ('e' [-+] [0-9]+ { $$ = YY_TDBL })? >
 
