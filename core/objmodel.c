@@ -251,6 +251,8 @@ void potion_type_constructor_is(PN vt, PN cl) {
 ///\param ivars: PNTuple of object members
 PN potion_class(Potion *P, PN cl, PN self, PN ivars) {
   PN parent = ((!self || self == P->lobby) ? PN_VTABLE(PN_TOBJECT) : self);
+  if(((struct PNVtable *)parent)->type <= PN_TUSER && ((struct PNVtable *)parent)->type != PN_TOBJECT)
+    return PN_NIL;
   PN pvars = ((struct PNVtable *)parent)->ivars;
   PNType t = PN_FLEX_SIZE(P->vts) + PN_TNIL;
   PN_FLEX_NEEDS(1, P->vts, PN_TFLEX, PNFlex, TYPE_BATCH_SIZE);
@@ -530,6 +532,8 @@ PN potion_object_send(Potion *P, PN cl, PN self, PN method) {
 PN potion_object_new(Potion *P, PN cl, PN self) {
   vPN(Vtable) vt = (struct PNVtable *)self;
   if (PN_IS_METACLASS(vt)) // TODO: error
+    return PN_NIL;
+  if(vt->type <= PN_TUSER && vt->type != PN_TOBJECT)
     return PN_NIL;
   if (vt->type == PN_TVTABLE) // TODO: error
     return PN_NIL;
