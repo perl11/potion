@@ -414,7 +414,7 @@ dist: $(AIO_DEPS) bins libs static ${GREG}
 	fi
 	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}" EXE=${EXE} DLL=${DLL} LOADEXT=${LOADEXT}
 
-install: bins libs $(AIO_DEPS) ${GREG}
+install: bins libs $(AIO_DEPS) ${GREG} bin/potion-s${EXE}
 	+$(MAKE) -f dist.mak $@ PREFIX="${PREFIX}"
 
 tarball:
