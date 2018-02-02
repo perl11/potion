@@ -82,7 +82,7 @@ with Google adopting it as natively compiled Go.
 
 I also spelunked Neko VM for some ideas and
 found this comparison very useful.
-<http://nekovm.org/lua>
+<http://web.archive.org/web/20150204201136/nekovm.org/lua>
 
 I also took from the Lua the notion of using
 tables for everything. And, like Lua, lists
