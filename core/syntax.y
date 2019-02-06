@@ -387,6 +387,7 @@ PN potion_parse(Potion *P, PN code, char *filename) {
   P->yypos = 0;
   P->input = code;
   P->source = PN_NIL;
+  P->parser = (PN)G;
   P->pbuf = potion_asm_new(P);
 #ifdef YY_DEBUG
   yydebug = P->flags;
@@ -449,6 +450,7 @@ PN potion_sig(Potion *P, char *fmt) {
   P->yypos = 0;
   P->input = potion_byte_str(P, fmt);
   P->source = out = PN_TUP0();
+  P->parser = (PN)G;
   P->pbuf = NULL;
 #ifdef YY_DEBUG
   yydebug = P->flags;

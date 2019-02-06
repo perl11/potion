@@ -15,7 +15,7 @@
  * 
  * THE SOFTWARE IS PROVIDED 'AS IS'.  USE ENTIRELY AT YOUR OWN RISK.
  * 
- * Last edited: 2013-04-11 11:10:34 rurban
+ * Last edited: 2019-02-06 12:05:37 rurban
  */
 
 #include <stdio.h>
@@ -26,9 +26,11 @@
 
 #define GREG_MAJOR	0
 #define GREG_MINOR	4
-#define GREG_LEVEL	5
+#define GREG_LEVEL	6
 
-typedef enum { Freed = -1, Unknown= 0, Rule, Variable, Name, Dot, Character, String, Class, Action, Predicate, Error, Alternate, Sequence, PeekFor, PeekNot, Query, Star, Plus, Any } NodeType;
+typedef enum { Freed = -1, Unknown= 0, Rule, Variable, Name, Dot, Character, String,
+               Class, Action, Predicate, Error, Alternate, Sequence, PeekFor, PeekNot,
+               Query, Star, Plus, Any } NodeType;
 
 enum {
   RuleUsed	= 1<<0,
@@ -38,25 +40,58 @@ enum {
 typedef union Node Node;
 
 #define NODE_COMMON NodeType type;  Node *next
-struct Rule	 { NODE_COMMON; char *name; Node *variables;  Node *expression;  int id;  int flags;	};
-struct Variable	 { NODE_COMMON; char *name; Node *value;  int offset;					};
-struct Name	 { NODE_COMMON; Node *rule; Node *variable;						};
-struct Dot	 { NODE_COMMON;										};
-struct Character { NODE_COMMON; char *value;								};
-struct String	 { NODE_COMMON; char *value;								};
-struct Class	 { NODE_COMMON; unsigned char *value;							};
-struct Action	 { NODE_COMMON; char *text;  Node *list;  char *name;  Node *rule;			};
-struct Predicate { NODE_COMMON; char *text;								};
-struct Error     { NODE_COMMON; Node *element; char *text;						};
-struct Alternate { NODE_COMMON; Node *first;  Node *last;						};
-struct Sequence	 { NODE_COMMON; Node *first;  Node *last;						};
-struct PeekFor	 { NODE_COMMON; Node *element;								};
-struct PeekNot	 { NODE_COMMON; Node *element;								};
-struct Query	 { NODE_COMMON; Node *element;								};
-struct Star	 { NODE_COMMON; Node *element;								};
-struct Plus	 { NODE_COMMON; Node *element;								};
-struct Any	 { NODE_COMMON;										};
+struct Rule	 { NODE_COMMON; char *name; Node *variables; Node *expression; int id; int flags; };
+struct Variable	 { NODE_COMMON; char *name; Node *value;  int offset;		   };
+struct Name	 { NODE_COMMON; Node *rule; Node *variable;			   };
+struct Dot	 { NODE_COMMON;							   };
+struct Character { NODE_COMMON; char *value;					   };
+struct String	 { NODE_COMMON; char *value;					   };
+struct Class	 { NODE_COMMON; unsigned char *value;				   };
+struct Action	 { NODE_COMMON; char *text;  Node *list;  char *name;  Node *rule; };
+struct Predicate { NODE_COMMON; char *text;					   };
+struct Error     { NODE_COMMON; Node *element; char *text;			   };
+struct Alternate { NODE_COMMON; Node *first;  Node *last;			   };
+struct Sequence	 { NODE_COMMON; Node *first;  Node *last;			   };
+struct PeekFor	 { NODE_COMMON; Node *element;					   };
+struct PeekNot	 { NODE_COMMON; Node *element;					   };
+struct Query	 { NODE_COMMON; Node *element;					   };
+struct Star	 { NODE_COMMON; Node *element;					   };
+struct Plus	 { NODE_COMMON; Node *element;					   };
+struct Any	 { NODE_COMMON;							   };
 #undef NODE_COMMON
+
+#ifndef YYSTYPE
+#define YYSTYPE	int
+#endif
+#ifndef YY_XTYPE
+#define YY_XTYPE void *
+#endif
+struct _yythunk; // forward declaration
+typedef struct _GREG {
+  char *buf;
+  int   buflen;
+  int   offset;
+  int   pos;
+  int   limit;
+  char *text;
+  int	textlen;
+  int	begin;
+  int	end;
+  struct _yythunk *thunks;
+  int	thunkslen;
+  int   thunkpos;
+  int	lineno;
+  char	*filename;
+  FILE  *input;
+  YYSTYPE ss;
+  YYSTYPE *val;
+  YYSTYPE *vals;
+  int valslen;
+  YY_XTYPE data;
+#ifdef YY_DEBUG
+  int debug;
+#endif
+} GREG;
 
 union Node
 {

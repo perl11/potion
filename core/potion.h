@@ -653,7 +653,7 @@ struct Potion_State {
   int prec;                ///< double precision
 
   //parser-only:
-  PN input, source;        ///< parser input and output (AST)
+  PN input, source, parser;///< parser input and output (AST)
   int yypos;               ///< parser buffer position
   PNAsm * volatile pbuf;   ///< parser buffer
   PN line;                 ///< currently parsed line (for debug)

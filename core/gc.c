@@ -14,6 +14,7 @@ http://starynkevitch.net/Basile/qishintro.html
 #include "gc.h"
 #include "khash.h"
 #include "table.h"
+#include "../tools/greg.h"
 
 #if defined(DEBUG)
 //mingw32 has struct timeval in sys/time.h
@@ -133,6 +134,56 @@ static inline int NEW_BIRTH_REGION(struct PNMemory *M, void **wb, int sz) {
   return sz;
 }
 
+void potion_gc_minor_parser(PN parser) {
+  if(parser == 0)
+    return;
+
+  struct _GREG *G = (struct _GREG *)parser;
+  struct PNMemory *M = ((Potion *)G->data)->mem;
+  Potion *P = G->data;
+
+  if(PN_IS_PTR(G->ss)) {
+    GC_MINOR_UPDATE(G->ss);
+    potion_mark_minor(G->data, (const struct PNObject *) G->ss);
+  }
+  if(PN_IS_PTR(G->val[0])) {
+    GC_MINOR_UPDATE(G->val[0]);
+    potion_mark_minor(G->data, (const struct PNObject *) G->val[0]);
+  }
+  int c = G->val - G->vals;
+  for(int i = 0; i < c; i++) {
+    if(PN_IS_PTR(G->vals[i])) {
+      GC_MINOR_UPDATE(G->vals[i]);
+      potion_mark_minor(G->data, (const struct PNObject *) G->vals[i]);
+    }
+  }
+}
+
+void potion_gc_major_parser(PN parser) {
+  if(parser == 0)
+    return;
+
+  struct _GREG *G = (struct _GREG *)parser;
+  struct PNMemory *M = ((Potion *)G->data)->mem;
+  Potion *P = G->data;
+
+  if(PN_IS_PTR(G->ss)) {
+    GC_MAJOR_UPDATE(G->ss);
+    potion_mark_major(P, (const struct PNObject *) G->ss);
+  }
+  if(PN_IS_PTR(G->val[0])) {
+    GC_MAJOR_UPDATE(G->val[0]);
+    potion_mark_major(P, (const struct PNObject *) G->val[0]);
+  }
+  int c = G->val - G->vals;
+  for(int i = 0; i < c; i++) {
+    if(G->vals[i] != NULL && PN_IS_PTR(G->vals[i])) {
+      GC_MAJOR_UPDATE(G->vals[i]);
+      potion_mark_major(P, (const struct PNObject *) G->vals[i]);
+    }
+  }
+}
+
 /** \par
   Both this function and potion_gc_major embody a simple
   Cheney loop (also called a "two-finger collector.")
@@ -161,6 +212,7 @@ static int potion_gc_minor(Potion *P, int sz) {
   potion_mark_stack(P, 1);
 
   GC_MINOR_STRINGS();
+  potion_gc_minor_parser(P->parser);
 
   wb = (void **)M->birth_storeptr;
   for (storead = wb; storead < (void **)M->birth_hi; storead++) {
@@ -239,6 +291,7 @@ static int potion_gc_major(Potion *P, int siz) {
   scanptr = 0;
 
   GC_MAJOR_STRINGS();
+  potion_gc_minor_parser(P->parser);
 
   pngc_page_delete((void *)prevoldlo, (char *)prevoldhi - (char *)prevoldlo);
   prevoldlo = 0;

@@ -174,6 +174,10 @@ core/potion.o: core/potion.c core/potion.h core/config.h core/internal.h \
  core/opcodes.h core/khash.h core/table.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${INCS} -o $@ $<
+core/syntax.o: core/syntax.c core/potion.h core/config.h core/internal.h \
+ core/asm.h core/ast.h tools/greg.h
+	@${ECHO} CC $@
+	@${CC} -c ${CFLAGS} ${INCS} -Itools -o $@ $<
 ifneq (${FPIC},)
 core/callcc.${OPIC}: core/callcc.c core/potion.h core/config.h core/internal.h
 	@${ECHO} CC $@ -O0 +frame-pointer
@@ -182,6 +186,10 @@ core/potion.${OPIC}: core/potion.c core/potion.h core/config.h core/internal.h \
  core/opcodes.h core/khash.h core/table.h
 	@${ECHO} CC $@ -O0
 	@${CC} -c ${CFLAGS} -O0 ${FPIC} ${INCS} -o $@ $<
+core/syntax.${OPIC}: core/syntax.c core/potion.h core/config.h core/internal.h \
+ core/asm.h core/ast.h tools/greg.h
+	@${ECHO} CC $@
+	@${CC} -c ${CFLAGS} ${FPIC} ${INCS} -Itools -o $@ $<
 endif
 
 core/potion.h: core/config.h
@@ -259,7 +267,7 @@ endif
 
 ${GREG}: tools/greg.c tools/compile.c tools/tree.c
 	@${ECHO} CC $@
-	@${CC} ${GREGCFLAGS} -o $@ tools/greg.c tools/compile.c tools/tree.c -Itools
+	@${CC} ${GREGCFLAGS} -Itools -o $@ tools/greg.c tools/compile.c tools/tree.c
 
 bin/potion${EXE}: ${PIC_OBJ_POTION} lib/libpotion${DLL}
 	@${ECHO} LINK $@
