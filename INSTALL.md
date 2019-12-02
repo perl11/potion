@@ -33,7 +33,7 @@ gcc-4.6.3 is broken, at least on ubuntu.
 
 ## ~ external dependencies ~
 
-    build-time: gnu make, perl, sed, gcc or clang, echo, cat, expr, git
+    build-time: gnu make, perl, sed, gcc or clang, echo, cat, expr, git, rsync
     perl is only needed because of BSD/darwin sed problems
 
     run-time:
