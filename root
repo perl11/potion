@@ -1,0 +1,1 @@
+{"version":1,"ops":[{"type":1,"author":{"id":"f9a4af3d66a64a7877219cd4afbb836a04c58488"},"timestamp":1580235174,"metadata":{"github-id":"MDU6SXNzdWU1NTYzODEyOTA=","github-url":"https://github.com/perl11/potion/issues/105","origin":"github"},"title":"Make fails","message":"When i run `make install` i get an error:\n```bash\n/bin/sh: 3: gtags: not found\n```","files":null}]}
