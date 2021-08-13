@@ -107,8 +107,8 @@ static const char *find_extension(char *str) {
        i++) {
     PN_SIZE len = strlen(pn_loader_extensions[i]);
     char buf[str_len + len + 1];
-    strncpy(buf, str, str_len);
-    strncpy(buf + str_len, pn_loader_extensions[i], len);
+    strcpy(buf, str);
+    strcpy(buf + str_len, pn_loader_extensions[i]);
     buf[str_len + len] = '\0';
     if (stat(buf, &st) == 0 && S_ISREG(st.st_mode))
       return pn_loader_extensions[i];
