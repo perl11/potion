@@ -66,6 +66,13 @@ and optionally args, statically typed via signature strings.
 #else
 # define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 #endif
+
+#if HAVE_ATTRIBUTE_ELEMENT_COUNT
+# define __bounds(siz) __attribute__((__element_count__(siz)))
+#else
+# define __bounds(siz)
+#endif
+
 #ifdef DEBUG
 # ifndef YY_DEBUG
 #  define YY_DEBUG
@@ -226,7 +233,7 @@ typedef _PN (*PN_F)(Potion *, PN, PN, ...);
   PNType vt; \
   PNUniq uniq
 
-#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[]; } N
+#define PN_FLEX(N, T)    typedef struct { PN_OBJECT_HEADER; PN_SIZE len; PN_SIZE siz; T ptr[] __bounds(siz); } N
 #define PN_FLEX_AT(N, I) ((PNFlex *)(N))->ptr[I]
 #define PN_FLEX_SIZE(N)  ((PNFlex *)(N))->len
 
