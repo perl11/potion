@@ -163,7 +163,7 @@ else
       #ARGDIR=`echo "#include <stdio.h>void a2(int *a, int b, int c) { printf(\\"%d\\", (int)(&c - &b)); }void a1(int a) { a2(&a,a+4,a+2); }int main() { a1(9); return 0; }" > $AC && $CCEX && $AOUT && rm -f $AOUT`
       HAVE_ASAN=`echo "#include <stdio.h>__attribute__((no_address_safety_analysis)) int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX -Werror $3 2>&1 && $AOUT && rm -f $AOUT`
     if [ "$HAVE_ASAN" = "1" ]; then HAVE_ASAN=1; else HAVE_ASAN=0; fi
-      HAVE_ATTRIBUTE_ELEMENT_COUNT=`echo "#include <stdio.h>struct{int size;int flex[] __attribute__((__element_count__(siz)));}x;int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX -Werror $3 2>&1 && $AOUT && rm -f $AOUT`
+      HAVE_ATTRIBUTE_ELEMENT_COUNT=`echo "#include <stdio.h>struct{int size;int flex[] __attribute__((__element_count__(size)));}x;int main() { puts(\\"1\\"); return 0; }" > $AC && $CCEX -Werror $3 2>&1 && $AOUT && rm -f $AOUT`
     if [ "$HAVE_ATTRIBUTE_ELEMENT_COUNT" = "1" ]; then HAVE_ATTRIBUTE_ELEMENT_COUNT=1; else HAVE_ATTRIBUTE_ELEMENT_COUNT=0; fi
   else
       # hard coded win32 values
