@@ -67,7 +67,9 @@ and optionally args, statically typed via signature strings.
 # define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 #endif
 
-#if HAVE_ATTRIBUTE_ELEMENT_COUNT
+#if HAVE_COUNTED_BY
+# define __bounds(siz) __counted_by(siz)
+#elif HAVE_ATTRIBUTE_ELEMENT_COUNT
 # define __bounds(siz) __attribute__((__element_count__(siz)))
 #else
 # define __bounds(siz)
