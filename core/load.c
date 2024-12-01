@@ -177,7 +177,7 @@ PN potion_load(Potion *P, PN cl, PN self, PN file) {
       result = potion_load_code(P, filename);
     else if (strcmp(file_ext, "pnb") == 0)
       result = potion_load_code(P, filename);
-    else if (strcmp(file_ext, POTION_LOADEXT+1) == 0)
+    else if (strcmp(file_ext, &POTION_LOADEXT[1]) == 0)
       result = potion_load_dylib(P, filename);
     else
       fprintf(stderr, "** unrecognized file extension: %s\n", file_ext);
