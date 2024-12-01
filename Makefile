@@ -234,18 +234,18 @@ ifneq (${FPIC},)
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
 
-.c.i: core/config.h
+.c.i:
 	@${ECHO} CPP $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ -E -c $<
-.c.in: core/config.h
+.c.in:
 	@${ECHO} CPP ASTYLE $@
 	@${CC} -c ${CFLAGS} ${INCS} -E -c $< | perl -pe's,^# (\d+) ",//# \1 ",' > $@.tmp && \
 	  astyle -s2 < $@.tmp > $@
-.c.o: core/config.h
+.c.o:
 	@${ECHO} CC $@
 	@${CC} -c ${CFLAGS} ${INCS} -o $@ $<
 ifneq (${FPIC},)
-.c.${OPIC}: core/config.h
+.c.${OPIC}:
 	@${ECHO} CC $@
 	@${CC} -c ${FPIC} ${CFLAGS} ${INCS} -o $@ $<
 endif
@@ -253,7 +253,7 @@ endif
 %.c: %.y ${GREGCROSS}
 	@${ECHO} GREG $@
 	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
-.y.c: ${GREGCROSS}
+.y.c:
 	@${ECHO} GREG $@
 	@${GREGCROSS} $< > $@-new && ${MV} $@-new $@
 
