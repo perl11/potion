@@ -111,12 +111,12 @@ static PN potion_str_eval(Potion *P, PN cl, PN self) {
 /// "number" method. as atoi/atof
 static PN potion_str_number(Potion *P, PN cl, PN self) {
   char *str = PN_STR_PTR(self);
-  int i = 0, dec = 0, sign = 0, len = PN_STR_LEN(self);
+  int i = 0, sign = 0, len = PN_STR_LEN(self);
   if (len < 1) return PN_ZERO;
 
   sign = (str[0] == '-' ? -1 : 1);
   if (str[0] == '-' || str[0] == '+') {
-    dec++; str++; len--;
+    str++; len--;
   }
   for (i = 0; i < len; i++)
     if (str[i] < '0' || str[i] > '9')
