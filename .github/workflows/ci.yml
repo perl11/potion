@@ -1,0 +1,80 @@
+name: CI
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - run: make check
+  msys:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    env:
+      MSYS2_DIR: msys64
+      MSYS2_ARCH: x86_64
+      MSYSTEM: MINGW64
+      ARCH: win64
+      PLATFORM: x64
+    steps:
+      # see https://github.com/msys2/setup-msys2
+    - name: setup-msys2
+      uses: msys2/setup-msys2@v2
+      with:
+        path-type: minimal
+        update: true
+        install: >-
+          git
+          base-devel
+          mingw-w64-x86_64-toolchain
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - shell: msys2 {0}
+      run: make check
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - run: make check
+  ppc:
+    os: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - name: install ppc cross
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends qemu gcc-powerpc-linux-gnu libc6-dev-powerpc-cross
+    - run: make check CC="powerpc-linux-gnu-gcc"
+  aarch64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - uses: uraimo/run-on-arch-action@v2.8.1
+      name: check on aarch64
+      id: runcmd
+      with:
+        arch: aarch64
+        githubToken: ${{ github.token }}
+        distro: ubuntu_latest
+        install: |
+          apt-get update -q -y
+          apt-get install -y make gcc grep
+        run: make check
