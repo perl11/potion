@@ -388,6 +388,12 @@ check: test
 test: pn libs test/api/potion-test${EXE} test/api/gc-test${EXE}
 	test/runtests.sh -q
 
+# emacs flymake-mode
+check-syntax:
+	test -n "$(CHK_SOURCES)" && \
+	  ${CC} -c ${CFLAGS} ${INCS} -Wextra -o /dev/null -S $(CHK_SOURCES)
+.PHONY: check-syntax
+
 testable : bin/potion${EXE} libs test/api/potion-test${EXE} test/api/gc-test${EXE} test/api/gc-bench${EXE}
 
 # for LTO gold -O4
